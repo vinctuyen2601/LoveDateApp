@@ -1,0 +1,133 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B9D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C06C84;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF8FB1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6B9D;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="calendarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F8E8EE;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Shadow filters -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dx="0" dy="8" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="heartShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.4"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="480" fill="url(#bgGradient)"/>
+
+  <!-- Calendar base -->
+  <g filter="url(#shadow)">
+    <!-- Calendar body -->
+    <rect x="256" y="320" width="512" height="448" rx="40" fill="url(#calendarGradient)"/>
+
+    <!-- Calendar header -->
+    <rect x="256" y="320" width="512" height="120" rx="40" fill="#FF6B9D"/>
+    <rect x="256" y="400" width="512" height="40" fill="#FF6B9D"/>
+
+    <!-- Calendar rings -->
+    <circle cx="340" cy="360" r="20" fill="none" stroke="#FFFFFF" stroke-width="12"/>
+    <circle cx="512" cy="360" r="20" fill="none" stroke="#FFFFFF" stroke-width="12"/>
+    <circle cx="684" cy="360" r="20" fill="none" stroke="#FFFFFF" stroke-width="12"/>
+  </g>
+
+  <!-- Calendar grid (dates) -->
+  <g fill="#C06C84" opacity="0.4">
+    <!-- Row 1 -->
+    <rect x="296" y="480" width="60" height="50" rx="8"/>
+    <rect x="376" y="480" width="60" height="50" rx="8"/>
+    <rect x="456" y="480" width="60" height="50" rx="8"/>
+    <rect x="536" y="480" width="60" height="50" rx="8"/>
+    <rect x="616" y="480" width="60" height="50" rx="8"/>
+    <rect x="696" y="480" width="60" height="50" rx="8"/>
+
+    <!-- Row 2 -->
+    <rect x="296" y="550" width="60" height="50" rx="8"/>
+    <rect x="376" y="550" width="60" height="50" rx="8"/>
+    <rect x="456" y="550" width="60" height="50" rx="8"/>
+    <rect x="536" y="550" width="60" height="50" rx="8"/>
+    <rect x="616" y="550" width="60" height="50" rx="8"/>
+    <rect x="696" y="550" width="60" height="50" rx="8"/>
+
+    <!-- Row 3 -->
+    <rect x="296" y="620" width="60" height="50" rx="8"/>
+    <rect x="376" y="620" width="60" height="50" rx="8"/>
+    <rect x="456" y="620" width="60" height="50" rx="8"/>
+    <rect x="536" y="620" width="60" height="50" rx="8"/>
+    <rect x="616" y="620" width="60" height="50" rx="8"/>
+    <rect x="696" y="620" width="60" height="50" rx="8"/>
+
+    <!-- Row 4 -->
+    <rect x="296" y="690" width="60" height="50" rx="8"/>
+    <rect x="376" y="690" width="60" height="50" rx="8"/>
+  </g>
+
+  <!-- Special date (highlighted) -->
+  <rect x="456" y="620" width="60" height="50" rx="8" fill="#FF6B9D"/>
+
+  <!-- Heart icon (on special date) -->
+  <g filter="url(#heartShadow)">
+    <path d="M 486 632
+             C 486 625, 490 620, 496 620
+             C 500 620, 504 622, 506 626
+             C 508 622, 512 620, 516 620
+             C 522 620, 526 625, 526 632
+             C 526 642, 506 656, 506 656
+             C 506 656, 486 642, 486 632 Z"
+          fill="#FFFFFF"/>
+  </g>
+
+  <!-- Large decorative heart (top right) -->
+  <g filter="url(#heartShadow)" opacity="0.9">
+    <path d="M 200 200
+             C 200 140, 240 100, 300 100
+             C 340 100, 370 120, 390 150
+             C 410 120, 440 100, 480 100
+             C 540 100, 580 140, 580 200
+             C 580 280, 390 420, 390 420
+             C 390 420, 200 280, 200 200 Z"
+          fill="url(#heartGradient)"/>
+  </g>
+
+  <!-- Notification bell icon (small, bottom right) -->
+  <g opacity="0.8">
+    <path d="M 820 680
+             L 840 680
+             C 845 680, 850 675, 850 670
+             L 850 640
+             C 850 620, 840 600, 830 600
+             C 820 600, 810 620, 810 640
+             L 810 670
+             C 810 675, 815 680, 820 680 Z"
+          fill="#FFFFFF"/>
+    <ellipse cx="830" cy="690" rx="15" ry="8" fill="#FFFFFF"/>
+    <circle cx="855" cy="615" r="12" fill="#FFD700"/>
+  </g>
+</svg>

@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Ngày Quan Trọng",
+    "slug": "important-dates-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FF69B4"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.importantdates",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch",
+          "processing"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.yourcompany.importantdates",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "USE_FULL_SCREEN_INTENT"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ],
+      "expo-font",
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      "expo-task-manager",
+      "expo-background-fetch"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "32f2824c-3d51-44e0-92e9-18c3eeee1fb1"
+      }
+    }
+  }
+}

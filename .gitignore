@@ -1,0 +1,104 @@
+# Dependencies
+node_modules/
+npm-debug.*
+yarn-error.log
+yarn.lock
+package-lock.json
+
+# Expo
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+dist/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+.env
+
+# TypeScript
+*.tsbuildinfo
+
+# Android/IJ
+android/.idea
+android/.gradle
+android/build/
+android/app/build/
+android/gradle
+android/gradlew
+android/gradlew.bat
+android/local.properties
+*.iml
+*.hprof
+.cxx/
+*.keystore
+!debug.keystore
+
+# iOS
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcworkspace
+!default.xcworkspace
+xcuserdata
+*.moved-aside
+DerivedData
+*.xcuserstate
+**/.xcode.env.local
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# Testing
+coverage/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
