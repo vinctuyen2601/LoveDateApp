@@ -49,9 +49,6 @@ android/.idea
 android/.gradle
 android/build/
 android/app/build/
-android/gradle
-android/gradlew
-android/gradlew.bat
 android/local.properties
 *.iml
 *.hprof
