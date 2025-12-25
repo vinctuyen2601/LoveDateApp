@@ -22,17 +22,28 @@ export const PermissionModal: React.FC<PermissionModalProps> = ({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    checkAndShowPermissionModal();
+    // Delay to ensure app is fully rendered
+    const timer = setTimeout(() => {
+      checkAndShowPermissionModal();
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const checkAndShowPermissionModal = async () => {
     try {
+      console.log('Checking permission modal status...');
+
       // Check if we've already asked for permission
       const hasAsked = await AsyncStorage.getItem(PERMISSION_ASKED_KEY);
+      console.log('Has asked before:', hasAsked);
 
       if (!hasAsked) {
+        console.log('Showing permission modal');
         // Show modal to request permission
         setVisible(true);
+      } else {
+        console.log('Permission already asked, skipping modal');
       }
     } catch (error) {
       console.error('Error checking permission status:', error);

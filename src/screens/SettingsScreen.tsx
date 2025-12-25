@@ -9,9 +9,12 @@ import {
   TextInput,
   Modal,
   Switch,
+  Linking,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../store/AuthContext';
 import { useSync } from '../store/SyncContext';
 import { useToast } from '../contexts/ToastContext';
@@ -113,7 +116,13 @@ const SettingsScreen: React.FC = () => {
             { text: 'Hủy', style: 'cancel' },
             {
               text: 'Mở cài đặt',
-              onPress: () => Notifications.openSettingsAsync(),
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              },
             },
           ]
         );
@@ -265,6 +274,28 @@ const SettingsScreen: React.FC = () => {
         showError(error.message);
       }
     }
+  };
+
+  const handleClearPermissionFlag = async () => {
+    Alert.alert(
+      'Xóa flag quyền thông báo',
+      'Thao tác này sẽ xóa trạng thái "đã hỏi quyền" để popup sẽ hiện lại khi restart app. Bạn có muốn tiếp tục?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('@notification_permission_asked');
+              showSuccess('✅ Đã xóa flag! Vui lòng restart app để thấy popup quyền.');
+            } catch (error: any) {
+              showError('Không thể xóa flag: ' + error.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const isLinked = (provider: string) => {
@@ -464,6 +495,14 @@ const SettingsScreen: React.FC = () => {
           icon="shield-checkmark"
           title="Chính sách bảo mật"
           onPress={() => Alert.alert('Bảo mật', 'Đang cập nhật...')}
+        />
+
+        <SettingItem
+          icon="bug"
+          title="[Debug] Reset popup quyền thông báo"
+          subtitle="Xóa flag để popup hiện lại khi restart"
+          onPress={handleClearPermissionFlag}
+          color="#FF9800"
         />
       </View>
 
