@@ -7,6 +7,7 @@ import AuthScreen from '../screens/AuthScreen';
 import TabNavigator from './TabNavigator';
 import AddEventScreen from '../screens/AddEventScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
+import EventsListScreen from '../screens/EventsListScreen';
 import MBTISurveyScreen from '../screens/MBTISurveyScreen';
 
 const Stack = createStackNavigator();
@@ -63,6 +64,13 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="EventDetail"
           component={EventDetailScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="EventsList"
+          component={EventsListScreen}
           options={{
             headerShown: false,
           }}

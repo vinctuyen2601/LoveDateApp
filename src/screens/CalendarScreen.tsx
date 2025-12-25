@@ -246,22 +246,48 @@ const CalendarScreen: React.FC = () => {
 
         {/* Month Statistics */}
         <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() =>
+              navigation.navigate('EventsList', {
+                filter: 'all',
+                title: 'Tất cả sự kiện',
+              })
+            }
+          >
             <Text style={styles.statValue}>{monthStats.total}</Text>
             <Text style={styles.statLabel}>Tổng số</Text>
-          </View>
-          <View style={[styles.statItem, styles.statItemBorder]}>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.statItem, styles.statItemBorder]}
+            onPress={() =>
+              navigation.navigate('EventsList', {
+                filter: 'upcoming',
+                title: 'Sự kiện sắp tới',
+              })
+            }
+          >
             <Text style={[styles.statValue, { color: COLORS.success }]}>
               {monthStats.upcoming}
             </Text>
             <Text style={styles.statLabel}>Sắp tới</Text>
-          </View>
-          <View style={styles.statItem}>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() =>
+              navigation.navigate('EventsList', {
+                filter: 'past',
+                title: 'Sự kiện đã qua',
+              })
+            }
+          >
             <Text style={[styles.statValue, { color: COLORS.textSecondary }]}>
               {monthStats.past}
             </Text>
             <Text style={styles.statLabel}>Đã qua</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useEvents } from '../store/EventsContext';
+import { useToast } from '../contexts/ToastContext';
 import { Event } from '../types';
 import { DateUtils } from '../utils/date.utils';
 import { COLORS, getCategoryColor, getRelationshipColor } from '../constants/colors';
@@ -21,21 +22,26 @@ const EventDetailScreen: React.FC = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { getEventById, deleteEvent } = useEvents();
+  const { showSuccess, showError } = useToast();
   const { eventId } = route.params;
+
+  // Get event directly in render to ensure it updates when events context changes
   const event = getEventById(eventId);
+
+  // If event is deleted or not found, navigate back
+  React.useEffect(() => {
+    if (!event) {
+      // Event was deleted or doesn't exist
+      navigation.goBack();
+    }
+  }, [event, navigation]);
 
   if (!event) {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
-          <Text style={styles.errorText}>Không tìm thấy sự kiện</Text>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>Quay lại</Text>
-          </TouchableOpacity>
+          <Text style={styles.errorText}>Đang tải...</Text>
         </View>
       </View>
     );
@@ -99,10 +105,12 @@ const EventDetailScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              const eventTitle = event.title; // Save title before delete
               await deleteEvent(event.id);
-              navigation.goBack();
+              showSuccess(`Đã xóa sự kiện "${eventTitle}"`);
+              // No need to manually navigate - useEffect will handle it when event becomes null
             } catch (error) {
-              Alert.alert('Lỗi', 'Không thể xóa sự kiện');
+              showError('Không thể xóa sự kiện');
             }
           },
         },
@@ -244,6 +252,17 @@ const EventDetailScreen: React.FC = () => {
             </View>
 
             <View style={styles.infoCard}>
+              {/* Reminder Time */}
+              {event.reminderSettings.reminderTime && (
+                <View style={styles.reminderItem}>
+                  <Ionicons name="time-outline" size={18} color={COLORS.primary} />
+                  <Text style={styles.reminderText}>
+                    Thời gian: {event.reminderSettings.reminderTime.hour.toString().padStart(2, '0')}:{event.reminderSettings.reminderTime.minute.toString().padStart(2, '0')}
+                  </Text>
+                </View>
+              )}
+
+              {/* Reminder Days */}
               {event.reminderSettings.remindDaysBefore.map((days, index) => (
                 <View key={index} style={styles.reminderItem}>
                   <Ionicons name="alarm-outline" size={18} color={COLORS.info} />

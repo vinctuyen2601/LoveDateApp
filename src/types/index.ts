@@ -226,7 +226,7 @@ export interface SyncMetadata {
 
 export interface EventFormData {
   title: string;
-  description: string;
+  description?: string; // Optional vì form không có field này
   eventDate: Date;
   isLunarCalendar: boolean;
   category: EventCategory;

@@ -11,9 +11,12 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { useAuth } from '../store/AuthContext';
 import { useSync } from '../store/SyncContext';
+import { useToast } from '../contexts/ToastContext';
 import { notificationService } from '../services/notification.service';
+import { NotificationUtils } from '../utils/notification.utils';
 import { COLORS } from '../constants/colors';
 import { STRINGS } from '../constants/strings';
 import { APP_VERSION } from '../constants/config';
@@ -61,52 +64,134 @@ const SettingsScreen: React.FC = () => {
 
   const { user, isAnonymous, linkedProviders, logout, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = authContext;
   const { sync, syncStatus } = syncContext;
+  const { showSuccess, showError, showInfo } = useToast();
 
   const [showLinkEmailModal, setShowLinkEmailModal] = useState(false);
   const [linkEmail, setLinkEmail] = useState('');
   const [linkPassword, setLinkPassword] = useState('');
   const [linkDisplayName, setLinkDisplayName] = useState('');
   const [isLinking, setIsLinking] = useState(false);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
+
+  // Check notification permissions on mount
+  React.useEffect(() => {
+    checkNotificationPermissions();
+  }, []);
+
+  const checkNotificationPermissions = async () => {
+    try {
+      setIsCheckingPermissions(true);
+      const { status } = await Notifications.getPermissionsAsync();
+      setNotificationEnabled(status === 'granted');
+    } catch (error) {
+      console.error('Error checking notification permissions:', error);
+    } finally {
+      setIsCheckingPermissions(false);
+    }
+  };
+
+  const handleToggleNotifications = async (value: boolean) => {
+    try {
+      if (value) {
+        // Request permissions
+        const hasPermission = await NotificationUtils.requestPermissions();
+        if (hasPermission) {
+          setNotificationEnabled(true);
+          showSuccess('✅ Đã bật thông báo thành công!');
+        } else {
+          setNotificationEnabled(false);
+          showError('❌ Không có quyền gửi thông báo. Vui lòng bật trong cài đặt.');
+        }
+      } else {
+        // Note: We can't actually disable notifications from the app
+        // We can only guide users to system settings
+        Alert.alert(
+          'Tắt thông báo',
+          'Để tắt thông báo, vui lòng vào Cài đặt > Ứng dụng > Ngày Quan Trọng > Thông báo',
+          [
+            { text: 'Hủy', style: 'cancel' },
+            {
+              text: 'Mở cài đặt',
+              onPress: () => Notifications.openSettingsAsync(),
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      showError(error.message || 'Không thể thay đổi cài đặt thông báo');
+    }
+  };
 
   const handleSync = async () => {
     try {
       await sync();
-      Alert.alert('Thành công', 'Đã đồng bộ dữ liệu');
+      showSuccess('✅ Đã đồng bộ dữ liệu thành công');
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể đồng bộ');
+      showError(error.message || 'Không thể đồng bộ');
     }
   };
 
   const handleTestNotification = async () => {
     try {
-      // Create a test event
-      const testEvent = {
-        id: 'test-notification',
-        title: 'Thông báo thử nghiệm',
-        description: 'Đây là thông báo thử nghiệm',
-        eventDate: new Date().toISOString(),
-        category: 'other' as const,
-        relationshipType: 'other' as const,
-        isLunarCalendar: false,
-        isRecurring: false,
-        reminderSettings: {
-          remindDaysBefore: [0],
-        },
-        giftIdeas: [],
-        notes: [],
-        isDeleted: false,
-        userId: user?.id || '',
-        localId: 'test',
-        version: Date.now(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        needsSync: false,
-      };
+      // Schedule a test notification 5 seconds from now
+      const testDate = new Date();
+      testDate.setSeconds(testDate.getSeconds() + 5);
 
-      await notificationService.testNotification(testEvent);
-      Alert.alert('Thành công', 'Đã gửi thông báo thử nghiệm!');
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🧪 Thông báo thử nghiệm',
+          body: 'Bạn sẽ nhận được thông báo này sau 5 giây!',
+          data: { test: true },
+        },
+        trigger: {
+          date: testDate,
+        },
+      });
+
+      showSuccess('🔔 Đã lên lịch thông báo! Sẽ hiện sau 5 giây');
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể gửi thông báo');
+      showError(error.message || 'Không thể gửi thông báo');
+    }
+  };
+
+  const handleTestNotificationWhenClosed = async () => {
+    try {
+      // Schedule a test notification 1 minute from now
+      const testDate = new Date();
+      testDate.setMinutes(testDate.getMinutes() + 1);
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🚀 Test App đã tắt',
+          body: 'Nếu bạn nhận được thông báo này khi app đã tắt - notifications hoạt động hoàn hảo! ✅',
+          data: { testWhenClosed: true },
+        },
+        trigger: {
+          date: testDate,
+        },
+      });
+
+      Alert.alert(
+        'Test thông báo khi app tắt',
+        'Đã lên lịch thông báo sau 1 phút.\n\n📱 Hướng dẫn:\n1. Tắt hoàn toàn app (swipe away)\n2. Chờ 1 phút\n3. Kiểm tra xem có nhận được thông báo không\n\nNếu nhận được → Notifications hoạt động OK! ✅',
+        [{ text: 'OK, đã hiểu' }]
+      );
+    } catch (error: any) {
+      showError(error.message || 'Không thể tạo test notification');
+    }
+  };
+
+  const handleCheckExactAlarm = async () => {
+    try {
+      const canSchedule = await NotificationUtils.canScheduleExactAlarms();
+      if (canSchedule) {
+        showSuccess('✅ Ứng dụng đã có quyền báo thức chính xác');
+      } else {
+        await NotificationUtils.requestExactAlarmPermission();
+      }
+    } catch (error: any) {
+      showError(error.message || 'Không thể kiểm tra quyền');
     }
   };
 
@@ -152,12 +237,9 @@ const SettingsScreen: React.FC = () => {
       setLinkEmail('');
       setLinkPassword('');
       setLinkDisplayName('');
-      Alert.alert(
-        'Thành công! 🎉',
-        'Tài khoản của bạn đã được liên kết với email. Bây giờ bạn có thể đăng nhập trên nhiều thiết bị!'
-      );
+      showSuccess('🎉 Tài khoản đã được liên kết với email thành công!');
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể liên kết tài khoản');
+      showError(error.message || 'Không thể liên kết tài khoản');
     } finally {
       setIsLinking(false);
     }
@@ -166,10 +248,10 @@ const SettingsScreen: React.FC = () => {
   const handleLinkGoogle = async () => {
     try {
       await linkWithGoogle();
-      Alert.alert('Thành công', 'Đã liên kết với Google');
+      showSuccess('✅ Đã liên kết với Google thành công');
     } catch (error: any) {
       if (!error.message.includes('sẽ cần implement')) {
-        Alert.alert('Lỗi', error.message);
+        showError(error.message);
       }
     }
   };
@@ -177,10 +259,10 @@ const SettingsScreen: React.FC = () => {
   const handleLinkFacebook = async () => {
     try {
       await linkWithFacebook();
-      Alert.alert('Thành công', 'Đã liên kết với Facebook');
+      showSuccess('✅ Đã liên kết với Facebook thành công');
     } catch (error: any) {
       if (!error.message.includes('sẽ cần implement')) {
-        Alert.alert('Lỗi', error.message);
+        showError(error.message);
       }
     }
   };
@@ -306,11 +388,58 @@ const SettingsScreen: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Thông báo</Text>
 
+        {/* Enable/Disable Notifications */}
+        <View style={styles.settingItem}>
+          <View style={styles.settingLeft}>
+            <View style={[styles.iconContainer, { backgroundColor: notificationEnabled ? COLORS.primary + '20' : COLORS.background }]}>
+              <Ionicons
+                name="notifications"
+                size={22}
+                color={notificationEnabled ? COLORS.primary : COLORS.textSecondary}
+              />
+            </View>
+            <View style={styles.settingText}>
+              <Text style={styles.settingTitle}>
+                Bật thông báo
+              </Text>
+              <Text style={styles.settingSubtitle}>
+                {isCheckingPermissions
+                  ? 'Đang kiểm tra...'
+                  : notificationEnabled
+                    ? 'Thông báo đã được bật'
+                    : 'Nhấn để bật thông báo'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={notificationEnabled}
+            onValueChange={handleToggleNotifications}
+            disabled={isCheckingPermissions}
+            trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+            thumbColor={COLORS.white}
+          />
+        </View>
+
+        <SettingItem
+          icon="alarm"
+          title="Kiểm tra quyền Báo thức chính xác"
+          subtitle="Cần thiết để nhận thông báo đúng giờ (Android 12+)"
+          onPress={handleCheckExactAlarm}
+        />
+
         <SettingItem
           icon="notifications"
           title="Gửi thông báo thử nghiệm"
-          subtitle="Kiểm tra xem thông báo có hoạt động không"
+          subtitle="Kiểm tra xem thông báo có hoạt động không (5 giây)"
           onPress={handleTestNotification}
+        />
+
+        <SettingItem
+          icon="rocket"
+          title="Test thông báo khi app tắt"
+          subtitle="Test sau 1 phút - hướng dẫn tắt app để kiểm tra"
+          onPress={handleTestNotificationWhenClosed}
+          color="#FF6B6B"
         />
       </View>
 

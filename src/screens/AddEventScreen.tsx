@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEvents } from "../store/EventsContext";
+import { useToast } from "../contexts/ToastContext";
 import {
   EventCategory,
   RelationshipType,
@@ -30,11 +31,17 @@ import RecurrenceTypePicker from "../components/RecurrenceTypePicker";
 
 const AddEventScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { addEvent } = useEvents();
+  const route = useRoute<any>();
+  const { addEvent, updateEvent, getEventById } = useEvents();
+  const { showSuccess, showError } = useToast();
+
+  // Check if this is Edit mode
+  const eventId = route.params?.eventId;
+  const isEditMode = !!eventId;
+  const existingEvent = isEditMode ? getEventById(eventId) : undefined;
 
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
-    description: "",
     eventDate: new Date(),
     isLunarCalendar: false,
     category: "anniversary" as EventCategory,
@@ -52,6 +59,40 @@ const AddEventScreen: React.FC = () => {
 
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load existing event data when in Edit mode
+  useEffect(() => {
+    if (isEditMode && existingEvent) {
+      const eventDate = new Date(existingEvent.eventDate);
+
+      setFormData({
+        title: existingEvent.title,
+        description: existingEvent.description,
+        eventDate,
+        isLunarCalendar: existingEvent.isLunarCalendar,
+        category: existingEvent.category,
+        relationshipType: existingEvent.relationshipType,
+        remindDaysBefore: existingEvent.reminderSettings.remindDaysBefore,
+        reminderTime: existingEvent.reminderSettings.reminderTime || { hour: 10, minute: 0 },
+        giftIdeas: existingEvent.giftIdeas,
+        isRecurring: existingEvent.isRecurring,
+        recurrencePattern: existingEvent.recurrencePattern,
+      });
+
+      // Set recurrence type based on existing pattern
+      if (existingEvent.recurrencePattern) {
+        setRecurrenceType(existingEvent.recurrencePattern.type);
+
+        if (existingEvent.recurrencePattern.type === 'weekly' && existingEvent.recurrencePattern.dayOfWeek !== undefined) {
+          setDayOfWeek(existingEvent.recurrencePattern.dayOfWeek);
+        } else if (existingEvent.recurrencePattern.type === 'monthly' && existingEvent.recurrencePattern.dayOfMonth !== undefined) {
+          setDayOfMonth(existingEvent.recurrencePattern.dayOfMonth);
+        }
+      } else if (!existingEvent.isRecurring) {
+        setRecurrenceType('once');
+      }
+    }
+  }, [isEditMode, eventId]);
 
   const handleSubmit = async () => {
     // Validate
@@ -92,12 +133,21 @@ const AddEventScreen: React.FC = () => {
         }
       }
 
-      await addEvent({ ...formData, recurrencePattern });
-      Alert.alert("Thành công", "Đã thêm sự kiện mới", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      if (isEditMode) {
+        // Update existing event
+        await updateEvent(eventId, { ...formData, recurrencePattern });
+        showSuccess(`✨ Đã cập nhật sự kiện "${formData.title}" thành công!`);
+      } else {
+        // Add new event
+        await addEvent({ ...formData, recurrencePattern });
+        showSuccess(`✨ Đã thêm sự kiện "${formData.title}" thành công!`);
+      }
+
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1500);
     } catch (error: any) {
-      Alert.alert("Lỗi", error.message || "Không thể thêm sự kiện");
+      showError(error.message || (isEditMode ? "Không thể cập nhật sự kiện" : "Không thể thêm sự kiện"));
     } finally {
       setIsSubmitting(false);
     }
@@ -500,7 +550,7 @@ const AddEventScreen: React.FC = () => {
           disabled={isSubmitting}
         >
           <Text style={styles.submitButtonText}>
-            {isSubmitting ? "Đang lưu..." : STRINGS.save}
+            {isSubmitting ? "Đang lưu..." : (isEditMode ? "Cập nhật" : STRINGS.save)}
           </Text>
         </TouchableOpacity>
       </View>

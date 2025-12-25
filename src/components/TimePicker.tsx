@@ -21,6 +21,12 @@ const TimePicker: React.FC<TimePickerProps> = ({ selectedTime, onTimeChange }) =
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   };
 
+  // Sync state with props when selectedTime changes
+  useEffect(() => {
+    setTempHour(selectedTime.hour);
+    setTempMinute(selectedTime.minute);
+  }, [selectedTime.hour, selectedTime.minute]);
+
   // Auto scroll to selected time when modal opens
   useEffect(() => {
     if (showModal) {

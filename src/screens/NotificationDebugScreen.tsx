@@ -13,6 +13,7 @@ import { COLORS } from '../constants/colors';
 import { notificationService } from '../services/notification.service';
 import { databaseService } from '../services/database.service';
 import { backgroundTaskService } from '../services/backgroundTask.service';
+import { NotificationUtils } from '../utils/notification.utils';
 
 const NotificationDebugScreen: React.FC = () => {
   const [scheduledCount, setScheduledCount] = useState(0);
@@ -20,6 +21,7 @@ const NotificationDebugScreen: React.FC = () => {
   const [backgroundTaskStatus, setBackgroundTaskStatus] = useState('');
   const [isTaskRegistered, setIsTaskRegistered] = useState(false);
   const [permissions, setPermissions] = useState<any>(null);
+  const [canScheduleExact, setCanScheduleExact] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -47,6 +49,10 @@ const NotificationDebugScreen: React.FC = () => {
       // Get notification permissions
       const perms = await Notifications.getPermissionsAsync();
       setPermissions(perms);
+
+      // Check exact alarm permission (Android 12+)
+      const exactAlarmPerm = await NotificationUtils.canScheduleExactAlarms();
+      setCanScheduleExact(exactAlarmPerm);
     } catch (error) {
       console.error('Error loading debug info:', error);
     } finally {
@@ -187,6 +193,16 @@ const NotificationDebugScreen: React.FC = () => {
           </View>
 
           <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Exact Alarm (Android 12+):</Text>
+            <Text style={[
+              styles.statValue,
+              canScheduleExact ? styles.statusSuccess : styles.statusError
+            ]}>
+              {canScheduleExact ? 'Granted ✓' : 'Not Granted ✗'}
+            </Text>
+          </View>
+
+          <View style={styles.statRow}>
             <Text style={styles.statLabel}>Background Task:</Text>
             <Text style={[
               styles.statValue,
@@ -205,6 +221,20 @@ const NotificationDebugScreen: React.FC = () => {
         {/* Test Actions */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>🧪 Test Actions</Text>
+
+          {!canScheduleExact && (
+            <TouchableOpacity
+              style={[styles.button, styles.buttonWarning]}
+              onPress={async () => {
+                await NotificationUtils.requestExactAlarmPermission();
+                await loadDebugInfo();
+              }}
+              disabled={loading}
+            >
+              <Ionicons name="alarm-outline" size={20} color={COLORS.white} />
+              <Text style={styles.buttonText}>Request Exact Alarm Permission</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={styles.button}

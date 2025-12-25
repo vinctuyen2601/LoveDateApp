@@ -7,7 +7,9 @@ import { AuthProvider } from './src/store/AuthContext';
 import { EventsProvider } from './src/store/EventsContext';
 import { SyncProvider } from './src/store/SyncContext';
 import { NotificationProvider } from './src/store/NotificationContext';
+import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator, { navigate } from './src/navigation/AppNavigator';
+import { PermissionModal } from './src/components/PermissionModal';
 import { notificationService } from './src/services/notification.service';
 import { databaseService } from './src/services/database.service';
 import { dataSeedService } from './src/services/dataSeed.service';
@@ -104,18 +106,37 @@ export default function App() {
     }
   };
 
+  const handlePermissionResult = async (granted: boolean) => {
+    if (granted) {
+      console.log('Notification permission granted');
+      // Reschedule notifications after permission granted
+      try {
+        const events = await databaseService.getAllEvents();
+        await notificationService.rescheduleAllNotifications(events);
+        console.log('Notifications rescheduled after permission granted');
+      } catch (error) {
+        console.error('Error rescheduling after permission:', error);
+      }
+    } else {
+      console.log('Notification permission denied or skipped');
+    }
+  };
+
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <EventsProvider>
-          <NotificationProvider>
-            <SyncProvider>
-              <AppNavigator />
-              <StatusBar style="auto" />
-            </SyncProvider>
-          </NotificationProvider>
-        </EventsProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <EventsProvider>
+            <NotificationProvider>
+              <SyncProvider>
+                <AppNavigator />
+                <StatusBar style="auto" />
+                <PermissionModal onPermissionResult={handlePermissionResult} />
+              </SyncProvider>
+            </NotificationProvider>
+          </EventsProvider>
+        </AuthProvider>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }

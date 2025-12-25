@@ -71,6 +71,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         giftIdeas: formData.giftIdeas,
         notes: [],
         isRecurring: formData.isRecurring,
+        recurrencePattern: formData.recurrencePattern,
         isDeleted: false,
         localId,
         serverId: undefined,
@@ -115,6 +116,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       }
       if (formData.giftIdeas !== undefined) updates.giftIdeas = formData.giftIdeas;
       if (formData.isRecurring !== undefined) updates.isRecurring = formData.isRecurring;
+      if (formData.recurrencePattern !== undefined) updates.recurrencePattern = formData.recurrencePattern;
 
       // Update in database
       const updatedEvent = await databaseService.updateEvent(id, updates);
