@@ -318,7 +318,13 @@ class DatabaseService {
       console.log("INSERT query:", query);
       console.log("INSERT values:", values);
 
-      await this.db.runAsync(query, values);
+      // Use runAsync with proper array of values
+      const statement = await this.db.prepareAsync(query);
+      try {
+        await statement.executeAsync(values);
+      } finally {
+        await statement.finalizeAsync();
+      }
 
       return eventWithTimestamps;
     } catch (error) {
