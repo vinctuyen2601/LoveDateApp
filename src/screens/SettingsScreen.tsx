@@ -143,41 +143,52 @@ const SettingsScreen: React.FC = () => {
 
   const handleTestNotification = async () => {
     try {
-      // Schedule a test notification 5 seconds from now
-      const testDate = new Date();
-      testDate.setSeconds(testDate.getSeconds() + 5);
+      // Check permission first
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        showError('Vui lòng bật quyền thông báo trước');
+        return;
+      }
 
+      // Schedule a test notification 5 seconds from now
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '🧪 Thông báo thử nghiệm',
           body: 'Bạn sẽ nhận được thông báo này sau 5 giây!',
           data: { test: true },
+          sound: 'default',
         },
         trigger: {
-          date: testDate,
+          seconds: 5,
         },
       });
 
       showSuccess('🔔 Đã lên lịch thông báo! Sẽ hiện sau 5 giây');
     } catch (error: any) {
+      console.error('Test notification error:', error);
       showError(error.message || 'Không thể gửi thông báo');
     }
   };
 
   const handleTestNotificationWhenClosed = async () => {
     try {
-      // Schedule a test notification 1 minute from now
-      const testDate = new Date();
-      testDate.setMinutes(testDate.getMinutes() + 1);
+      // Check permission first
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        showError('Vui lòng bật quyền thông báo trước');
+        return;
+      }
 
+      // Schedule a test notification 1 minute from now
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '🚀 Test App đã tắt',
           body: 'Nếu bạn nhận được thông báo này khi app đã tắt - notifications hoạt động hoàn hảo! ✅',
           data: { testWhenClosed: true },
+          sound: 'default',
         },
         trigger: {
-          date: testDate,
+          seconds: 60, // 1 minute
         },
       });
 
@@ -187,6 +198,7 @@ const SettingsScreen: React.FC = () => {
         [{ text: 'OK, đã hiểu' }]
       );
     } catch (error: any) {
+      console.error('Test notification when closed error:', error);
       showError(error.message || 'Không thể tạo test notification');
     }
   };
