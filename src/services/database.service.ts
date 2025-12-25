@@ -312,18 +312,33 @@ class DatabaseService {
       addField('createdAt', now);
       addField('updatedAt', now);
 
-      const query = `INSERT INTO events (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`;
-
-      console.log("INSERT query:", query);
-      console.log("INSERT values:", values);
-
-      // Use runAsync with proper array of values
-      const statement = await this.db.prepareAsync(query);
-      try {
-        await statement.executeAsync(values);
-      } finally {
-        await statement.finalizeAsync();
+      // Debug: Check if db is still valid
+      if (!this.db) {
+        throw new DatabaseError("Database connection lost before INSERT");
       }
+
+      // Build parameterized query - only use ? for actual values (not NULL)
+      const actualValues: any[] = [];
+      const finalPlaceholders: string[] = [];
+
+      for (let i = 0; i < placeholders.length; i++) {
+        if (placeholders[i] === 'NULL') {
+          finalPlaceholders.push('NULL');
+        } else {
+          finalPlaceholders.push('?');
+          actualValues.push(values[i]);
+        }
+      }
+
+      const query = `INSERT INTO events (${columns.join(', ')}) VALUES (${finalPlaceholders.join(', ')})`;
+
+      console.log("Final INSERT query:", query);
+      console.log("Actual values:", actualValues);
+
+      // Use runAsync - the correct method for INSERT with parameters
+      await this.db.runAsync(query, actualValues);
+
+      console.log("Event created successfully!");
 
       return eventWithTimestamps;
     } catch (error) {
