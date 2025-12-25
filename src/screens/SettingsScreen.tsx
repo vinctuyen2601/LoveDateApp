@@ -150,12 +150,15 @@ const SettingsScreen: React.FC = () => {
         return;
       }
 
-      // Present notification immediately (no scheduling needed)
-      await Notifications.presentNotificationAsync({
-        title: '🧪 Thông báo thử nghiệm',
-        body: 'Thông báo test hiển thị ngay lập tức!',
-        data: { test: true },
-        sound: 'default',
+      // Schedule notification to show immediately (trigger: null)
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🧪 Thông báo thử nghiệm',
+          body: 'Thông báo test hiển thị ngay lập tức!',
+          data: { test: true },
+          sound: 'default',
+        },
+        trigger: null, // null = show immediately
       });
 
       showSuccess('🔔 Đã gửi thông báo test!');
