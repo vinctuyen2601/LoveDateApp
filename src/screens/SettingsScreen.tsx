@@ -150,20 +150,15 @@ const SettingsScreen: React.FC = () => {
         return;
       }
 
-      // Schedule a test notification 5 seconds from now
-      const testDate = new Date(Date.now() + 5000); // 5 seconds from now
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🧪 Thông báo thử nghiệm',
-          body: 'Bạn sẽ nhận được thông báo này sau 5 giây!',
-          data: { test: true },
-          sound: 'default',
-        },
-        trigger: testDate,
+      // Present notification immediately (no scheduling needed)
+      await Notifications.presentNotificationAsync({
+        title: '🧪 Thông báo thử nghiệm',
+        body: 'Thông báo test hiển thị ngay lập tức!',
+        data: { test: true },
+        sound: 'default',
       });
 
-      showSuccess('🔔 Đã lên lịch thông báo! Sẽ hiện sau 5 giây');
+      showSuccess('🔔 Đã gửi thông báo test!');
     } catch (error: any) {
       console.error('Test notification error:', error);
       showError(error.message || 'Không thể gửi thông báo');
@@ -180,7 +175,7 @@ const SettingsScreen: React.FC = () => {
       }
 
       // Schedule a test notification 1 minute from now
-      const testDate = new Date(Date.now() + 60000); // 1 minute from now
+      const scheduledTime = new Date(Date.now() + 60000); // 1 minute
 
       await Notifications.scheduleNotificationAsync({
         content: {
@@ -189,7 +184,10 @@ const SettingsScreen: React.FC = () => {
           data: { testWhenClosed: true },
           sound: 'default',
         },
-        trigger: testDate,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: scheduledTime,
+        },
       });
 
       Alert.alert(
