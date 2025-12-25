@@ -151,6 +151,8 @@ const SettingsScreen: React.FC = () => {
       }
 
       // Schedule a test notification 5 seconds from now
+      const testDate = new Date(Date.now() + 5000); // 5 seconds from now
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '🧪 Thông báo thử nghiệm',
@@ -158,9 +160,7 @@ const SettingsScreen: React.FC = () => {
           data: { test: true },
           sound: 'default',
         },
-        trigger: {
-          seconds: 5,
-        },
+        trigger: testDate,
       });
 
       showSuccess('🔔 Đã lên lịch thông báo! Sẽ hiện sau 5 giây');
@@ -180,6 +180,8 @@ const SettingsScreen: React.FC = () => {
       }
 
       // Schedule a test notification 1 minute from now
+      const testDate = new Date(Date.now() + 60000); // 1 minute from now
+
       await Notifications.scheduleNotificationAsync({
         content: {
           title: '🚀 Test App đã tắt',
@@ -187,9 +189,7 @@ const SettingsScreen: React.FC = () => {
           data: { testWhenClosed: true },
           sound: 'default',
         },
-        trigger: {
-          seconds: 60, // 1 minute
-        },
+        trigger: testDate,
       });
 
       Alert.alert(
