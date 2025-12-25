@@ -66,9 +66,9 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         relationshipType: formData.relationshipType,
         reminderSettings: {
           remindDaysBefore: formData.remindDaysBefore,
-          reminderTime: formData.reminderTime,
+          reminderTime: formData.reminderTime || { hour: 10, minute: 0 }, // Default time
         },
-        giftIdeas: formData.giftIdeas,
+        giftIdeas: formData.giftIdeas || [],
         notes: [],
         isRecurring: formData.isRecurring,
         recurrencePattern: formData.recurrencePattern,
