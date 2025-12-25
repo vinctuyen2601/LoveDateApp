@@ -67,7 +67,6 @@ const AddEventScreen: React.FC = () => {
 
       setFormData({
         title: existingEvent.title,
-        description: existingEvent.description,
         eventDate,
         isLunarCalendar: existingEvent.isLunarCalendar,
         category: existingEvent.category,

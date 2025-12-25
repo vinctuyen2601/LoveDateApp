@@ -59,7 +59,6 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       const newEvent: Omit<Event, 'createdAt' | 'updatedAt'> = {
         id: localId,
         title: formData.title,
-        description: formData.description,
         eventDate: formData.eventDate.toISOString(),
         isLunarCalendar: formData.isLunarCalendar,
         category: formData.category,

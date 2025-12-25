@@ -217,8 +217,7 @@ class DatabaseService {
 
     if (event.id !== undefined) dbEvent.id = event.id;
     if (event.title !== undefined) dbEvent.title = event.title;
-    if (event.description !== undefined)
-      dbEvent.description = event.description || null;
+    // description field removed - no longer used
     if (event.eventDate !== undefined) dbEvent.eventDate = event.eventDate;
     if (event.isLunarCalendar !== undefined)
       dbEvent.isLunarCalendar = event.isLunarCalendar ? 1 : 0;
@@ -295,7 +294,7 @@ class DatabaseService {
       // Add all fields
       addField('id', dbEvent.id);
       addField('title', dbEvent.title);
-      addField('description', dbEvent.description ?? null);
+      // description field removed - no longer used
       addField('eventDate', dbEvent.eventDate);
       addField('isLunarCalendar', dbEvent.isLunarCalendar ?? 0);
       addField('category', dbEvent.category ?? 'other');

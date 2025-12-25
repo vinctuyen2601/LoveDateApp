@@ -42,7 +42,6 @@ export interface EventNote {
 export interface Event {
   id: string; // local_timestamp_random hoặc server UUID
   title: string;
-  description?: string;
   eventDate: string; // ISO string
   isLunarCalendar: boolean;
   category: EventCategory;
@@ -197,7 +196,6 @@ export interface ActivitySuggestion {
 export interface DatabaseEvent {
   id: string;
   title: string;
-  description: string | null;
   eventDate: string;
   isLunarCalendar: number; // SQLite boolean
   category: string;
@@ -226,7 +224,6 @@ export interface SyncMetadata {
 
 export interface EventFormData {
   title: string;
-  description?: string; // Optional vì form không có field này
   eventDate: Date;
   isLunarCalendar: boolean;
   category: EventCategory;
