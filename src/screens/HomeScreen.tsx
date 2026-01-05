@@ -264,14 +264,6 @@ const HomeScreen: React.FC = () => {
                           })}
                         </Text>
                       </View>
-                      {event.description && (
-                        <Text
-                          style={styles.upcomingEventDescription}
-                          numberOfLines={1}
-                        >
-                          {event.description}
-                        </Text>
-                      )}
                     </View>
                     <Ionicons
                       name="chevron-forward"
@@ -697,11 +689,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: 2,
   },
-  miniEventDescription: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontStyle: "italic",
-  },
 
   // Upcoming Events Section
   upcomingEventsSection: {
@@ -794,12 +781,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     textTransform: "capitalize",
-  },
-  upcomingEventDescription: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginTop: 2,
-    fontStyle: "italic",
   },
 
   // Old Upcoming Events (for backward compatibility)

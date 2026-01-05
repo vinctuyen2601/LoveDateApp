@@ -42,7 +42,7 @@ const isSmallScreen = width < 375; // iPhone SE, small Android phones
 interface SurveyQuestion {
   id: string;
   question: string;
-  description?: string; // Giải thích tại sao hỏi câu này
+  questionHint?: string; // Giải thích tại sao hỏi câu này (renamed from description)
   type: "single" | "multiple" | "text";
   options?: string[];
   maxSelections?: number; // For multiple choice
@@ -155,7 +155,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "gender",
       question: "Người bạn muốn tặng quà thuộc giới tính nào?",
-      description: "Giúp chúng tôi gợi ý quà phù hợp với sở thích chung",
+      questionHint: "Giúp chúng tôi gợi ý quà phù hợp với sở thích chung",
       type: "single",
       options: ["Nam", "Nữ", "Khác"],
     },
@@ -164,7 +164,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "relationship",
       question: "Mối quan hệ của bạn với người đó?",
-      description:
+      questionHint:
         "Mối quan hệ khác nhau sẽ có cách thể hiện tình cảm khác nhau",
       type: "single",
       options: [
@@ -181,7 +181,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "relationship_duration",
       question: "Bạn và người ấy đã yêu nhau được bao lâu?",
-      description: "Giai đoạn khác nhau cần quà khác nhau",
+      questionHint: "Giai đoạn khác nhau cần quà khác nhau",
       type: "single",
       options: [
         "Dưới 3 tháng (Mới yêu)",
@@ -198,7 +198,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "personality",
       question: "Tính cách của người đó? (Chọn tối đa 3)",
-      description: "Hiểu tính cách giúp chọn quà hợp gu",
+      questionHint: "Hiểu tính cách giúp chọn quà hợp gu",
       type: "multiple",
       maxSelections: 3,
       options: [
@@ -219,7 +219,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "hobbies",
       question: "Người đó thường làm gì lúc rảnh? (Chọn nhiều đáp án)",
-      description: "Quà liên quan đến sở thích luôn được yêu thích",
+      questionHint: "Quà liên quan đến sở thích luôn được yêu thích",
       type: "multiple",
       maxSelections: 5,
       options: [
@@ -242,7 +242,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "hobbies_other",
       question: "Có sở thích đặc biệt nào khác không?",
-      description: "VD: Sưu tầm mô hình, chơi nhạc cụ, làm vườn...",
+      questionHint: "VD: Sưu tầm mô hình, chơi nhạc cụ, làm vườn...",
       type: "text",
       placeholder: "Nhập sở thích khác (nếu có)...",
     },
@@ -256,7 +256,7 @@ const SuggestionsScreen: React.FC = () => {
           : surveyAnswers.gender === "Nữ"
           ? "Điều cô ấy đang cần/muốn nhất hiện tại?"
           : "Điều họ đang cần/muốn nhất hiện tại?",
-      description: "Quà thiết thực luôn có giá trị cao",
+      questionHint: "Quà thiết thực luôn có giá trị cao",
       type: "multiple",
       maxSelections: 3,
       options:
@@ -296,7 +296,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "love_language",
       question: "Người đó cảm nhận tình cảm qua cách nào nhiều nhất?",
-      description: "Hiểu 5 ngôn ngữ yêu thương để thể hiện đúng cách",
+      questionHint: "Hiểu 5 ngôn ngữ yêu thương để thể hiện đúng cách",
       type: "single",
       options: [
         "Lời nói ngọt ngào, khen ngợi",
@@ -320,7 +320,7 @@ const SuggestionsScreen: React.FC = () => {
           : surveyAnswers.gender === "Nữ"
           ? "Phong cách thời trang cô ấy thích?"
           : "Phong cách của họ?",
-      description: "Giúp chọn quà về thời trang, phụ kiện",
+      questionHint: "Giúp chọn quà về thời trang, phụ kiện",
       type: "multiple",
       maxSelections: 2,
       options:
@@ -356,7 +356,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "budget",
       question: "Ngân sách bạn dự định cho món quà này?",
-      description: "Giúp gợi ý quà phù hợp với khả năng tài chính",
+      questionHint: "Giúp gợi ý quà phù hợp với khả năng tài chính",
       type: "single",
       options: [
         "Dưới 200k (Quà ý nghĩa, handmade)",
@@ -373,7 +373,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "occasion",
       question: "Quà tặng cho dịp gì?",
-      description: "Mỗi dịp có ý nghĩa riêng",
+      questionHint: "Mỗi dịp có ý nghĩa riêng",
       type: "single",
       options: [
         "Sinh nhật",
@@ -392,7 +392,7 @@ const SuggestionsScreen: React.FC = () => {
     {
       id: "gift_purpose",
       question: "Bạn muốn món quà này mang lại điều gì?",
-      description: "Hiểu rõ mục đích để gợi ý chính xác hơn",
+      questionHint: "Hiểu rõ mục đích để gợi ý chính xác hơn",
       type: "multiple",
       maxSelections: 2,
       options: [
@@ -849,9 +849,9 @@ const SuggestionsScreen: React.FC = () => {
                   {currentQuestion.question}
                 </Text>
 
-                {currentQuestion.description && (
+                {currentQuestion.questionHint && (
                   <Text style={styles.questionDescription}>
-                    {currentQuestion.description}
+                    {currentQuestion.questionHint}
                   </Text>
                 )}
 

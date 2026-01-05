@@ -185,7 +185,6 @@ class DatabaseService {
     return {
       id: dbEvent.id,
       title: dbEvent.title,
-      description: dbEvent.description || undefined,
       eventDate: dbEvent.eventDate,
       isLunarCalendar: Boolean(dbEvent.isLunarCalendar),
       category: dbEvent.category as any,
@@ -266,7 +265,10 @@ class DatabaseService {
 
       const dbEvent = this.eventToDbFormat(eventWithTimestamps);
 
-      console.log("Creating event with dbEvent:", JSON.stringify(dbEvent, null, 2));
+      console.log(
+        "Creating event with dbEvent:",
+        JSON.stringify(dbEvent, null, 2)
+      );
 
       // Validate required fields
       if (!dbEvent.id || !dbEvent.title || !dbEvent.eventDate) {
@@ -280,63 +282,162 @@ class DatabaseService {
       const placeholders: string[] = [];
       const values: any[] = [];
 
-      // Helper function to add field
+      // Helper function to add field - ALWAYS use ? placeholder, NEVER use NULL literal
+      // expo-sqlite on Android crashes with NULL literals in prepared statements
       const addField = (columnName: string, value: any) => {
         columns.push(columnName);
-        if (value === null || value === undefined) {
-          placeholders.push('NULL');
-        } else {
-          placeholders.push('?');
-          values.push(value);
-        }
+        placeholders.push("?"); // Always use ? - even for null values
+        values.push(value === undefined ? null : value); // Convert undefined to null
       };
 
       // Add all fields
-      addField('id', dbEvent.id);
-      addField('title', dbEvent.title);
+      addField("id", dbEvent.id);
+      addField("title", dbEvent.title);
       // description field removed - no longer used
-      addField('eventDate', dbEvent.eventDate);
-      addField('isLunarCalendar', dbEvent.isLunarCalendar ?? 0);
-      addField('category', dbEvent.category ?? 'other');
-      addField('relationshipType', dbEvent.relationshipType ?? 'other');
-      addField('reminderSettings', dbEvent.reminderSettings ?? null);
-      addField('giftIdeas', dbEvent.giftIdeas ?? null);
-      addField('notes', dbEvent.notes ?? null);
-      addField('isRecurring', dbEvent.isRecurring ?? 1);
-      addField('recurrencePattern', dbEvent.recurrencePattern ?? null);
-      addField('isDeleted', dbEvent.isDeleted ?? 0);
-      addField('localId', dbEvent.localId ?? null);
-      addField('serverId', dbEvent.serverId ?? null);
-      addField('version', dbEvent.version ?? 0);
-      addField('needsSync', dbEvent.needsSync ?? 1);
-      addField('createdAt', now);
-      addField('updatedAt', now);
+      addField("eventDate", dbEvent.eventDate);
+      addField("isLunarCalendar", dbEvent.isLunarCalendar ?? 0);
+      addField("category", dbEvent.category ?? "other");
+      addField("relationshipType", dbEvent.relationshipType ?? "other");
+      addField("reminderSettings", dbEvent.reminderSettings ?? null);
+      addField("giftIdeas", dbEvent.giftIdeas ?? null);
+      addField("notes", dbEvent.notes ?? null);
+      addField("isRecurring", dbEvent.isRecurring ?? 1);
+      addField("recurrencePattern", dbEvent.recurrencePattern ?? null);
+      addField("isDeleted", dbEvent.isDeleted ?? 0);
+      addField("localId", dbEvent.localId ?? null);
+      addField("serverId", dbEvent.serverId ?? null);
+      addField("version", dbEvent.version ?? 0);
+      addField("needsSync", dbEvent.needsSync ?? 1);
+      addField("createdAt", now);
+      addField("updatedAt", now);
 
       // Debug: Check if db is still valid
       if (!this.db) {
         throw new DatabaseError("Database connection lost before INSERT");
       }
 
-      // Build parameterized query - only use ? for actual values (not NULL)
-      const actualValues: any[] = [];
-      const finalPlaceholders: string[] = [];
-
-      for (let i = 0; i < placeholders.length; i++) {
-        if (placeholders[i] === 'NULL') {
-          finalPlaceholders.push('NULL');
-        } else {
-          finalPlaceholders.push('?');
-          actualValues.push(values[i]);
-        }
-      }
-
-      const query = `INSERT INTO events (${columns.join(', ')}) VALUES (${finalPlaceholders.join(', ')})`;
+      // Build query - all placeholders are now "?"
+      const query = `INSERT INTO events (${columns.join(
+        ", "
+      )}) VALUES (${placeholders.join(", ")})`;
 
       console.log("Final INSERT query:", query);
-      console.log("Actual values:", actualValues);
+      console.log("Query values (with null):", values);
 
-      // Use runAsync - the correct method for INSERT with parameters
-      await this.db.runAsync(query, actualValues);
+      // DEBUG: Check database state
+      console.log("🔍 DEBUG: Checking database state...");
+      console.log("this.db exists?", !!this.db);
+      console.log("this.db type:", typeof this.db);
+
+      if (!this.db) {
+        throw new DatabaseError("CRITICAL: this.db is null/undefined before INSERT!");
+      }
+
+      // Try to query the schema to verify table exists
+      try {
+        console.log("🔍 Checking if events table exists...");
+        const tableInfo = await this.db.getAllAsync(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='events'"
+        );
+        console.log("Table exists check:", tableInfo);
+
+        if (tableInfo.length === 0) {
+          throw new DatabaseError("events table does not exist!");
+        }
+
+        // Get table schema
+        console.log("🔍 Getting events table schema...");
+        const schema = await this.db.getAllAsync("PRAGMA table_info(events)");
+        console.log("Events table schema:", JSON.stringify(schema, null, 2));
+      } catch (schemaError: any) {
+        console.error("❌ Schema check failed:", schemaError);
+        throw new DatabaseError("Schema check failed", schemaError);
+      }
+
+      // DEBUG: Try different methods to insert
+      try {
+        // Test 1: Try with execAsync (raw SQL without prepared statement)
+        console.log("🔍 Test 1: Using execAsync with literal values");
+        const testId1 = (dbEvent.id + "_test1").replace(/'/g, "''");
+        const testTitle1 = dbEvent.title.replace(/'/g, "''"); // Escape single quotes
+        const testDate1 = dbEvent.eventDate.replace(/'/g, "''");
+        const rawSql = `INSERT INTO events (id, title, eventDate) VALUES ('${testId1}', '${testTitle1}', '${testDate1}')`;
+        console.log("Raw SQL:", rawSql);
+        await this.db.execAsync(rawSql);
+        console.log("✅ Test 1 (execAsync) passed!");
+
+        // Test 2: Try with runAsync on simple statement
+        console.log("🔍 Test 2: Using runAsync with bound parameters");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate) VALUES (?, ?, ?)",
+          [dbEvent.id + "_test2", dbEvent.title, dbEvent.eventDate]
+        );
+        console.log("✅ Test 2 (runAsync) passed!");
+
+        // Test 2: Add boolean fields
+        console.log("🔍 Test 2: Add boolean fields");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, isLunarCalendar, isRecurring, isDeleted, needsSync) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [dbEvent.id + "_test2", dbEvent.title, dbEvent.eventDate, dbEvent.isLunarCalendar ?? 0, dbEvent.isRecurring ?? 1, dbEvent.isDeleted ?? 0, dbEvent.needsSync ?? 1]
+        );
+        console.log("✅ Test 2 passed!");
+
+        // Test 3: Add string fields
+        console.log("🔍 Test 3: Add string fields (category, relationshipType)");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, category, relationshipType) VALUES (?, ?, ?, ?, ?)",
+          [dbEvent.id + "_test3", dbEvent.title, dbEvent.eventDate, dbEvent.category ?? "other", dbEvent.relationshipType ?? "other"]
+        );
+        console.log("✅ Test 3 passed!");
+
+        // Test 4: Add JSON fields
+        console.log("🔍 Test 4: Add JSON fields (reminderSettings, giftIdeas, notes)");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, reminderSettings, giftIdeas, notes) VALUES (?, ?, ?, ?, ?, ?)",
+          [dbEvent.id + "_test4", dbEvent.title, dbEvent.eventDate, dbEvent.reminderSettings ?? null, dbEvent.giftIdeas ?? null, dbEvent.notes ?? null]
+        );
+        console.log("✅ Test 4 passed!");
+
+        // Test 5: Add recurrencePattern (possible culprit)
+        console.log("🔍 Test 5: Add recurrencePattern");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, recurrencePattern) VALUES (?, ?, ?, ?)",
+          [dbEvent.id + "_test5", dbEvent.title, dbEvent.eventDate, dbEvent.recurrencePattern ?? null]
+        );
+        console.log("✅ Test 5 passed!");
+
+        // Test 6: Add nullable ID fields
+        console.log("🔍 Test 6: Add nullable ID fields (localId, serverId)");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, localId, serverId) VALUES (?, ?, ?, ?, ?)",
+          [dbEvent.id + "_test6", dbEvent.title, dbEvent.eventDate, dbEvent.localId ?? null, dbEvent.serverId ?? null]
+        );
+        console.log("✅ Test 6 passed!");
+
+        // Test 7: Add timestamp fields
+        console.log("🔍 Test 7: Add timestamp fields (createdAt, updatedAt)");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+          [dbEvent.id + "_test7", dbEvent.title, dbEvent.eventDate, now, now]
+        );
+        console.log("✅ Test 7 passed!");
+
+        // Test 8: Add version field
+        console.log("🔍 Test 8: Add version field");
+        await this.db.runAsync(
+          "INSERT INTO events (id, title, eventDate, version) VALUES (?, ?, ?, ?)",
+          [dbEvent.id + "_test8", dbEvent.title, dbEvent.eventDate, dbEvent.version ?? 0]
+        );
+        console.log("✅ Test 8 passed!");
+
+      } catch (testError: any) {
+        console.error("❌ Test failed:", testError);
+        throw new DatabaseError("Debug test failed - see logs above", testError);
+      }
+
+      // If all tests pass, try the full insert
+      console.log("🎯 All tests passed! Now trying full INSERT...");
+      await this.db.runAsync(query, values);
 
       console.log("Event created successfully!");
 
@@ -420,7 +521,13 @@ class DatabaseService {
             // For non-null values, use parameter binding
             setClauses.push(`${key} = ?`);
             values.push(value);
-            console.log(`Field "${key}" = ${typeof value === 'string' ? `"${value.substring(0, 50)}..."` : value}`);
+            console.log(
+              `Field "${key}" = ${
+                typeof value === "string"
+                  ? `"${value.substring(0, 50)}..."`
+                  : value
+              }`
+            );
           }
         }
       });
@@ -436,7 +543,10 @@ class DatabaseService {
 
       console.log("UPDATE query:", fullQuery);
       console.log("Values:", JSON.stringify(fullValues));
-      console.log("Number of placeholders:", (fullQuery.match(/\?/g) || []).length);
+      console.log(
+        "Number of placeholders:",
+        (fullQuery.match(/\?/g) || []).length
+      );
       console.log("Number of values:", fullValues.length);
       console.log("Set clauses:", setClauses);
 
@@ -858,7 +968,6 @@ class DatabaseService {
     return {
       id: dbSurvey.id,
       title: dbSurvey.title,
-      description: dbSurvey.description || undefined,
       type: dbSurvey.type as any,
       status: dbSurvey.status as any,
       icon: dbSurvey.icon || undefined,

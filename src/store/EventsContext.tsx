@@ -100,7 +100,6 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       const updates: Partial<Event> = {};
 
       if (formData.title !== undefined) updates.title = formData.title;
-      if (formData.description !== undefined) updates.description = formData.description;
       if (formData.eventDate !== undefined) updates.eventDate = formData.eventDate.toISOString();
       if (formData.isLunarCalendar !== undefined) updates.isLunarCalendar = formData.isLunarCalendar;
       if (formData.category !== undefined) updates.category = formData.category;
@@ -173,8 +172,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const searchEvents = useCallback((query: string): Event[] => {
     const lowerQuery = query.toLowerCase();
     return events.filter(event =>
-      event.title.toLowerCase().includes(lowerQuery) ||
-      (event.description && event.description.toLowerCase().includes(lowerQuery))
+      event.title.toLowerCase().includes(lowerQuery)
     );
   }, [events]);
 

@@ -51,7 +51,6 @@ export const STRINGS = {
 
   // Event Form
   event_name: 'Tên sự kiện',
-  event_description: 'Mô tả',
   event_date: 'Ngày',
   event_category: 'Danh mục',
   event_relationship: 'Mối quan hệ',

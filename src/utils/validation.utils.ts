@@ -1,5 +1,5 @@
 import { EventFormData, EventFormErrors } from '../types';
-import { MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MAX_DESCRIPTION_LENGTH } from '../constants/config';
+import { MIN_TITLE_LENGTH, MAX_TITLE_LENGTH } from '../constants/config';
 import { STRINGS } from '../constants/strings';
 
 export class ValidationUtils {
@@ -41,18 +41,6 @@ export class ValidationUtils {
     return { valid: true };
   }
 
-  /**
-   * Validate event description
-   */
-  static isValidDescription(description: string): { valid: boolean; error?: string } {
-    if (description && description.length > MAX_DESCRIPTION_LENGTH) {
-      return {
-        valid: false,
-        error: `Mô tả không được vượt quá ${MAX_DESCRIPTION_LENGTH} ký tự`,
-      };
-    }
-    return { valid: true };
-  }
 
   /**
    * Validate event date

@@ -229,19 +229,6 @@ const EventDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Description */}
-        {event.description && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="document-text" size={22} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Mô tả</Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              <Text style={styles.descriptionText}>{event.description}</Text>
-            </View>
-          </View>
-        )}
 
         {/* Reminder Settings */}
         {event.reminderSettings.remindDaysBefore.length > 0 && (
@@ -497,11 +484,6 @@ const styles = StyleSheet.create({
   relationshipText: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  descriptionText: {
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    lineHeight: 24,
   },
   reminderItem: {
     flexDirection: 'row',

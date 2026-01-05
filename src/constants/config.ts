@@ -51,7 +51,6 @@ export const TIME_FORMAT = 'HH:mm';
 // Validation
 export const MIN_TITLE_LENGTH = 3;
 export const MAX_TITLE_LENGTH = 100;
-export const MAX_DESCRIPTION_LENGTH = 500;
 
 // App Info
 export const APP_VERSION = '1.0.0';
