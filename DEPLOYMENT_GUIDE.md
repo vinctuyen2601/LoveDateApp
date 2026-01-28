@@ -227,7 +227,6 @@ A:
 - [ ] Check battery usage
 - [ ] Review analytics integration
 - [ ] Update version number
-- [ ] Create release notes
 - [ ] Test production build
 
 ## 🎯 Next Steps

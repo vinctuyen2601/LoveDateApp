@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { AuthProvider } from './src/store/AuthContext';
 import { EventsProvider } from './src/store/EventsContext';
 import { SyncProvider } from './src/store/SyncContext';
@@ -11,7 +12,7 @@ import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator, { navigate } from './src/navigation/AppNavigator';
 import { PermissionModal } from './src/components/PermissionModal';
 import { notificationService } from './src/services/notification.service';
-import { databaseService } from './src/services/database.service';
+import * as DB from './src/services/database.service';
 import { dataSeedService } from './src/services/dataSeed.service';
 import { backgroundTaskService } from './src/services/backgroundTask.service';
 
@@ -26,7 +27,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export default function App() {
+// Inner component that uses SQLite context
+function AppContent() {
+  const db = useSQLiteContext();
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function App() {
       console.log('App has come to foreground, reschedule notifications');
       // App has come to foreground - reschedule all notifications
       try {
-        const events = await databaseService.getAllEvents();
+        const events = await DB.getAllEvents(db);
         await notificationService.rescheduleAllNotifications(events);
       } catch (error) {
         console.error('Error rescheduling on app resume:', error);
@@ -81,28 +84,36 @@ export default function App() {
 
   const initializeApp = async () => {
     try {
-      // 1. Initialize database
-      await databaseService.init();
-      console.log('Database initialized');
+      console.log('🚀 Initializing app with SQLiteProvider...');
 
-      // 2. Seed default data if needed
+      // Database is already initialized by SQLiteProvider!
+      // Just need to run migrations
+      await DB.initializeTables(db);
+      console.log('✅ Database tables initialized');
+
+      // Set db instance for legacy compatibility layer
+      // This allows old code to keep working while we migrate
+      (DB as any).databaseService.setDb(db);
+      console.log('✅ Legacy database service configured');
+
+      // 2. Seed default data if needed (using legacy compatibility layer)
       await dataSeedService.seedDefaultData();
-      console.log('Default data seeded');
+      console.log('✅ Default data seeded');
 
       // 3. Initialize notifications
       await notificationService.init();
-      console.log('Notifications initialized');
+      console.log('✅ Notifications initialized');
 
       // 4. Register background task for notification management
       await backgroundTaskService.registerBackgroundTask();
-      console.log('Background task registered');
+      console.log('✅ Background task registered');
 
       // 5. Initial notification reschedule
-      const events = await databaseService.getAllEvents();
+      const events = await DB.getAllEvents(db);
       await notificationService.rescheduleAllNotifications(events);
-      console.log('Initial notifications scheduled');
+      console.log('✅ Initial notifications scheduled');
     } catch (error) {
-      console.error('Failed to initialize app:', error);
+      console.error('❌ Failed to initialize app:', error);
     }
   };
 
@@ -111,7 +122,7 @@ export default function App() {
       console.log('Notification permission granted');
       // Reschedule notifications after permission granted
       try {
-        const events = await databaseService.getAllEvents();
+        const events = await DB.getAllEvents(db);
         await notificationService.rescheduleAllNotifications(events);
         console.log('Notifications rescheduled after permission granted');
       } catch (error) {
@@ -138,5 +149,13 @@ export default function App() {
         </AuthProvider>
       </ToastProvider>
     </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <SQLiteProvider databaseName={DB.DB_NAME}>
+      <AppContent />
+    </SQLiteProvider>
   );
 }

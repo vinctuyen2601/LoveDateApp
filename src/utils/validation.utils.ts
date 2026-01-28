@@ -73,15 +73,7 @@ export class ValidationUtils {
       errors.eventDate = dateValidation.error;
     }
 
-    // Validate category
-    if (!formData.category) {
-      errors.category = STRINGS.error_required_field;
-    }
-
-    // Validate relationship type
-    if (!formData.relationshipType) {
-      errors.relationshipType = STRINGS.error_required_field;
-    }
+    // Tags are optional, no validation needed
 
     return errors;
   }

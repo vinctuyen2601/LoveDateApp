@@ -99,6 +99,25 @@ export class DateUtils {
   }
 
   /**
+   * Format date to YYYY-MM-DD string in local timezone
+   * Use this instead of toISOString().split('T')[0] to avoid timezone issues
+   */
+  static toLocalDateString(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Get today's date as YYYY-MM-DD string in local timezone
+   */
+  static getTodayString(): string {
+    return DateUtils.toLocalDateString(new Date());
+  }
+
+  /**
    * Get reminder dates based on days before
    */
   static getReminderDates(eventDate: Date | string, daysBefore: number[]): Date[] {

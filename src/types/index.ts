@@ -1,17 +1,5 @@
 // ==================== EVENT TYPES ====================
 
-export type EventCategory = "birthday" | "anniversary" | "holiday" | "other";
-
-export type RelationshipType =
-  | "wife"
-  | "husband"
-  | "child"
-  | "parent"
-  | "sibling"
-  | "friend"
-  | "colleague"
-  | "other";
-
 export type RecurrenceType = "once" | "weekly" | "monthly" | "yearly";
 
 export interface RecurrencePattern {
@@ -28,7 +16,7 @@ export interface RecurrencePattern {
 export interface ReminderSettings {
   remindDaysBefore: number[]; // [1, 7, 30] = nhắc 1 ngày, 1 tuần, 1 tháng trước
   customTimes?: Date[]; // Thời gian cụ thể để nhắc
-  reminderTime?: { hour: number; minute: number }; // Giờ nhắc mặc định (default: 10:00)
+  reminderTime?: { hour: number; minute: number }; // Giờ nhắc mặc định (default: giờ hiện tại)
 }
 
 export interface EventNote {
@@ -44,11 +32,8 @@ export interface Event {
   title: string;
   eventDate: string; // ISO string
   isLunarCalendar: boolean;
-  category: EventCategory;
-  relationshipType: RelationshipType;
+  tags: string[]; // Replaces category  (e.g. ['birthday', 'wife', 'important'])
   reminderSettings: ReminderSettings;
-  giftIdeas: string[];
-  notes: EventNote[];
   isRecurring: boolean;
   recurrencePattern?: RecurrencePattern; // New: detailed recurrence info
   isDeleted: boolean;
@@ -178,7 +163,7 @@ export interface GiftSuggestion {
   id: string;
   name: string;
   category: string;
-  relationshipTypes: RelationshipType[];
+  tags: string[]; // Changed from relationshipTypes to tags
   priceRange?: string;
   icon?: string;
 }
@@ -187,7 +172,7 @@ export interface ActivitySuggestion {
   id: string;
   name: string;
   description: string;
-  category: EventCategory;
+  tags: string[]; // Changed from category to tags
   icon?: string;
 }
 
@@ -198,11 +183,8 @@ export interface DatabaseEvent {
   title: string;
   eventDate: string;
   isLunarCalendar: number; // SQLite boolean
-  category: string;
-  relationshipType: string;
+  tags: string; // JSON string array
   reminderSettings: string; // JSON string
-  giftIdeas: string; // JSON string
-  notes: string; // JSON string
   isRecurring: number; // SQLite boolean
   recurrencePattern: string | null; // JSON string
   isDeleted: number; // SQLite boolean
@@ -226,11 +208,9 @@ export interface EventFormData {
   title: string;
   eventDate: Date;
   isLunarCalendar: boolean;
-  category: EventCategory;
-  relationshipType: RelationshipType;
+  tags: string[]; // Replaces category
   remindDaysBefore: number[];
   reminderTime?: { hour: number; minute: number }; // Giờ nhắc mặc định
-  giftIdeas: string[];
   isRecurring: boolean;
   recurrencePattern?: RecurrencePattern; // Detailed recurrence information
 }
@@ -238,8 +218,7 @@ export interface EventFormData {
 export interface EventFormErrors {
   title?: string;
   eventDate?: string;
-  category?: string;
-  relationshipType?: string;
+  tags?: string;
 }
 
 // ==================== ANALYTICS TYPES ====================
@@ -248,8 +227,7 @@ export interface EventStats {
   totalEvents: number;
   upcomingEvents: number;
   pastEvents: number;
-  eventsByCategory: Record<EventCategory, number>;
-  eventsByRelationship: Record<RelationshipType, number>;
+  eventsByTag: Record<string, number>; // Changed from category/relationship to tags
 }
 
 // ==================== LUNAR CALENDAR TYPES ====================
@@ -312,7 +290,7 @@ export interface EventsContextValue {
   deleteEvent: (id: string) => Promise<void>;
   getEventById: (id: string) => Event | undefined;
   getUpcomingEvents: (days?: number) => Event[];
-  getEventsByCategory: (category: EventCategory) => Event[];
+  getEventsByTag: (tag: string) => Event[]; // Changed from getEventsByCategory
   searchEvents: (query: string) => Event[];
 }
 
@@ -403,32 +381,6 @@ export const UNKNOWN_ERROR_MESSAGE =
 
 // ==================== CONSTANTS ====================
 
-export const EVENT_CATEGORIES: {
-  value: EventCategory;
-  label: string;
-  icon: string;
-}[] = [
-  { value: "birthday", label: "Sinh nhật", icon: "gift" },
-  { value: "anniversary", label: "Kỷ niệm", icon: "heart" },
-  { value: "holiday", label: "Ngày lễ", icon: "calendar" },
-  { value: "other", label: "Khác", icon: "ellipsis-horizontal-circle" },
-];
-
-export const RELATIONSHIP_TYPES: {
-  value: RelationshipType;
-  label: string;
-  icon: string;
-}[] = [
-  { value: "wife", label: "Vợ", icon: "heart" },
-  { value: "husband", label: "Chồng", icon: "heart-circle" },
-  { value: "child", label: "Con", icon: "happy" },
-  { value: "parent", label: "Cha mẹ", icon: "people" },
-  { value: "sibling", label: "Anh chị em", icon: "people-circle" },
-  { value: "friend", label: "Bạn bè", icon: "chatbubbles" },
-  { value: "colleague", label: "Đồng nghiệp", icon: "briefcase" },
-  { value: "other", label: "Khác", icon: "person-circle" },
-];
-
 export const REMIND_OPTIONS = [
   { value: 0, label: "Trong ngày" },
   { value: 1, label: "1 ngày trước" },
@@ -436,6 +388,16 @@ export const REMIND_OPTIONS = [
   { value: 7, label: "1 tuần trước" },
   { value: 14, label: "2 tuần trước" },
   { value: 30, label: "1 tháng trước" },
+];
+
+// ==================== PREDEFINED TAGS ====================
+// Tags managed on server, synced to local DB
+export const PREDEFINED_TAGS = [
+  { value: "birthday", label: "Sinh nhật", icon: "gift", color: "#FF6B6B" },
+  { value: "anniversary", label: "Kỷ niệm", icon: "heart", color: "#FF69B4" },
+  { value: "wife", label: "Vợ", icon: "heart", color: "#E74C3C" },
+  { value: "husband", label: "Chồng", icon: "heart-circle", color: "#3498DB" },
+  { value: "family", label: "Gia đình", icon: "people", color: "#9B59B6" },
 ];
 
 // ==================== ARTICLE TYPES ====================

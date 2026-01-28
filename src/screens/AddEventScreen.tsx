@@ -14,17 +14,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useEvents } from "../store/EventsContext";
 import { useToast } from "../contexts/ToastContext";
-import {
-  EventCategory,
-  RelationshipType,
-  EventFormData,
-  RecurrenceType,
-} from "../types";
+import { EventFormData, RecurrenceType, PREDEFINED_TAGS } from "../types";
 import { COLORS } from "../constants/colors";
 import { STRINGS } from "../constants/strings";
+import { DateUtils } from "../utils/date.utils";
 import { ValidationUtils } from "../utils/validation.utils";
-import CategoryPicker from "../components/CategoryPicker";
-import RelationshipPicker from "../components/RelationshipPicker";
 import ReminderSettings from "../components/ReminderSettings";
 import TimePicker from "../components/TimePicker";
 import RecurrenceTypePicker from "../components/RecurrenceTypePicker";
@@ -40,15 +34,18 @@ const AddEventScreen: React.FC = () => {
   const isEditMode = !!eventId;
   const existingEvent = isEditMode ? getEventById(eventId) : undefined;
 
+  const now = new Date();
+  // Create default date at 12:00 to avoid timezone issues
+  const defaultDate = new Date();
+  defaultDate.setHours(12, 0, 0, 0);
+
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
-    eventDate: new Date(),
+    eventDate: defaultDate,
     isLunarCalendar: false,
-    category: "anniversary" as EventCategory,
-    relationshipType: "wife" as RelationshipType,
+    tags: [],
     remindDaysBefore: [1, 7],
-    reminderTime: { hour: 10, minute: 0 },
-    giftIdeas: [],
+    reminderTime: { hour: now.getHours(), minute: now.getMinutes() },
     isRecurring: true, // Default yearly recurring
   });
 
@@ -69,11 +66,12 @@ const AddEventScreen: React.FC = () => {
         title: existingEvent.title,
         eventDate,
         isLunarCalendar: existingEvent.isLunarCalendar,
-        category: existingEvent.category,
-        relationshipType: existingEvent.relationshipType,
+        tags: existingEvent.tags, // Load tags from existing event
         remindDaysBefore: existingEvent.reminderSettings.remindDaysBefore,
-        reminderTime: existingEvent.reminderSettings.reminderTime || { hour: 10, minute: 0 },
-        giftIdeas: existingEvent.giftIdeas,
+        reminderTime: existingEvent.reminderSettings.reminderTime || {
+          hour: now.getHours(),
+          minute: now.getMinutes(),
+        },
         isRecurring: existingEvent.isRecurring,
         recurrencePattern: existingEvent.recurrencePattern,
       });
@@ -82,13 +80,19 @@ const AddEventScreen: React.FC = () => {
       if (existingEvent.recurrencePattern) {
         setRecurrenceType(existingEvent.recurrencePattern.type);
 
-        if (existingEvent.recurrencePattern.type === 'weekly' && existingEvent.recurrencePattern.dayOfWeek !== undefined) {
+        if (
+          existingEvent.recurrencePattern.type === "weekly" &&
+          existingEvent.recurrencePattern.dayOfWeek !== undefined
+        ) {
           setDayOfWeek(existingEvent.recurrencePattern.dayOfWeek);
-        } else if (existingEvent.recurrencePattern.type === 'monthly' && existingEvent.recurrencePattern.dayOfMonth !== undefined) {
+        } else if (
+          existingEvent.recurrencePattern.type === "monthly" &&
+          existingEvent.recurrencePattern.dayOfMonth !== undefined
+        ) {
           setDayOfMonth(existingEvent.recurrencePattern.dayOfMonth);
         }
       } else if (!existingEvent.isRecurring) {
-        setRecurrenceType('once');
+        setRecurrenceType("once");
       }
     }
   }, [isEditMode, eventId]);
@@ -146,7 +150,10 @@ const AddEventScreen: React.FC = () => {
         navigation.goBack();
       }, 1500);
     } catch (error: any) {
-      showError(error.message || (isEditMode ? "Không thể cập nhật sự kiện" : "Không thể thêm sự kiện"));
+      showError(
+        error.message ||
+          (isEditMode ? "Không thể cập nhật sự kiện" : "Không thể thêm sự kiện")
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -426,13 +433,15 @@ const AddEventScreen: React.FC = () => {
             <View style={styles.inlinePickerContainer}>
               <View style={styles.calendarCard}>
                 <Calendar
-                  current={formData.eventDate.toISOString().split("T")[0]}
+                  current={DateUtils.toLocalDateString(formData.eventDate)}
                   onDayPress={(day: DateData) => {
-                    const selectedDate = new Date(day.timestamp);
+                    // Use dateString to avoid timezone issues
+                    const [year, month, date] = day.dateString.split('-').map(Number);
+                    const selectedDate = new Date(year, month - 1, date, 12, 0, 0, 0);
                     setFormData({ ...formData, eventDate: selectedDate });
                   }}
                   markedDates={{
-                    [formData.eventDate.toISOString().split("T")[0]]: {
+                    [DateUtils.toLocalDateString(formData.eventDate)]: {
                       selected: true,
                       selectedColor: COLORS.primary,
                     },
@@ -517,25 +526,55 @@ const AddEventScreen: React.FC = () => {
 
         {/* Reminder Time */}
         <TimePicker
-          selectedTime={formData.reminderTime || { hour: 10, minute: 0 }}
+          selectedTime={formData.reminderTime || { hour: now.getHours(), minute: now.getMinutes() }}
           onTimeChange={(time) =>
             setFormData({ ...formData, reminderTime: time })
           }
         />
 
-        {/* Category */}
-        <CategoryPicker
-          selectedCategory={formData.category}
-          onSelect={(category) => setFormData({ ...formData, category })}
-        />
-
-        {/* Relationship */}
-        <RelationshipPicker
-          selectedRelationship={formData.relationshipType}
-          onSelect={(relationship) =>
-            setFormData({ ...formData, relationshipType: relationship })
-          }
-        />
+        {/* Tags Picker */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Nhãn sự kiện</Text>
+          <View style={styles.tagsContainer}>
+            {PREDEFINED_TAGS.map((tag) => {
+              const isSelected = formData.tags.includes(tag.value);
+              return (
+                <TouchableOpacity
+                  key={tag.value}
+                  style={[
+                    styles.tagChip,
+                    isSelected && styles.tagChipSelected,
+                    { borderColor: tag.color },
+                  ]}
+                  onPress={() => {
+                    const newTags = isSelected
+                      ? formData.tags.filter((t) => t !== tag.value)
+                      : [...formData.tags, tag.value];
+                    setFormData({ ...formData, tags: newTags });
+                  }}
+                >
+                  <Ionicons
+                    name={tag.icon as any}
+                    size={16}
+                    color={isSelected ? COLORS.white : tag.color}
+                  />
+                  <Text
+                    style={[
+                      styles.tagText,
+                      isSelected && styles.tagTextSelected,
+                      { color: isSelected ? COLORS.white : tag.color },
+                    ]}
+                  >
+                    {tag.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={styles.helperText}>
+            Chọn một hoặc nhiều nhãn để phân loại sự kiện
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Submit Button */}
@@ -549,7 +588,11 @@ const AddEventScreen: React.FC = () => {
           disabled={isSubmitting}
         >
           <Text style={styles.submitButtonText}>
-            {isSubmitting ? "Đang lưu..." : (isEditMode ? "Cập nhật" : STRINGS.save)}
+            {isSubmitting
+              ? "Đang lưu..."
+              : isEditMode
+              ? "Cập nhật"
+              : STRINGS.save}
           </Text>
         </TouchableOpacity>
       </View>
@@ -759,6 +802,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: COLORS.primaryLight + "15",
     borderRadius: 8,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  tagChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 2,
+    backgroundColor: COLORS.surface,
+    gap: 6,
+  },
+  tagChipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  tagText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  tagTextSelected: {
+    color: COLORS.white,
+    fontWeight: "700",
+  },
+  helperText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 8,
+    fontStyle: "italic",
   },
 });
 

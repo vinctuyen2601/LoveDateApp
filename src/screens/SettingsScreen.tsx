@@ -15,17 +15,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useAuth } from '../store/AuthContext';
 import { useSync } from '../store/SyncContext';
 import { useToast } from '../contexts/ToastContext';
 import { notificationService } from '../services/notification.service';
 import { NotificationUtils } from '../utils/notification.utils';
+import * as DB from '../services/database.service';
 import { COLORS } from '../constants/colors';
 import { STRINGS } from '../constants/strings';
 import { APP_VERSION } from '../constants/config';
 
 const SettingsScreen: React.FC = () => {
   console.log('[SettingsScreen] Component rendering...');
+
+  const db = useSQLiteContext(); // Get database instance from context
 
   let authContext, syncContext;
   try {
@@ -311,6 +315,54 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
+  const handleResetDatabase = async () => {
+    Alert.alert(
+      '⚠️ Reset Database',
+      'CẢNH BÁO: Thao tác này sẽ XÓA TẤT CẢ DỮ LIỆU (events, articles, surveys) và tạo lại database mới. Vui lòng RESTART APP sau khi reset. Bạn có chắc chắn muốn tiếp tục?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'XÓA TẤT CẢ',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              showInfo('Đang reset database...');
+              await DB.resetDatabase(db);
+              showSuccess('✅ Database đã được reset! Vui lòng RESTART APP để hoàn tất.');
+            } catch (error: any) {
+              console.error('Reset database error:', error);
+              showError('Không thể reset database: ' + error.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleForceRecreateEventsTable = async () => {
+    Alert.alert(
+      '🔧 Recreate Events Table',
+      'Thao tác này sẽ TẠO LẠI bảng events để sửa lỗi corruption. Dữ liệu hiện tại sẽ được GIỮ LẠI. Vui lòng RESTART APP sau khi hoàn tất. Tiếp tục?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Tạo lại',
+          style: 'default',
+          onPress: async () => {
+            try {
+              showInfo('Đang tạo lại events table...');
+              await DB.forceRecreateEventsTable(db);
+              showSuccess('✅ Events table đã được tạo lại! Vui lòng RESTART APP để hoàn tất.');
+            } catch (error: any) {
+              console.error('Force recreate table error:', error);
+              showError('Không thể tạo lại table: ' + error.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const isLinked = (provider: string) => {
     return linkedProviders?.includes(provider) || false;
   };
@@ -516,6 +568,22 @@ const SettingsScreen: React.FC = () => {
           subtitle="Xóa flag để popup hiện lại khi restart"
           onPress={handleClearPermissionFlag}
           color="#FF9800"
+        />
+
+        <SettingItem
+          icon="construct"
+          title="[Debug] Fix Events Table"
+          subtitle="🔧 Tạo lại bảng events (GIỮ dữ liệu) - Sửa lỗi NullPointer"
+          onPress={handleForceRecreateEventsTable}
+          color="#FF9800"
+        />
+
+        <SettingItem
+          icon="trash"
+          title="[Debug] Reset Database"
+          subtitle="⚠️ XÓA TẤT CẢ dữ liệu và tạo lại database"
+          onPress={handleResetDatabase}
+          color="#FF0000"
         />
       </View>
 

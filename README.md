@@ -162,10 +162,7 @@ User thao tác → Lưu ngay vào SQLite local → UI update ngay lập tức
 - `eventDate`: Ngày sự kiện (ISO string)
 - `isLunarCalendar`: 0 = Dương lịch, 1 = Âm lịch
 - `category`: birthday | anniversary | holiday | other
-- `relationshipType`: wife | husband | child | parent | friend | colleague | other
 - `reminderSettings`: JSON array các ngày nhắc trước
-- `giftIdeas`: JSON array ý tưởng quà tặng
-- `notes`: JSON array ghi chú theo năm
 - `needsSync`: 0 = đã sync, 1 = cần sync
 - `version`: Timestamp cho conflict resolution
 

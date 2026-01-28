@@ -20,8 +20,9 @@ import { Event } from "../types";
 import { COLORS } from "../constants/colors";
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
-import { format, addDays, isSameDay, isToday } from "date-fns";
+import { format, addDays } from "date-fns";
 import { vi } from "date-fns/locale";
+import { DateUtils } from "../utils/date.utils";
 import {
   BirthdayIcon,
   AnniversaryIcon,
@@ -38,10 +39,10 @@ const HomeScreen: React.FC = () => {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    DateUtils.getTodayString()
   );
   const [currentMonth, setCurrentMonth] = useState(
-    new Date().toISOString().split("T")[0]
+    DateUtils.getTodayString()
   );
   const [isUpcomingExpanded, setIsUpcomingExpanded] = useState(true); // Default is expanded
 
@@ -77,8 +78,8 @@ const HomeScreen: React.FC = () => {
   };
 
   // Get category color
-  const getCategoryColor = (category: string): string => {
-    switch (category) {
+  const getCategoryColor = (tag: string): string => {
+    switch (tag) {
       case "birthday":
         return COLORS.categoryBirthday;
       case "anniversary":
@@ -102,7 +103,7 @@ const HomeScreen: React.FC = () => {
       const date = new Date(event.eventDate);
       if (isNaN(date.getTime())) return; // Skip invalid dates
 
-      const eventDate = date.toISOString().split("T")[0];
+      const eventDate = DateUtils.toLocalDateString(date);
 
       if (!marked[eventDate]) {
         marked[eventDate] = {
@@ -111,8 +112,10 @@ const HomeScreen: React.FC = () => {
         };
       }
 
+      // Add dot with primary tag color
+      const primaryTag = event.tags[0] || 'other';
       marked[eventDate].dots.push({
-        color: getCategoryColor(event.category),
+        color: getCategoryColor(primaryTag),
       });
     });
 
@@ -128,25 +131,6 @@ const HomeScreen: React.FC = () => {
     }
 
     return marked;
-  }, [events, selectedDate]);
-
-  // Get events for selected date
-  const selectedDateEvents = useMemo(() => {
-    return events
-      .filter((event) => {
-        if (!event.eventDate) return false;
-
-        const date = new Date(event.eventDate);
-        if (isNaN(date.getTime())) return false;
-
-        const eventDate = date.toISOString().split("T")[0];
-        return eventDate === selectedDate;
-      })
-      .sort((a, b) => {
-        const dateA = new Date(a.eventDate).getTime();
-        const dateB = new Date(b.eventDate).getTime();
-        return dateA - dateB;
-      });
   }, [events, selectedDate]);
 
   const upcomingEvents = useMemo(() => getUpcomingEvents(), [events]);
@@ -224,13 +208,15 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
             {isUpcomingExpanded &&
               upcomingEvents.map((event) => {
-                const categoryColor = getCategoryColor(event.category);
+                const primaryTag =
+                  event.tags && event.tags.length > 0 ? event.tags[0] : "other";
+                const categoryColor = getCategoryColor(primaryTag);
                 const EventIcon =
-                  event.category === "birthday"
+                  primaryTag === "birthday"
                     ? BirthdayIcon
-                    : event.category === "anniversary"
+                    : primaryTag === "anniversary"
                     ? AnniversaryIcon
-                    : event.category === "holiday"
+                    : primaryTag === "holiday"
                     ? HolidayIcon
                     : OtherIcon;
 
@@ -323,70 +309,6 @@ const HomeScreen: React.FC = () => {
               )}
             />
           </View>
-
-          {/* Events for selected date */}
-          {/* {selectedDateEvents.length > 0 && (
-            <View style={styles.selectedDateContainer}>
-              <View style={styles.selectedDateHeader}>
-                <Text style={styles.selectedDateTitle}>
-                  Sự kiện ngày{" "}
-                  {format(new Date(selectedDate), "d/M/yyyy", { locale: vi })}
-                </Text>
-                <Text style={styles.selectedDateCount}>
-                  {selectedDateEvents.length} sự kiện
-                </Text>
-              </View>
-              {selectedDateEvents.map((event) => {
-                const categoryColor = getCategoryColor(event.category);
-                const EventIcon =
-                  event.category === "birthday"
-                    ? BirthdayIcon
-                    : event.category === "anniversary"
-                    ? AnniversaryIcon
-                    : event.category === "holiday"
-                    ? HolidayIcon
-                    : OtherIcon;
-
-                return (
-                  <TouchableOpacity
-                    key={event.id}
-                    style={[
-                      styles.miniEventCard,
-                      { borderLeftColor: categoryColor },
-                    ]}
-                    onPress={() => handleEventPress(event)}
-                  >
-                    <View
-                      style={[
-                        styles.miniEventIconContainer,
-                        { backgroundColor: categoryColor + "15" },
-                      ]}
-                    >
-                      <EventIcon size={22} color={categoryColor} />
-                    </View>
-                    <View style={styles.miniEventContent}>
-                      <Text style={styles.miniEventTitle} numberOfLines={1}>
-                        {event.title}
-                      </Text>
-                      {event.description && (
-                        <Text
-                          style={styles.miniEventDescription}
-                          numberOfLines={1}
-                        >
-                          {event.description}
-                        </Text>
-                      )}
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={COLORS.textSecondary}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )} */}
         </View>
 
         {/* Survey Card */}

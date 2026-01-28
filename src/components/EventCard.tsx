@@ -13,7 +13,9 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, onPress, onDelete }) => {
-  const categoryColor = getCategoryColor(event.category);
+  // Get primary tag for color/icon (first tag in array)
+  const primaryTag = event.tags[0] || 'other';
+  const tagColor = getCategoryColor(primaryTag);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleDeletePress = () => {
@@ -29,30 +31,27 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress, onDelete }) => {
     setShowDeleteDialog(false);
   };
 
-  const getCategoryIcon = (category: string): keyof typeof Ionicons.glyphMap => {
-    switch (category) {
-      case 'birthday':
-        return 'gift';
-      case 'anniversary':
-        return 'heart';
-      case 'holiday':
-        return 'star';
-      default:
-        return 'calendar';
-    }
+  const getTagIcon = (tags: string[]): keyof typeof Ionicons.glyphMap => {
+    // Check for specific tags to determine icon
+    if (tags.includes('birthday')) return 'gift';
+    if (tags.includes('anniversary')) return 'heart';
+    if (tags.includes('holiday')) return 'star';
+    if (tags.includes('wife') || tags.includes('husband')) return 'heart-circle';
+    if (tags.includes('family')) return 'people';
+    return 'calendar';
   };
 
   return (
     <>
       <TouchableOpacity
-        style={[styles.card, { borderLeftColor: categoryColor }]}
+        style={[styles.card, { borderLeftColor: tagColor }]}
         onPress={() => onPress(event)}
         activeOpacity={0.7}
       >
         <View style={styles.cardContent}>
           {/* Icon */}
-          <View style={[styles.iconContainer, { backgroundColor: categoryColor + '20' }]}>
-            <Ionicons name={getCategoryIcon(event.category)} size={24} color={categoryColor} />
+          <View style={[styles.iconContainer, { backgroundColor: tagColor + '20' }]}>
+            <Ionicons name={getTagIcon(event.tags)} size={24} color={tagColor} />
           </View>
 
           {/* Content */}

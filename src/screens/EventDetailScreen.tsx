@@ -15,7 +15,8 @@ import { useEvents } from '../store/EventsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Event } from '../types';
 import { DateUtils } from '../utils/date.utils';
-import { COLORS, getCategoryColor, getRelationshipColor } from '../constants/colors';
+import { COLORS, getCategoryColor } from '../constants/colors';
+import { PREDEFINED_TAGS } from '../types';
 import CountdownTimer from '../components/CountdownTimer';
 
 const EventDetailScreen: React.FC = () => {
@@ -47,47 +48,18 @@ const EventDetailScreen: React.FC = () => {
     );
   }
 
-  const categoryColor = getCategoryColor(event.category);
-  const relationshipColor = getRelationshipColor(event.relationshipType);
+  // Get primary tag (first tag) for color and icon
+  const primaryTag = event.tags[0] || 'other';
+  const primaryColor = getCategoryColor(primaryTag);
 
-  const getCategoryIcon = (category: string): keyof typeof Ionicons.glyphMap => {
-    switch (category) {
-      case 'birthday':
-        return 'gift';
-      case 'anniversary':
-        return 'heart';
-      case 'holiday':
-        return 'star';
-      default:
-        return 'calendar';
-    }
-  };
-
-  const getCategoryLabel = (category: string): string => {
-    switch (category) {
-      case 'birthday':
-        return 'Sinh nhật';
-      case 'anniversary':
-        return 'Kỷ niệm';
-      case 'holiday':
-        return 'Ngày lễ';
-      default:
-        return 'Khác';
-    }
-  };
-
-  const getRelationshipLabel = (relationship: string): string => {
-    const labels: Record<string, string> = {
-      wife: 'Vợ',
-      husband: 'Chồng',
-      child: 'Con',
-      parent: 'Cha mẹ',
-      sibling: 'Anh chị em',
-      friend: 'Bạn bè',
-      colleague: 'Đồng nghiệp',
-      other: 'Khác',
+  // Find tag details from PREDEFINED_TAGS
+  const getTagDetails = (tagValue: string) => {
+    return PREDEFINED_TAGS.find(t => t.value === tagValue) || {
+      value: 'other',
+      label: 'Khác',
+      icon: 'calendar',
+      color: COLORS.textSecondary
     };
-    return labels[relationship] || relationship;
   };
 
   const handleEdit = () => {
@@ -149,13 +121,13 @@ const EventDetailScreen: React.FC = () => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Hero Section */}
-        <View style={[styles.heroSection, { backgroundColor: categoryColor + '15' }]}>
-          <View style={[styles.heroIcon, { backgroundColor: categoryColor + '30' }]}>
-            <Ionicons name={getCategoryIcon(event.category)} size={48} color={categoryColor} />
+        <View style={[styles.heroSection, { backgroundColor: primaryColor + '15' }]}>
+          <View style={[styles.heroIcon, { backgroundColor: primaryColor + '30' }]}>
+            <Ionicons name={getTagDetails(primaryTag).icon as any} size={48} color={primaryColor} />
           </View>
           <Text style={styles.eventTitle}>{event.title}</Text>
-          <View style={[styles.categoryBadge, { backgroundColor: categoryColor }]}>
-            <Text style={styles.categoryBadgeText}>{getCategoryLabel(event.category)}</Text>
+          <View style={[styles.categoryBadge, { backgroundColor: primaryColor }]}>
+            <Text style={styles.categoryBadgeText}>{getTagDetails(primaryTag).label}</Text>
           </View>
         </View>
 
@@ -212,22 +184,37 @@ const EventDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Relationship Information */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="people" size={22} color={COLORS.primary} />
-            <Text style={styles.sectionTitle}>Mối quan hệ</Text>
-          </View>
+        {/* Tags Information */}
+        {event.tags.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="pricetags" size={22} color={COLORS.primary} />
+              <Text style={styles.sectionTitle}>Nhãn</Text>
+            </View>
 
-          <View style={styles.infoCard}>
-            <View style={[styles.relationshipPill, { backgroundColor: relationshipColor + '20', borderColor: relationshipColor + '40' }]}>
-              <Ionicons name="person" size={20} color={relationshipColor} />
-              <Text style={[styles.relationshipText, { color: relationshipColor }]}>
-                {getRelationshipLabel(event.relationshipType)}
-              </Text>
+            <View style={styles.infoCard}>
+              <View style={styles.tagsContainer}>
+                {event.tags.map((tag) => {
+                  const tagDetails = getTagDetails(tag);
+                  return (
+                    <View
+                      key={tag}
+                      style={[
+                        styles.tagPill,
+                        { backgroundColor: tagDetails.color + '20', borderColor: tagDetails.color + '40' }
+                      ]}
+                    >
+                      <Ionicons name={tagDetails.icon as any} size={18} color={tagDetails.color} />
+                      <Text style={[styles.tagText, { color: tagDetails.color }]}>
+                        {tagDetails.label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
 
         {/* Reminder Settings */}
@@ -259,64 +246,6 @@ const EventDetailScreen: React.FC = () => {
                 </View>
               ))}
             </View>
-          </View>
-        )}
-
-        {/* Gift Ideas */}
-        {event.giftIdeas.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="gift" size={22} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Ý tưởng quà tặng</Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              {event.giftIdeas.map((gift, index) => (
-                <View key={index} style={styles.giftItem}>
-                  <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
-                  <Text style={styles.giftText}>{gift}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Notes */}
-        {event.notes.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="book" size={22} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Ghi chú các năm</Text>
-            </View>
-
-            {event.notes.map((note, index) => (
-              <View key={index} style={styles.noteCard}>
-                <View style={styles.noteHeader}>
-                  <Text style={styles.noteYear}>Năm {note.year}</Text>
-                </View>
-                {note.gift && (
-                  <View style={styles.noteRow}>
-                    <Ionicons name="gift-outline" size={16} color={COLORS.textSecondary} />
-                    <Text style={styles.noteLabel}>Quà tặng: </Text>
-                    <Text style={styles.noteValue}>{note.gift}</Text>
-                  </View>
-                )}
-                {note.activity && (
-                  <View style={styles.noteRow}>
-                    <Ionicons name="star-outline" size={16} color={COLORS.textSecondary} />
-                    <Text style={styles.noteLabel}>Hoạt động: </Text>
-                    <Text style={styles.noteValue}>{note.activity}</Text>
-                  </View>
-                )}
-                {note.note && (
-                  <View style={styles.noteRow}>
-                    <Ionicons name="document-text-outline" size={16} color={COLORS.textSecondary} />
-                    <Text style={styles.noteLabel}>Ghi chú: </Text>
-                    <Text style={styles.noteValue}>{note.note}</Text>
-                  </View>
-                )}
-              </View>
-            ))}
           </View>
         )}
 
@@ -472,17 +401,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
-  relationshipPill: {
+  tagsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
+    flexWrap: 'wrap',
     gap: 10,
   },
-  relationshipText: {
-    fontSize: 16,
+  tagPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 8,
+  },
+  tagText: {
+    fontSize: 14,
     fontWeight: '600',
   },
   reminderItem: {

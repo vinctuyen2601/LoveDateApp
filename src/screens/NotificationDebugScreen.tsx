@@ -9,13 +9,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
+import { useSQLiteContext } from 'expo-sqlite';
 import { COLORS } from '../constants/colors';
 import { notificationService } from '../services/notification.service';
-import { databaseService } from '../services/database.service';
+import * as DB from '../services/database.service';
 import { backgroundTaskService } from '../services/backgroundTask.service';
 import { NotificationUtils } from '../utils/notification.utils';
 
 const NotificationDebugScreen: React.FC = () => {
+  const db = useSQLiteContext();
   const [scheduledCount, setScheduledCount] = useState(0);
   const [dbCount, setDbCount] = useState(0);
   const [backgroundTaskStatus, setBackgroundTaskStatus] = useState('');
@@ -36,8 +38,8 @@ const NotificationDebugScreen: React.FC = () => {
       const scheduled = await notificationService.getAllScheduledNotifications();
       setScheduledCount(scheduled.length);
 
-      // Get notification IDs from database
-      const dbNotifs = await databaseService.getAllScheduledNotificationIds();
+      // Get notification IDs from database (using legacy layer for now)
+      const dbNotifs = await DB.databaseService.getAllScheduledNotificationIds();
       setDbCount(dbNotifs.length);
 
       // Get background task status
@@ -93,7 +95,7 @@ const NotificationDebugScreen: React.FC = () => {
   const handleRescheduleAll = async () => {
     try {
       setLoading(true);
-      const events = await databaseService.getAllEvents();
+      const events = await DB.getAllEvents(db);
       await notificationService.rescheduleAllNotifications(events);
       Alert.alert('Success', `Rescheduled notifications for ${events.length} events`);
       await loadDebugInfo();

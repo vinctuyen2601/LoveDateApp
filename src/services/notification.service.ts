@@ -1,7 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Event } from '../types';
 import { NotificationUtils } from '../utils/notification.utils';
-import { databaseService } from './database.service';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -48,21 +47,8 @@ class NotificationService {
       // Cancel existing notifications for this event
       await NotificationUtils.cancelEventNotifications(event.id);
 
-      // Delete old notification records from database
-      await databaseService.deleteScheduledNotifications(event.id);
-
       // Schedule new notifications
       const notificationResults = await NotificationUtils.scheduleEventNotificationsWithDetails(event);
-
-      // Save notification IDs to database
-      for (const { notificationId, daysBefore, scheduledAt } of notificationResults) {
-        await databaseService.saveScheduledNotification(
-          event.id,
-          notificationId,
-          daysBefore,
-          scheduledAt
-        );
-      }
 
       console.log(
         `Scheduled ${notificationResults.length} notifications for event: ${event.title}`
@@ -86,7 +72,6 @@ class NotificationService {
   async cancelEventNotifications(eventId: string): Promise<void> {
     try {
       await NotificationUtils.cancelEventNotifications(eventId);
-      await databaseService.deleteScheduledNotifications(eventId);
       console.log(`Cancelled notifications for event: ${eventId}`);
     } catch (error) {
       console.error('Error cancelling event notifications:', error);
@@ -122,7 +107,6 @@ class NotificationService {
   async cancelAllNotifications(): Promise<void> {
     try {
       await NotificationUtils.cancelAllNotifications();
-      await databaseService.clearAllScheduledNotifications();
       console.log('All notifications cancelled');
     } catch (error) {
       console.error('Error cancelling all notifications:', error);

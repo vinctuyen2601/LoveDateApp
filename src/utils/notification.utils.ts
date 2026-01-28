@@ -137,7 +137,7 @@ export class NotificationUtils {
     }
 
     return {
-      title: `${NotificationUtils.getNotificationIcon(event.category)} ${STRINGS.notif_reminder_title}`,
+      title: `${NotificationUtils.getNotificationIcon(event.tags)} ${STRINGS.notif_reminder_title}`,
       body,
       data: {
         eventId: event.id,
@@ -154,19 +154,21 @@ export class NotificationUtils {
   }
 
   /**
-   * Get emoji icon for category
+   * Get emoji icon based on tags
    */
-  static getNotificationIcon(category: string): string {
-    switch (category) {
-      case 'birthday':
-        return '🎂';
-      case 'anniversary':
-        return '❤️';
-      case 'holiday':
-        return '🎉';
-      default:
-        return '📅';
+  static getNotificationIcon(tags: string[]): string {
+    if (tags.includes('birthday')) {
+      return '🎂';
+    } else if (tags.includes('anniversary')) {
+      return '❤️';
+    } else if (tags.includes('holiday')) {
+      return '🎉';
+    } else if (tags.includes('wife') || tags.includes('husband')) {
+      return '💑';
+    } else if (tags.includes('family')) {
+      return '👨‍👩‍👧‍👦';
     }
+    return '📅';
   }
 
   /**
@@ -187,9 +189,12 @@ export class NotificationUtils {
       notificationDate.setDate(notificationDate.getDate() - daysBefore);
 
       // Use custom reminder time if available, otherwise default to 9:00 AM
+      // IMPORTANT: setHours() uses local timezone, which is what we want
       const reminderTime = event.reminderSettings?.reminderTime;
       const hour = reminderTime?.hour ?? 9;
       const minute = reminderTime?.minute ?? 0;
+
+      // Set time in local timezone (this is correct behavior)
       notificationDate.setHours(hour, minute, 0, 0);
 
       // Don't schedule if notification date is in the past
@@ -225,7 +230,7 @@ export class NotificationUtils {
       });
 
       console.log(
-        `Scheduled notification for "${event.title}" at ${notificationDate.toLocaleString()}`
+        `Scheduled notification for "${event.title}" at ${notificationDate.toLocaleString()} (Local time: ${hour}:${String(minute).padStart(2, '0')})`
       );
 
       return notificationId;

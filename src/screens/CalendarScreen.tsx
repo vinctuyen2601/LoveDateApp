@@ -18,6 +18,7 @@ import { useSync } from "../store/SyncContext";
 import { Event } from "../types";
 import { COLORS } from "../constants/colors";
 import { STRINGS } from "../constants/strings";
+import { DateUtils } from "../utils/date.utils";
 import EventCard from "../components/EventCard";
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
@@ -30,10 +31,10 @@ const CalendarScreen: React.FC = () => {
   const { sync, syncStatus } = useSync();
 
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    DateUtils.getTodayString()
   );
   const [currentMonth, setCurrentMonth] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    DateUtils.getTodayString()
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -77,7 +78,7 @@ const CalendarScreen: React.FC = () => {
       const date = new Date(event.eventDate);
       if (isNaN(date.getTime())) return; // Skip invalid dates
 
-      const eventDate = date.toISOString().split("T")[0];
+      const eventDate = DateUtils.toLocalDateString(date);
 
       if (!marked[eventDate]) {
         marked[eventDate] = {
@@ -86,11 +87,12 @@ const CalendarScreen: React.FC = () => {
         };
       }
 
-      // Add dot with category color
-      const categoryColor = getCategoryColor(event.category);
+      // Add dot with primary tag color
+      const primaryTag = event.tags[0] || 'other';
+      const tagColor = getCategoryColor(primaryTag);
       if (marked[eventDate].dots.length < 3) {
         marked[eventDate].dots.push({
-          color: categoryColor,
+          color: tagColor,
         });
       }
     });
@@ -121,7 +123,7 @@ const CalendarScreen: React.FC = () => {
         const date = new Date(event.eventDate);
         if (isNaN(date.getTime())) return false;
 
-        const eventDate = date.toISOString().split("T")[0];
+        const eventDate = DateUtils.toLocalDateString(date);
         return eventDate === selectedDate;
       })
       .sort((a, b) => {
@@ -220,7 +222,7 @@ const CalendarScreen: React.FC = () => {
   };
 
   const isToday = (dateString: string) => {
-    return dateString === new Date().toISOString().split("T")[0];
+    return dateString === DateUtils.getTodayString();
   };
 
   return (
@@ -236,7 +238,7 @@ const CalendarScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.todayButton}
             onPress={() =>
-              setSelectedDate(new Date().toISOString().split("T")[0])
+              setSelectedDate(DateUtils.getTodayString())
             }
           >
             <Ionicons name="today" size={20} color={COLORS.white} />
@@ -506,6 +508,15 @@ const CalendarScreen: React.FC = () => {
         {/* Bottom Spacing */}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddEvent')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color={COLORS.white} />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -802,6 +813,22 @@ const styles = StyleSheet.create({
   articleReadTime: {
     fontSize: 11,
     color: COLORS.white,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
 

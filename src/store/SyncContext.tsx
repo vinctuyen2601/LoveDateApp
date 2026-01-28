@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useSQLiteContext } from 'expo-sqlite';
 import { SyncStatus, SyncConflict, SyncContextValue } from '../types';
 import { syncService } from '../services/sync.service';
 import { contentSyncService } from '../services/contentSync.service';
 import { notificationService } from '../services/notification.service';
-import { databaseService } from '../services/database.service';
+import * as DB from '../services/database.service';
 import { useAuth } from './AuthContext';
 import { useEvents } from './EventsContext';
 
@@ -14,6 +15,7 @@ interface SyncProviderProps {
 }
 
 export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
+  const db = useSQLiteContext();
   const { isAuthenticated } = useAuth();
   const { refreshEvents } = useEvents();
 
@@ -46,7 +48,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
           .then(async () => {
             // Reschedule all notifications after sync to ensure they're up to date
             try {
-              const events = await databaseService.getAllEvents();
+              const events = await DB.getAllEvents(db);
               await notificationService.rescheduleAllNotifications(events);
               console.log('Notifications rescheduled after sync');
             } catch (error) {

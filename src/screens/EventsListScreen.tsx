@@ -13,8 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useEvents } from '../store/EventsContext';
 import { useToast } from '../contexts/ToastContext';
-import { Event, EventCategory } from '../types';
-import { COLORS, getCategoryColor } from '../constants/colors';
+import { Event } from '../types';
+import { COLORS } from '../constants/colors';
 import EventCard from '../components/EventCard';
 
 type FilterType = 'all' | 'upcoming' | 'past' | 'birthday' | 'anniversary' | 'holiday' | 'other';
@@ -63,7 +63,7 @@ const EventsListScreen: React.FC = () => {
       case 'anniversary':
       case 'holiday':
       case 'other':
-        filtered = filtered.filter((event) => event.category === selectedFilter);
+        filtered = filtered.filter((event) => event.tags.includes(selectedFilter));
         break;
       case 'all':
       default:
@@ -82,10 +82,6 @@ const EventsListScreen: React.FC = () => {
 
   const handleEventPress = (event: Event) => {
     navigation.navigate('EventDetail', { eventId: event.id });
-  };
-
-  const handleEventEdit = (event: Event) => {
-    navigation.navigate('AddEvent', { eventId: event.id });
   };
 
   const handleEventDelete = async (event: Event) => {
@@ -243,7 +239,6 @@ const EventsListScreen: React.FC = () => {
                 key={event.id}
                 event={event}
                 onPress={() => handleEventPress(event)}
-                onEdit={() => handleEventEdit(event)}
                 onDelete={() => handleEventDelete(event)}
               />
             ))}
