@@ -1,3 +1,33 @@
+// ==================== CHECKLIST TYPES ====================
+
+export interface ChecklistItem {
+  id: string;
+  eventId: string;
+  title: string;
+  isCompleted: boolean;
+  dueDaysBefore: number; // How many days before event this should be done
+  displayOrder: number; // For sorting
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DatabaseChecklistItem {
+  id: string;
+  eventId: string;
+  title: string;
+  isCompleted: number; // SQLite boolean
+  dueDaysBefore: number;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChecklistTemplate {
+  title: string;
+  dueDaysBefore: number;
+  order: number;
+}
+
 // ==================== EVENT TYPES ====================
 
 export type RecurrenceType = "once" | "weekly" | "monthly" | "yearly";

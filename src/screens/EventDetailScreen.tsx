@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,23 +11,31 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useEvents } from '../store/EventsContext';
 import { useToast } from '../contexts/ToastContext';
-import { Event } from '../types';
+import { Event, ChecklistItem } from '../types';
 import { DateUtils } from '../utils/date.utils';
 import { COLORS, getCategoryColor } from '../constants/colors';
 import { PREDEFINED_TAGS } from '../types';
 import CountdownTimer from '../components/CountdownTimer';
+import ChecklistSection from '../components/ChecklistSection';
+import * as ChecklistService from '../services/checklist.service';
 
 const EventDetailScreen: React.FC = () => {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const db = useSQLiteContext();
   const { getEventById, deleteEvent } = useEvents();
   const { showSuccess, showError } = useToast();
   const { eventId } = route.params;
 
   // Get event directly in render to ensure it updates when events context changes
   const event = getEventById(eventId);
+
+  // Checklist state
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [isLoadingChecklist, setIsLoadingChecklist] = useState(true);
 
   // If event is deleted or not found, navigate back
   React.useEffect(() => {
@@ -36,6 +44,69 @@ const EventDetailScreen: React.FC = () => {
       navigation.goBack();
     }
   }, [event, navigation]);
+
+  // Load checklist when component mounts or event changes
+  useEffect(() => {
+    if (event) {
+      loadChecklist();
+    }
+  }, [event?.id]);
+
+  const loadChecklist = async () => {
+    if (!event) return;
+
+    try {
+      setIsLoadingChecklist(true);
+
+      // Check if checklist exists
+      let items = await ChecklistService.getChecklistItems(db, event.id);
+
+      // If no checklist, auto-generate based on event tags
+      if (items.length === 0) {
+        items = await ChecklistService.generateChecklistForEvent(
+          db,
+          event.id,
+          event.title,
+          event.tags
+        );
+      }
+
+      setChecklistItems(items);
+    } catch (error) {
+      console.error('Error loading checklist:', error);
+    } finally {
+      setIsLoadingChecklist(false);
+    }
+  };
+
+  const handleToggleChecklistItem = async (id: string) => {
+    try {
+      await ChecklistService.toggleChecklistItem(db, id);
+      await loadChecklist(); // Reload to get updated data
+    } catch (error) {
+      showError('Không thể cập nhật checklist');
+    }
+  };
+
+  const handleDeleteChecklistItem = async (id: string) => {
+    try {
+      await ChecklistService.deleteChecklistItem(db, id);
+      await loadChecklist();
+      showSuccess('Đã xóa mục');
+    } catch (error) {
+      showError('Không thể xóa mục');
+    }
+  };
+
+  const handleAddChecklistItem = async (title: string) => {
+    try {
+      await ChecklistService.createChecklistItem(db, event.id, title);
+      await loadChecklist();
+      showSuccess('Đã thêm mục mới');
+    } catch (error) {
+      showError('Không thể thêm mục');
+    }
+  };
 
   if (!event) {
     return (
@@ -137,6 +208,22 @@ const EventDetailScreen: React.FC = () => {
             <CountdownTimer targetDate={event.eventDate} compact={false} />
           </View>
         </View>
+
+        {/* Checklist Section */}
+        {!isLoadingChecklist && (
+          <View style={styles.section}>
+            <ChecklistSection
+              eventId={event.id}
+              items={checklistItems}
+              onToggle={handleToggleChecklistItem}
+              onDelete={handleDeleteChecklistItem}
+              onAdd={handleAddChecklistItem}
+              showProgress={true}
+              allowAdd={true}
+              allowDelete={true}
+            />
+          </View>
+        )}
 
         {/* Date Information */}
         <View style={styles.section}>

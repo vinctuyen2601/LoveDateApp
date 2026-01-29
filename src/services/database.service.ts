@@ -147,6 +147,27 @@ export async function initializeTables(
       );
     `);
 
+    // Checklist items table
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS checklist_items (
+        id TEXT PRIMARY KEY,
+        eventId TEXT NOT NULL,
+        title TEXT NOT NULL,
+        isCompleted INTEGER DEFAULT 0,
+        dueDaysBefore INTEGER DEFAULT 0,
+        displayOrder INTEGER DEFAULT 0,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (eventId) REFERENCES events(id) ON DELETE CASCADE
+      );
+    `);
+
+    // Index for checklist items
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_checklist_eventId ON checklist_items(eventId);
+      CREATE INDEX IF NOT EXISTS idx_checklist_order ON checklist_items(eventId, displayOrder);
+    `);
+
     console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing tables:", error);

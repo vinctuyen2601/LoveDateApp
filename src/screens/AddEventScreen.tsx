@@ -12,6 +12,7 @@ import {
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "../store/EventsContext";
 import { useToast } from "../contexts/ToastContext";
 import { EventFormData, RecurrenceType, PREDEFINED_TAGS } from "../types";
@@ -22,10 +23,12 @@ import { ValidationUtils } from "../utils/validation.utils";
 import ReminderSettings from "../components/ReminderSettings";
 import TimePicker from "../components/TimePicker";
 import RecurrenceTypePicker from "../components/RecurrenceTypePicker";
+import * as ChecklistService from "../services/checklist.service";
 
 const AddEventScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<any>();
+  const db = useSQLiteContext();
   const { addEvent, updateEvent, getEventById } = useEvents();
   const { showSuccess, showError } = useToast();
 
@@ -142,8 +145,22 @@ const AddEventScreen: React.FC = () => {
         showSuccess(`✨ Đã cập nhật sự kiện "${formData.title}" thành công!`);
       } else {
         // Add new event
-        await addEvent({ ...formData, recurrencePattern });
+        const newEvent = await addEvent({ ...formData, recurrencePattern });
         showSuccess(`✨ Đã thêm sự kiện "${formData.title}" thành công!`);
+
+        // Auto-generate checklist for new event
+        try {
+          await ChecklistService.generateChecklistForEvent(
+            db,
+            newEvent.id,
+            newEvent.title,
+            newEvent.tags
+          );
+          console.log('✅ Auto-generated checklist for new event');
+        } catch (error) {
+          console.error('Error generating checklist:', error);
+          // Don't fail event creation if checklist generation fails
+        }
       }
 
       setTimeout(() => {
