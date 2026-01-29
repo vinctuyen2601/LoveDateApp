@@ -28,6 +28,45 @@ export interface ChecklistTemplate {
   order: number;
 }
 
+// ==================== GIFT HISTORY TYPES ====================
+
+export interface GiftHistoryItem {
+  id: string;
+  eventId: string;
+  giftName: string;
+  price?: number;
+  rating?: number; // 1-5 stars
+  purchaseUrl?: string;
+  notes?: string;
+  isPurchased: boolean;
+  purchasedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DatabaseGiftHistoryItem {
+  id: string;
+  eventId: string;
+  giftName: string;
+  price: number | null;
+  rating: number | null;
+  purchaseUrl: string | null;
+  notes: string | null;
+  isPurchased: number; // SQLite boolean
+  purchasedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AIGiftSuggestion {
+  name: string;
+  description: string;
+  priceRange: string;
+  category: string;
+  reasoning: string;
+  purchaseLinks?: string[];
+}
+
 // ==================== EVENT TYPES ====================
 
 export type RecurrenceType = "once" | "weekly" | "monthly" | "yearly";

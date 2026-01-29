@@ -168,6 +168,30 @@ export async function initializeTables(
       CREATE INDEX IF NOT EXISTS idx_checklist_order ON checklist_items(eventId, displayOrder);
     `);
 
+    // Gift history table
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS gift_history (
+        id TEXT PRIMARY KEY,
+        eventId TEXT NOT NULL,
+        giftName TEXT NOT NULL,
+        price REAL,
+        rating INTEGER,
+        purchaseUrl TEXT,
+        notes TEXT,
+        isPurchased INTEGER DEFAULT 0,
+        purchasedAt TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (eventId) REFERENCES events(id) ON DELETE CASCADE
+      );
+    `);
+
+    // Index for gift history
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_gift_eventId ON gift_history(eventId);
+      CREATE INDEX IF NOT EXISTS idx_gift_purchased ON gift_history(isPurchased);
+    `);
+
     console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing tables:", error);

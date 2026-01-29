@@ -225,6 +225,25 @@ const EventDetailScreen: React.FC = () => {
           </View>
         )}
 
+        {/* Gift Suggestions Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.giftSuggestionsButton}
+            onPress={() => navigation.navigate('GiftSuggestions', { eventId: event.id, event })}
+          >
+            <View style={styles.giftSuggestionsIcon}>
+              <Ionicons name="gift" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.giftSuggestionsContent}>
+              <Text style={styles.giftSuggestionsTitle}>Gợi ý quà tặng</Text>
+              <Text style={styles.giftSuggestionsSubtitle}>
+                Sử dụng AI để tìm món quà hoàn hảo
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Date Information */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -609,6 +628,40 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  giftSuggestionsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 2,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  giftSuggestionsIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: `${COLORS.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  giftSuggestionsContent: {
+    flex: 1,
+  },
+  giftSuggestionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  giftSuggestionsSubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
   },
 });
 

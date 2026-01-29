@@ -9,6 +9,7 @@ import AddEventScreen from '../screens/AddEventScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import EventsListScreen from '../screens/EventsListScreen';
 import MBTISurveyScreen from '../screens/MBTISurveyScreen';
+import GiftSuggestionsScreen from '../screens/GiftSuggestionsScreen';
 
 const Stack = createStackNavigator();
 
@@ -71,6 +72,13 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="EventsList"
           component={EventsListScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="GiftSuggestions"
+          component={GiftSuggestionsScreen}
           options={{
             headerShown: false,
           }}
