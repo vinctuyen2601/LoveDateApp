@@ -12,10 +12,10 @@ Cập nhật: 2026-01-30
 Nâng cấp app từ MVP hiện tại lên đúng specs đã định nghĩa trong [important_dates_app_spec.md](./important_dates_app_spec.md)
 
 ### Tiến độ tổng thể
-- **Phase 1:** 0/3 tasks (0%)
+- **Phase 1:** 2/3 tasks (67%)
 - **Phase 2:** 0/3 tasks (0%)
 - **Phase 3:** 0/3 tasks (0%)
-- **Tổng cộng:** 0/9 tasks (0%)
+- **Tổng cộng:** 2/9 tasks (22%)
 
 ---
 
@@ -31,13 +31,11 @@ Nâng cấp app từ MVP hiện tại lên đúng specs đã định nghĩa tron
 
 ---
 
-### ✅ Task 1: Checklist System (Moved from Task 3)
+### ✅ Task 1: Checklist System
 **Mức độ:** 🔴 CRITICAL
 **Ước lượng:** 3-4 ngày
-**Trạng thái:** 🚀 **ĐANG LÀM**
-**Mức độ:** 🔴 CRITICAL
-**Ước lượng:** 5-7 ngày
-**Trạng thái:** ⏳ Chưa bắt đầu
+**Trạng thái:** ✅ **HOÀN THÀNH** (2026-01-30)
+**Commit:** 603310f
 
 #### Subtasks:
 - [ ] **2.1. OpenAI Integration Setup**
@@ -156,7 +154,8 @@ _Tham khảo specs Section 2.5 - Checklist Chuẩn bị_
 ### ✅ Task 2: AI Gift Suggestions System
 **Mức độ:** 🔴 CRITICAL
 **Ước lượng:** 4-5 ngày
-**Trạng thái:** ⏳ Chưa bắt đầu
+**Trạng thái:** ✅ **HOÀN THÀNH** (2026-01-30)
+**Commit:** e600d91
 
 #### Subtasks:
 - [ ] **2.1. OpenAI Integration Setup**
@@ -555,6 +554,21 @@ Một task được coi là hoàn thành khi:
   - AI suggestions vẫn hoạt động tốt chỉ với event title + tags
 - 🚀 START Task 1: Checklist System (quick win)
 - 📊 Updated task numbers: 9 tasks (từ 10 tasks)
+
+### 2026-01-30 - Evening
+- ✅ COMPLETED Task 1: Checklist System
+  - Database schema + service layer + UI components + integration
+  - Auto-generate checklist based on event tags
+  - Full CRUD operations with progress tracking
+  - Commit: 603310f
+- ✅ COMPLETED Task 2: AI Gift Suggestions System
+  - OpenAI integration with gpt-4o-mini model
+  - Gift history database + service layer
+  - Full UI with suggestions + history tabs
+  - Fallback to predefined suggestions if API fails
+  - Context-aware: analyzes event tags, budget, preferences, past gifts
+  - Commit: e600d91
+- 📊 Phase 1 Progress: 2/3 tasks completed (67%)
 
 ### Decisions Log
 _Ghi lại các quyết định quan trọng trong quá trình development_
