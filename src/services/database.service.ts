@@ -192,6 +192,31 @@ export async function initializeTables(
       CREATE INDEX IF NOT EXISTS idx_gift_purchased ON gift_history(isPurchased);
     `);
 
+    // Notification logs table
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS notification_logs (
+        id TEXT PRIMARY KEY,
+        eventId TEXT NOT NULL,
+        notificationId TEXT,
+        daysBefore INTEGER NOT NULL,
+        scheduledAt TEXT NOT NULL,
+        deliveredAt TEXT,
+        status TEXT NOT NULL,
+        errorMessage TEXT,
+        retryCount INTEGER DEFAULT 0,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (eventId) REFERENCES events(id) ON DELETE CASCADE
+      );
+    `);
+
+    // Index for notification logs
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_notif_eventId ON notification_logs(eventId);
+      CREATE INDEX IF NOT EXISTS idx_notif_status ON notification_logs(status);
+      CREATE INDEX IF NOT EXISTS idx_notif_scheduled ON notification_logs(scheduledAt);
+    `);
+
     console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing tables:", error);

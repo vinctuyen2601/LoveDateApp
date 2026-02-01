@@ -362,4 +362,77 @@ export class NotificationUtils {
       console.error('Error presenting notification:', error);
     }
   }
+
+  /**
+   * Schedule notification and return detailed info for logging
+   */
+  static async scheduleNotificationWithDetails(
+    event: Event,
+    daysBefore: number
+  ): Promise<{
+    notificationId: string | null;
+    scheduledAt: string;
+  }> {
+    try {
+      // Convert lunar calendar to solar calendar if needed
+      let eventDate = new Date(event.eventDate);
+      if (event.isLunarCalendar) {
+        eventDate = lunarService.convertEventDate(eventDate, true);
+      }
+
+      const notificationDate = new Date(eventDate);
+      notificationDate.setDate(notificationDate.getDate() - daysBefore);
+
+      // Use custom reminder time if available, otherwise default to 9:00 AM
+      const reminderTime = event.reminderSettings?.reminderTime;
+      const hour = reminderTime?.hour ?? 9;
+      const minute = reminderTime?.minute ?? 0;
+
+      // Set time in local timezone
+      notificationDate.setHours(hour, minute, 0, 0);
+
+      // Don't schedule if notification date is in the past
+      if (notificationDate < new Date()) {
+        return {
+          notificationId: null,
+          scheduledAt: notificationDate.toISOString(),
+        };
+      }
+
+      const content = NotificationUtils.createNotificationContent(event, daysBefore);
+
+      let trigger: Notifications.NotificationTriggerInput;
+
+      if (event.isRecurring) {
+        // For recurring events, schedule yearly with calendar trigger
+        trigger = {
+          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          repeats: true,
+          day: notificationDate.getDate(),
+          month: notificationDate.getMonth() + 1,
+          hour,
+          minute,
+        };
+      } else {
+        // For one-time events, use date trigger
+        trigger = {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: notificationDate,
+        };
+      }
+
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content,
+        trigger,
+      });
+
+      return {
+        notificationId,
+        scheduledAt: notificationDate.toISOString(),
+      };
+    } catch (error) {
+      console.error('Error scheduling notification with details:', error);
+      throw error;
+    }
+  }
 }

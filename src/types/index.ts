@@ -182,6 +182,41 @@ export interface ScheduledNotification {
 
 export type NotificationPriority = "urgent" | "important" | "reminder";
 
+export type NotificationStatus =
+  | "scheduled"    // Notification scheduled successfully
+  | "delivered"    // Notification delivered to user
+  | "failed"       // Scheduling failed
+  | "cancelled"    // Manually cancelled
+  | "expired";     // Passed scheduled time without delivery
+
+export interface NotificationLog {
+  id: string;
+  eventId: string;
+  notificationId?: string;
+  daysBefore: number;
+  scheduledAt: string;
+  deliveredAt?: string;
+  status: NotificationStatus;
+  errorMessage?: string;
+  retryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DatabaseNotificationLog {
+  id: string;
+  eventId: string;
+  notificationId: string | null;
+  daysBefore: number;
+  scheduledAt: string;
+  deliveredAt: string | null;
+  status: string;
+  errorMessage: string | null;
+  retryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ==================== UI TYPES ====================
 
 export interface EventCardProps {
