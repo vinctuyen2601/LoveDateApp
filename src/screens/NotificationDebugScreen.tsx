@@ -83,6 +83,7 @@ const NotificationDebugScreen: React.FC = () => {
           data: { test: true },
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
           seconds: 5,
         },
       });

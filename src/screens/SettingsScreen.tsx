@@ -474,9 +474,9 @@ const SettingsScreen: React.FC = () => {
                 return (
                   <View key={badgeDef.type} style={styles.badgeItem}>
                     <BadgeCard
-                      badge={badgeDef}
+                      badgeDefinition={badgeDef}
+                      achievement={earned}
                       earned={!!earned}
-                      earnedDate={earned?.earnedAt}
                       size="medium"
                     />
                   </View>

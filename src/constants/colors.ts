@@ -23,6 +23,7 @@ export const COLORS = {
   surfaceDark: '#2C2C2C',
 
   // Text Colors
+  text: '#2C3E50', // Alias for textPrimary
   textPrimary: '#2C3E50',
   textSecondary: '#7F8C8D',
   textLight: '#BDC3C7',

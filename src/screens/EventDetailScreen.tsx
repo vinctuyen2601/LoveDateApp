@@ -99,6 +99,7 @@ const EventDetailScreen: React.FC = () => {
   };
 
   const handleAddChecklistItem = async (title: string) => {
+    if (!event) return;
     try {
       await ChecklistService.createChecklistItem(db, event.id, title);
       await loadChecklist();

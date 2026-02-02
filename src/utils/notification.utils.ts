@@ -357,7 +357,10 @@ export class NotificationUtils {
   static async presentNotificationNow(event: Event, daysBefore: number = 0): Promise<void> {
     try {
       const content = NotificationUtils.createNotificationContent(event, daysBefore);
-      await Notifications.presentNotificationAsync(content);
+      await Notifications.scheduleNotificationAsync({
+        content,
+        trigger: null, // Show immediately
+      });
     } catch (error) {
       console.error('Error presenting notification:', error);
     }

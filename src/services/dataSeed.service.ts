@@ -1,5 +1,5 @@
 import { databaseService } from './database.service';
-import { defaultArticles } from '../data/articles';
+// import { defaultArticles } from '../data/articles'; // TODO: Fix articles data
 import * as ActivityService from './activitySuggestion.service';
 
 const SEED_FLAG_KEY = 'data_seeded';
@@ -66,22 +66,24 @@ class DataSeedService {
       }
 
       // Insert default articles
-      console.log(`Seeding ${defaultArticles.length} default articles...`);
+      // TODO: Fix articles data
+      // console.log(`Seeding ${defaultArticles.length} default articles...`);
 
-      for (const article of defaultArticles) {
-        await databaseService.upsertArticle({
-          ...article,
-          likes: article.likes || 0,
-          views: article.views || 0,
-          isPublished: article.isPublished !== undefined ? article.isPublished : true,
-          isFeatured: article.isFeatured || false,
-          version: 0,
-          createdAt: article.createdAt || new Date().toISOString(),
-          updatedAt: article.updatedAt || new Date().toISOString(),
-        });
-      }
+      // for (const article of defaultArticles) {
+      //   await databaseService.upsertArticle({
+      //     ...article,
+      //     likes: article.likes || 0,
+      //     views: article.views || 0,
+      //     isPublished: article.isPublished !== undefined ? article.isPublished : true,
+      //     isFeatured: article.isFeatured || false,
+      //     version: 0,
+      //     createdAt: article.createdAt || new Date().toISOString(),
+      //     updatedAt: article.updatedAt || new Date().toISOString(),
+      //   });
+      // }
 
-      console.log(`Seeded ${defaultArticles.length} default articles`);
+      // console.log(`Seeded ${defaultArticles.length} default articles`);
+      console.log('Articles seeding skipped (no data available)');
     } catch (error) {
       console.error('Error seeding articles:', error);
       throw error;

@@ -59,7 +59,6 @@ class AuthService {
           displayName,
           isAnonymous: true,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         };
 
         const localTokens: AuthTokens = {

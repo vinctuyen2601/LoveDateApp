@@ -416,7 +416,6 @@ const CalendarScreen: React.FC = () => {
                   key={event.id}
                   event={event}
                   onPress={() => handleEventPress(event)}
-                  onEdit={() => handleEventEdit(event)}
                   onDelete={() => handleEventDelete(event)}
                 />
               ))}

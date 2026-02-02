@@ -75,7 +75,8 @@ class BackgroundTaskService {
    * Get background fetch status
    */
   async getStatus(): Promise<BackgroundFetch.BackgroundFetchStatus> {
-    return await BackgroundFetch.getStatusAsync();
+    const status = await BackgroundFetch.getStatusAsync();
+    return status ?? BackgroundFetch.BackgroundFetchStatus.Available;
   }
 
   /**
