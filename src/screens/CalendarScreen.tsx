@@ -471,14 +471,17 @@ const CalendarScreen: React.FC = () => {
                 style={styles.articleCard}
                 onPress={() => handleArticlePress(article.id)}
               >
-                <Image
-                  source={
-                    article.imageUrl ||
-                    require("../../assets/images/default-thumbnail.jpg")
-                  }
-                  style={styles.articleImage}
-                  resizeMode="cover"
-                />
+                {article.imageUrl ? (
+                  <Image
+                    source={{ uri: article.imageUrl }}
+                    style={styles.articleImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.articleImage, { backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="heart-outline" size={48} color={COLORS.textSecondary} />
+                  </View>
+                )}
                 <View style={styles.articleOverlay}>
                   <View
                     style={[

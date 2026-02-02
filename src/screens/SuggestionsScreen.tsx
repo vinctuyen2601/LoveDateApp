@@ -670,17 +670,21 @@ const SuggestionsScreen: React.FC = () => {
                     style={styles.featuredCard}
                     onPress={() => handleArticlePress(article)}
                   >
-                    <Image
-                      source={
-                        article.imageUrl
-                          ? typeof article.imageUrl === 'string'
+                    {article.imageUrl ? (
+                      <Image
+                        source={
+                          typeof article.imageUrl === 'string'
                             ? { uri: article.imageUrl }
                             : article.imageUrl
-                          : require("../../assets/images/default-thumbnail.jpg")
-                      }
-                      style={styles.featuredImage}
-                      resizeMode="cover"
-                    />
+                        }
+                        style={styles.featuredImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.featuredImage, { backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }]}>
+                        <Ionicons name="heart-outline" size={48} color={COLORS.textSecondary} />
+                      </View>
+                    )}
                     <View style={styles.featuredOverlay}>
                       <View style={styles.featuredBadge}>
                         <Ionicons name="star" size={12} color={COLORS.white} />
@@ -725,17 +729,21 @@ const SuggestionsScreen: React.FC = () => {
                   style={styles.articleGridCard}
                   onPress={() => handleArticlePress(article)}
                 >
-                  <Image
-                    source={
-                      article.imageUrl
-                        ? typeof article.imageUrl === 'string'
+                  {article.imageUrl ? (
+                    <Image
+                      source={
+                        typeof article.imageUrl === 'string'
                           ? { uri: article.imageUrl }
                           : article.imageUrl
-                        : require("../../assets/images/default-thumbnail.jpg")
-                    }
-                    style={styles.articleImage}
-                    resizeMode="cover"
-                  />
+                      }
+                      style={styles.articleImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.articleImage, { backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }]}>
+                      <Ionicons name="heart-outline" size={48} color={COLORS.textSecondary} />
+                    </View>
+                  )}
                   <View style={styles.articleCardContent}>
                     <View
                       style={[
