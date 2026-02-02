@@ -272,12 +272,39 @@ export interface GiftSuggestion {
   icon?: string;
 }
 
+// Activity Suggestion types (Phase 2 - Task 5)
 export interface ActivitySuggestion {
   id: string;
   name: string;
-  description: string;
-  tags: string[]; // Changed from category to tags
-  icon?: string;
+  category: 'restaurant' | 'activity' | 'location';
+  location?: string; // Area/district (e.g., "Quận 1", "Thủ Đức")
+  address?: string;
+  priceRange?: '₫' | '₫₫' | '₫₫₫' | '₫₫₫₫'; // Similar to Google Maps
+  rating?: number; // 1.0 - 5.0
+  bookingUrl?: string;
+  phoneNumber?: string;
+  imageUrl?: string;
+  description?: string;
+  tags?: string[]; // e.g., ["Italian", "Romantic", "Outdoor"]
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DatabaseActivitySuggestion {
+  id: string;
+  name: string;
+  category: string;
+  location: string | null;
+  address: string | null;
+  priceRange: string | null;
+  rating: number | null;
+  bookingUrl: string | null;
+  phoneNumber: string | null;
+  imageUrl: string | null;
+  description: string | null;
+  tags: string | null; // JSON string array
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ==================== DATABASE TYPES ====================
@@ -619,6 +646,135 @@ export interface DatabaseSurvey {
   version: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// ==================== GAMIFICATION TYPES (Phase 3 - Task 7) ====================
+
+export interface UserStats {
+  id: string;
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  totalEventsCreated: number;
+  totalEventsCompleted: number;
+  totalChecklistsCompleted: number;
+  totalGiftsPurchased: number;
+  lastActivityDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DatabaseUserStats {
+  id: string;
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  totalEventsCreated: number;
+  totalEventsCompleted: number;
+  totalChecklistsCompleted: number;
+  totalGiftsPurchased: number;
+  lastActivityDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BadgeType =
+  | 'perfect_partner'      // 10 events không quên
+  | 'thoughtful'           // 5 quà được rate 5 sao
+  | 'streak_master'        // 30 ngày streak
+  | 'planner'              // 20 checklists hoàn thành 100%
+  | 'early_bird'           // 10 events created 7+ days in advance
+  | 'consistent'           // 7 ngày streak
+  | 'organizer'            // 50+ checklist items completed
+  | 'generous'             // 10+ gifts purchased
+  | 'beginner';            // First event created
+
+export interface Achievement {
+  id: string;
+  userId: string;
+  badgeType: BadgeType;
+  badgeName: string;
+  badgeDescription?: string;
+  earnedAt: string;
+  notified: boolean;
+}
+
+export interface DatabaseAchievement {
+  id: string;
+  userId: string;
+  badgeType: string;
+  badgeName: string;
+  badgeDescription: string | null;
+  earnedAt: string;
+  notified: number; // SQLite boolean
+}
+
+export interface BadgeDefinition {
+  type: BadgeType;
+  name: string;
+  description: string;
+  icon: string; // Ionicons name
+  color: string;
+  requirement: number;
+  category: 'events' | 'gifts' | 'streak' | 'checklist';
+}
+
+// ==================== PREMIUM TYPES (Phase 3 - Task 8) ====================
+
+export type SubscriptionType = 'free' | 'monthly' | 'yearly';
+export type SubscriptionStatus = 'active' | 'expired' | 'cancelled' | 'trial';
+export type Platform = 'ios' | 'android';
+
+export interface PremiumSubscription {
+  id: string;
+  userId: string;
+  subscriptionType: SubscriptionType;
+  status: SubscriptionStatus;
+  purchaseToken?: string;
+  productId: string;
+  purchaseDate: string;
+  expiryDate?: string;
+  autoRenew: boolean;
+  platform: Platform;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DatabasePremiumSubscription {
+  id: string;
+  userId: string;
+  subscriptionType: string;
+  status: string;
+  purchaseToken: string | null;
+  productId: string;
+  purchaseDate: string;
+  expiryDate: string | null;
+  autoRenew: number; // SQLite boolean
+  platform: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PremiumFeatures {
+  unlimitedEvents: boolean;
+  advancedAnalytics: boolean;
+  prioritySupport: boolean;
+  customThemes: boolean;
+  exportData: boolean;
+  adFree: boolean;
+}
+
+export interface SubscriptionProduct {
+  id: string;
+  type: SubscriptionType;
+  name: string;
+  description: string;
+  price: string;
+  priceValue: number;
+  currency: string;
+  duration: string;
+  features: string[];
+  popular?: boolean;
 }
 
 // ==================== CONTENT SYNC TYPES ====================

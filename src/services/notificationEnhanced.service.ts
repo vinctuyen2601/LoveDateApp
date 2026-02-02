@@ -22,12 +22,17 @@ class NotificationEnhancedService {
   private db: SQLite.SQLiteDatabase | null = null;
   private maxRetries = 3;
   private retryDelay = 1000; // 1 second
+  private notificationReceivedSubscription: Notifications.Subscription | null = null;
+  private notificationResponseSubscription: Notifications.Subscription | null = null;
 
   /**
    * Initialize notification service with database
    */
   async init(database: SQLite.SQLiteDatabase): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {
+      console.log('⚠️ Enhanced notification service already initialized');
+      return;
+    }
 
     try {
       this.db = database;
@@ -64,16 +69,40 @@ class NotificationEnhancedService {
   }
 
   /**
+   * Cleanup notification service (remove listeners)
+   */
+  cleanup(): void {
+    if (this.notificationReceivedSubscription) {
+      this.notificationReceivedSubscription.remove();
+      this.notificationReceivedSubscription = null;
+    }
+    if (this.notificationResponseSubscription) {
+      this.notificationResponseSubscription.remove();
+      this.notificationResponseSubscription = null;
+    }
+    this.isInitialized = false;
+    console.log('✅ Enhanced notification service cleaned up');
+  }
+
+  /**
    * Setup listeners to track notification delivery
    */
   private setupDeliveryListeners(): void {
+    // Remove existing listeners if any
+    if (this.notificationReceivedSubscription) {
+      this.notificationReceivedSubscription.remove();
+    }
+    if (this.notificationResponseSubscription) {
+      this.notificationResponseSubscription.remove();
+    }
+
     // Listen for notification received (app in foreground)
-    Notifications.addNotificationReceivedListener((notification) => {
+    this.notificationReceivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
       this.handleNotificationDelivered(notification);
     });
 
     // Listen for notification response (user tapped notification)
-    Notifications.addNotificationResponseReceivedListener((response) => {
+    this.notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
       this.handleNotificationDelivered(response.notification);
     });
   }

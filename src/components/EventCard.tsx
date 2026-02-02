@@ -5,14 +5,26 @@ import { Event } from '../types';
 import { DateUtils } from '../utils/date.utils';
 import { COLORS, getCategoryColor } from '../constants/colors';
 import ConfirmDialog from './ConfirmDialog';
+import CountdownTimer from './CountdownTimer';
 
 interface EventCardProps {
   event: Event;
   onPress: (event: Event) => void;
   onDelete?: (event: Event) => void;
+  checklistProgress?: {
+    completed: number;
+    total: number;
+  };
+  showCountdown?: boolean;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onPress, onDelete }) => {
+const EventCard: React.FC<EventCardProps> = ({
+  event,
+  onPress,
+  onDelete,
+  checklistProgress,
+  showCountdown = false
+}) => {
   // Get primary tag for color/icon (first tag in array)
   const primaryTag = event.tags[0] || 'other';
   const tagColor = getCategoryColor(primaryTag);
@@ -67,6 +79,40 @@ const EventCard: React.FC<EventCardProps> = ({ event, onPress, onDelete }) => {
                 {event.isLunarCalendar && <Text style={styles.lunarText}> (ÂL)</Text>}
               </Text>
             </View>
+
+            {/* Countdown */}
+            {showCountdown && (
+              <View style={styles.countdownSection}>
+                <CountdownTimer targetDate={event.eventDate} compact={true} />
+              </View>
+            )}
+
+            {/* Checklist Progress */}
+            {checklistProgress && checklistProgress.total > 0 && (
+              <View style={styles.progressSection}>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${(checklistProgress.completed / checklistProgress.total) * 100}%`,
+                        backgroundColor: checklistProgress.completed === checklistProgress.total ? COLORS.success : tagColor,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressText}>
+                  {checklistProgress.completed === checklistProgress.total ? (
+                    <>
+                      <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
+                      {' Đã hoàn thành'}
+                    </>
+                  ) : (
+                    `${checklistProgress.completed}/${checklistProgress.total} việc`
+                  )}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Delete button */}
@@ -153,6 +199,28 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 8,
     marginLeft: 8,
+  },
+  countdownSection: {
+    marginTop: 6,
+  },
+  progressSection: {
+    marginTop: 8,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: COLORS.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
 });
 

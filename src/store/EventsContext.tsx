@@ -2,7 +2,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { useSQLiteContext } from 'expo-sqlite';
 import { Event, EventFormData, EventsContextValue } from '../types';
 import * as DB from '../services/database.service';
-import { notificationService } from '../services/notification.service';
+import { notificationEnhancedService } from '../services/notificationEnhanced.service';
+import * as ChecklistService from '../services/checklist.service';
+import * as StreakService from '../services/streak.service';
+import { useAchievement } from './AchievementContext';
 
 const EventsContext = createContext<EventsContextValue | undefined>(undefined);
 
@@ -12,11 +15,17 @@ interface EventsProviderProps {
 
 export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const db = useSQLiteContext(); // 🎉 Use SQLite context instead of singleton
+  const { showAchievements } = useAchievement();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Initialize enhanced notification service with database
+    notificationEnhancedService.init(db).catch(err => {
+      console.error('Failed to initialize notification service:', err);
+    });
+
     // Load events when database is ready
     loadEvents();
   }, []);
@@ -76,8 +85,42 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       // Save to database using functional approach
       const savedEvent = await DB.createEvent(db, newEvent);
 
-      // Schedule notifications
-      await notificationService.scheduleEventNotifications(savedEvent);
+      // Auto-generate checklist for new event
+      try {
+        await ChecklistService.generateChecklistForEvent(
+          db,
+          savedEvent.id,
+          savedEvent.title,
+          savedEvent.tags
+        );
+        console.log('✅ Auto-generated checklist for new event');
+      } catch (error) {
+        console.error('⚠️ Error generating checklist:', error);
+        // Don't fail event creation if checklist generation fails
+      }
+
+      // Schedule notifications with enhanced service
+      try {
+        const result = await notificationEnhancedService.scheduleEventNotifications(savedEvent);
+        if (result.totalFailed > 0) {
+          console.warn(`⚠️ ${result.totalFailed} notifications failed to schedule for "${savedEvent.title}"`);
+        }
+      } catch (error) {
+        console.error('⚠️ Error scheduling notifications:', error);
+        // Don't fail event creation if notification scheduling fails
+        // Notifications can be rescheduled later
+      }
+
+      // Track event creation for gamification
+      try {
+        const newAchievements = await StreakService.trackEventCreated(db, 'default-user');
+        if (newAchievements.length > 0) {
+          showAchievements(newAchievements);
+        }
+      } catch (error) {
+        console.error('⚠️ Error tracking event creation:', error);
+        // Don't fail event creation if tracking fails
+      }
 
       // Refresh events list
       await refreshEvents();
@@ -112,8 +155,16 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       // Update in database using functional approach
       const updatedEvent = await DB.updateEvent(db, id, updates);
 
-      // Update notifications
-      await notificationService.updateEventNotifications(updatedEvent);
+      // Update notifications with enhanced service
+      try {
+        const result = await notificationEnhancedService.scheduleEventNotifications(updatedEvent);
+        if (result.totalFailed > 0) {
+          console.warn(`⚠️ ${result.totalFailed} notifications failed to schedule for "${updatedEvent.title}"`);
+        }
+      } catch (error) {
+        console.error('⚠️ Error updating notifications:', error);
+        // Don't fail event update if notification update fails
+      }
 
       // Refresh events list
       await refreshEvents();
@@ -131,8 +182,14 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       // Soft delete in database using functional approach
       await DB.deleteEvent(db, id);
 
-      // Cancel notifications
-      await notificationService.cancelEventNotifications(id);
+      // Cancel notifications with enhanced service (also marks as cancelled in logs)
+      try {
+        await notificationEnhancedService.cancelEventNotifications(id);
+      } catch (error) {
+        console.error('⚠️ Error canceling notifications:', error);
+        // Don't fail event deletion if notification cancellation fails
+        // User can still manually clear notifications from system settings
+      }
 
       // Refresh events list
       await refreshEvents();

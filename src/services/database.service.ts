@@ -217,6 +217,94 @@ export async function initializeTables(
       CREATE INDEX IF NOT EXISTS idx_notif_scheduled ON notification_logs(scheduledAt);
     `);
 
+    // Activity suggestions table (Phase 2 - Task 5)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS activity_suggestions (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        location TEXT,
+        address TEXT,
+        priceRange TEXT,
+        rating REAL,
+        bookingUrl TEXT,
+        phoneNumber TEXT,
+        imageUrl TEXT,
+        description TEXT,
+        tags TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Index for activity suggestions
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_activity_category ON activity_suggestions(category);
+      CREATE INDEX IF NOT EXISTS idx_activity_location ON activity_suggestions(location);
+      CREATE INDEX IF NOT EXISTS idx_activity_rating ON activity_suggestions(rating);
+    `);
+
+    // User stats table (Phase 3 - Task 7: Gamification)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS user_stats (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        currentStreak INTEGER DEFAULT 0,
+        longestStreak INTEGER DEFAULT 0,
+        totalEventsCreated INTEGER DEFAULT 0,
+        totalEventsCompleted INTEGER DEFAULT 0,
+        totalChecklistsCompleted INTEGER DEFAULT 0,
+        totalGiftsPurchased INTEGER DEFAULT 0,
+        lastActivityDate TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Achievements table (Phase 3 - Task 7: Gamification)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS achievements (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL,
+        badgeType TEXT NOT NULL,
+        badgeName TEXT NOT NULL,
+        badgeDescription TEXT,
+        earnedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        notified INTEGER DEFAULT 0
+      );
+    `);
+
+    // Index for gamification tables
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_stats_userId ON user_stats(userId);
+      CREATE INDEX IF NOT EXISTS idx_achievements_userId ON achievements(userId);
+      CREATE INDEX IF NOT EXISTS idx_achievements_badgeType ON achievements(badgeType);
+    `);
+
+    // Premium subscriptions table (Phase 3 - Task 8: Premium Features)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS premium_subscriptions (
+        id TEXT PRIMARY KEY,
+        userId TEXT NOT NULL UNIQUE,
+        subscriptionType TEXT NOT NULL,
+        status TEXT NOT NULL,
+        purchaseToken TEXT,
+        productId TEXT NOT NULL,
+        purchaseDate TEXT NOT NULL,
+        expiryDate TEXT,
+        autoRenew INTEGER DEFAULT 1,
+        platform TEXT NOT NULL,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Index for premium subscriptions
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_premium_userId ON premium_subscriptions(userId);
+      CREATE INDEX IF NOT EXISTS idx_premium_status ON premium_subscriptions(status);
+    `);
+
     console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing tables:", error);

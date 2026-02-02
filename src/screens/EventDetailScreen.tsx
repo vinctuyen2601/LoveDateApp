@@ -209,6 +209,44 @@ const EventDetailScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Quick Actions - Show important incomplete checklist items */}
+        {!isLoadingChecklist && checklistItems.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="flash" size={22} color={COLORS.warning} />
+              <Text style={styles.sectionTitle}>Hành động nhanh</Text>
+            </View>
+
+            <View style={styles.quickActionsCard}>
+              {checklistItems
+                .filter(item => !item.isCompleted)
+                .slice(0, 3) // Show max 3 items
+                .map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.quickActionButton}
+                    onPress={() => handleToggleChecklistItem(item.id)}
+                  >
+                    <View style={styles.quickActionIcon}>
+                      <Ionicons name="checkmark-circle-outline" size={24} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.quickActionText} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
+                ))}
+
+              {checklistItems.filter(item => !item.isCompleted).length === 0 && (
+                <View style={styles.quickActionEmpty}>
+                  <Ionicons name="checkmark-circle" size={32} color={COLORS.success} />
+                  <Text style={styles.quickActionEmptyText}>Đã hoàn thành tất cả!</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Checklist Section */}
         {!isLoadingChecklist && (
           <View style={styles.section}>
@@ -238,6 +276,23 @@ const EventDetailScreen: React.FC = () => {
               <Text style={styles.giftSuggestionsTitle}>Gợi ý quà tặng</Text>
               <Text style={styles.giftSuggestionsSubtitle}>
                 Sử dụng AI để tìm món quà hoàn hảo
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Activity Suggestions Button (Phase 2 - Task 5) */}
+          <TouchableOpacity
+            style={styles.giftSuggestionsButton}
+            onPress={() => navigation.navigate('ActivitySuggestions', { eventId: event.id, event })}
+          >
+            <View style={styles.giftSuggestionsIcon}>
+              <Ionicons name="restaurant" size={24} color={COLORS.secondary} />
+            </View>
+            <View style={styles.giftSuggestionsContent}>
+              <Text style={styles.giftSuggestionsTitle}>Gợi ý hoạt động</Text>
+              <Text style={styles.giftSuggestionsSubtitle}>
+                Nhà hàng, địa điểm và hoạt động vui chơi
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
@@ -662,6 +717,44 @@ const styles = StyleSheet.create({
   giftSuggestionsSubtitle: {
     fontSize: 13,
     color: COLORS.textSecondary,
+  },
+  quickActionsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 8,
+    elevation: 1,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginVertical: 4,
+    backgroundColor: `${COLORS.primary}08`,
+  },
+  quickActionIcon: {
+    marginRight: 12,
+  },
+  quickActionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: COLORS.textPrimary,
+  },
+  quickActionEmpty: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  quickActionEmptyText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.success,
+    marginTop: 8,
   },
 });
 

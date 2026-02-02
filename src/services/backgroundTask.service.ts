@@ -1,13 +1,17 @@
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { databaseService } from './database.service';
-import { notificationService } from './notification.service';
+import { notificationEnhancedService } from './notificationEnhanced.service';
 
 const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND_NOTIFICATION_TASK';
 
 /**
  * Background task to reschedule notifications
  * This runs periodically even when the app is closed
+ *
+ * TODO: This needs to be updated to work with the new database context pattern.
+ * Background tasks run outside the app context, so we need to handle database
+ * initialization differently here.
  */
 TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async () => {
   try {
@@ -17,7 +21,8 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async () => {
     const events = await databaseService.getAllEvents();
 
     // Reschedule notifications for all events
-    await notificationService.rescheduleAllNotifications(events);
+    // Note: Enhanced service may not have database initialized in background context
+    await notificationEnhancedService.rescheduleAllNotifications(events);
 
     console.log('[Background Task] Successfully rescheduled notifications');
 

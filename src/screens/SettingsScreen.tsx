@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,25 +11,30 @@ import {
   Switch,
   Linking,
   Platform,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSQLiteContext } from 'expo-sqlite';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../store/AuthContext';
 import { useSync } from '../store/SyncContext';
 import { useToast } from '../contexts/ToastContext';
-import { notificationService } from '../services/notification.service';
 import { NotificationUtils } from '../utils/notification.utils';
 import * as DB from '../services/database.service';
 import { COLORS } from '../constants/colors';
 import { STRINGS } from '../constants/strings';
 import { APP_VERSION } from '../constants/config';
+import { Achievement, UserStats } from '../types';
+import * as StreakService from '../services/streak.service';
+import BadgeCard from '../components/BadgeCard';
 
 const SettingsScreen: React.FC = () => {
   console.log('[SettingsScreen] Component rendering...');
 
   const db = useSQLiteContext(); // Get database instance from context
+  const navigation = useNavigation<any>();
 
   let authContext, syncContext;
   try {
@@ -80,10 +85,29 @@ const SettingsScreen: React.FC = () => {
   const [isLinking, setIsLinking] = useState(false);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [isLoadingBadges, setIsLoadingBadges] = useState(true);
+
+  // Load gamification data
+  const loadGamificationData = async () => {
+    try {
+      setIsLoadingBadges(true);
+      const stats = await StreakService.getUserStats(db, 'default-user');
+      const badges = await StreakService.getUserAchievements(db, 'default-user');
+      setUserStats(stats);
+      setAchievements(badges);
+    } catch (error) {
+      console.error('Error loading gamification data:', error);
+    } finally {
+      setIsLoadingBadges(false);
+    }
+  };
 
   // Check notification permissions on mount
-  React.useEffect(() => {
+  useEffect(() => {
     checkNotificationPermissions();
+    loadGamificationData();
   }, []);
 
   const checkNotificationPermissions = async () => {
@@ -413,6 +437,56 @@ const SettingsScreen: React.FC = () => {
         )}
       </View>
 
+      {/* Achievements Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Thành tựu</Text>
+
+        {isLoadingBadges ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Đang tải thành tựu...</Text>
+          </View>
+        ) : (
+          <>
+            {/* Stats Summary */}
+            {userStats && (
+              <View style={styles.statsCard}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats.currentStreak}</Text>
+                  <Text style={styles.statLabel}>Streak hiện tại</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{userStats.longestStreak}</Text>
+                  <Text style={styles.statLabel}>Streak tốt nhất</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{achievements.length}</Text>
+                  <Text style={styles.statLabel}>Huy hiệu</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Badges Grid */}
+            <View style={styles.badgesGrid}>
+              {StreakService.BADGE_DEFINITIONS.map((badgeDef) => {
+                const earned = achievements.find((a) => a.badgeType === badgeDef.type);
+                return (
+                  <View key={badgeDef.type} style={styles.badgeItem}>
+                    <BadgeCard
+                      badge={badgeDef}
+                      earned={!!earned}
+                      earnedDate={earned?.earnedAt}
+                      size="medium"
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+      </View>
+
       {/* Link Account Section */}
       {isAnonymous && (
         <View style={styles.section}>
@@ -456,6 +530,19 @@ const SettingsScreen: React.FC = () => {
           />
         </View>
       )}
+
+      {/* Premium Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Premium</Text>
+
+        <SettingItem
+          icon="star"
+          title="Nâng cấp Premium"
+          subtitle="Mở khóa tất cả tính năng cao cấp"
+          onPress={() => navigation.navigate('Premium')}
+          color={COLORS.warning}
+        />
+      </View>
 
       {/* Sync Section */}
       <View style={styles.section}>
@@ -976,6 +1063,49 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 12,
+  },
+  badgesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  badgeItem: {
+    width: '48%',
   },
 });
 

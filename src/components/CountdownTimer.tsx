@@ -30,6 +30,11 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     return () => clearInterval(interval);
   }, [targetDate, showSeconds]);
 
+  // Determine urgency level
+  const isUrgent = countdown.days <= 2 && countdown.days >= 0; // 0-2 days
+  const isWarning = countdown.days === 3; // Exactly 3 days
+  const isToday = DateUtils.isToday(targetDate);
+
   if (compact) {
     return (
       <View style={styles.compactContainer}>
@@ -37,7 +42,9 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
           style={[
             styles.compactText,
             countdown.isPast && styles.pastText,
-            DateUtils.isToday(targetDate) && styles.todayText,
+            isToday && styles.todayText,
+            isUrgent && !isToday && styles.urgentText,
+            isWarning && styles.warningText,
           ]}
         >
           {countdown.displayText}
@@ -47,36 +54,63 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>
-        {countdown.isPast ? 'Đã qua' : DateUtils.isToday(targetDate) ? 'Hôm nay!' : 'Còn lại'}
+    <View style={[
+      styles.container,
+      isUrgent && !isToday && styles.urgentContainer,
+      isWarning && styles.warningContainer,
+    ]}>
+      <Text style={[
+        styles.label,
+        isUrgent && !isToday && styles.urgentLabel,
+      ]}>
+        {countdown.isPast ? 'Đã qua' : isToday ? '🎉 Hôm nay!' : isUrgent ? '⚠️ Còn lại' : 'Còn lại'}
       </Text>
 
       <View style={styles.timeContainer}>
         {countdown.days > 0 && (
           <View style={styles.timeBlock}>
-            <Text style={styles.timeValue}>{countdown.days}</Text>
+            <Text style={[
+              styles.timeValue,
+              isUrgent && !isToday && styles.urgentTimeValue,
+            ]}>
+              {countdown.days}
+            </Text>
             <Text style={styles.timeUnit}>ngày</Text>
           </View>
         )}
 
         {(countdown.days > 0 || countdown.hours > 0) && (
           <View style={styles.timeBlock}>
-            <Text style={styles.timeValue}>{countdown.hours}</Text>
+            <Text style={[
+              styles.timeValue,
+              isUrgent && !isToday && styles.urgentTimeValue,
+            ]}>
+              {countdown.hours}
+            </Text>
             <Text style={styles.timeUnit}>giờ</Text>
           </View>
         )}
 
         {countdown.days === 0 && (
           <View style={styles.timeBlock}>
-            <Text style={styles.timeValue}>{countdown.minutes}</Text>
+            <Text style={[
+              styles.timeValue,
+              isToday && styles.todayTimeValue,
+            ]}>
+              {countdown.minutes}
+            </Text>
             <Text style={styles.timeUnit}>phút</Text>
           </View>
         )}
 
         {showSeconds && countdown.days === 0 && (
           <View style={styles.timeBlock}>
-            <Text style={styles.timeValue}>{countdown.seconds}</Text>
+            <Text style={[
+              styles.timeValue,
+              isToday && styles.todayTimeValue,
+            ]}>
+              {countdown.seconds}
+            </Text>
             <Text style={styles.timeUnit}>giây</Text>
           </View>
         )}
@@ -100,15 +134,43 @@ const styles = StyleSheet.create({
   todayText: {
     color: COLORS.success,
     fontSize: 16,
+    fontWeight: '700',
+  },
+  urgentText: {
+    color: COLORS.error,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  warningText: {
+    color: COLORS.warning,
+    fontSize: 15,
+    fontWeight: '700',
   },
   container: {
     alignItems: 'center',
     paddingVertical: 12,
   },
+  urgentContainer: {
+    backgroundColor: `${COLORS.error}10`,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  warningContainer: {
+    backgroundColor: `${COLORS.warning}10`,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
   label: {
     fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: 8,
+  },
+  urgentLabel: {
+    color: COLORS.error,
+    fontWeight: '700',
+    fontSize: 15,
   },
   timeContainer: {
     flexDirection: 'row',
@@ -122,6 +184,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.primary,
+  },
+  urgentTimeValue: {
+    color: COLORS.error,
+  },
+  todayTimeValue: {
+    color: COLORS.success,
   },
   timeUnit: {
     fontSize: 12,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,10 +13,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar, DateData } from "react-native-calendars";
+import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "../store/EventsContext";
 import { useSync } from "../store/SyncContext";
 import { useNotification } from "../store/NotificationContext";
-import { Event } from "../types";
+import { Event, UserStats } from "../types";
 import { COLORS } from "../constants/colors";
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
@@ -30,9 +31,12 @@ import {
   OtherIcon,
 } from "../components/EventIcons";
 import NotificationBanner from "../components/NotificationBanner";
+import StreakBadge from "../components/StreakBadge";
+import * as StreakService from "../services/streak.service";
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const db = useSQLiteContext();
   const { events, isLoading, refreshEvents } = useEvents();
   const { sync, syncStatus } = useSync();
   const { message, icon } = useNotification();
@@ -45,11 +49,26 @@ const HomeScreen: React.FC = () => {
     DateUtils.getTodayString()
   );
   const [isUpcomingExpanded, setIsUpcomingExpanded] = useState(true); // Default is expanded
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+
+  // Load user stats
+  const loadUserStats = async () => {
+    try {
+      const stats = await StreakService.getUserStats(db, 'default-user');
+      setUserStats(stats);
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadUserStats();
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refreshEvents(), sync()]);
+      await Promise.all([refreshEvents(), sync(), loadUserStats()]);
     } catch (error) {
       console.error("Refresh failed:", error);
     } finally {
@@ -184,6 +203,18 @@ const HomeScreen: React.FC = () => {
           />
         }
       >
+        {/* Streak Badge Section */}
+        {userStats && (
+          <View style={styles.streakSection}>
+            <StreakBadge
+              currentStreak={userStats.currentStreak}
+              longestStreak={userStats.longestStreak}
+              size="large"
+              showLongest
+            />
+          </View>
+        )}
+
         {/* Upcoming Events Section */}
         {upcomingEvents.length > 0 && (
           <View style={styles.upcomingEventsSection}>
@@ -444,6 +475,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop:
       Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 56 : 36,
+  },
+  streakSection: {
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
   // Top Notification Banner (old - for backward compatibility)
   topNotificationBanner: {

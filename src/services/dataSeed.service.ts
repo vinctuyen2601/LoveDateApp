@@ -1,7 +1,9 @@
 import { databaseService } from './database.service';
 import { defaultArticles } from '../data/articles';
+import * as ActivityService from './activitySuggestion.service';
 
 const SEED_FLAG_KEY = 'data_seeded';
+const ACTIVITY_SEED_FLAG_KEY = 'activity_suggestions_seeded';
 
 class DataSeedService {
   /**
@@ -26,6 +28,24 @@ class DataSeedService {
       await databaseService.setSyncMetadata(SEED_FLAG_KEY, 'true');
 
       console.log('Default data seeding completed');
+    } catch (error) {
+      console.error('Error seeding default data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Seed activity suggestions (Phase 2 - Task 5)
+   * Uses database instance directly since dataSeedService uses singleton
+   */
+  async seedActivitySuggestions(db: any): Promise<void> {
+    try {
+      console.log('🌱 Checking activity suggestions seed status...');
+
+      // Seed activities
+      await ActivityService.seedActivitySuggestions(db);
+
+      console.log('✅ Activity suggestions seeding completed');
     } catch (error) {
       console.error('Error seeding default data:', error);
       throw error;

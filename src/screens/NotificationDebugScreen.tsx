@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { useSQLiteContext } from 'expo-sqlite';
 import { COLORS } from '../constants/colors';
-import { notificationService } from '../services/notification.service';
+import { notificationEnhancedService } from '../services/notificationEnhanced.service';
 import * as DB from '../services/database.service';
 import { backgroundTaskService } from '../services/backgroundTask.service';
 import { NotificationUtils } from '../utils/notification.utils';
@@ -35,7 +35,7 @@ const NotificationDebugScreen: React.FC = () => {
       setLoading(true);
 
       // Get scheduled notifications from system
-      const scheduled = await notificationService.getAllScheduledNotifications();
+      const scheduled = await notificationEnhancedService.getAllScheduledNotifications();
       setScheduledCount(scheduled.length);
 
       // Get notification IDs from database (using legacy layer for now)
@@ -96,7 +96,7 @@ const NotificationDebugScreen: React.FC = () => {
     try {
       setLoading(true);
       const events = await DB.getAllEvents(db);
-      await notificationService.rescheduleAllNotifications(events);
+      await notificationEnhancedService.rescheduleAllNotifications(events);
       Alert.alert('Success', `Rescheduled notifications for ${events.length} events`);
       await loadDebugInfo();
     } catch (error: any) {
@@ -118,7 +118,7 @@ const NotificationDebugScreen: React.FC = () => {
           onPress: async () => {
             try {
               setLoading(true);
-              await notificationService.cancelAllNotifications();
+              await notificationEnhancedService.cancelAllNotifications();
               Alert.alert('Success', 'All notifications cleared');
               await loadDebugInfo();
             } catch (error: any) {
@@ -148,7 +148,7 @@ const NotificationDebugScreen: React.FC = () => {
 
   const handleViewScheduled = async () => {
     try {
-      const scheduled = await notificationService.getAllScheduledNotifications();
+      const scheduled = await notificationEnhancedService.getAllScheduledNotifications();
       const message = scheduled.map((notif, index) => {
         const trigger = notif.trigger as any;
         return `${index + 1}. ${notif.content.title}\n   Event: ${notif.content.data?.eventId}\n   Time: ${trigger.dateComponents ? JSON.stringify(trigger.dateComponents) : 'N/A'}`;

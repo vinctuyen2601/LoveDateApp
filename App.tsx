@@ -5,13 +5,14 @@ import { AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { AuthProvider } from './src/store/AuthContext';
+import { AchievementProvider } from './src/store/AchievementContext';
 import { EventsProvider } from './src/store/EventsContext';
 import { SyncProvider } from './src/store/SyncContext';
 import { NotificationProvider } from './src/store/NotificationContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator, { navigate } from './src/navigation/AppNavigator';
 import { PermissionModal } from './src/components/PermissionModal';
-import { notificationService } from './src/services/notification.service';
+import { notificationEnhancedService } from './src/services/notificationEnhanced.service';
 import * as DB from './src/services/database.service';
 import { dataSeedService } from './src/services/dataSeed.service';
 import { backgroundTaskService } from './src/services/backgroundTask.service';
@@ -73,7 +74,7 @@ function AppContent() {
       // App has come to foreground - reschedule all notifications
       try {
         const events = await DB.getAllEvents(db);
-        await notificationService.rescheduleAllNotifications(events);
+        await notificationEnhancedService.rescheduleAllNotifications(events);
       } catch (error) {
         console.error('Error rescheduling on app resume:', error);
       }
@@ -100,9 +101,13 @@ function AppContent() {
       await dataSeedService.seedDefaultData();
       console.log('✅ Default data seeded');
 
-      // 3. Initialize notifications
-      await notificationService.init();
-      console.log('✅ Notifications initialized');
+      // 2.5. Seed activity suggestions (Phase 2 - Task 5)
+      await dataSeedService.seedActivitySuggestions(db);
+      console.log('✅ Activity suggestions seeded');
+
+      // 3. Initialize enhanced notifications with database
+      await notificationEnhancedService.init(db);
+      console.log('✅ Enhanced notifications initialized');
 
       // 4. Register background task for notification management
       await backgroundTaskService.registerBackgroundTask();
@@ -110,7 +115,7 @@ function AppContent() {
 
       // 5. Initial notification reschedule
       const events = await DB.getAllEvents(db);
-      await notificationService.rescheduleAllNotifications(events);
+      await notificationEnhancedService.rescheduleAllNotifications(events);
       console.log('✅ Initial notifications scheduled');
     } catch (error) {
       console.error('❌ Failed to initialize app:', error);
@@ -123,7 +128,7 @@ function AppContent() {
       // Reschedule notifications after permission granted
       try {
         const events = await DB.getAllEvents(db);
-        await notificationService.rescheduleAllNotifications(events);
+        await notificationEnhancedService.rescheduleAllNotifications(events);
         console.log('Notifications rescheduled after permission granted');
       } catch (error) {
         console.error('Error rescheduling after permission:', error);
@@ -137,15 +142,17 @@ function AppContent() {
     <SafeAreaProvider>
       <ToastProvider>
         <AuthProvider>
-          <EventsProvider>
-            <NotificationProvider>
-              <SyncProvider>
-                <AppNavigator />
-                <StatusBar style="auto" />
-                <PermissionModal onPermissionResult={handlePermissionResult} />
-              </SyncProvider>
-            </NotificationProvider>
-          </EventsProvider>
+          <AchievementProvider>
+            <EventsProvider>
+              <NotificationProvider>
+                <SyncProvider>
+                  <AppNavigator />
+                  <StatusBar style="auto" />
+                  <PermissionModal onPermissionResult={handlePermissionResult} />
+                </SyncProvider>
+              </NotificationProvider>
+            </EventsProvider>
+          </AchievementProvider>
         </AuthProvider>
       </ToastProvider>
     </SafeAreaProvider>

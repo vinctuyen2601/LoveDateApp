@@ -10,6 +10,8 @@ import EventDetailScreen from '../screens/EventDetailScreen';
 import EventsListScreen from '../screens/EventsListScreen';
 import MBTISurveyScreen from '../screens/MBTISurveyScreen';
 import GiftSuggestionsScreen from '../screens/GiftSuggestionsScreen';
+import ActivitySuggestionsScreen from '../screens/ActivitySuggestionsScreen';
+import PremiumScreen from '../screens/PremiumScreen';
 
 const Stack = createStackNavigator();
 
@@ -81,6 +83,21 @@ const AppNavigator: React.FC = () => {
           component={GiftSuggestionsScreen}
           options={{
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="ActivitySuggestions"
+          component={ActivitySuggestionsScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="Premium"
+          component={PremiumScreen}
+          options={{
+            headerShown: false,
+            presentation: 'modal',
           }}
         />
         <Stack.Screen
