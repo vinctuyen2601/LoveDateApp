@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,17 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Image,
-  Dimensions,
   Platform,
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar, DateData } from "react-native-calendars";
-import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "../store/EventsContext";
 import { useSync } from "../store/SyncContext";
 import { useNotification } from "../store/NotificationContext";
-import { Event, UserStats } from "../types";
+import { Event } from "../types";
 import { COLORS } from "../constants/colors";
+import { CALENDAR_THEME } from "../constants/calendarTheme";
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
 import { format, addDays } from "date-fns";
@@ -31,14 +29,27 @@ import {
   OtherIcon,
 } from "../components/EventIcons";
 import NotificationBanner from "../components/NotificationBanner";
-import StreakBadge from "../components/StreakBadge";
-import * as StreakService from "../services/streak.service";
+import PressableCard from "../components/PressableCard";
+
+const TAB_BAR_HEIGHT = 60;
+
+const getEventIcon = (primaryTag: string) => {
+  switch (primaryTag) {
+    case "birthday":
+      return BirthdayIcon;
+    case "anniversary":
+      return AnniversaryIcon;
+    case "holiday":
+      return HolidayIcon;
+    default:
+      return OtherIcon;
+  }
+};
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const db = useSQLiteContext();
   const { events, isLoading, refreshEvents } = useEvents();
-  const { sync, syncStatus } = useSync();
+  const { sync } = useSync();
   const { message, icon } = useNotification();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -48,27 +59,11 @@ const HomeScreen: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(
     DateUtils.getTodayString()
   );
-  const [isUpcomingExpanded, setIsUpcomingExpanded] = useState(true); // Default is expanded
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-
-  // Load user stats
-  const loadUserStats = async () => {
-    try {
-      const stats = await StreakService.getUserStats(db, 'default-user');
-      setUserStats(stats);
-    } catch (error) {
-      console.error('Error loading user stats:', error);
-    }
-  };
-
-  useEffect(() => {
-    loadUserStats();
-  }, []);
-
+  const [isUpcomingExpanded, setIsUpcomingExpanded] = useState(true);
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refreshEvents(), sync(), loadUserStats()]);
+      await Promise.all([refreshEvents(), sync()]);
     } catch (error) {
       console.error("Refresh failed:", error);
     } finally {
@@ -76,17 +71,15 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // Get upcoming events (next 7 days)
-  const getUpcomingEvents = () => {
+  const upcomingEvents = useMemo(() => {
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Reset to start of day
+    now.setHours(0, 0, 0, 0);
     const sevenDaysLater = addDays(now, 7);
-
     return events
       .filter((event) => {
         if (!event.eventDate) return false;
         const eventDate = new Date(event.eventDate);
-        eventDate.setHours(0, 0, 0, 0); // Reset to start of day
+        eventDate.setHours(0, 0, 0, 0);
         return eventDate >= now && eventDate <= sevenDaysLater;
       })
       .sort(
@@ -94,9 +87,8 @@ const HomeScreen: React.FC = () => {
           new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
       )
       .slice(0, 3);
-  };
+  }, [events]);
 
-  // Get category color
   const getCategoryColor = (tag: string): string => {
     switch (tag) {
       case "birthday":
@@ -110,35 +102,19 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // Prepare marked dates for calendar
   const markedDates = useMemo(() => {
     const marked: any = {};
-
-    // Mark dates that have events
     events.forEach((event) => {
-      // Validate date
       if (!event.eventDate) return;
-
       const date = new Date(event.eventDate);
-      if (isNaN(date.getTime())) return; // Skip invalid dates
-
+      if (isNaN(date.getTime())) return;
       const eventDate = DateUtils.toLocalDateString(date);
-
       if (!marked[eventDate]) {
-        marked[eventDate] = {
-          marked: true,
-          dots: [],
-        };
+        marked[eventDate] = { marked: true, dots: [] };
       }
-
-      // Add dot with primary tag color
-      const primaryTag = event.tags[0] || 'other';
-      marked[eventDate].dots.push({
-        color: getCategoryColor(primaryTag),
-      });
+      const primaryTag = event.tags[0] || "other";
+      marked[eventDate].dots.push({ color: getCategoryColor(primaryTag) });
     });
-
-    // Mark selected date
     if (marked[selectedDate]) {
       marked[selectedDate].selected = true;
       marked[selectedDate].selectedColor = COLORS.primary;
@@ -148,47 +124,110 @@ const HomeScreen: React.FC = () => {
         selectedColor: COLORS.primary,
       };
     }
-
     return marked;
   }, [events, selectedDate]);
 
-  const upcomingEvents = useMemo(() => getUpcomingEvents(), [events]);
+  const selectedDateEvents = useMemo(() => {
+    return events.filter((event) => {
+      if (!event.eventDate) return false;
+      const eventDate = DateUtils.toLocalDateString(new Date(event.eventDate));
+      return eventDate === selectedDate;
+    });
+  }, [events, selectedDate]);
 
-  // Calendar handlers
-  const handleDayPress = (day: DateData) => {
-    setSelectedDate(day.dateString);
-  };
-
-  const handleMonthChange = (month: DateData) => {
+  const handleDayPress = (day: DateData) => setSelectedDate(day.dateString);
+  const handleMonthChange = (month: DateData) =>
     setCurrentMonth(month.dateString);
-  };
 
-  // Get featured articles
   const [articles] = useState(() => getFeaturedArticles(DEFAULT_ARTICLES));
 
-  const handleSurveyPress = () => {
+  const handleSurveyPress = () =>
     navigation.navigate("Suggestions", { openSurvey: true });
-  };
-
-  const handleArticlePress = (articleId: string) => {
-    navigation.navigate("Suggestions");
-  };
-
-  const handleViewCalendar = () => {
-    navigation.navigate("Calendar");
-  };
-
-  const handleEventPress = (event: Event) => {
+  const handleEventPress = (event: Event) =>
     navigation.navigate("EventDetail", { eventId: event.id });
+  const handleAddEvent = () => navigation.navigate("AddEvent");
+  const handleViewCalendar = () => navigation.navigate("Calendar");
+
+  // ===== SHARED EVENT CARD =====
+  const renderEventCard = (
+    event: Event,
+    options: { showDate?: boolean } = {}
+  ) => {
+    const { showDate = true } = options;
+    const primaryTag =
+      event.tags && event.tags.length > 0 ? event.tags[0] : "other";
+    const categoryColor = getCategoryColor(primaryTag);
+    const EventIcon = getEventIcon(primaryTag);
+
+    return (
+      <PressableCard
+        key={event.id}
+        style={[styles.eventCard, { borderLeftColor: categoryColor }]}
+        onPress={() => handleEventPress(event)}
+      >
+        <View
+          style={[
+            styles.eventIconBadge,
+            { backgroundColor: categoryColor + "15" },
+          ]}
+        >
+          <EventIcon size={32} color={categoryColor} />
+        </View>
+        <View style={styles.eventCardContent}>
+          <Text style={styles.eventCardTitle} numberOfLines={2}>
+            {event.title}
+          </Text>
+          {showDate && (
+            <View style={styles.eventCardMeta}>
+              <Ionicons
+                name="time-outline"
+                size={13}
+                color={COLORS.textSecondary}
+              />
+              <Text style={styles.eventCardDate}>
+                {format(new Date(event.eventDate), "EEEE, d MMMM", {
+                  locale: vi,
+                })}
+              </Text>
+            </View>
+          )}
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+      </PressableCard>
+    );
   };
 
-  const handleAddEvent = () => {
-    navigation.navigate("AddEvent");
-  };
+  // ===== QUICK ACTIONS =====
+  const quickActions = [
+    {
+      id: "survey",
+      icon: "heart-circle" as const,
+      title: "Khảo sát tính cách",
+      subtitle: "Gợi ý quà tặng",
+      color: COLORS.primary,
+      onPress: handleSurveyPress,
+    },
+    {
+      id: "mbti",
+      icon: "people" as const,
+      title: "Trắc nghiệm MBTI",
+      subtitle: "16 loại tính cách",
+      color: COLORS.secondary,
+      onPress: handleSurveyPress,
+    },
+    {
+      id: "add",
+      icon: "add-circle" as const,
+      title: "Thêm sự kiện",
+      subtitle: "Tạo mới ngay",
+      color: COLORS.success,
+      onPress: handleAddEvent,
+    },
+  ];
+
 
   return (
     <View style={styles.container}>
-      {/* Notification Banner */}
       <NotificationBanner message={message} icon={icon} />
 
       <ScrollView
@@ -203,98 +242,69 @@ const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* Streak Badge Section */}
-        {userStats && (
-          <View style={styles.streakSection}>
-            <StreakBadge
-              currentStreak={userStats.currentStreak}
-              longestStreak={userStats.longestStreak}
-              size="large"
-              showLongest
+        {/* Empty hint banner */}
+        {!isLoading && events.length === 0 && (
+          <PressableCard style={styles.emptyHint} onPress={handleAddEvent}>
+            <Ionicons name="add-circle" size={20} color={COLORS.primary} />
+            <Text style={styles.emptyHintText}>
+              Thêm sự kiện đầu tiên của bạn
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={COLORS.textSecondary}
             />
-          </View>
+          </PressableCard>
         )}
 
-        {/* Upcoming Events Section */}
+        {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
-          <View style={styles.upcomingEventsSection}>
+          <View style={styles.section}>
             <TouchableOpacity
               style={styles.sectionHeader}
               onPress={() => setIsUpcomingExpanded(!isUpcomingExpanded)}
               activeOpacity={0.7}
             >
               <View style={styles.sectionHeaderLeft}>
-                <Text style={styles.sectionTitle}>⏰ Sự kiện sắp tới</Text>
-                <View style={styles.eventCountBadge}>
-                  <Text style={styles.eventCountText}>
+                <Ionicons
+                  name="alarm-outline"
+                  size={20}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.sectionTitle}>Sự kiện sắp tới</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
                     {upcomingEvents.length}
                   </Text>
                 </View>
               </View>
               <Ionicons
                 name={isUpcomingExpanded ? "chevron-up" : "chevron-down"}
-                size={24}
-                color={COLORS.primary}
+                size={20}
+                color={COLORS.textSecondary}
               />
             </TouchableOpacity>
             {isUpcomingExpanded &&
-              upcomingEvents.map((event) => {
-                const primaryTag =
-                  event.tags && event.tags.length > 0 ? event.tags[0] : "other";
-                const categoryColor = getCategoryColor(primaryTag);
-                const EventIcon =
-                  primaryTag === "birthday"
-                    ? BirthdayIcon
-                    : primaryTag === "anniversary"
-                    ? AnniversaryIcon
-                    : primaryTag === "holiday"
-                    ? HolidayIcon
-                    : OtherIcon;
-
-                return (
-                  <TouchableOpacity
-                    key={event.id}
-                    style={styles.upcomingEventCard}
-                    onPress={() => handleEventPress(event)}
-                  >
-                    <View
-                      style={[
-                        styles.upcomingIconBadge,
-                        { backgroundColor: categoryColor + "15" },
-                      ]}
-                    >
-                      <EventIcon size={36} color={categoryColor} />
-                    </View>
-                    <View style={styles.upcomingEventContent}>
-                      <Text style={styles.upcomingEventTitle} numberOfLines={2}>
-                        {event.title}
-                      </Text>
-                      <View style={styles.upcomingEventMeta}>
-                        <Ionicons
-                          name="time-outline"
-                          size={14}
-                          color={COLORS.textSecondary}
-                        />
-                        <Text style={styles.upcomingEventDate}>
-                          {format(new Date(event.eventDate), "EEEE, d MMMM", {
-                            locale: vi,
-                          })}
-                        </Text>
-                      </View>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={24}
-                      color={COLORS.textSecondary}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
+              upcomingEvents.map((event) => renderEventCard(event))}
           </View>
         )}
 
-        {/* Calendar Section */}
-        <View style={styles.calendarSection}>
+        {/* Calendar */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={COLORS.primary}
+              />
+              <Text style={styles.sectionTitle}>Lịch sự kiện</Text>
+            </View>
+            <TouchableOpacity onPress={handleViewCalendar}>
+              <Text style={styles.viewAllText}>Xem tất cả</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.calendarContainer}>
             <Calendar
               current={currentMonth}
@@ -302,39 +312,16 @@ const HomeScreen: React.FC = () => {
               onMonthChange={handleMonthChange}
               markedDates={markedDates}
               markingType="multi-dot"
-              theme={{
-                backgroundColor: COLORS.white,
-                calendarBackground: COLORS.white,
-                textSectionTitleColor: COLORS.textSecondary,
-                selectedDayBackgroundColor: COLORS.primary,
-                selectedDayTextColor: COLORS.white,
-                todayTextColor: COLORS.primary,
-                dayTextColor: COLORS.textPrimary,
-                textDisabledColor: COLORS.textLight,
-                dotColor: COLORS.primary,
-                selectedDotColor: COLORS.white,
-                arrowColor: COLORS.primary,
-                monthTextColor: COLORS.textPrimary,
-                indicatorColor: COLORS.primary,
-                textDayFontFamily: "System",
-                textMonthFontFamily: "System",
-                textDayHeaderFontFamily: "System",
-                textDayFontWeight: "300",
-                textMonthFontWeight: "600",
-                textDayHeaderFontWeight: "500",
-                textDayFontSize: 14,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 12,
-              }}
+              theme={CALENDAR_THEME}
               enableSwipeMonths={true}
-              hideExtraDays={true}
-              firstDay={0}
+              hideExtraDays={false}
+              firstDay={1}
               renderArrow={(direction: string) => (
                 <Ionicons
                   name={
                     direction === "left" ? "chevron-back" : "chevron-forward"
                   }
-                  size={24}
+                  size={20}
                   color={COLORS.primary}
                 />
               )}
@@ -342,97 +329,149 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Survey Card */}
-        <TouchableOpacity style={styles.surveyCard} onPress={handleSurveyPress}>
-          <View style={styles.surveyIconContainer}>
-            <Ionicons name="heart-circle" size={48} color={COLORS.white} />
+        {/* Selected Date Events */}
+        {selectedDateEvents.length > 0 && (
+          <View style={styles.selectedDateSection}>
+            <View style={styles.selectedDateHeader}>
+              <Ionicons
+                name="today-outline"
+                size={16}
+                color={COLORS.primary}
+              />
+              <Text style={styles.selectedDateTitle}>
+                Ngay{" "}
+                {format(new Date(selectedDate + "T00:00:00"), "d/M", {
+                  locale: vi,
+                })}
+              </Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {selectedDateEvents.length}
+                </Text>
+              </View>
+            </View>
+            {selectedDateEvents.map((event) =>
+              renderEventCard(event, { showDate: false })
+            )}
           </View>
-          <View style={styles.surveyContent}>
-            <Text style={styles.surveyTitle}>Khảo sát tính cách 💕</Text>
-            <Text style={styles.surveyDescription}>
-              Tìm hiểu tính cách người yêu và nhận gợi ý quà tặng phù hợp
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
+        )}
 
-        {/* MBTI Test Card */}
-        <TouchableOpacity style={styles.mbtiCard} onPress={handleSurveyPress}>
-          <View style={styles.mbtiIconContainer}>
-            <Ionicons name="people" size={48} color={COLORS.white} />
-          </View>
-          <View style={styles.mbtiContent}>
-            <Text style={styles.mbtiTitle}>Trách nghiệm MBTI 🧠</Text>
-            <Text style={styles.mbtiDescription}>
-              Khám phá 16 loại tính cách và hiểu rõ hơn về bản thân
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward" size={24} color={COLORS.secondary} />
-        </TouchableOpacity>
-
-        {/* Featured Articles */}
-        <View style={styles.articlesSection}>
+        {/* Quick Actions */}
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>✨ Bài viết nổi bật</Text>
+            <View style={styles.sectionHeaderLeft}>
+              <Ionicons
+                name="flash-outline"
+                size={20}
+                color={COLORS.primary}
+              />
+              <Text style={styles.sectionTitle}>Khám phá</Text>
+            </View>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsScroll}
+          >
+            {quickActions.map((action) => (
+              <PressableCard
+                key={action.id}
+                style={styles.quickActionCard}
+                onPress={action.onPress}
+              >
+                <View
+                  style={[
+                    styles.quickActionIcon,
+                    { backgroundColor: action.color + "15" },
+                  ]}
+                >
+                  <Ionicons
+                    name={action.icon}
+                    size={28}
+                    color={action.color}
+                  />
+                </View>
+                <Text style={styles.quickActionTitle} numberOfLines={1}>
+                  {action.title}
+                </Text>
+                <Text style={styles.quickActionSubtitle} numberOfLines={1}>
+                  {action.subtitle}
+                </Text>
+              </PressableCard>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Articles */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <Ionicons
+                name="book-outline"
+                size={20}
+                color={COLORS.primary}
+              />
+              <Text style={styles.sectionTitle}>Bài viết nổi bật</Text>
+            </View>
             <TouchableOpacity
               onPress={() => navigation.navigate("Suggestions")}
             >
               <Text style={styles.viewAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
-
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.articlesScroll}
           >
             {articles.slice(0, 4).map((article) => (
-              <TouchableOpacity
+              <PressableCard
                 key={article.id}
                 style={styles.articleCard}
-                onPress={() => handleArticlePress(article.id)}
+                onPress={() => navigation.navigate("Suggestions")}
               >
-                {article.imageUrl ? (
-                  <Image
-                    source={{ uri: article.imageUrl }}
-                    style={styles.articleImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={[styles.articleImage, { backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="heart-outline" size={48} color={COLORS.textSecondary} />
-                  </View>
-                )}
-                <View style={styles.articleOverlay}>
+                <View
+                  style={[
+                    styles.articleColorBar,
+                    { backgroundColor: article.color },
+                  ]}
+                />
+                <View style={styles.articleContent}>
                   <View
                     style={[
-                      styles.articleBadge,
-                      { backgroundColor: article.color },
+                      styles.articleIconCircle,
+                      { backgroundColor: article.color + "15" },
                     ]}
                   >
                     <Ionicons
                       name={article.icon}
-                      size={12}
-                      color={COLORS.white}
+                      size={20}
+                      color={article.color}
                     />
                   </View>
                   <Text style={styles.articleTitle} numberOfLines={2}>
                     {article.title}
                   </Text>
-                  <Text style={styles.articleReadTime}>
-                    {article.readTime} phút đọc
-                  </Text>
+                  <View style={styles.articleMeta}>
+                    <Ionicons
+                      name="time-outline"
+                      size={12}
+                      color={COLORS.textSecondary}
+                    />
+                    <Text style={styles.articleReadTime}>
+                      {article.readTime} phút
+                    </Text>
+                  </View>
                 </View>
-              </TouchableOpacity>
+              </PressableCard>
             ))}
           </ScrollView>
         </View>
 
-        {/* Bottom Spacing */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 30 }} />
       </ScrollView>
 
-      {/* Floating Action Button */}
+      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         onPress={handleAddEvent}
@@ -449,499 +488,248 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  // Fixed Notification Banner - Dark Theme
-  fixedNotificationBanner: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 12 : 48,
-    paddingBottom: 12,
-    gap: 8,
-    zIndex: 1000,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fixedNotificationText: {
-    fontSize: 14,
-    color: COLORS.white,
-    fontWeight: "500",
-  },
   scrollContent: {
     paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 56 : 36,
+      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 56 : 56,
   },
-  streakSection: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
-  // Top Notification Banner (old - for backward compatibility)
-  topNotificationBanner: {
+  // Empty hint
+  emptyHint: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${COLORS.primary}10`,
-    paddingHorizontal: 16,
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 12 : 48,
-    paddingBottom: 12,
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: `${COLORS.primary}20`,
-  },
-  // Header with Love Quote
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
     backgroundColor: COLORS.white,
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary + "20",
+    borderStyle: "dashed",
   },
-  headerContent: {
+  emptyHintText: {
     flex: 1,
-    marginRight: 12,
-  },
-  loveQuote: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    lineHeight: 24,
-    marginBottom: 4,
-  },
-  headerDate: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textTransform: "capitalize",
-  },
-  // Old styles for backward compatibility
-  greeting: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-  },
-  headerSubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 4,
-    textTransform: "capitalize",
+    color: COLORS.textPrimary,
+    fontWeight: "500",
   },
 
-  // Calendar Section
-  calendarSection: {
-    paddingHorizontal: 8,
-    marginTop: 16,
+  // Sections
+  section: {
+    marginTop: 20,
+    paddingHorizontal: 12,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
+    paddingHorizontal: 4,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
   },
-  eventCountBadge: {
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  badge: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
+    borderRadius: 10,
+    minWidth: 22,
+    height: 22,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
-  eventCountText: {
-    fontSize: 12,
-    fontWeight: "bold",
+  badgeText: {
+    fontSize: 11,
+    fontWeight: "700",
     color: COLORS.white,
   },
   viewAllText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: "600",
-  },
-  calendarContainer: {
-    backgroundColor: COLORS.white,
-    marginTop: 8,
-    marginHorizontal: 4,
-    borderRadius: 12,
-    overflow: "hidden",
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  selectedDateContainer: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 4,
-    marginTop: 8,
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: "hidden",
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  selectedDateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  selectedDateTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-  },
-  selectedDateCount: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  miniEventCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    gap: 12,
-    borderLeftWidth: 4,
-    elevation: 1,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  miniEventIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  miniEventContent: {
-    flex: 1,
-  },
-  miniEventTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginBottom: 2,
-  },
-
-  // Upcoming Events Section
-  upcomingEventsSection: {
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  notificationBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: `${COLORS.primary}08`,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
-    gap: 8,
-  },
-  notificationScroll: {
-    flex: 1,
-  },
-  notificationText: {
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: "500",
-  },
-  upcomingEventCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-  },
-  upcomingIconBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  upcomingDateBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: `${COLORS.primary}10`,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-    borderWidth: 1,
-    borderColor: `${COLORS.primary}20`,
-  },
-  upcomingDateDay: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    lineHeight: 28,
-  },
-  upcomingDateMonth: {
-    fontSize: 11,
-    color: COLORS.primary,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  upcomingEventContent: {
-    flex: 1,
-    marginRight: 8,
-  },
-  upcomingEventTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginBottom: 6,
-    lineHeight: 22,
-  },
-  upcomingEventMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 4,
-  },
-  upcomingEventDate: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    textTransform: "capitalize",
+    color: COLORS.primary,
+    fontWeight: "600",
   },
 
-  // Old Upcoming Events (for backward compatibility)
-  upcomingSection: {
-    marginTop: 16,
-  },
-  upcomingTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
-    marginBottom: 8,
-  },
-  upcomingCard: {
+  // Event Card
+  eventCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    elevation: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+    borderLeftWidth: 4,
   },
-  upcomingDate: {
+  eventIconBadge: {
     width: 50,
     height: 50,
-    borderRadius: 10,
-    backgroundColor: `${COLORS.primary}15`,
+    borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
-  upcomingDay: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.primary,
-  },
-  upcomingMonth: {
-    fontSize: 11,
-    color: COLORS.primary,
-    textTransform: "uppercase",
-  },
-  upcomingContent: {
+  eventCardContent: {
     flex: 1,
+    marginRight: 8,
   },
-  upcomingEventTime: {
+  eventCardTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  eventCardMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  eventCardDate: {
     fontSize: 12,
     color: COLORS.textSecondary,
     textTransform: "capitalize",
   },
 
-  // Survey Card
-  surveyCard: {
-    flexDirection: "row",
-    alignItems: "center",
+  // Calendar
+  calendarContainer: {
     backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 16,
-    elevation: 3,
+    borderRadius: 14,
+    overflow: "hidden",
     shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-  },
-  surveyIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  surveyContent: {
-    flex: 1,
-  },
-  surveyTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  surveyDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
-  // MBTI Card
-  mbtiCard: {
+  // Selected Date
+  selectedDateSection: {
+    paddingHorizontal: 12,
+    marginTop: 16,
+  },
+  selectedDateHeader: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 16,
-    elevation: 3,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.secondary,
+    gap: 6,
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
-  mbtiIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  mbtiContent: {
-    flex: 1,
-  },
-  mbtiTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+  selectedDateTitle: {
+    fontSize: 15,
+    fontWeight: "600",
     color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  mbtiDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
   },
 
-  // Featured Articles
-  articlesSection: {
-    marginTop: 16,
-    marginBottom: 16,
+  // Quick Actions
+  quickActionsScroll: {
+    gap: 12,
   },
+  quickActionCard: {
+    width: 140,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  quickActionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  quickActionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  quickActionSubtitle: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+  },
+
+  // Articles
   articlesScroll: {
-    paddingHorizontal: 16,
     gap: 12,
   },
   articleCard: {
-    width: 200,
-    height: 140,
-    borderRadius: 12,
+    width: 170,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
     overflow: "hidden",
-    elevation: 2,
     shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  articleImage: {
+  articleColorBar: {
+    height: 6,
     width: "100%",
-    height: "100%",
-    position: "absolute",
   },
-  articleOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    padding: 12,
-    justifyContent: "flex-end",
+  articleContent: {
+    padding: 14,
   },
-  articleBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  articleIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   articleTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: COLORS.white,
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
     lineHeight: 18,
+    marginBottom: 8,
+  },
+  articleMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   articleReadTime: {
     fontSize: 11,
-    color: COLORS.white,
+    color: COLORS.textSecondary,
   },
 
   // FAB
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    bottom: 20 + TAB_BAR_HEIGHT,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: COLORS.shadow,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 8,
   },
 });

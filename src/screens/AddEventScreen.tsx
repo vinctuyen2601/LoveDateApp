@@ -24,6 +24,7 @@ import ReminderSettings from "../components/ReminderSettings";
 import TimePicker from "../components/TimePicker";
 import RecurrenceTypePicker from "../components/RecurrenceTypePicker";
 import * as PremiumService from "../services/premium.service";
+import { MAX_TITLE_LENGTH } from "../constants/config";
 
 const AddEventScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -59,6 +60,7 @@ const AddEventScreen: React.FC = () => {
 
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Load existing event data when in Edit mode
   useEffect(() => {
@@ -191,12 +193,49 @@ const AddEventScreen: React.FC = () => {
     setFormData({ ...formData, remindDaysBefore: newDays });
   };
 
+  // Form steps for progress indicator
+  const formSteps = [
+    { label: 'Tên', icon: 'text-outline' as const },
+    { label: 'Thời gian', icon: 'calendar-outline' as const },
+    { label: 'Nhắc nhở', icon: 'notifications-outline' as const },
+    { label: 'Nhãn', icon: 'pricetag-outline' as const },
+  ];
+
   return (
     <View style={styles.container}>
+      {/* Step Progress Indicator */}
+      <View style={styles.stepIndicator}>
+        {formSteps.map((step, index) => (
+          <View key={step.label} style={styles.stepItem}>
+            <View style={[
+              styles.stepDot,
+              { backgroundColor: COLORS.primary + (index === 0 ? 'FF' : '40') }
+            ]}>
+              <Ionicons name={step.icon} size={14} color={index === 0 ? COLORS.white : COLORS.primary} />
+            </View>
+            <Text style={[
+              styles.stepLabel,
+              index === 0 && styles.stepLabelActive
+            ]}>
+              {step.label}
+            </Text>
+            {index < formSteps.length - 1 && <View style={styles.stepLine} />}
+          </View>
+        ))}
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        onScroll={(e) => setIsScrolled(e.nativeEvent.contentOffset.y > 10)}
+        scrollEventThrottle={16}
       >
+        {/* Section: Tên sự kiện */}
+        <View style={styles.sectionDivider}>
+          <Ionicons name="text-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.sectionDividerText}>Tên sự kiện</Text>
+        </View>
+
         {/* Title */}
         <View style={styles.section}>
           <Text style={styles.label}>
@@ -210,8 +249,27 @@ const AddEventScreen: React.FC = () => {
               setFormData({ ...formData, title: text });
               setErrors({ ...errors, title: undefined });
             }}
+            maxLength={MAX_TITLE_LENGTH}
           />
-          {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+          <View style={styles.inputFooter}>
+            {errors.title ? (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            ) : (
+              <View />
+            )}
+            <Text style={[
+              styles.charCount,
+              formData.title.length >= MAX_TITLE_LENGTH && styles.charCountLimit
+            ]}>
+              {formData.title.length}/{MAX_TITLE_LENGTH}
+            </Text>
+          </View>
+        </View>
+
+        {/* Section: Thời gian */}
+        <View style={styles.sectionDivider}>
+          <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.sectionDividerText}>Thời gian & Lặp lại</Text>
         </View>
 
         {/* Recurrence Type Picker */}
@@ -541,6 +599,12 @@ const AddEventScreen: React.FC = () => {
           )}
         </View>
 
+        {/* Section: Nhắc nhở */}
+        <View style={styles.sectionDivider}>
+          <Ionicons name="notifications-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.sectionDividerText}>Nhắc nhở</Text>
+        </View>
+
         {/* Reminders */}
         <ReminderSettings
           selectedDays={formData.remindDaysBefore}
@@ -554,6 +618,12 @@ const AddEventScreen: React.FC = () => {
             setFormData({ ...formData, reminderTime: time })
           }
         />
+
+        {/* Section: Nhãn */}
+        <View style={styles.sectionDivider}>
+          <Ionicons name="pricetag-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.sectionDividerText}>Nhãn sự kiện</Text>
+        </View>
 
         {/* Tags Picker */}
         <View style={styles.section}>
@@ -601,7 +671,7 @@ const AddEventScreen: React.FC = () => {
       </ScrollView>
 
       {/* Submit Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, isScrolled && styles.footerShadow]}>
         <TouchableOpacity
           style={[
             styles.submitButton,
@@ -858,6 +928,77 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 8,
     fontStyle: "italic",
+  },
+  stepIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  stepItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  stepDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stepLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: COLORS.textSecondary,
+    marginLeft: 4,
+  },
+  stepLabelActive: {
+    color: COLORS.primary,
+    fontWeight: "700",
+  },
+  stepLine: {
+    width: 20,
+    height: 2,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 6,
+  },
+  sectionDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  sectionDividerText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+  footerShadow: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+  inputFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  charCount: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  charCountLimit: {
+    color: COLORS.error,
   },
 });
 

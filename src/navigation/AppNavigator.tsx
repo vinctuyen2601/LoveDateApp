@@ -12,6 +12,8 @@ import MBTISurveyScreen from '../screens/MBTISurveyScreen';
 import GiftSuggestionsScreen from '../screens/GiftSuggestionsScreen';
 import ActivitySuggestionsScreen from '../screens/ActivitySuggestionsScreen';
 import PremiumScreen from '../screens/PremiumScreen';
+import ArticleDetailScreen from '../screens/ArticleDetailScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -106,6 +108,20 @@ const AppNavigator: React.FC = () => {
           options={{
             title: 'Khảo sát MBTI',
             presentation: 'modal',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="ArticleDetail"
+          component={ArticleDetailScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="ProductDetail"
+          component={ProductDetailScreen}
+          options={{
             headerShown: false,
           }}
         />

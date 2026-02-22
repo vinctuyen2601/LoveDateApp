@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import PressableCard from './PressableCard';
 
 interface StatCardProps {
   title: string;
@@ -36,28 +37,17 @@ const StatCard: React.FC<StatCardProps> = ({
     return COLORS.textSecondary;
   };
 
-  const CardWrapper = onPress ? TouchableOpacity : View;
-
-  return (
-    <CardWrapper
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-    >
-      {/* Icon */}
+  const content = (
+    <>
       {icon && (
         <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
           <Ionicons name={icon} size={24} color={iconColor} />
         </View>
       )}
-
-      {/* Content */}
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.value}>{value}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-
-        {/* Trend */}
         {trend && trendValue && (
           <View style={styles.trendContainer}>
             <Ionicons name={getTrendIcon()} size={16} color={getTrendColor()} />
@@ -67,13 +57,21 @@ const StatCard: React.FC<StatCardProps> = ({
           </View>
         )}
       </View>
-
-      {/* Arrow if pressable */}
       {onPress && (
         <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
       )}
-    </CardWrapper>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <PressableCard style={styles.card} onPress={onPress}>
+        {content}
+      </PressableCard>
+    );
+  }
+
+  return <View style={styles.card}>{content}</View>;
 };
 
 const styles = StyleSheet.create({

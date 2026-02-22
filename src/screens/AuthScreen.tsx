@@ -27,6 +27,51 @@ const AuthScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Real-time validation state
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+
+  const markTouched = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  const validateField = (field: string, value: string) => {
+    let error: string | undefined;
+    switch (field) {
+      case 'email':
+        if (value.length > 0 && !ValidationUtils.isValidEmail(value))
+          error = STRINGS.error_invalid_email;
+        break;
+      case 'password':
+        if (value.length > 0 && !ValidationUtils.isValidPassword(value))
+          error = STRINGS.error_invalid_password;
+        break;
+      case 'confirmPassword':
+        if (value.length > 0 && !ValidationUtils.doPasswordsMatch(password, value))
+          error = STRINGS.error_password_mismatch;
+        break;
+      case 'displayName':
+        if (value.length > 0) {
+          const result = ValidationUtils.isValidDisplayName(value);
+          if (!result.valid) error = result.error;
+        }
+        break;
+    }
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    if (touched[field]) {
+      validateField(field, value);
+    }
+  };
+
+  const isFieldValid = (field: string, value: string): boolean => {
+    if (!touched[field] || value.length === 0) return false;
+    return !fieldErrors[field];
+  };
+
   const handleSubmit = async () => {
     // Validate email
     if (!ValidationUtils.isValidEmail(email)) {
@@ -113,68 +158,104 @@ const AuthScreen: React.FC = () => {
 
           {/* Display Name (Register only) */}
           {!isLogin && (
-            <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
-              <TextInput
-                style={styles.input}
-                placeholder={STRINGS.auth_display_name}
-                placeholderTextColor={COLORS.textSecondary}
-                value={displayName}
-                onChangeText={setDisplayName}
-                autoCapitalize="words"
-              />
+            <View>
+              <View style={[styles.inputContainer, fieldErrors.displayName && touched.displayName ? styles.inputContainerError : null]}>
+                <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  placeholder={STRINGS.auth_display_name}
+                  placeholderTextColor={COLORS.textSecondary}
+                  value={displayName}
+                  onChangeText={(v) => handleFieldChange('displayName', v, setDisplayName)}
+                  onBlur={() => { markTouched('displayName'); validateField('displayName', displayName); }}
+                  autoCapitalize="words"
+                />
+                {isFieldValid('displayName', displayName) && (
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+                )}
+              </View>
+              {touched.displayName && fieldErrors.displayName && (
+                <Text style={styles.fieldError}>{fieldErrors.displayName}</Text>
+              )}
             </View>
           )}
 
           {/* Email */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder={STRINGS.auth_email}
-              placeholderTextColor={COLORS.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+          <View>
+            <View style={[styles.inputContainer, fieldErrors.email && touched.email ? styles.inputContainerError : null]}>
+              <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
+              <TextInput
+                style={styles.input}
+                placeholder={STRINGS.auth_email}
+                placeholderTextColor={COLORS.textSecondary}
+                value={email}
+                onChangeText={(v) => handleFieldChange('email', v, setEmail)}
+                onBlur={() => { markTouched('email'); validateField('email', email); }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {isFieldValid('email', email) && (
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+              )}
+            </View>
+            {touched.email && fieldErrors.email && (
+              <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+            )}
           </View>
 
           {/* Password */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder={STRINGS.auth_password}
-              placeholderTextColor={COLORS.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons
-                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                size={20}
-                color={COLORS.textSecondary}
+          <View>
+            <View style={[styles.inputContainer, fieldErrors.password && touched.password ? styles.inputContainerError : null]}>
+              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
+              <TextInput
+                style={styles.input}
+                placeholder={STRINGS.auth_password}
+                placeholderTextColor={COLORS.textSecondary}
+                value={password}
+                onChangeText={(v) => handleFieldChange('password', v, setPassword)}
+                onBlur={() => { markTouched('password'); validateField('password', password); }}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
               />
-            </TouchableOpacity>
+              {isFieldValid('password', password) && (
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+              )}
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                  size={20}
+                  color={COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+            {touched.password && fieldErrors.password && (
+              <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+            )}
           </View>
 
           {/* Confirm Password (Register only) */}
           {!isLogin && (
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
-              <TextInput
-                style={styles.input}
-                placeholder={STRINGS.auth_confirm_password}
-                placeholderTextColor={COLORS.textSecondary}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
+            <View>
+              <View style={[styles.inputContainer, fieldErrors.confirmPassword && touched.confirmPassword ? styles.inputContainerError : null]}>
+                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
+                <TextInput
+                  style={styles.input}
+                  placeholder={STRINGS.auth_confirm_password}
+                  placeholderTextColor={COLORS.textSecondary}
+                  value={confirmPassword}
+                  onChangeText={(v) => handleFieldChange('confirmPassword', v, setConfirmPassword)}
+                  onBlur={() => { markTouched('confirmPassword'); validateField('confirmPassword', confirmPassword); }}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                {isFieldValid('confirmPassword', confirmPassword) && (
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+                )}
+              </View>
+              {touched.confirmPassword && fieldErrors.confirmPassword && (
+                <Text style={styles.fieldError}>{fieldErrors.confirmPassword}</Text>
+              )}
             </View>
           )}
 
@@ -277,8 +358,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 16,
+    marginBottom: 4,
     gap: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  inputContainerError: {
+    borderColor: COLORS.error,
+  },
+  fieldError: {
+    color: COLORS.error,
+    fontSize: 12,
+    marginBottom: 12,
+    marginLeft: 16,
+    marginTop: 2,
   },
   input: {
     flex: 1,

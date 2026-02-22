@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BadgeDefinition, Achievement } from '../types';
 import { COLORS } from '../constants/colors';
 import { getBadgeDefinition } from '../services/streak.service';
+import PressableCard from './PressableCard';
 
 interface BadgeCardProps {
   achievement?: Achievement;
@@ -60,14 +61,10 @@ const BadgeCard: React.FC<BadgeCardProps> = ({
 
   const sizeStyles = getSizeStyles();
 
-  const CardWrapper = onPress ? TouchableOpacity : View;
+  const cardStyle = [styles.container, sizeStyles.container, !isEarned && styles.containerLocked];
 
-  return (
-    <CardWrapper
-      style={[styles.container, sizeStyles.container, !isEarned && styles.containerLocked]}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-    >
+  const content = (
+    <>
       <View
         style={[
           styles.iconContainer,
@@ -100,8 +97,18 @@ const BadgeCard: React.FC<BadgeCardProps> = ({
           </Text>
         )}
       </View>
-    </CardWrapper>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <PressableCard style={cardStyle} onPress={onPress}>
+        {content}
+      </PressableCard>
+    );
+  }
+
+  return <View style={cardStyle}>{content}</View>;
 };
 
 const styles = StyleSheet.create({

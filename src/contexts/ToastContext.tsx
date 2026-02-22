@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import Toast, { ToastType, ToastProps } from '../components/Toast';
 
 interface ToastContextType {
@@ -23,12 +23,28 @@ interface ToastProviderProps {
   children: React.ReactNode;
 }
 
+interface QueuedToast extends ToastProps {
+  id: string;
+}
+
+const MAX_QUEUE_SIZE = 5;
+
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
-  const [toast, setToast] = useState<ToastProps | null>(null);
+  const [queue, setQueue] = useState<QueuedToast[]>([]);
+  const idCounter = useRef(0);
 
   const showToast = useCallback(
     (message: string, type: ToastType = 'success', duration: number = 3000) => {
-      setToast({ message, type, duration });
+      setQueue((prev) => {
+        // Deduplicate: skip if same message already in queue
+        if (prev.some((t) => t.message === message && t.type === type)) {
+          return prev;
+        }
+        // Limit queue size
+        const trimmed = prev.length >= MAX_QUEUE_SIZE ? prev.slice(1) : prev;
+        const id = `toast_${++idCounter.current}`;
+        return [...trimmed, { id, message, type, duration }];
+      });
     },
     []
   );
@@ -50,8 +66,10 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   }, [showToast]);
 
   const handleHide = useCallback(() => {
-    setToast(null);
+    setQueue((prev) => prev.slice(1));
   }, []);
+
+  const currentToast = queue[0] || null;
 
   return (
     <ToastContext.Provider
@@ -64,7 +82,15 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       }}
     >
       {children}
-      {toast && <Toast {...toast} onHide={handleHide} />}
+      {currentToast && (
+        <Toast
+          key={currentToast.id}
+          message={currentToast.message}
+          type={currentToast.type}
+          duration={currentToast.duration}
+          onHide={handleHide}
+        />
+      )}
     </ToastContext.Provider>
   );
 };

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Linking, Image } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { ActivitySuggestion } from '../types';
 import { COLORS } from '../constants/colors';
+import PressableCard from './PressableCard';
 
 interface ActivityCardProps {
   activity: ActivitySuggestion;
@@ -78,10 +79,9 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   const categoryColor = getCategoryColor();
 
   return (
-    <TouchableOpacity
+    <PressableCard
       style={[styles.card, { borderLeftColor: categoryColor }]}
       onPress={() => onPress?.(activity)}
-      activeOpacity={0.7}
     >
       {/* Image */}
       {activity.imageUrl && (
@@ -172,7 +172,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           </View>
         )}
       </View>
-    </TouchableOpacity>
+    </PressableCard>
   );
 };
 

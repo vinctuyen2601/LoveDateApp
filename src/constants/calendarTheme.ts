@@ -1,0 +1,26 @@
+import { COLORS } from './colors';
+
+export const CALENDAR_THEME = {
+  backgroundColor: COLORS.white,
+  calendarBackground: COLORS.white,
+  textSectionTitleColor: COLORS.textSecondary,
+  selectedDayBackgroundColor: COLORS.primary,
+  selectedDayTextColor: COLORS.white,
+  todayTextColor: COLORS.primary,
+  dayTextColor: COLORS.textPrimary,
+  textDisabledColor: COLORS.textLight,
+  dotColor: COLORS.primary,
+  selectedDotColor: COLORS.white,
+  arrowColor: COLORS.primary,
+  monthTextColor: COLORS.textPrimary,
+  indicatorColor: COLORS.primary,
+  textDayFontFamily: 'System',
+  textMonthFontFamily: 'System',
+  textDayHeaderFontFamily: 'System',
+  textDayFontWeight: '300' as const,
+  textMonthFontWeight: '600' as const,
+  textDayHeaderFontWeight: '500' as const,
+  textDayFontSize: 14,
+  textMonthFontSize: 16,
+  textDayHeaderFontSize: 12,
+} as const;

@@ -37,6 +37,8 @@ export const STORAGE_KEYS = {
   THEME_MODE: '@theme_mode',
   LANGUAGE: '@language',
   NOTIFICATION_SETTINGS: '@notification_settings',
+  AFFILIATE_PRODUCTS_CACHE: '@lovedate_affiliate_products_cache',
+  AFFILIATE_PRODUCTS_TIMESTAMP: '@lovedate_affiliate_products_cache_timestamp',
 } as const;
 
 // Pagination

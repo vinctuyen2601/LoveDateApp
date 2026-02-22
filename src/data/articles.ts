@@ -401,3 +401,18 @@ export const sortArticles = (
     }
   });
 };
+
+// Helper function to get related articles (same category, exclude current)
+export const getRelatedArticles = (
+  currentArticle: Article,
+  allArticles: Article[],
+  limit: number = 3
+): Article[] => {
+  return allArticles
+    .filter(
+      a => a.id !== currentArticle.id &&
+           a.category === currentArticle.category &&
+           a.isPublished !== false
+    )
+    .slice(0, limit);
+};

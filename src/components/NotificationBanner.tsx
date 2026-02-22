@@ -6,7 +6,8 @@ import {
   Animated,
   Easing,
   View,
-  useWindowDimensions,
+  Text,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../constants/colors";
@@ -14,166 +15,121 @@ import { COLORS } from "../constants/colors";
 interface NotificationBannerProps {
   message: string;
   icon?: keyof typeof Ionicons.glyphMap;
+  dismissible?: boolean;
+  onDismiss?: () => void;
 }
+
+const SCROLL_SPEED = 50; // px per second
+const GAP = 100; // spacing between two copies
 
 const NotificationBanner: React.FC<NotificationBannerProps> = ({
   message,
   icon = "notifications",
+  dismissible = true,
+  onDismiss,
 }) => {
-  const { width: screenWidth } = useWindowDimensions();
-
-  // Animation values
-  const slideAnim = useRef(new Animated.Value(-100)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const translateX1 = useRef(new Animated.Value(0)).current;
-  const translateX2 = useRef(new Animated.Value(screenWidth)).current;
-
+  const [isDismissed, setIsDismissed] = useState(false);
   const [textWidth, setTextWidth] = useState(0);
+  const slideAnim = useRef(new Animated.Value(-100)).current;
+  const scrollAnim = useRef(new Animated.Value(0)).current;
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Slide in animation on mount
+  // Slide in
   useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      tension: 50,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+    if (message && !isDismissed) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [message, isDismissed]);
 
-  // Icon pulse animation
+  // Marquee: always scroll
   useEffect(() => {
-    const pulseAnimation = Animated.loop(
+    animRef.current?.stop();
+    scrollAnim.setValue(0);
+
+    if (textWidth <= 0) return;
+
+    const oneLoopDistance = textWidth + GAP;
+    const duration = (oneLoopDistance / SCROLL_SPEED) * 1000;
+
+    animRef.current = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseAnimation.start();
-
-    return () => pulseAnimation.stop();
-  }, []);
-
-  // Continuous marquee scroll animation
-  useEffect(() => {
-    if (textWidth === 0) return;
-
-    // Calculate total distance: text needs to move completely off screen
-    const totalDistance = textWidth + screenWidth;
-    const duration = totalDistance * 30; // Increased from 15 to 30 (slower speed)
-    const delayDuration = 10000; // 10 seconds delay before scrolling
-
-    // Calculate when second text should appear
-    // Second text starts when first text has moved half the screen
-    const secondTextStartPosition = textWidth + screenWidth / 2;
-    const timeToReachHalfScreen = (screenWidth / 2 / totalDistance) * duration;
-    const secondTextDelay = delayDuration + timeToReachHalfScreen;
-
-    // Reset positions
-    translateX1.setValue(0);
-    translateX2.setValue(secondTextStartPosition);
-
-    // Animate first text with delay
-    const anim1 = Animated.loop(
-      Animated.sequence([
-        Animated.delay(delayDuration), // Wait 10 seconds before starting
-        Animated.timing(translateX1, {
-          toValue: -totalDistance,
-          duration: duration,
+        Animated.delay(2000),
+        Animated.timing(scrollAnim, {
+          toValue: -oneLoopDistance,
+          duration,
           easing: Easing.linear,
           useNativeDriver: true,
         }),
       ])
     );
-
-    // Animate second text - starts later to maintain spacing
-    const anim2 = Animated.loop(
-      Animated.sequence([
-        Animated.delay(secondTextDelay), // Calculated delay to maintain spacing
-        Animated.timing(translateX2, {
-          toValue: -totalDistance,
-          duration: duration,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    anim1.start();
-    anim2.start();
+    animRef.current.start();
 
     return () => {
-      anim1.stop();
-      anim2.stop();
+      animRef.current?.stop();
     };
-  }, [message, textWidth, screenWidth]);
+  }, [textWidth, message]);
+
+  const handleDismiss = () => {
+    animRef.current?.stop();
+    Animated.timing(slideAnim, {
+      toValue: -100,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsDismissed(true);
+      onDismiss?.();
+    });
+  };
+
+  if (!message || isDismissed) return null;
 
   return (
     <Animated.View
-      style={[
-        styles.fixedNotificationBanner,
-        {
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
+      style={[styles.banner, { transform: [{ translateY: slideAnim }] }]}
     >
-      <Animated.View
-        style={{
-          transform: [{ scale: pulseAnim }],
-        }}
+      <Ionicons name={icon} size={18} color={COLORS.white} />
+
+      {/* Hidden: measure real text width */}
+      <Text
+        style={styles.hiddenText}
+        onLayout={(e) => setTextWidth(Math.ceil(e.nativeEvent.layout.width))}
       >
-        <Ionicons name={icon} size={20} color={COLORS.white} />
-      </Animated.View>
+        {message}
+      </Text>
 
-      <View style={styles.notificationScroll}>
-        <Animated.Text
+      <View style={styles.textContainer}>
+        <Animated.View
           style={[
-            styles.fixedNotificationText,
-            {
-              transform: [{ translateX: translateX1 }],
-            },
+            styles.textRow,
+            { transform: [{ translateX: scrollAnim }] },
           ]}
-          numberOfLines={1}
-          ellipsizeMode="clip"
-          onLayout={(event) => {
-            const { width } = event.nativeEvent.layout;
-            if (textWidth === 0) {
-              setTextWidth(width);
-            }
-          }}
         >
-          {message}
-        </Animated.Text>
-
-        <Animated.Text
-          style={[
-            styles.fixedNotificationText,
-            {
-              position: "absolute",
-              transform: [{ translateX: translateX2 }],
-            },
-          ]}
-          numberOfLines={1}
-          ellipsizeMode="clip"
-        >
-          {message}
-        </Animated.Text>
+          <Text style={styles.text}>{message}</Text>
+          <View style={{ width: GAP }} />
+          <Text style={styles.text}>{message}</Text>
+        </Animated.View>
       </View>
+
+      {dismissible && (
+        <TouchableOpacity
+          onPress={handleDismiss}
+          style={styles.dismissButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close" size={16} color={COLORS.white} />
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  fixedNotificationBanner: {
+  banner: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -183,24 +139,40 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
     paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 12 : 12,
-    paddingBottom: 12,
-    gap: 8,
+      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 10 : 10,
+    paddingBottom: 10,
+    gap: 10,
     zIndex: 1000,
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  notificationScroll: {
+  hiddenText: {
+    position: "absolute",
+    opacity: 0,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  textContainer: {
     flex: 1,
     overflow: "hidden",
+    height: 20,
   },
-  fixedNotificationText: {
-    fontSize: 14,
+  textRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 20,
+  },
+  text: {
+    fontSize: 13,
     color: COLORS.white,
     fontWeight: "500",
+  },
+  dismissButton: {
+    padding: 4,
+    opacity: 0.8,
   },
 });
 

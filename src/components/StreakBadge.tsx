@@ -28,7 +28,7 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({
       case 'small':
         return {
           container: styles.containerSmall,
-          icon: 20,
+          icon: 16,
           number: styles.numberSmall,
           label: styles.labelSmall,
         };
@@ -51,6 +51,21 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({
 
   const sizeStyles = getSizeStyles();
   const flameColor = getFlameColor();
+
+  if (size === 'small') {
+    return (
+      <View style={[styles.container, styles.containerSmall]}>
+        <Ionicons
+          name={currentStreak > 0 ? 'flame' : 'flame-outline'}
+          size={16}
+          color={flameColor}
+        />
+        <Text style={[styles.number, styles.numberSmall, { color: flameColor }]}>
+          {currentStreak}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, sizeStyles.container]}>
@@ -90,7 +105,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   containerSmall: {
-    padding: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: COLORS.background,
+    borderRadius: 20,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   containerMedium: {
     padding: 12,
@@ -99,7 +122,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   iconContainer: {
-    marginRight: 12,
+    marginRight: 8,
   },
   content: {
     flex: 1,
@@ -109,7 +132,7 @@ const styles = StyleSheet.create({
     color: COLORS.warning,
   },
   numberSmall: {
-    fontSize: 16,
+    fontSize: 14,
   },
   numberMedium: {
     fontSize: 24,
@@ -122,7 +145,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   labelSmall: {
-    fontSize: 11,
+    fontSize: 10,
   },
   labelMedium: {
     fontSize: 13,

@@ -785,3 +785,30 @@ export interface ContentSyncMetadata {
   lastArticleSyncAt?: string;
   lastSurveySyncAt?: string;
 }
+
+// ==================== AFFILIATE PRODUCT TYPES ====================
+
+export type AffiliateCategory = 'gift' | 'restaurant' | 'hotel' | 'spa' | 'travel';
+
+export interface AffiliateProduct {
+  id: string;
+  name: string;
+  description: string;
+  category: AffiliateCategory;
+  subcategory: string;
+  priceRange: string;
+  price?: number;
+  originalPrice?: number;
+  rating: number;
+  reviewCount: number;
+  imageUrl?: string;
+  affiliateUrl: string;
+  affiliatePartner?: string;
+  occasion?: string[];
+  budget?: string[];
+  tags?: string[];
+  icon: string;
+  color: string;
+  isFeatured: boolean;
+  isPopular: boolean;
+}

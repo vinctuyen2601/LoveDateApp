@@ -83,6 +83,7 @@ DerivedData
 .vscode/
 .idea/
 .claude/
+_bmad*
 
 # Testing
 coverage/

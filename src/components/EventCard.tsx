@@ -6,6 +6,7 @@ import { DateUtils } from '../utils/date.utils';
 import { COLORS, getCategoryColor } from '../constants/colors';
 import ConfirmDialog from './ConfirmDialog';
 import CountdownTimer from './CountdownTimer';
+import PressableCard from './PressableCard';
 
 interface EventCardProps {
   event: Event;
@@ -55,10 +56,9 @@ const EventCard: React.FC<EventCardProps> = ({
 
   return (
     <>
-      <TouchableOpacity
+      <PressableCard
         style={[styles.card, { borderLeftColor: tagColor }]}
         onPress={() => onPress(event)}
-        activeOpacity={0.7}
       >
         <View style={styles.cardContent}>
           {/* Icon */}
@@ -129,7 +129,7 @@ const EventCard: React.FC<EventCardProps> = ({
             </TouchableOpacity>
           )}
         </View>
-      </TouchableOpacity>
+      </PressableCard>
 
       {/* Confirm Delete Dialog */}
       <ConfirmDialog
@@ -224,4 +224,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EventCard;
+export default React.memo(EventCard);

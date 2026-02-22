@@ -17,25 +17,27 @@ import { useEvents } from "../store/EventsContext";
 import { useSync } from "../store/SyncContext";
 import { Event } from "../types";
 import { COLORS } from "../constants/colors";
+import { CALENDAR_THEME } from "../constants/calendarTheme";
 import { STRINGS } from "../constants/strings";
 import { DateUtils } from "../utils/date.utils";
 import EventCard from "../components/EventCard";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
+import { EmptyState } from "../components/EmptyState";
 
 const { width } = Dimensions.get("window");
 
 const CalendarScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { events, isLoading, refreshEvents, deleteEvent } = useEvents();
   const { sync, syncStatus } = useSync();
 
-  const [selectedDate, setSelectedDate] = useState<string>(
-    DateUtils.getTodayString()
-  );
-  const [currentMonth, setCurrentMonth] = useState<string>(
-    DateUtils.getTodayString()
-  );
+  // Accept selectedDate from navigation params (e.g. from HomeScreen)
+  const initialDate = route.params?.selectedDate || DateUtils.getTodayString();
+
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate);
+  const [currentMonth, setCurrentMonth] = useState<string>(initialDate);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Get featured articles
@@ -307,30 +309,7 @@ const CalendarScreen: React.FC = () => {
             onMonthChange={handleMonthChange}
             markedDates={markedDates}
             markingType="multi-dot"
-            theme={{
-              backgroundColor: COLORS.white,
-              calendarBackground: COLORS.white,
-              textSectionTitleColor: COLORS.textSecondary,
-              selectedDayBackgroundColor: COLORS.primary,
-              selectedDayTextColor: COLORS.white,
-              todayTextColor: COLORS.primary,
-              dayTextColor: COLORS.textPrimary,
-              textDisabledColor: COLORS.textLight,
-              dotColor: COLORS.primary,
-              selectedDotColor: COLORS.white,
-              arrowColor: COLORS.primary,
-              monthTextColor: COLORS.textPrimary,
-              indicatorColor: COLORS.primary,
-              textDayFontFamily: "System",
-              textMonthFontFamily: "System",
-              textDayHeaderFontFamily: "System",
-              textDayFontWeight: "300",
-              textMonthFontWeight: "600",
-              textDayHeaderFontWeight: "500",
-              textDayFontSize: 14,
-              textMonthFontSize: 18,
-              textDayHeaderFontSize: 12,
-            }}
+            theme={{ ...CALENDAR_THEME, textMonthFontSize: 18 }}
             enableSwipeMonths={true}
             hideExtraDays={true}
             firstDay={1}
@@ -345,7 +324,7 @@ const CalendarScreen: React.FC = () => {
         </View>
 
         {/* Legend */}
-        {/* <View style={styles.legendContainer}>
+        <View style={styles.legendContainer}>
           <Text style={styles.legendTitle}>Danh mục:</Text>
           <View style={styles.legendItems}>
             <View style={styles.legendItem}>
@@ -385,7 +364,7 @@ const CalendarScreen: React.FC = () => {
               <Text style={styles.legendText}>Khác</Text>
             </View>
           </View>
-        </View> */}
+        </View>
 
         {/* Selected Date Section */}
         <View style={styles.selectedDateContainer}>
@@ -421,33 +400,16 @@ const CalendarScreen: React.FC = () => {
               ))}
             </View>
           ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="calendar-outline"
-                size={64}
-                color={COLORS.textLight}
-              />
-              <Text style={styles.emptyText}>Không có sự kiện nào</Text>
-              <Text style={styles.emptySubtext}>
-                Nhấn vào ngày khác để xem sự kiện
-              </Text>
-            </View>
+            <EmptyState
+              icon="calendar-outline"
+              title="Không có sự kiện nào"
+              subtitle="Chưa có sự kiện cho ngày này"
+              actionLabel="Thêm sự kiện cho ngày này"
+              onAction={() => navigation.navigate("AddEvent", { prefillDate: selectedDate })}
+              iconColor={COLORS.primary}
+            />
           )}
         </View>
-
-        {/* Quick Add Button Hint */}
-        {selectedDateEvents.length === 0 && (
-          <View style={styles.hintContainer}>
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={COLORS.info}
-            />
-            <Text style={styles.hintText}>
-              Nhấn nút + ở góc dưới để thêm sự kiện mới
-            </Text>
-          </View>
-        )}
 
         {/* Featured Articles */}
         <View style={styles.articlesSection}>
