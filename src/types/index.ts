@@ -22,10 +22,28 @@ export interface DatabaseChecklistItem {
   updatedAt: string;
 }
 
-export interface ChecklistTemplate {
+export interface ChecklistTemplateItem {
   title: string;
   dueDaysBefore: number;
   order: number;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  eventCategory: string; // birthday, anniversary, holiday, default
+
+  // Template Items
+  items: ChecklistTemplateItem[];
+
+  // Relationship-specific customization
+  relationshipSpecific?: Record<string, ChecklistTemplateItem[]>;
+
+  // CMS fields
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  deletedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ==================== GIFT HISTORY TYPES ====================
@@ -265,11 +283,34 @@ export type HomeStackParamList = {
 
 export interface GiftSuggestion {
   id: string;
-  name: string;
-  category: string;
-  tags: string[]; // Changed from relationshipTypes to tags
-  priceRange?: string;
-  icon?: string;
+  title: string;
+  description: string;
+  type: 'gift' | 'experience' | 'activity' | 'romantic_plan';
+
+  // Scoring Criteria (for filtering algorithm)
+  category?: string[];
+  budget?: string[];
+  occasion?: string[];
+  personality?: string[];
+  hobbies?: string[];
+  loveLanguage?: string[];
+  gender?: 'Nam' | 'Nữ' | 'Khác';
+  relationshipStage?: string[];
+
+  // Details
+  whyGreat?: string; // Lý do gợi ý này tốt
+  tips?: string[]; // Array of tips
+
+  // Related Content
+  relatedProducts?: string[]; // Product IDs
+  relatedArticles?: string[]; // Article IDs
+
+  // CMS fields
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  deletedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Activity Suggestion types (Phase 2 - Task 5)
@@ -286,6 +327,11 @@ export interface ActivitySuggestion {
   imageUrl?: string;
   description?: string;
   tags?: string[]; // e.g., ["Italian", "Romantic", "Outdoor"]
+
+  // CMS fields
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -710,13 +756,28 @@ export interface DatabaseAchievement {
 }
 
 export interface BadgeDefinition {
-  type: BadgeType;
+  id: string;
+  badgeType: BadgeType;
   name: string;
   description: string;
   icon: string; // Ionicons name
   color: string;
-  requirement: number;
-  category: 'events' | 'gifts' | 'streak' | 'checklist';
+
+  // Requirements (for unlocking logic)
+  requirements: Record<string, any>; // e.g., {minEvents: 1} or {minStreak: 7}
+
+  // Rewards
+  rewards?: {
+    points?: number;
+    premiumDays?: number;
+  };
+
+  // CMS fields
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  deletedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ==================== PREMIUM TYPES (Phase 3 - Task 8) ====================
@@ -766,15 +827,28 @@ export interface PremiumFeatures {
 
 export interface SubscriptionProduct {
   id: string;
-  type: SubscriptionType;
+  planType: SubscriptionType;
   name: string;
-  description: string;
-  price: string;
-  priceValue: number;
-  currency: string;
-  duration: string;
-  features: string[];
-  popular?: boolean;
+  description?: string;
+
+  // Pricing
+  price: number;
+  currency: string; // 'VND'
+  billingCycle?: 'monthly' | 'yearly' | 'one-time';
+
+  // Limits & Features
+  features: Record<string, any>; // e.g., {maxEvents: 10, hasAnalytics: false}
+
+  // Display
+  isPopular?: boolean;
+  displayOrder?: number;
+
+  // CMS fields
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  deletedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ==================== CONTENT SYNC TYPES ====================
@@ -782,8 +856,40 @@ export interface SubscriptionProduct {
 export interface ContentSyncMetadata {
   lastArticleVersion: number;
   lastSurveyVersion: number;
+  lastProductVersion: number;
+  lastActivityVersion: number;
+  lastGiftVersion: number;
+  lastChecklistVersion: number;
+  lastBadgeVersion: number;
+  lastPlanVersion: number;
   lastArticleSyncAt?: string;
   lastSurveySyncAt?: string;
+  lastProductSyncAt?: string;
+  lastActivitySyncAt?: string;
+  lastGiftSyncAt?: string;
+  lastChecklistSyncAt?: string;
+  lastBadgeSyncAt?: string;
+  lastPlanSyncAt?: string;
+}
+
+export interface ContentSyncResponse {
+  articles: Article[];
+  surveys: Survey[];
+  products: AffiliateProduct[];
+  activities: ActivitySuggestion[];
+  giftSuggestions: GiftSuggestion[];
+  checklistTemplates: ChecklistTemplate[];
+  badgeDefinitions: BadgeDefinition[];
+  subscriptionPlans: SubscriptionProduct[];
+  lastArticleVersion: number;
+  lastSurveyVersion: number;
+  lastProductVersion: number;
+  lastActivityVersion: number;
+  lastGiftVersion: number;
+  lastChecklistVersion: number;
+  lastBadgeVersion: number;
+  lastPlanVersion: number;
+  syncedAt: string;
 }
 
 // ==================== AFFILIATE PRODUCT TYPES ====================
@@ -811,4 +917,11 @@ export interface AffiliateProduct {
   color: string;
   isFeatured: boolean;
   isPopular: boolean;
+
+  // CMS fields
+  status?: 'draft' | 'published' | 'archived';
+  version?: number;
+  deletedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }

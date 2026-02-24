@@ -231,7 +231,7 @@ export async function generateChecklistForEvent(
 
     // Create checklist items from template
     const items: ChecklistItem[] = [];
-    for (const templateItem of template) {
+    for (const templateItem of template.items) {
       const item = await createChecklistItem(
         db,
         eventId,

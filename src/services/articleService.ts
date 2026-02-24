@@ -1,22 +1,24 @@
 /**
  * Article Service
  * Handles all article-related API calls and data synchronization
+ * Updated for CMS integration with version-based sync
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Article, DEFAULT_ARTICLES } from '../data/articles';
+import { CMS_ENDPOINTS, CACHE_CONFIG, STORAGE_KEYS } from '../constants/config';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
-const ARTICLES_CACHE_KEY = '@lovedate_articles_cache';
-const ARTICLES_CACHE_TIMESTAMP_KEY = '@lovedate_articles_cache_timestamp';
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const ARTICLES_CACHE_KEY = STORAGE_KEYS.ARTICLES_CACHE;
+const ARTICLES_CACHE_TIMESTAMP_KEY = STORAGE_KEYS.ARTICLES_TIMESTAMP;
+const CACHE_DURATION = CACHE_CONFIG.DURATION;
 
 /**
- * Fetch articles from backend API
+ * Fetch articles from CMS backend API
  */
 export const fetchArticlesFromAPI = async (): Promise<Article[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/articles`, {
+    const response = await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.ARTICLES}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -24,13 +26,15 @@ export const fetchArticlesFromAPI = async (): Promise<Article[]> => {
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      throw new Error(`CMS API Error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.articles || data; // Handle different response formats
+    // Filter only published articles from CMS
+    const articles = (data.articles || data) as Article[];
+    return articles.filter((article) => article.isPublished !== false);
   } catch (error) {
-    console.error('Error fetching articles from API:', error);
+    console.error('Error fetching articles from CMS:', error);
     throw error;
   }
 };
@@ -144,11 +148,11 @@ export const clearArticlesCache = async (): Promise<void> => {
 };
 
 /**
- * Track article view (analytics)
+ * Track article view (analytics - CMS endpoint)
  */
 export const trackArticleView = async (articleId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}/articles/${articleId}/view`, {
+    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.ARTICLES}/${articleId}/view`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -161,11 +165,11 @@ export const trackArticleView = async (articleId: string): Promise<void> => {
 };
 
 /**
- * Track article like
+ * Track article like (CMS endpoint)
  */
 export const likeArticle = async (articleId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}/articles/${articleId}/like`, {
+    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.ARTICLES}/${articleId}/like`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -178,11 +182,11 @@ export const likeArticle = async (articleId: string): Promise<void> => {
 };
 
 /**
- * Unlike article
+ * Unlike article (CMS endpoint)
  */
 export const unlikeArticle = async (articleId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}/articles/${articleId}/unlike`, {
+    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.ARTICLES}/${articleId}/unlike`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

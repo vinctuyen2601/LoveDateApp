@@ -166,7 +166,7 @@ const PremiumScreen: React.FC = () => {
 
           <Text style={styles.featuresTitle}>Tính năng đã mở khóa:</Text>
           <View style={styles.featuresList}>
-            {selectedProduct.features.map((feature, index) => (
+            {(selectedProduct.features.featureList || []).map((feature: string, index: number) => (
               <View key={index} style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
                 <Text style={styles.featureText}>{feature}</Text>
@@ -211,12 +211,12 @@ const PremiumScreen: React.FC = () => {
             style={[
               styles.planCard,
               selectedProduct.id === product.id && styles.planCardSelected,
-              product.popular && styles.planCardPopular,
+              product.isPopular && styles.planCardPopular,
             ]}
             onPress={() => setSelectedProduct(product)}
             activeOpacity={0.7}
           >
-            {product.popular && (
+            {product.isPopular && (
               <View style={styles.popularBadge}>
                 <Text style={styles.popularBadgeText}>PHỔ BIẾN</Text>
               </View>
@@ -228,8 +228,8 @@ const PremiumScreen: React.FC = () => {
                 <Text style={styles.planDescription}>{product.description}</Text>
               </View>
               <View style={styles.planPriceContainer}>
-                <Text style={styles.planPrice}>{product.price}</Text>
-                <Text style={styles.planDuration}>{product.duration}</Text>
+                <Text style={styles.planPrice}>{product.price.toLocaleString('vi-VN')}đ</Text>
+                <Text style={styles.planDuration}>/ {product.billingCycle === 'monthly' ? 'tháng' : 'năm'}</Text>
               </View>
             </View>
 
@@ -246,7 +246,7 @@ const PremiumScreen: React.FC = () => {
       <View style={styles.featuresSection}>
         <Text style={styles.sectionTitle}>Tính năng Premium</Text>
 
-        {selectedProduct.features.map((feature, index) => (
+        {(selectedProduct.features.featureList || []).map((feature: string, index: number) => (
           <View key={index} style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
             <Text style={styles.featureText}>{feature}</Text>

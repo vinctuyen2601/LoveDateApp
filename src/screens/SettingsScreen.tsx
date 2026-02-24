@@ -470,9 +470,9 @@ const SettingsScreen: React.FC = () => {
             {/* Badges Grid */}
             <View style={styles.badgesGrid}>
               {StreakService.BADGE_DEFINITIONS.map((badgeDef) => {
-                const earned = achievements.find((a) => a.badgeType === badgeDef.type);
+                const earned = achievements.find((a) => a.badgeType === badgeDef.badgeType);
                 return (
-                  <View key={badgeDef.type} style={styles.badgeItem}>
+                  <View key={badgeDef.badgeType} style={styles.badgeItem}>
                     <BadgeCard
                       badgeDefinition={badgeDef}
                       achievement={earned}

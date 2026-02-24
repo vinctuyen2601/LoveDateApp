@@ -1,12 +1,12 @@
-import { ChecklistTemplate } from "../types";
+import { ChecklistTemplate, ChecklistTemplateItem } from "../types";
 
 /**
- * Checklist templates for different event types
- * Each template contains suggested tasks based on event tags
+ * Checklist templates for different event types (CMS-ready structure)
+ * Each template is a container with items array
  */
 
-// Birthday checklist template
-export const BIRTHDAY_CHECKLIST: ChecklistTemplate[] = [
+// Birthday checklist items
+const BIRTHDAY_ITEMS: ChecklistTemplateItem[] = [
   {
     title: "Suy nghĩ ý tưởng quà tặng",
     dueDaysBefore: 14,
@@ -34,8 +34,15 @@ export const BIRTHDAY_CHECKLIST: ChecklistTemplate[] = [
   },
 ];
 
-// Anniversary checklist template
-export const ANNIVERSARY_CHECKLIST: ChecklistTemplate[] = [
+// Birthday checklist template
+export const BIRTHDAY_CHECKLIST: ChecklistTemplate = {
+  id: 'birthday_template',
+  eventCategory: 'birthday',
+  items: BIRTHDAY_ITEMS,
+};
+
+// Anniversary checklist items
+const ANNIVERSARY_ITEMS: ChecklistTemplateItem[] = [
   {
     title: "Chọn nhà hàng hoặc địa điểm",
     dueDaysBefore: 14,
@@ -68,8 +75,15 @@ export const ANNIVERSARY_CHECKLIST: ChecklistTemplate[] = [
   },
 ];
 
-// Holiday checklist template (Valentine, 8/3, 20/10, etc)
-export const HOLIDAY_CHECKLIST: ChecklistTemplate[] = [
+// Anniversary checklist template
+export const ANNIVERSARY_CHECKLIST: ChecklistTemplate = {
+  id: 'anniversary_template',
+  eventCategory: 'anniversary',
+  items: ANNIVERSARY_ITEMS,
+};
+
+// Holiday checklist items (Valentine, 8/3, 20/10, etc)
+const HOLIDAY_ITEMS: ChecklistTemplateItem[] = [
   {
     title: "Nghĩ ý tưởng quà và hoạt động",
     dueDaysBefore: 10,
@@ -92,8 +106,15 @@ export const HOLIDAY_CHECKLIST: ChecklistTemplate[] = [
   },
 ];
 
-// Default checklist for other events
-export const DEFAULT_CHECKLIST: ChecklistTemplate[] = [
+// Holiday checklist template
+export const HOLIDAY_CHECKLIST: ChecklistTemplate = {
+  id: 'holiday_template',
+  eventCategory: 'holiday',
+  items: HOLIDAY_ITEMS,
+};
+
+// Default checklist items for other events
+const DEFAULT_ITEMS: ChecklistTemplateItem[] = [
   {
     title: "Chuẩn bị cho sự kiện",
     dueDaysBefore: 7,
@@ -111,12 +132,19 @@ export const DEFAULT_CHECKLIST: ChecklistTemplate[] = [
   },
 ];
 
+// Default checklist template
+export const DEFAULT_CHECKLIST: ChecklistTemplate = {
+  id: 'default_template',
+  eventCategory: 'default',
+  items: DEFAULT_ITEMS,
+};
+
 /**
  * Get appropriate checklist template based on event tags
  * @param tags - Event tags array
- * @returns Checklist template
+ * @returns Checklist template (CMS-ready structure)
  */
-export function getChecklistTemplate(tags: string[]): ChecklistTemplate[] {
+export function getChecklistTemplate(tags: string[]): ChecklistTemplate {
   // Check for birthday
   if (tags.includes("birthday")) {
     return BIRTHDAY_CHECKLIST;
@@ -144,7 +172,7 @@ export function getChecklistTemplate(tags: string[]): ChecklistTemplate[] {
 export function generateSmartChecklist(
   title: string,
   tags: string[]
-): ChecklistTemplate[] {
+): ChecklistTemplate {
   const template = getChecklistTemplate(tags);
 
   // Add relationship-specific items
@@ -156,14 +184,17 @@ export function generateSmartChecklist(
 
   if (relationship && tags.includes("birthday")) {
     // Add special item for close relationships
-    return [
+    return {
       ...template,
-      {
-        title: "Lên kế hoạch bất ngờ đặc biệt",
-        dueDaysBefore: 5,
-        order: template.length + 1,
-      },
-    ];
+      items: [
+        ...template.items,
+        {
+          title: "Lên kế hoạch bất ngờ đặc biệt",
+          dueDaysBefore: 5,
+          order: template.items.length + 1,
+        },
+      ],
+    };
   }
 
   return template;

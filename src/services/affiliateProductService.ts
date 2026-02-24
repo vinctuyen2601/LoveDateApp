@@ -1,24 +1,25 @@
 /**
  * Affiliate Product Service
  * Handles all affiliate product-related API calls, caching, and tracking
- * Follows the same cache-first pattern as articleService.ts
+ * Updated for CMS integration with version-based sync
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AffiliateProduct, AffiliateCategory } from '../types';
 import { DEFAULT_AFFILIATE_PRODUCTS } from '../data/affiliateProducts';
+import { CMS_ENDPOINTS, CACHE_CONFIG, STORAGE_KEYS } from '../constants/config';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
-const PRODUCTS_CACHE_KEY = '@lovedate_affiliate_products_cache';
-const PRODUCTS_CACHE_TIMESTAMP_KEY = '@lovedate_affiliate_products_cache_timestamp';
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+const PRODUCTS_CACHE_KEY = STORAGE_KEYS.AFFILIATE_PRODUCTS_CACHE;
+const PRODUCTS_CACHE_TIMESTAMP_KEY = STORAGE_KEYS.AFFILIATE_PRODUCTS_TIMESTAMP;
+const CACHE_DURATION = CACHE_CONFIG.DURATION;
 
 /**
- * Fetch products from backend API
+ * Fetch products from CMS backend API
  */
 export const fetchProductsFromAPI = async (): Promise<AffiliateProduct[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/affiliate-products`, {
+    const response = await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.PRODUCTS}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -26,13 +27,15 @@ export const fetchProductsFromAPI = async (): Promise<AffiliateProduct[]> => {
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      throw new Error(`CMS API Error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.products || data; // Handle different response formats
+    // Filter only published products from CMS
+    const products = (data.products || data) as AffiliateProduct[];
+    return products.filter((product) => product.status !== 'draft' && product.status !== 'archived');
   } catch (error) {
-    console.error('Error fetching products from API:', error);
+    console.error('Error fetching products from CMS:', error);
     throw error;
   }
 };
@@ -138,11 +141,11 @@ export const clearProductsCache = async (): Promise<void> => {
 };
 
 /**
- * Track product view (analytics - fire and forget)
+ * Track product view (analytics - CMS endpoint, fire and forget)
  */
 export const trackProductView = async (productId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}/affiliate-products/${productId}/view`, {
+    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.PRODUCTS}/${productId}/view`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -152,11 +155,11 @@ export const trackProductView = async (productId: string): Promise<void> => {
 };
 
 /**
- * Track affiliate click (revenue tracking - fire and forget)
+ * Track affiliate click (revenue tracking - CMS endpoint, fire and forget)
  */
 export const trackAffiliateClick = async (productId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}/affiliate-products/${productId}/click`, {
+    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.PRODUCTS}/${productId}/click`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });

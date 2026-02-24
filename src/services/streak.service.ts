@@ -11,89 +11,101 @@ import { COLORS } from '../constants/colors';
  * - Badge/achievement earning
  */
 
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Helper to extract requirement value from BadgeDefinition.requirements object
+ */
+function getRequirementValue(badge: BadgeDefinition): number {
+  const reqs = badge.requirements;
+  return reqs.minEvents || reqs.minStreak || reqs.minChecklistsCompleted ||
+         reqs.minChecklistItems || reqs.minFiveStarGifts || reqs.minGiftsPurchased ||
+         reqs.minEarlyEvents || 1;
+}
+
 // ==================== BADGE DEFINITIONS ====================
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
-    type: 'beginner',
+    id: 'beginner',
+    badgeType: 'beginner',
     name: 'Người mới',
     description: 'Tạo sự kiện đầu tiên',
     icon: 'rocket',
     color: COLORS.primary,
-    requirement: 1,
-    category: 'events',
+    requirements: { minEvents: 1 },
   },
   {
-    type: 'perfect_partner',
+    id: 'perfect_partner',
+    badgeType: 'perfect_partner',
     name: 'Đối tác hoàn hảo',
     description: 'Tạo 10 sự kiện không quên',
     icon: 'heart',
     color: COLORS.categoryBirthday,
-    requirement: 10,
-    category: 'events',
+    requirements: { minEvents: 10 },
   },
   {
-    type: 'consistent',
+    id: 'consistent',
+    badgeType: 'consistent',
     name: 'Kiên định',
     description: 'Duy trì streak 7 ngày',
     icon: 'flame',
     color: COLORS.warning,
-    requirement: 7,
-    category: 'streak',
+    requirements: { minStreak: 7 },
   },
   {
-    type: 'streak_master',
+    id: 'streak_master',
+    badgeType: 'streak_master',
     name: 'Bậc thầy streak',
     description: 'Duy trì streak 30 ngày',
     icon: 'trophy',
     color: COLORS.success,
-    requirement: 30,
-    category: 'streak',
+    requirements: { minStreak: 30 },
   },
   {
-    type: 'planner',
+    id: 'planner',
+    badgeType: 'planner',
     name: 'Nhà lập kế hoạch',
     description: 'Hoàn thành 20 checklist 100%',
     icon: 'checkmark-done-circle',
     color: COLORS.secondary,
-    requirement: 20,
-    category: 'checklist',
+    requirements: { minChecklistsCompleted: 20 },
   },
   {
-    type: 'organizer',
+    id: 'organizer',
+    badgeType: 'organizer',
     name: 'Người tổ chức',
     description: 'Hoàn thành 50+ mục trong checklist',
     icon: 'list',
     color: COLORS.primary,
-    requirement: 50,
-    category: 'checklist',
+    requirements: { minChecklistItems: 50 },
   },
   {
-    type: 'thoughtful',
+    id: 'thoughtful',
+    badgeType: 'thoughtful',
     name: 'Chu đáo',
     description: '5 quà được đánh giá 5 sao',
     icon: 'star',
     color: COLORS.warning,
-    requirement: 5,
-    category: 'gifts',
+    requirements: { minFiveStarGifts: 5 },
   },
   {
-    type: 'generous',
+    id: 'generous',
+    badgeType: 'generous',
     name: 'Hào phóng',
     description: 'Mua 10+ món quà',
     icon: 'gift',
     color: COLORS.categoryAnniversary,
-    requirement: 10,
-    category: 'gifts',
+    requirements: { minGiftsPurchased: 10 },
   },
   {
-    type: 'early_bird',
+    id: 'early_bird',
+    badgeType: 'early_bird',
     name: 'Chim sớm',
     description: 'Tạo 10 sự kiện trước 7 ngày',
     icon: 'time',
     color: COLORS.categoryHoliday,
-    requirement: 10,
-    category: 'events',
+    requirements: { minEarlyEvents: 10, daysInAdvance: 7 },
   },
 ];
 
@@ -404,7 +416,7 @@ export async function awardBadge(
       return null; // Already earned
     }
 
-    const badge = BADGE_DEFINITIONS.find((b) => b.type === badgeType);
+    const badge = BADGE_DEFINITIONS.find((b) => b.badgeType === badgeType);
     if (!badge) {
       console.warn('Badge definition not found:', badgeType);
       return null;
@@ -451,72 +463,75 @@ export async function checkAndAwardBadges(
 
     // Check each badge definition
     for (const badge of BADGE_DEFINITIONS) {
-      if (earnedTypes.has(badge.type)) {
+      if (earnedTypes.has(badge.badgeType)) {
         continue; // Already earned
       }
 
       let shouldAward = false;
 
-      switch (badge.category) {
-        case 'events':
-          if (badge.type === 'perfect_partner' && stats.totalEventsCreated >= badge.requirement) {
-            shouldAward = true;
-          }
-          if (badge.type === 'beginner' && stats.totalEventsCreated >= badge.requirement) {
-            shouldAward = true;
-          }
-          // early_bird requires special check
-          if (badge.type === 'early_bird') {
-            const earlyEvents = await db.getFirstAsync<{ count: number }>(
-              `SELECT COUNT(*) as count FROM events
-               WHERE isDeleted = 0
-               AND julianday(eventDate) - julianday(createdAt) >= 7`
-            );
-            if (earlyEvents && earlyEvents.count >= badge.requirement) {
-              shouldAward = true;
-            }
-          }
-          break;
-
-        case 'streak':
-          if (stats.currentStreak >= badge.requirement) {
+      // Check requirements based on badge type
+      switch (badge.badgeType) {
+        case 'beginner':
+        case 'perfect_partner':
+          if (stats.totalEventsCreated >= getRequirementValue(badge)) {
             shouldAward = true;
           }
           break;
 
-        case 'checklist':
-          if (badge.type === 'planner' && stats.totalChecklistsCompleted >= badge.requirement) {
+        case 'early_bird':
+          // Requires special check - events created 7+ days in advance
+          const earlyEvents = await db.getFirstAsync<{ count: number }>(
+            `SELECT COUNT(*) as count FROM events
+             WHERE isDeleted = 0
+             AND julianday(eventDate) - julianday(createdAt) >= 7`
+          );
+          if (earlyEvents && earlyEvents.count >= getRequirementValue(badge)) {
             shouldAward = true;
-          }
-          if (badge.type === 'organizer') {
-            // Count total completed checklist items
-            const completedItems = await db.getFirstAsync<{ count: number }>(
-              'SELECT COUNT(*) as count FROM checklist_items WHERE isCompleted = 1'
-            );
-            if (completedItems && completedItems.count >= badge.requirement) {
-              shouldAward = true;
-            }
           }
           break;
 
-        case 'gifts':
-          if (badge.type === 'generous' && stats.totalGiftsPurchased >= badge.requirement) {
+        case 'consistent':
+        case 'streak_master':
+          if (stats.currentStreak >= getRequirementValue(badge)) {
             shouldAward = true;
           }
-          if (badge.type === 'thoughtful') {
-            // Check for 5-star gifts
-            const fiveStarGifts = await db.getFirstAsync<{ count: number }>(
-              'SELECT COUNT(*) as count FROM gift_history WHERE rating = 5'
-            );
-            if (fiveStarGifts && fiveStarGifts.count >= badge.requirement) {
-              shouldAward = true;
-            }
+          break;
+
+        case 'planner':
+          if (stats.totalChecklistsCompleted >= getRequirementValue(badge)) {
+            shouldAward = true;
+          }
+          break;
+
+        case 'organizer':
+          // Count total completed checklist items
+          const completedItems = await db.getFirstAsync<{ count: number }>(
+            'SELECT COUNT(*) as count FROM checklist_items WHERE isCompleted = 1'
+          );
+          if (completedItems && completedItems.count >= getRequirementValue(badge)) {
+            shouldAward = true;
+          }
+          break;
+
+        case 'generous':
+          if (stats.totalGiftsPurchased >= getRequirementValue(badge)) {
+            shouldAward = true;
+          }
+          break;
+
+        case 'thoughtful':
+          // Check for 5-star gifts
+          const fiveStarGifts = await db.getFirstAsync<{ count: number }>(
+            'SELECT COUNT(*) as count FROM gift_history WHERE rating = 5'
+          );
+          if (fiveStarGifts && fiveStarGifts.count >= getRequirementValue(badge)) {
+            shouldAward = true;
           }
           break;
       }
 
       if (shouldAward) {
-        const achievement = await awardBadge(db, userId, badge.type);
+        const achievement = await awardBadge(db, userId, badge.badgeType);
         if (achievement) {
           newBadges.push(achievement);
         }
@@ -551,5 +566,5 @@ export async function markAchievementNotified(
  * Get badge definition by type
  */
 export function getBadgeDefinition(badgeType: BadgeType): BadgeDefinition | undefined {
-  return BADGE_DEFINITIONS.find((b) => b.type === badgeType);
+  return BADGE_DEFINITIONS.find((b) => b.badgeType === badgeType);
 }

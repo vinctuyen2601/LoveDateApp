@@ -37,8 +37,34 @@ export const STORAGE_KEYS = {
   THEME_MODE: '@theme_mode',
   LANGUAGE: '@language',
   NOTIFICATION_SETTINGS: '@notification_settings',
+
+  // Content Cache Keys (CMS)
+  ARTICLES_CACHE: '@lovedate_articles_cache',
+  ARTICLES_TIMESTAMP: '@lovedate_articles_cache_timestamp',
   AFFILIATE_PRODUCTS_CACHE: '@lovedate_affiliate_products_cache',
   AFFILIATE_PRODUCTS_TIMESTAMP: '@lovedate_affiliate_products_cache_timestamp',
+  SURVEYS_CACHE: '@lovedate_surveys_cache',
+  SURVEYS_TIMESTAMP: '@lovedate_surveys_cache_timestamp',
+  ACTIVITIES_CACHE: '@lovedate_activities_cache',
+  ACTIVITIES_TIMESTAMP: '@lovedate_activities_cache_timestamp',
+  GIFT_SUGGESTIONS_CACHE: '@lovedate_gift_suggestions_cache',
+  GIFT_SUGGESTIONS_TIMESTAMP: '@lovedate_gift_suggestions_cache_timestamp',
+  CHECKLIST_TEMPLATES_CACHE: '@lovedate_checklist_templates_cache',
+  CHECKLIST_TEMPLATES_TIMESTAMP: '@lovedate_checklist_templates_cache_timestamp',
+  BADGE_DEFINITIONS_CACHE: '@lovedate_badge_definitions_cache',
+  BADGE_DEFINITIONS_TIMESTAMP: '@lovedate_badge_definitions_cache_timestamp',
+  SUBSCRIPTION_PLANS_CACHE: '@lovedate_subscription_plans_cache',
+  SUBSCRIPTION_PLANS_TIMESTAMP: '@lovedate_subscription_plans_cache_timestamp',
+
+  // Version Tracking (CMS Sync)
+  LAST_ARTICLE_VERSION: '@last_article_version',
+  LAST_SURVEY_VERSION: '@last_survey_version',
+  LAST_PRODUCT_VERSION: '@last_product_version',
+  LAST_ACTIVITY_VERSION: '@last_activity_version',
+  LAST_GIFT_VERSION: '@last_gift_version',
+  LAST_CHECKLIST_VERSION: '@last_checklist_version',
+  LAST_BADGE_VERSION: '@last_badge_version',
+  LAST_PLAN_VERSION: '@last_plan_version',
 } as const;
 
 // Pagination
@@ -65,4 +91,24 @@ export const FEATURES = {
   ENABLE_OFFLINE_MODE: true,
   ENABLE_LUNAR_CALENDAR: true,
   ENABLE_GIFT_SUGGESTIONS: true,
+  ENABLE_CMS_SYNC: true, // Enable CMS content sync
+} as const;
+
+// CMS API Endpoints
+export const CMS_ENDPOINTS = {
+  ARTICLES: '/api/articles',
+  PRODUCTS: '/api/products',
+  ACTIVITIES: '/api/activities',
+  SURVEYS: '/api/surveys',
+  GIFT_SUGGESTIONS: '/api/gift-suggestions',
+  CHECKLIST_TEMPLATES: '/api/checklist-templates',
+  BADGE_DEFINITIONS: '/api/badge-definitions',
+  SUBSCRIPTION_PLANS: '/api/subscription-plans',
+  CONTENT_SYNC: '/api/sync/content',
+} as const;
+
+// Cache Configuration
+export const CACHE_CONFIG = {
+  DURATION: 1000 * 60 * 60, // 1 hour
+  MAX_AGE: 1000 * 60 * 60 * 24, // 24 hours max cache age
 } as const;

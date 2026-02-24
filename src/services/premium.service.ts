@@ -29,38 +29,56 @@ const TRIAL_DURATION_DAYS = 7;
 export const SUBSCRIPTION_PRODUCTS: SubscriptionProduct[] = [
   {
     id: 'monthly_4.99',
-    type: 'monthly',
+    planType: 'monthly',
     name: 'Gói tháng',
     description: 'Thanh toán hàng tháng',
-    price: '99.000đ',
-    priceValue: 99000,
+    price: 99000,
     currency: 'VND',
-    duration: '/ tháng',
-    features: [
-      'Không giới hạn số sự kiện',
-      'Phân tích nâng cao',
-      'Xuất dữ liệu',
-      'Giao diện tùy chỉnh',
-      'Hỗ trợ ưu tiên',
-      'Không quảng cáo',
-    ],
+    billingCycle: 'monthly',
+    features: {
+      maxEvents: -1, // unlimited
+      hasAnalytics: true,
+      hasExport: true,
+      hasCustomThemes: true,
+      hasPrioritySupport: true,
+      adFree: true,
+      featureList: [
+        'Không giới hạn số sự kiện',
+        'Phân tích nâng cao',
+        'Xuất dữ liệu',
+        'Giao diện tùy chỉnh',
+        'Hỗ trợ ưu tiên',
+        'Không quảng cáo',
+      ],
+    },
+    displayOrder: 1,
   },
   {
     id: 'yearly_49.99',
-    type: 'yearly',
+    planType: 'yearly',
     name: 'Gói năm',
     description: 'Tiết kiệm 17%',
-    price: '990.000đ',
-    priceValue: 990000,
+    price: 990000,
     currency: 'VND',
-    duration: '/ năm',
-    features: [
-      'Tất cả tính năng gói tháng',
-      'Tiết kiệm 17% (~2 tháng miễn phí)',
-      'Ưu tiên truy cập tính năng mới',
-      'Sao lưu đám mây không giới hạn',
-    ],
-    popular: true,
+    billingCycle: 'yearly',
+    features: {
+      maxEvents: -1, // unlimited
+      hasAnalytics: true,
+      hasExport: true,
+      hasCustomThemes: true,
+      hasPrioritySupport: true,
+      adFree: true,
+      hasCloudBackup: true,
+      hasEarlyAccess: true,
+      featureList: [
+        'Tất cả tính năng gói tháng',
+        'Tiết kiệm 17% (~2 tháng miễn phí)',
+        'Ưu tiên truy cập tính năng mới',
+        'Sao lưu đám mây không giới hạn',
+      ],
+    },
+    isPopular: true,
+    displayOrder: 2,
   },
 ];
 
@@ -426,18 +444,18 @@ export async function mockPurchase(
     const purchaseDate = new Date().toISOString();
     let expiryDate: string | undefined;
 
-    if (product.type === 'monthly') {
+    if (product.planType === 'monthly') {
       const expiry = new Date();
       expiry.setMonth(expiry.getMonth() + 1);
       expiryDate = expiry.toISOString();
-    } else if (product.type === 'yearly') {
+    } else if (product.planType === 'yearly') {
       const expiry = new Date();
       expiry.setFullYear(expiry.getFullYear() + 1);
       expiryDate = expiry.toISOString();
     }
 
     return await upsertSubscription(db, userId, {
-      subscriptionType: product.type,
+      subscriptionType: product.planType,
       status: 'active',
       productId,
       purchaseDate,
