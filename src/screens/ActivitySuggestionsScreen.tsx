@@ -13,8 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ActivitySuggestion } from '../types';
-import { COLORS } from '../constants/colors';
-import ActivityCard from '../components/ActivityCard';
+import { COLORS } from '@themes/colors';
+import ActivityCard from '@components/molecules/ActivityCard';
 import * as ActivityService from '../services/activitySuggestion.service';
 
 type TabType = 'restaurant' | 'activity' | 'location';

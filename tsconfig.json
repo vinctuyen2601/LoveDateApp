@@ -20,8 +20,8 @@
       "@services/*": [
         "src/services/*"
       ],
-      "@store/*": [
-        "src/store/*"
+      "@contexts/*": [
+        "src/contexts/*"
       ],
       "@navigation/*": [
         "src/navigation/*"
@@ -29,11 +29,20 @@
       "@types/*": [
         "src/types/*"
       ],
-      "@utils/*": [
-        "src/utils/*"
-      ],
       "@constants/*": [
         "src/constants/*"
+      ],
+      "@themes/*": [
+        "src/themes/*"
+      ],
+      "@styles/*": [
+        "src/styles/*"
+      ],
+      "@lib/*": [
+        "src/lib/*"
+      ],
+      "@schemas/*": [
+        "src/schemas/*"
       ]
     }
   },

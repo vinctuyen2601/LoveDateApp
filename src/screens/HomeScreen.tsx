@@ -11,25 +11,25 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar, DateData } from "react-native-calendars";
-import { useEvents } from "../store/EventsContext";
-import { useSync } from "../store/SyncContext";
-import { useNotification } from "../store/NotificationContext";
+import { useEvents } from '@contexts/EventsContext';
+import { useSync } from '@contexts/SyncContext';
+import { useNotification } from '@contexts/NotificationContext';
 import { Event } from "../types";
-import { COLORS } from "../constants/colors";
-import { CALENDAR_THEME } from "../constants/calendarTheme";
+import { COLORS } from '@themes/colors';
+import { CALENDAR_THEME } from '@themes/calendarTheme';
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
 import { format, addDays } from "date-fns";
 import { vi } from "date-fns/locale";
-import { DateUtils } from "../utils/date.utils";
+import { DateUtils } from '@lib/date.utils';
 import {
   BirthdayIcon,
   AnniversaryIcon,
   HolidayIcon,
   OtherIcon,
-} from "../components/EventIcons";
-import NotificationBanner from "../components/NotificationBanner";
-import PressableCard from "../components/PressableCard";
+} from "@components/atoms/EventIcons";
+import NotificationBanner from "@components/molecules/NotificationBanner";
+import PressableCard from "@components/atoms/PressableCard";
 
 const TAB_BAR_HEIGHT = 60;
 

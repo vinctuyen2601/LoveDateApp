@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { UserStats, DatabaseUserStats, Achievement, DatabaseAchievement, BadgeType, BadgeDefinition } from '../types';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '@themes/colors';
 
 /**
  * Streak Service (Phase 3 - Task 7: Gamification)

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useNotification } from '../store/NotificationContext';
-import { COLORS } from '../constants/colors';
+import { useNotification } from '@contexts/NotificationContext';
+import { COLORS } from '@themes/colors';
 import { Ionicons } from '@expo/vector-icons';
 
 /**

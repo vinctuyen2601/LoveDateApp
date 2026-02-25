@@ -7,8 +7,13 @@ import {
   DatabaseArticle,
   Survey,
   DatabaseSurvey,
+  ActivitySuggestion,
+  GiftSuggestion,
+  ChecklistTemplate,
+  BadgeDefinition,
+  SubscriptionProduct,
+  DatabaseError,
 } from "../types";
-import { DatabaseError } from "../types";
 
 const DB_NAME = "important_dates.db";
 
@@ -303,6 +308,106 @@ export async function initializeTables(
     await db.execAsync(`
       CREATE INDEX IF NOT EXISTS idx_premium_userId ON premium_subscriptions(userId);
       CREATE INDEX IF NOT EXISTS idx_premium_status ON premium_subscriptions(status);
+    `);
+
+    // Gift suggestions table (CMS content — separate from user gift_history)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS gift_suggestions (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        type TEXT NOT NULL,
+        category TEXT,
+        budget TEXT,
+        occasion TEXT,
+        personality TEXT,
+        hobbies TEXT,
+        loveLanguage TEXT,
+        gender TEXT,
+        relationshipStage TEXT,
+        whyGreat TEXT,
+        tips TEXT,
+        relatedProducts TEXT,
+        relatedArticles TEXT,
+        status TEXT DEFAULT 'published',
+        version INTEGER DEFAULT 0,
+        deletedAt TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_gift_sug_type ON gift_suggestions(type);
+      CREATE INDEX IF NOT EXISTS idx_gift_sug_status ON gift_suggestions(status);
+    `);
+
+    // Checklist templates table (CMS content — separate from user checklist_items)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS checklist_templates (
+        id TEXT PRIMARY KEY,
+        eventCategory TEXT NOT NULL,
+        items TEXT NOT NULL,
+        relationshipSpecific TEXT,
+        status TEXT DEFAULT 'published',
+        version INTEGER DEFAULT 0,
+        deletedAt TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_checklist_template_category ON checklist_templates(eventCategory);
+    `);
+
+    // Badge definitions table (CMS content — separate from user achievements)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS badge_definitions (
+        id TEXT PRIMARY KEY,
+        badgeType TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        color TEXT NOT NULL,
+        requirements TEXT NOT NULL,
+        rewards TEXT,
+        status TEXT DEFAULT 'published',
+        version INTEGER DEFAULT 0,
+        deletedAt TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_badge_def_type ON badge_definitions(badgeType);
+    `);
+
+    // Subscription plans table (CMS content — separate from user premium_subscriptions)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS subscription_plans (
+        id TEXT PRIMARY KEY,
+        planType TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL NOT NULL,
+        currency TEXT NOT NULL,
+        billingCycle TEXT,
+        features TEXT NOT NULL,
+        isPopular INTEGER DEFAULT 0,
+        displayOrder INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'published',
+        version INTEGER DEFAULT 0,
+        deletedAt TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_plan_type ON subscription_plans(planType);
+      CREATE INDEX IF NOT EXISTS idx_plan_order ON subscription_plans(displayOrder);
     `);
 
     console.log("✅ Database tables initialized successfully");
@@ -764,20 +869,78 @@ class LegacyDatabaseService {
   }
 
   // Additional methods for compatibility
-  async markEventSynced(_localId: string, _serverId: string) {
-    // Stub - syncing will be reimplemented later
-    console.warn("markEventSynced called on legacy layer - not implemented");
+  async markEventSynced(localId: string, serverId: string) {
+    if (!this.db) return;
+    try {
+      const now = new Date().toISOString();
+      await this.db.runAsync(
+        `UPDATE events SET serverId = ?, needsSync = 0, updatedAt = ?
+         WHERE localId = ? OR id = ?`,
+        [serverId, now, localId, localId]
+      );
+    } catch (error) {
+      console.error("Error marking event as synced:", error);
+    }
   }
 
-  async getAllArticles(_includeUnpublished?: boolean) {
+  async getAllArticles(includeUnpublished = false): Promise<Article[]> {
     if (!this.db) return [];
-    // Articles table exists, but we'll return empty for now
-    return [];
+    try {
+      const query = includeUnpublished
+        ? "SELECT * FROM articles ORDER BY updatedAt DESC"
+        : "SELECT * FROM articles WHERE isPublished = 1 ORDER BY updatedAt DESC";
+      const rows = (await this.db.getAllAsync(query)) as DatabaseArticle[];
+      return rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        category: row.category as Article["category"],
+        icon: row.icon,
+        color: row.color,
+        content: row.content,
+        imageUrl: row.imageUrl ?? undefined,
+        author: row.author ?? undefined,
+        readTime: row.readTime ?? undefined,
+        tags: row.tags ? JSON.parse(row.tags) : [],
+        likes: row.likes,
+        views: row.views,
+        isPublished: Boolean(row.isPublished),
+        isFeatured: Boolean(row.isFeatured),
+        version: row.version,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      }));
+    } catch (error) {
+      console.error("Error getting articles:", error);
+      return [];
+    }
   }
 
-  async getAllSurveys() {
+  async getAllSurveys(): Promise<Survey[]> {
     if (!this.db) return [];
-    return [];
+    try {
+      const rows = (await this.db.getAllAsync(
+        "SELECT * FROM surveys WHERE status = 'published' ORDER BY updatedAt DESC"
+      )) as DatabaseSurvey[];
+      return rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        description: row.description ?? undefined,
+        type: row.type as Survey["type"],
+        status: row.status as Survey["status"],
+        icon: row.icon ?? undefined,
+        color: row.color ?? undefined,
+        questions: JSON.parse(row.questions),
+        results: row.results ? JSON.parse(row.results) : undefined,
+        totalTaken: row.totalTaken,
+        isFeatured: Boolean(row.isFeatured),
+        version: row.version,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      }));
+    } catch (error) {
+      console.error("Error getting surveys:", error);
+      return [];
+    }
   }
 
   async getSyncMetadata(key: string) {
@@ -832,14 +995,209 @@ class LegacyDatabaseService {
     console.warn("upsertArticle called on legacy layer - not implemented");
   }
 
-  async bulkUpsertArticles(_articles: any[]) {
-    // Stub - articles will be reimplemented later
-    console.warn("bulkUpsertArticles called on legacy layer - not implemented");
+  async bulkUpsertArticles(articles: Article[]): Promise<void> {
+    if (!this.db || articles.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const a of articles) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO articles
+              (id, title, category, icon, color, content, imageUrl, author, readTime,
+               tags, likes, views, isPublished, isFeatured, version, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              a.id, a.title, a.category, a.icon, a.color, a.content,
+              a.imageUrl ?? null, a.author ?? null, a.readTime ?? null,
+              a.tags ? JSON.stringify(a.tags) : null,
+              a.likes, a.views,
+              a.isPublished ? 1 : 0,
+              a.isFeatured ? 1 : 0,
+              a.version, a.createdAt, a.updatedAt,
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving articles:", error);
+    }
   }
 
-  async bulkUpsertSurveys(_surveys: any[]) {
-    // Stub - surveys will be reimplemented later
-    console.warn("bulkUpsertSurveys called on legacy layer - not implemented");
+  async bulkUpsertSurveys(surveys: Survey[]): Promise<void> {
+    if (!this.db || surveys.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const s of surveys) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO surveys
+              (id, title, description, type, status, icon, color, questions, results,
+               totalTaken, isFeatured, version, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              s.id, s.title, s.description ?? null,
+              s.type, s.status,
+              s.icon ?? null, s.color ?? null,
+              JSON.stringify(s.questions),
+              s.results ? JSON.stringify(s.results) : null,
+              s.totalTaken,
+              s.isFeatured ? 1 : 0,
+              s.version, s.createdAt, s.updatedAt,
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving surveys:", error);
+    }
+  }
+
+  async bulkUpsertActivities(activities: ActivitySuggestion[]): Promise<void> {
+    if (!this.db || activities.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const a of activities) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO activity_suggestions
+              (id, name, category, location, address, priceRange, rating, bookingUrl,
+               phoneNumber, imageUrl, description, tags, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              a.id, a.name, a.category,
+              a.location ?? null, a.address ?? null, a.priceRange ?? null,
+              a.rating ?? null, a.bookingUrl ?? null, a.phoneNumber ?? null,
+              a.imageUrl ?? null, a.description ?? null,
+              a.tags ? JSON.stringify(a.tags) : null,
+              a.createdAt, a.updatedAt,
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving activities:", error);
+    }
+  }
+
+  async bulkUpsertGiftSuggestions(gifts: GiftSuggestion[]): Promise<void> {
+    if (!this.db || gifts.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const g of gifts) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO gift_suggestions
+              (id, title, description, type, category, budget, occasion, personality,
+               hobbies, loveLanguage, gender, relationshipStage, whyGreat, tips,
+               relatedProducts, relatedArticles, status, version, deletedAt, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              g.id, g.title, g.description, g.type,
+              g.category ? JSON.stringify(g.category) : null,
+              g.budget ? JSON.stringify(g.budget) : null,
+              g.occasion ? JSON.stringify(g.occasion) : null,
+              g.personality ? JSON.stringify(g.personality) : null,
+              g.hobbies ? JSON.stringify(g.hobbies) : null,
+              g.loveLanguage ? JSON.stringify(g.loveLanguage) : null,
+              g.gender ?? null,
+              g.relationshipStage ? JSON.stringify(g.relationshipStage) : null,
+              g.whyGreat ?? null,
+              g.tips ? JSON.stringify(g.tips) : null,
+              g.relatedProducts ? JSON.stringify(g.relatedProducts) : null,
+              g.relatedArticles ? JSON.stringify(g.relatedArticles) : null,
+              g.status ?? 'published',
+              g.version ?? 0,
+              g.deletedAt ?? null,
+              g.createdAt ?? new Date().toISOString(),
+              g.updatedAt ?? new Date().toISOString(),
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving gift suggestions:", error);
+    }
+  }
+
+  async bulkUpsertChecklistTemplates(templates: ChecklistTemplate[]): Promise<void> {
+    if (!this.db || templates.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const t of templates) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO checklist_templates
+              (id, eventCategory, items, relationshipSpecific, status, version, deletedAt, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              t.id, t.eventCategory,
+              JSON.stringify(t.items),
+              t.relationshipSpecific ? JSON.stringify(t.relationshipSpecific) : null,
+              t.status ?? 'published',
+              t.version ?? 0,
+              t.deletedAt ?? null,
+              t.createdAt ?? new Date().toISOString(),
+              t.updatedAt ?? new Date().toISOString(),
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving checklist templates:", error);
+    }
+  }
+
+  async bulkUpsertBadgeDefinitions(badges: BadgeDefinition[]): Promise<void> {
+    if (!this.db || badges.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const b of badges) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO badge_definitions
+              (id, badgeType, name, description, icon, color, requirements, rewards,
+               status, version, deletedAt, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              b.id, b.badgeType, b.name, b.description, b.icon, b.color,
+              JSON.stringify(b.requirements),
+              b.rewards ? JSON.stringify(b.rewards) : null,
+              b.status ?? 'published',
+              b.version ?? 0,
+              b.deletedAt ?? null,
+              b.createdAt ?? new Date().toISOString(),
+              b.updatedAt ?? new Date().toISOString(),
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving badge definitions:", error);
+    }
+  }
+
+  async bulkUpsertSubscriptionPlans(plans: SubscriptionProduct[]): Promise<void> {
+    if (!this.db || plans.length === 0) return;
+    try {
+      await this.db.withTransactionAsync(async () => {
+        for (const p of plans) {
+          await this.db!.runAsync(
+            `INSERT OR REPLACE INTO subscription_plans
+              (id, planType, name, description, price, currency, billingCycle, features,
+               isPopular, displayOrder, status, version, deletedAt, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              p.id, p.planType, p.name, p.description ?? null,
+              p.price, p.currency, p.billingCycle ?? null,
+              JSON.stringify(p.features),
+              p.isPopular ? 1 : 0,
+              p.displayOrder ?? 0,
+              p.status ?? 'published',
+              p.version ?? 0,
+              p.deletedAt ?? null,
+              p.createdAt ?? new Date().toISOString(),
+              p.updatedAt ?? new Date().toISOString(),
+            ]
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error bulk saving subscription plans:", error);
+    }
   }
 }
 

@@ -13,17 +13,17 @@ import {
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
-import { useEvents } from "../store/EventsContext";
-import { useSync } from "../store/SyncContext";
+import { useEvents } from '@contexts/EventsContext';
+import { useSync } from '@contexts/SyncContext';
 import { Event } from "../types";
-import { COLORS } from "../constants/colors";
-import { CALENDAR_THEME } from "../constants/calendarTheme";
+import { COLORS } from '@themes/colors';
+import { CALENDAR_THEME } from '@themes/calendarTheme';
 import { STRINGS } from "../constants/strings";
-import { DateUtils } from "../utils/date.utils";
-import EventCard from "../components/EventCard";
+import { DateUtils } from '@lib/date.utils';
+import EventCard from "@components/molecules/EventCard";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
-import { EmptyState } from "../components/EmptyState";
+import { EmptyState } from "@components/atoms/EmptyState";
 
 const { width } = Dimensions.get("window");
 

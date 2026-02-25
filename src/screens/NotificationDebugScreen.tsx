@@ -10,11 +10,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { useSQLiteContext } from 'expo-sqlite';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '@themes/colors';
 import { notificationEnhancedService } from '../services/notificationEnhanced.service';
 import * as DB from '../services/database.service';
 import { backgroundTaskService } from '../services/backgroundTask.service';
-import { NotificationUtils } from '../utils/notification.utils';
+import { NotificationUtils } from '@lib/notification.utils';
 
 const NotificationDebugScreen: React.FC = () => {
   const db = useSQLiteContext();

@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '@themes/colors';
 import { SubscriptionProduct, PremiumSubscription } from '../types';
 import * as PremiumService from '../services/premium.service';
 

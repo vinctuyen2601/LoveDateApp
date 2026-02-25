@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../constants/colors';
+import { COLORS } from '@themes/colors';
 import { AffiliateCategory } from '../../types';
 import { SERVICE_CATEGORIES } from '../../data/affiliateProducts';
 

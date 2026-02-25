@@ -11,72 +11,21 @@ import {
   Switch,
   Linking,
   Platform,
-  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSQLiteContext } from 'expo-sqlite';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../store/AuthContext';
-import { useSync } from '../store/SyncContext';
+import { useAuth } from '@contexts/AuthContext';
+import { useSync } from '@contexts/SyncContext';
 import { useToast } from '../contexts/ToastContext';
-import { NotificationUtils } from '../utils/notification.utils';
-import * as DB from '../services/database.service';
-import { COLORS } from '../constants/colors';
-import { STRINGS } from '../constants/strings';
+import { NotificationUtils } from '@lib/notification.utils';
+import { COLORS } from '@themes/colors';
 import { APP_VERSION } from '../constants/config';
-import { Achievement, UserStats } from '../types';
-import * as StreakService from '../services/streak.service';
-import BadgeCard from '../components/BadgeCard';
-
 const SettingsScreen: React.FC = () => {
-  console.log('[SettingsScreen] Component rendering...');
-
-  const db = useSQLiteContext(); // Get database instance from context
   const navigation = useNavigation<any>();
-
-  let authContext, syncContext;
-  try {
-    authContext = useAuth();
-    console.log('[SettingsScreen] useAuth successful:', {
-      hasUser: !!authContext.user,
-      isAnonymous: authContext.isAnonymous
-    });
-  } catch (error) {
-    console.error('[SettingsScreen] useAuth failed:', error);
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: 'red', fontSize: 16, textAlign: 'center' }}>
-          Lỗi: Không thể tải thông tin người dùng
-        </Text>
-        <Text style={{ marginTop: 10, color: '#666', textAlign: 'center' }}>
-          {String(error)}
-        </Text>
-      </View>
-    );
-  }
-
-  try {
-    syncContext = useSync();
-    console.log('[SettingsScreen] useSync successful');
-  } catch (error) {
-    console.error('[SettingsScreen] useSync failed:', error);
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ color: 'red', fontSize: 16, textAlign: 'center' }}>
-          Lỗi: Không thể tải trạng thái đồng bộ
-        </Text>
-        <Text style={{ marginTop: 10, color: '#666', textAlign: 'center' }}>
-          {String(error)}
-        </Text>
-      </View>
-    );
-  }
-
-  const { user, isAnonymous, linkedProviders, logout, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = authContext;
-  const { sync, syncStatus } = syncContext;
-  const { showSuccess, showError, showInfo } = useToast();
+  const { user, isAnonymous, linkedProviders, logout, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = useAuth();
+  const { sync, syncStatus } = useSync();
+  const { showSuccess, showError } = useToast();
 
   const [showLinkEmailModal, setShowLinkEmailModal] = useState(false);
   const [linkEmail, setLinkEmail] = useState('');
@@ -85,29 +34,9 @@ const SettingsScreen: React.FC = () => {
   const [isLinking, setIsLinking] = useState(false);
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [isLoadingBadges, setIsLoadingBadges] = useState(true);
-
-  // Load gamification data
-  const loadGamificationData = async () => {
-    try {
-      setIsLoadingBadges(true);
-      const stats = await StreakService.getUserStats(db, 'default-user');
-      const badges = await StreakService.getUserAchievements(db, 'default-user');
-      setUserStats(stats);
-      setAchievements(badges);
-    } catch (error) {
-      console.error('Error loading gamification data:', error);
-    } finally {
-      setIsLoadingBadges(false);
-    }
-  };
-
   // Check notification permissions on mount
   useEffect(() => {
     checkNotificationPermissions();
-    loadGamificationData();
   }, []);
 
   const checkNotificationPermissions = async () => {
@@ -166,82 +95,6 @@ const SettingsScreen: React.FC = () => {
       showSuccess('✅ Đã đồng bộ dữ liệu thành công');
     } catch (error: any) {
       showError(error.message || 'Không thể đồng bộ');
-    }
-  };
-
-  const handleTestNotification = async () => {
-    try {
-      // Check permission first
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') {
-        showError('Vui lòng bật quyền thông báo trước');
-        return;
-      }
-
-      // Schedule notification to show immediately (trigger: null)
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🧪 Thông báo thử nghiệm',
-          body: 'Thông báo test hiển thị ngay lập tức!',
-          data: { test: true },
-          sound: 'default',
-        },
-        trigger: null, // null = show immediately
-      });
-
-      showSuccess('🔔 Đã gửi thông báo test!');
-    } catch (error: any) {
-      console.error('Test notification error:', error);
-      showError(error.message || 'Không thể gửi thông báo');
-    }
-  };
-
-  const handleTestNotificationWhenClosed = async () => {
-    try {
-      // Check permission first
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') {
-        showError('Vui lòng bật quyền thông báo trước');
-        return;
-      }
-
-      // Schedule a test notification 1 minute from now
-      const scheduledTime = new Date(Date.now() + 60000); // 1 minute
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🚀 Test App đã tắt',
-          body: 'Nếu bạn nhận được thông báo này khi app đã tắt - notifications hoạt động hoàn hảo! ✅',
-          data: { testWhenClosed: true },
-          sound: 'default',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: scheduledTime,
-        },
-      });
-
-      Alert.alert(
-        'Test thông báo khi app tắt',
-        'Đã lên lịch thông báo sau 1 phút.\n\n📱 Hướng dẫn:\n1. Tắt hoàn toàn app (swipe away)\n2. Chờ 1 phút\n3. Kiểm tra xem có nhận được thông báo không\n\nNếu nhận được → Notifications hoạt động OK! ✅',
-        [{ text: 'OK, đã hiểu' }]
-      );
-    } catch (error: any) {
-      console.error('Test notification when closed error:', error);
-      showError(error.message || 'Không thể tạo test notification');
-    }
-  };
-
-  const handleCheckExactAlarm = async () => {
-    try {
-      const canSchedule = await NotificationUtils.canScheduleExactAlarms();
-      if (canSchedule) {
-        showSuccess('✅ Ứng dụng đã có quyền báo thức chính xác');
-      } else {
-        await NotificationUtils.requestExactAlarmPermission();
-      }
-    } catch (error: any) {
-      showError(error.message || 'Không thể kiểm tra quyền');
     }
   };
 
@@ -317,84 +170,11 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleClearPermissionFlag = async () => {
-    Alert.alert(
-      'Xóa flag quyền thông báo',
-      'Thao tác này sẽ xóa trạng thái "đã hỏi quyền" để popup sẽ hiện lại khi restart app. Bạn có muốn tiếp tục?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('@notification_permission_asked');
-              showSuccess('✅ Đã xóa flag! Vui lòng restart app để thấy popup quyền.');
-            } catch (error: any) {
-              showError('Không thể xóa flag: ' + error.message);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleResetDatabase = async () => {
-    Alert.alert(
-      '⚠️ Reset Database',
-      'CẢNH BÁO: Thao tác này sẽ XÓA TẤT CẢ DỮ LIỆU (events, articles, surveys) và tạo lại database mới. Vui lòng RESTART APP sau khi reset. Bạn có chắc chắn muốn tiếp tục?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'XÓA TẤT CẢ',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              showInfo('Đang reset database...');
-              await DB.resetDatabase(db);
-              showSuccess('✅ Database đã được reset! Vui lòng RESTART APP để hoàn tất.');
-            } catch (error: any) {
-              console.error('Reset database error:', error);
-              showError('Không thể reset database: ' + error.message);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleForceRecreateEventsTable = async () => {
-    Alert.alert(
-      '🔧 Recreate Events Table',
-      'Thao tác này sẽ TẠO LẠI bảng events để sửa lỗi corruption. Dữ liệu hiện tại sẽ được GIỮ LẠI. Vui lòng RESTART APP sau khi hoàn tất. Tiếp tục?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Tạo lại',
-          style: 'default',
-          onPress: async () => {
-            try {
-              showInfo('Đang tạo lại events table...');
-              await DB.forceRecreateEventsTable(db);
-              showSuccess('✅ Events table đã được tạo lại! Vui lòng RESTART APP để hoàn tất.');
-            } catch (error: any) {
-              console.error('Force recreate table error:', error);
-              showError('Không thể tạo lại table: ' + error.message);
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const isLinked = (provider: string) => {
     return linkedProviders?.includes(provider) || false;
   };
 
-  console.log('[SettingsScreen] About to render UI...');
-
-  try {
-    return (
+  return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Profile Section */}
       <View style={styles.section}>
@@ -437,56 +217,6 @@ const SettingsScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Achievements Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thành tựu</Text>
-
-        {isLoadingBadges ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Đang tải thành tựu...</Text>
-          </View>
-        ) : (
-          <>
-            {/* Stats Summary */}
-            {userStats && (
-              <View style={styles.statsCard}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{userStats.currentStreak}</Text>
-                  <Text style={styles.statLabel}>Streak hiện tại</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{userStats.longestStreak}</Text>
-                  <Text style={styles.statLabel}>Streak tốt nhất</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{achievements.length}</Text>
-                  <Text style={styles.statLabel}>Huy hiệu</Text>
-                </View>
-              </View>
-            )}
-
-            {/* Badges Grid */}
-            <View style={styles.badgesGrid}>
-              {StreakService.BADGE_DEFINITIONS.map((badgeDef) => {
-                const earned = achievements.find((a) => a.badgeType === badgeDef.badgeType);
-                return (
-                  <View key={badgeDef.badgeType} style={styles.badgeItem}>
-                    <BadgeCard
-                      badgeDefinition={badgeDef}
-                      achievement={earned}
-                      earned={!!earned}
-                      size="medium"
-                    />
-                  </View>
-                );
-              })}
-            </View>
-          </>
-        )}
-      </View>
-
       {/* Link Account Section */}
       {isAnonymous && (
         <View style={styles.section}>
@@ -521,13 +251,6 @@ const SettingsScreen: React.FC = () => {
             color="#1877F2"
           />
 
-          <SettingItem
-            icon="call"
-            title="Số điện thoại"
-            subtitle="Sắp có"
-            onPress={() => Alert.alert('Sắp có', 'Tính năng này đang được phát triển')}
-            disabled
-          />
         </View>
       )}
 
@@ -561,10 +284,6 @@ const SettingsScreen: React.FC = () => {
           badgeText={syncStatus.pendingCount.toString()}
         />
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Đang chờ đồng bộ:</Text>
-          <Text style={styles.infoValue}>{syncStatus.pendingCount} sự kiện</Text>
-        </View>
       </View>
 
       {/* Notifications Section */}
@@ -603,27 +322,6 @@ const SettingsScreen: React.FC = () => {
           />
         </View>
 
-        <SettingItem
-          icon="alarm"
-          title="Kiểm tra quyền Báo thức chính xác"
-          subtitle="Cần thiết để nhận thông báo đúng giờ (Android 12+)"
-          onPress={handleCheckExactAlarm}
-        />
-
-        <SettingItem
-          icon="notifications"
-          title="Gửi thông báo thử nghiệm"
-          subtitle="Kiểm tra xem thông báo có hoạt động không (5 giây)"
-          onPress={handleTestNotification}
-        />
-
-        <SettingItem
-          icon="rocket"
-          title="Test thông báo khi app tắt"
-          subtitle="Test sau 1 phút - hướng dẫn tắt app để kiểm tra"
-          onPress={handleTestNotificationWhenClosed}
-          color="#FF6B6B"
-        />
       </View>
 
       {/* App Info */}
@@ -637,41 +335,6 @@ const SettingsScreen: React.FC = () => {
           onPress={() => Alert.alert('Ngày Quan Trọng', `Version: ${APP_VERSION || '1.0.0'}\n\nỨng dụng nhắc nhở những ngày quan trọng trong cuộc sống.`)}
         />
 
-        <SettingItem
-          icon="document-text"
-          title="Điều khoản sử dụng"
-          onPress={() => Alert.alert('Điều khoản', 'Đang cập nhật...')}
-        />
-
-        <SettingItem
-          icon="shield-checkmark"
-          title="Chính sách bảo mật"
-          onPress={() => Alert.alert('Bảo mật', 'Đang cập nhật...')}
-        />
-
-        <SettingItem
-          icon="bug"
-          title="[Debug] Reset popup quyền thông báo"
-          subtitle="Xóa flag để popup hiện lại khi restart"
-          onPress={handleClearPermissionFlag}
-          color="#FF9800"
-        />
-
-        <SettingItem
-          icon="construct"
-          title="[Debug] Fix Events Table"
-          subtitle="🔧 Tạo lại bảng events (GIỮ dữ liệu) - Sửa lỗi NullPointer"
-          onPress={handleForceRecreateEventsTable}
-          color="#FF9800"
-        />
-
-        <SettingItem
-          icon="trash"
-          title="[Debug] Reset Database"
-          subtitle="⚠️ XÓA TẤT CẢ dữ liệu và tạo lại database"
-          onPress={handleResetDatabase}
-          color="#FF0000"
-        />
       </View>
 
       {/* Logout */}
@@ -739,24 +402,7 @@ const SettingsScreen: React.FC = () => {
         </View>
       </Modal>
     </ScrollView>
-    );
-  } catch (error) {
-    console.error('[SettingsScreen] Render error:', error);
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: COLORS.background }}>
-        <Ionicons name="alert-circle" size={64} color={COLORS.error} />
-        <Text style={{ color: COLORS.error, fontSize: 18, fontWeight: 'bold', marginTop: 20 }}>
-          Lỗi hiển thị
-        </Text>
-        <Text style={{ marginTop: 10, color: COLORS.textSecondary, textAlign: 'center' }}>
-          Không thể hiển thị màn hình cài đặt
-        </Text>
-        <Text style={{ marginTop: 10, color: '#666', fontSize: 12, textAlign: 'center' }}>
-          {String(error)}
-        </Text>
-      </View>
-    );
-  }
+  );
 };
 
 // Setting Item Component
@@ -974,24 +620,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1063,49 +691,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',
-  },
-  loadingContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: 12,
-  },
-  badgesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  badgeItem: {
-    width: '48%',
   },
 });
 

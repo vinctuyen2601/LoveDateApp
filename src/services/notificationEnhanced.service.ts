@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as SQLite from 'expo-sqlite';
 import { Event } from '../types';
-import { NotificationUtils } from '../utils/notification.utils';
+import { NotificationUtils } from '@lib/notification.utils';
 import * as NotificationLogService from './notificationLog.service';
 
 /**
@@ -155,7 +155,8 @@ class NotificationEnhancedService {
           scheduledAt: result.scheduledAt,
         };
       } else {
-        throw new Error('Failed to get notification ID');
+        // null means date is in the past for one-time events — not retryable
+        return { success: false, error: 'Notification date is in the past' };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

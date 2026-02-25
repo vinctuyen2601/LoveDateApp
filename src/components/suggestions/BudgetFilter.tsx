@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { COLORS } from '../../constants/colors';
+import { COLORS } from '@themes/colors';
 import { BUDGET_OPTIONS } from '../../data/affiliateProducts';
 import { getProductsByBudget } from '../../services/affiliateProductService';
 import { AffiliateProduct } from '../../types';

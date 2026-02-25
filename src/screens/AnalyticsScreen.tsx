@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
-import { COLORS } from '../constants/colors';
-import StatCard from '../components/StatCard';
+import { COLORS } from '@themes/colors';
+import StatCard from '@components/atoms/StatCard';
 import * as AnalyticsService from '../services/analytics.service';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

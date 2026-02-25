@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AffiliateProduct } from '../types';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '@themes/colors';
 import {
   formatPrice,
   SERVICE_CATEGORIES,

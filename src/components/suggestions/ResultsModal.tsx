@@ -8,10 +8,10 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "../../constants/colors";
+import { COLORS } from '@themes/colors';
 import { Suggestion } from "../../data/suggestions";
 import { AffiliateProduct } from "../../types";
-import { EmptyState } from "../EmptyState";
+import { EmptyState } from '@components/atoms/EmptyState';
 import ProductCard from "./ProductCard";
 
 interface ResultsModalProps {

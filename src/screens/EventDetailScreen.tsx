@@ -12,14 +12,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEvents } from '../store/EventsContext';
+import { useEvents } from '@contexts/EventsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Event, ChecklistItem } from '../types';
-import { DateUtils } from '../utils/date.utils';
-import { COLORS, getCategoryColor } from '../constants/colors';
+import { DateUtils } from '@lib/date.utils';
+import { COLORS, getCategoryColor } from '@themes/colors';
 import { PREDEFINED_TAGS } from '../types';
-import CountdownTimer from '../components/CountdownTimer';
-import ChecklistSection from '../components/ChecklistSection';
+import CountdownTimer from '@components/molecules/CountdownTimer';
+import ChecklistSection from '@components/organisms/ChecklistSection';
 import * as ChecklistService from '../services/checklist.service';
 
 const EventDetailScreen: React.FC = () => {

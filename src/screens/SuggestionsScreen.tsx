@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { COLORS } from "../constants/colors";
+import { COLORS } from '@themes/colors';
 import { Suggestion } from "../data/suggestions";
 import { Article } from "../data/articles";
 import {
@@ -23,11 +23,10 @@ import {
 import { EXPERIENCE_PACKAGES } from "../data/affiliateProducts";
 import {
   getProducts,
-  refreshProducts as refreshProductsFromAPI,
 } from "../services/affiliateProductService";
 import { AffiliateProduct, AffiliateCategory } from "../types";
 import { useLazySection } from "../hooks/useLazySection";
-import { LoadingState } from "../components/LoadingState";
+import { LoadingState } from "@components/atoms/LoadingState";
 import HeroBanner from "../components/suggestions/HeroBanner";
 import ServiceCategories from "../components/suggestions/ServiceCategories";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
@@ -36,7 +35,7 @@ import OccasionCards from "../components/suggestions/OccasionCard";
 import BudgetFilter from "../components/suggestions/BudgetFilter";
 import SurveyModal from "../components/suggestions/SurveyModal";
 import ResultsModal from "../components/suggestions/ResultsModal";
-import PressableCard from "../components/PressableCard";
+import PressableCard from "@components/atoms/PressableCard";
 
 const SuggestionsScreen: React.FC = () => {
   const route = useRoute<any>();
@@ -48,6 +47,7 @@ const SuggestionsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedArticleCategory, setSelectedArticleCategory] = useState<string>("all");
+  const [productsError, setProductsError] = useState<string | null>(null);
 
   // Modal state
   const [showSurveyModal, setShowSurveyModal] = useState(false);
@@ -97,10 +97,12 @@ const SuggestionsScreen: React.FC = () => {
 
   const loadProducts = async () => {
     try {
+      setProductsError(null);
       const fetchedProducts = await getProducts();
       setProducts(fetchedProducts);
     } catch (error) {
       console.error("Error loading products:", error);
+      setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
     }
   };
 
@@ -108,18 +110,23 @@ const SuggestionsScreen: React.FC = () => {
   const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
-      const [freshArticles, freshProducts] = await Promise.all([
-        refreshArticles().catch(() => articles),
-        refreshProductsFromAPI().catch(() => products),
+      setProductsError(null);
+      const [articlesResult, productsResult] = await Promise.allSettled([
+        refreshArticles(),
+        getProducts(),
       ]);
-      setArticles(freshArticles);
-      setProducts(freshProducts);
+      if (articlesResult.status === "fulfilled") setArticles(articlesResult.value);
+      if (productsResult.status === "fulfilled") {
+        setProducts(productsResult.value);
+      } else {
+        setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
+      }
     } catch (error) {
       console.error("Error refreshing:", error);
     } finally {
       setRefreshing(false);
     }
-  }, [articles, products]);
+  }, []);
 
   const handleArticlePress = useCallback(
     (article: Article) => {
@@ -242,15 +249,27 @@ const SuggestionsScreen: React.FC = () => {
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-            >
-              {trendingProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </ScrollView>
+            {productsError ? (
+              <View style={styles.offlineBanner}>
+                <Ionicons name="wifi-outline" size={20} color={COLORS.textSecondary} />
+                <Text style={styles.offlineBannerText}>{productsError}</Text>
+              </View>
+            ) : trendingProducts.length === 0 ? (
+              <View style={styles.offlineBanner}>
+                <Ionicons name="gift-outline" size={20} color={COLORS.textSecondary} />
+                <Text style={styles.offlineBannerText}>Chưa có sản phẩm nào</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScroll}
+              >
+                {trendingProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </ScrollView>
+            )}
           </View>
         ) : (
           <View style={styles.section}>
@@ -460,6 +479,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: COLORS.white,
+  },
+
+  // Offline / empty state banner
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  offlineBannerText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    flex: 1,
   },
 });
 

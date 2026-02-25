@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "../../constants/colors";
+import { COLORS } from '@themes/colors';
 import { Article, filterArticlesByCategory } from "../../data/articles";
-import { LoadingState } from "../LoadingState";
-import PressableCard from "../PressableCard";
+import { LoadingState } from '@components/atoms/LoadingState';
+import PressableCard from '@components/atoms/PressableCard';
 
 const ARTICLE_CATEGORIES = [
   { id: "all", name: "Tất cả", icon: "apps" as const, color: COLORS.primary },

@@ -65,6 +65,15 @@ class SyncService {
         return;
       }
 
+      // Run content sync (articles, surveys, activities, etc.) independently
+      // This must run regardless of whether there are events to sync
+      try {
+        await contentSyncService.syncContent();
+      } catch (contentError) {
+        console.error('Content sync failed:', contentError);
+        // Don't throw — content sync failure shouldn't block event sync
+      }
+
       // Get events that need sync
       const eventsNeedingSync = await databaseService.getEventsNeedingSync();
 
@@ -103,14 +112,6 @@ class SyncService {
       );
 
       console.log('Sync completed successfully');
-
-      // Also sync content (articles & surveys) in background
-      try {
-        await contentSyncService.syncContent();
-      } catch (contentError) {
-        console.error('Content sync failed during auto-sync:', contentError);
-        // Don't throw - content sync failure shouldn't fail the whole sync
-      }
 
       this.notifyListeners({
         isSyncing: false,

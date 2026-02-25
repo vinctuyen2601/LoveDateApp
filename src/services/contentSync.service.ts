@@ -4,7 +4,6 @@ import { apiService } from './api.service';
 import {
   Article,
   Survey,
-  AffiliateProduct,
   ActivitySuggestion,
   GiftSuggestion,
   ChecklistTemplate,
@@ -16,7 +15,7 @@ import {
 const CONTENT_SYNC_KEYS = {
   LAST_ARTICLE_VERSION: 'last_article_version',
   LAST_SURVEY_VERSION: 'last_survey_version',
-  LAST_PRODUCT_VERSION: 'last_product_version',
+  LAST_PRODUCT_VERSION: 'last_product_version', // kept: still sent to BE as query param
   LAST_ACTIVITY_VERSION: 'last_activity_version',
   LAST_GIFT_VERSION: 'last_gift_version',
   LAST_CHECKLIST_VERSION: 'last_checklist_version',
@@ -24,7 +23,6 @@ const CONTENT_SYNC_KEYS = {
   LAST_PLAN_VERSION: 'last_plan_version',
   LAST_ARTICLE_SYNC: 'last_article_sync_at',
   LAST_SURVEY_SYNC: 'last_survey_sync_at',
-  LAST_PRODUCT_SYNC: 'last_product_sync_at',
   LAST_ACTIVITY_SYNC: 'last_activity_sync_at',
   LAST_GIFT_SYNC: 'last_gift_sync_at',
   LAST_CHECKLIST_SYNC: 'last_checklist_sync_at',
@@ -96,7 +94,6 @@ class ContentSyncService {
       const {
         articles,
         surveys,
-        products,
         activities,
         giftSuggestions,
         checklistTemplates,
@@ -104,7 +101,6 @@ class ContentSyncService {
         subscriptionPlans,
         lastArticleVersion: newArticleVersion,
         lastSurveyVersion: newSurveyVersion,
-        lastProductVersion: newProductVersion,
         lastActivityVersion: newActivityVersion,
         lastGiftVersion: newGiftVersion,
         lastChecklistVersion: newChecklistVersion,
@@ -113,7 +109,7 @@ class ContentSyncService {
       } = response;
 
       console.log(
-        `Received: ${articles.length} articles, ${surveys.length} surveys, ${products.length} products, ` +
+        `Received: ${articles.length} articles, ${surveys.length} surveys, ` +
           `${activities.length} activities, ${giftSuggestions.length} gifts, ${checklistTemplates.length} checklists, ` +
           `${badgeDefinitions.length} badges, ${subscriptionPlans.length} plans`
       );
@@ -133,12 +129,7 @@ class ContentSyncService {
         console.log(`✓ Synced ${surveys.length} surveys`);
       }
 
-      if (products.length > 0) {
-        await databaseService.bulkUpsertProducts(products);
-        await this.setLastProductVersion(newProductVersion);
-        await this.setLastProductSync(new Date().toISOString());
-        console.log(`✓ Synced ${products.length} products`);
-      }
+      // products are fetched realtime — skipping SQLite save
 
       if (activities.length > 0) {
         await databaseService.bulkUpsertActivities(activities);
@@ -193,7 +184,6 @@ class ContentSyncService {
       await Promise.all([
         this.setLastArticleVersion(0),
         this.setLastSurveyVersion(0),
-        this.setLastProductVersion(0),
         this.setLastActivityVersion(0),
         this.setLastGiftVersion(0),
         this.setLastChecklistVersion(0),
@@ -218,7 +208,6 @@ class ContentSyncService {
     const [
       lastArticleVersion,
       lastSurveyVersion,
-      lastProductVersion,
       lastActivityVersion,
       lastGiftVersion,
       lastChecklistVersion,
@@ -226,7 +215,6 @@ class ContentSyncService {
       lastPlanVersion,
       lastArticleSync,
       lastSurveySync,
-      lastProductSync,
       lastActivitySync,
       lastGiftSync,
       lastChecklistSync,
@@ -235,7 +223,6 @@ class ContentSyncService {
     ] = await Promise.all([
       this.getLastArticleVersion(),
       this.getLastSurveyVersion(),
-      this.getLastProductVersion(),
       this.getLastActivityVersion(),
       this.getLastGiftVersion(),
       this.getLastChecklistVersion(),
@@ -243,7 +230,6 @@ class ContentSyncService {
       this.getLastPlanVersion(),
       this.getLastArticleSync(),
       this.getLastSurveySync(),
-      this.getLastProductSync(),
       this.getLastActivitySync(),
       this.getLastGiftSync(),
       this.getLastChecklistSync(),
@@ -255,7 +241,6 @@ class ContentSyncService {
       versions: {
         articles: lastArticleVersion,
         surveys: lastSurveyVersion,
-        products: lastProductVersion,
         activities: lastActivityVersion,
         gifts: lastGiftVersion,
         checklists: lastChecklistVersion,
@@ -265,7 +250,6 @@ class ContentSyncService {
       lastSync: {
         articles: lastArticleSync,
         surveys: lastSurveySync,
-        products: lastProductSync,
         activities: lastActivitySync,
         gifts: lastGiftSync,
         checklists: lastChecklistSync,
@@ -316,18 +300,6 @@ class ContentSyncService {
   private async getLastProductVersion(): Promise<number> {
     const value = await databaseService.getSyncMetadata(CONTENT_SYNC_KEYS.LAST_PRODUCT_VERSION);
     return value ? parseInt(value, 10) : 0;
-  }
-
-  private async setLastProductVersion(version: number): Promise<void> {
-    await databaseService.setSyncMetadata(CONTENT_SYNC_KEYS.LAST_PRODUCT_VERSION, version.toString());
-  }
-
-  private async getLastProductSync(): Promise<string | null> {
-    return databaseService.getSyncMetadata(CONTENT_SYNC_KEYS.LAST_PRODUCT_SYNC);
-  }
-
-  private async setLastProductSync(timestamp: string): Promise<void> {
-    await databaseService.setSyncMetadata(CONTENT_SYNC_KEYS.LAST_PRODUCT_SYNC, timestamp);
   }
 
   // Activities

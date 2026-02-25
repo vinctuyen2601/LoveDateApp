@@ -13,14 +13,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import RenderHTML from 'react-native-render-html';
-import { COLORS } from '../constants/colors';
-import { htmlStyles } from '../constants/htmlStyles';
+import { COLORS } from '@themes/colors';
+import { htmlStyles } from '@styles/htmlStyles';
 import { Article, getRelatedArticles, ARTICLE_CATEGORIES } from '../data/articles';
 import { getRelatedProductsForArticleAsync } from '../services/affiliateProductService';
 import { getArticles } from '../services/articleService';
 import { AffiliateProduct } from '../types';
 import ProductCard from '../components/suggestions/ProductCard';
-import PressableCard from '../components/PressableCard';
+import PressableCard from '@components/atoms/PressableCard';
 
 const { width: screenWidth } = Dimensions.get('window');
 

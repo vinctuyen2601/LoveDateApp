@@ -1,8 +1,8 @@
 import React, { createRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useAuth } from '../store/AuthContext';
-import { COLORS } from '../constants/colors';
+import { useAuth } from '@contexts/AuthContext';
+import { COLORS } from '@themes/colors';
 import AuthScreen from '../screens/AuthScreen';
 import TabNavigator from './TabNavigator';
 import AddEventScreen from '../screens/AddEventScreen';

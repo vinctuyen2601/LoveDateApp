@@ -4,19 +4,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
-import { AuthProvider } from './src/store/AuthContext';
-import { AchievementProvider } from './src/store/AchievementContext';
-import { EventsProvider } from './src/store/EventsContext';
-import { SyncProvider } from './src/store/SyncContext';
-import { NotificationProvider } from './src/store/NotificationContext';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { AchievementProvider } from './src/contexts/AchievementContext';
+import { EventsProvider } from './src/contexts/EventsContext';
+import { SyncProvider } from './src/contexts/SyncContext';
+import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator, { navigate } from './src/navigation/AppNavigator';
-import { PermissionModal } from './src/components/PermissionModal';
+import { PermissionModal } from './src/components/organisms/PermissionModal';
 import { notificationEnhancedService } from './src/services/notificationEnhanced.service';
+import { scheduleUpcomingNotifications } from './src/services/notificationScheduler.service';
 import * as DB from './src/services/database.service';
 import { dataSeedService } from './src/services/dataSeed.service';
 import { backgroundTaskService } from './src/services/backgroundTask.service';
-import OnboardingOverlay, { checkOnboardingComplete } from './src/components/OnboardingOverlay';
+import OnboardingOverlay, { checkOnboardingComplete } from './src/components/organisms/OnboardingOverlay';
 
 // Configure how notifications are presented when app is in foreground
 Notifications.setNotificationHandler({
@@ -77,11 +78,10 @@ function AppContent() {
       appState.current.match(/inactive|background/) &&
       nextAppState === 'active'
     ) {
-      console.log('App has come to foreground, reschedule notifications');
       // App has come to foreground - reschedule all notifications
       try {
         const events = await DB.getAllEvents(db);
-        await notificationEnhancedService.rescheduleAllNotifications(events);
+        await scheduleUpcomingNotifications(events);
       } catch (error) {
         console.error('Error rescheduling on app resume:', error);
       }
@@ -120,9 +120,9 @@ function AppContent() {
       await backgroundTaskService.registerBackgroundTask();
       console.log('✅ Background task registered');
 
-      // 5. Initial notification reschedule
+      // 5. Initial notification schedule for upcoming window
       const events = await DB.getAllEvents(db);
-      await notificationEnhancedService.rescheduleAllNotifications(events);
+      await scheduleUpcomingNotifications(events);
       console.log('✅ Initial notifications scheduled');
     } catch (error) {
       console.error('❌ Failed to initialize app:', error);
@@ -135,7 +135,7 @@ function AppContent() {
       // Reschedule notifications after permission granted
       try {
         const events = await DB.getAllEvents(db);
-        await notificationEnhancedService.rescheduleAllNotifications(events);
+        await scheduleUpcomingNotifications(events);
         console.log('Notifications rescheduled after permission granted');
       } catch (error) {
         console.error('Error rescheduling after permission:', error);

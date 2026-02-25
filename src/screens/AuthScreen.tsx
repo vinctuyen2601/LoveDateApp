@@ -11,10 +11,10 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../store/AuthContext';
-import { COLORS } from '../constants/colors';
+import { useAuth } from '@contexts/AuthContext';
+import { COLORS } from '@themes/colors';
 import { STRINGS } from '../constants/strings';
-import { ValidationUtils } from '../utils/validation.utils';
+import { ValidationUtils } from '@lib/validation.utils';
 
 const AuthScreen: React.FC = () => {
   const { login, register, loginWithGoogle } = useAuth();

@@ -12,7 +12,7 @@ import {
 import { useSQLiteContext } from "expo-sqlite";
 import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
-import { COLORS } from "../constants/colors";
+import { COLORS } from '@themes/colors';
 import { Event, AIGiftSuggestion, GiftHistoryItem as GiftHistoryItemType } from "../types";
 import { generateGiftSuggestionsWithFallback } from "../services/giftSuggestion.service";
 import {
@@ -21,8 +21,8 @@ import {
   deleteGiftItem,
   markGiftAsPurchased,
 } from "../services/giftHistory.service";
-import GiftSuggestionCard from "../components/GiftSuggestionCard";
-import GiftHistoryItem from "../components/GiftHistoryItem";
+import GiftSuggestionCard from "@components/molecules/GiftSuggestionCard";
+import GiftHistoryItem from "@components/molecules/GiftHistoryItem";
 import { useToast } from "../contexts/ToastContext";
 
 type GiftSuggestionsScreenRouteProp = RouteProp<

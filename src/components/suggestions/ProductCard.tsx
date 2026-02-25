@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { AffiliateProduct } from '../../types';
-import { COLORS } from '../../constants/colors';
+import { COLORS } from '@themes/colors';
 import { formatPrice } from '../../data/affiliateProducts';
-import PressableCard from '../PressableCard';
+import PressableCard from '@components/atoms/PressableCard';
 
 interface ProductCardProps {
   product: AffiliateProduct;

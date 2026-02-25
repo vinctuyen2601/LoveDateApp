@@ -1,214 +1,65 @@
 /**
  * Affiliate Product Service
- * Handles all affiliate product-related API calls, caching, and tracking
- * Updated for CMS integration with version-based sync
+ * Realtime fetch from CMS backend — no cache, no fallback.
+ * If no network → caller receives thrown error → UI shows empty state.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AffiliateProduct, AffiliateCategory } from '../types';
-import { DEFAULT_AFFILIATE_PRODUCTS } from '../data/affiliateProducts';
-import { CMS_ENDPOINTS, CACHE_CONFIG, STORAGE_KEYS } from '../constants/config';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-const PRODUCTS_CACHE_KEY = STORAGE_KEYS.AFFILIATE_PRODUCTS_CACHE;
-const PRODUCTS_CACHE_TIMESTAMP_KEY = STORAGE_KEYS.AFFILIATE_PRODUCTS_TIMESTAMP;
-const CACHE_DURATION = CACHE_CONFIG.DURATION;
+import { apiService } from './api.service';
 
 /**
- * Fetch products from CMS backend API
- */
-export const fetchProductsFromAPI = async (): Promise<AffiliateProduct[]> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.PRODUCTS}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`CMS API Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    // Filter only published products from CMS
-    const products = (data.products || data) as AffiliateProduct[];
-    return products.filter((product) => product.status !== 'draft' && product.status !== 'archived');
-  } catch (error) {
-    console.error('Error fetching products from CMS:', error);
-    throw error;
-  }
-};
-
-/**
- * Get products with cache-first strategy
- * 1. Check cache validity
- * 2. If valid, return cached data and fetch fresh in background
- * 3. If invalid or no cache, fetch from API
- * 4. If API fails, return default products
+ * Fetch products directly from CMS backend (realtime, no cache)
  */
 export const getProducts = async (): Promise<AffiliateProduct[]> => {
-  try {
-    // Check cache first
-    const cachedProducts = await getCachedProducts();
-    if (cachedProducts) {
-      // Fetch fresh data in background for next time
-      fetchProductsFromAPI()
-        .then(products => cacheProducts(products))
-        .catch(err => console.log('Background product fetch failed:', err));
-
-      return cachedProducts;
-    }
-
-    // No valid cache, fetch from API
-    const products = await fetchProductsFromAPI();
-    await cacheProducts(products);
-    return products;
-  } catch (error) {
-    console.error('Error getting products, using defaults:', error);
-    return DEFAULT_AFFILIATE_PRODUCTS;
-  }
+  const data = await apiService.get('/products');
+  const products = (data.products || data) as AffiliateProduct[];
+  return products.filter(p => p.status !== 'draft' && p.status !== 'archived');
 };
 
 /**
- * Get cached products if still valid
- */
-const getCachedProducts = async (): Promise<AffiliateProduct[] | null> => {
-  try {
-    const [cachedData, cachedTimestamp] = await Promise.all([
-      AsyncStorage.getItem(PRODUCTS_CACHE_KEY),
-      AsyncStorage.getItem(PRODUCTS_CACHE_TIMESTAMP_KEY),
-    ]);
-
-    if (!cachedData || !cachedTimestamp) {
-      return null;
-    }
-
-    const timestamp = parseInt(cachedTimestamp, 10);
-    const now = Date.now();
-
-    if (now - timestamp > CACHE_DURATION) {
-      return null;
-    }
-
-    return JSON.parse(cachedData);
-  } catch (error) {
-    console.error('Error reading cached products:', error);
-    return null;
-  }
-};
-
-/**
- * Cache products to local storage
- */
-const cacheProducts = async (products: AffiliateProduct[]): Promise<void> => {
-  try {
-    await Promise.all([
-      AsyncStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(products)),
-      AsyncStorage.setItem(PRODUCTS_CACHE_TIMESTAMP_KEY, Date.now().toString()),
-    ]);
-  } catch (error) {
-    console.error('Error caching products:', error);
-  }
-};
-
-/**
- * Force refresh products from API
- */
-export const refreshProducts = async (): Promise<AffiliateProduct[]> => {
-  try {
-    const products = await fetchProductsFromAPI();
-    await cacheProducts(products);
-    return products;
-  } catch (error) {
-    console.error('Error refreshing products:', error);
-    throw error;
-  }
-};
-
-/**
- * Clear products cache
- */
-export const clearProductsCache = async (): Promise<void> => {
-  try {
-    await Promise.all([
-      AsyncStorage.removeItem(PRODUCTS_CACHE_KEY),
-      AsyncStorage.removeItem(PRODUCTS_CACHE_TIMESTAMP_KEY),
-    ]);
-  } catch (error) {
-    console.error('Error clearing products cache:', error);
-  }
-};
-
-/**
- * Track product view (analytics - CMS endpoint, fire and forget)
+ * Track product view (analytics — fire and forget)
  */
 export const trackProductView = async (productId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.PRODUCTS}/${productId}/view`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
+    await apiService.post(`/products/${productId}/view`);
+  } catch {
     // Fail silently for analytics
   }
 };
 
 /**
- * Track affiliate click (revenue tracking - CMS endpoint, fire and forget)
+ * Track affiliate click (revenue tracking — fire and forget)
  */
 export const trackAffiliateClick = async (productId: string): Promise<void> => {
   try {
-    await fetch(`${API_BASE_URL}${CMS_ENDPOINTS.PRODUCTS}/${productId}/click`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
+    await apiService.post(`/products/${productId}/click`);
+  } catch {
     // Fail silently for analytics
   }
 };
 
-/**
- * Get product by ID from cache
- */
+// ==================== FILTER HELPERS ====================
+
 export const getProductById = async (productId: string): Promise<AffiliateProduct | null> => {
-  try {
-    const products = await getProducts();
-    return products.find(p => p.id === productId) || null;
-  } catch (error) {
-    return null;
-  }
+  const products = await getProducts();
+  return products.find(p => p.id === productId) || null;
 };
 
-// ==================== ASYNC FILTER HELPERS ====================
-
-/**
- * Get products by category (async)
- */
 export const getProductsByCategory = async (category: AffiliateCategory): Promise<AffiliateProduct[]> => {
   const products = await getProducts();
   return products.filter(p => p.category === category);
 };
 
-/**
- * Get products by budget range (async)
- */
 export const getProductsByBudget = async (budget: string): Promise<AffiliateProduct[]> => {
   const products = await getProducts();
   return products.filter(p => p.budget?.includes(budget));
 };
 
-/**
- * Get products by occasion (async)
- */
 export const getProductsByOccasion = async (occasion: string): Promise<AffiliateProduct[]> => {
   const products = await getProducts();
   return products.filter(p => p.occasion?.includes(occasion));
 };
 
-/**
- * Get popular products (async)
- */
 export const getPopularProductsAsync = async (limit: number = 8): Promise<AffiliateProduct[]> => {
   const products = await getProducts();
   return products
@@ -217,9 +68,6 @@ export const getPopularProductsAsync = async (limit: number = 8): Promise<Affili
     .slice(0, limit);
 };
 
-/**
- * Get related products for article (async)
- */
 export const getRelatedProductsForArticleAsync = async (articleTags?: string[]): Promise<AffiliateProduct[]> => {
   const products = await getProducts();
   if (!articleTags || articleTags.length === 0) {
@@ -230,6 +78,5 @@ export const getRelatedProductsForArticleAsync = async (articleTags?: string[]):
       p.occasion?.some(o => articleTags.includes(o)) ||
       p.tags?.some(t => articleTags.includes(t))
   );
-  if (tagged.length >= 3) return tagged.slice(0, 4);
-  return products.filter(p => p.isPopular).slice(0, 4);
+  return tagged.length >= 3 ? tagged.slice(0, 4) : products.filter(p => p.isPopular).slice(0, 4);
 };

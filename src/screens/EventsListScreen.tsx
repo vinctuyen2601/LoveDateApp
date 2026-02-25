@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useEvents } from '../store/EventsContext';
+import { useEvents } from '@contexts/EventsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Event } from '../types';
-import { COLORS } from '../constants/colors';
-import EventCard from '../components/EventCard';
+import { COLORS } from '@themes/colors';
+import EventCard from '@components/molecules/EventCard';
 
 type FilterType = 'all' | 'upcoming' | 'past' | 'birthday' | 'anniversary' | 'holiday' | 'other';
 

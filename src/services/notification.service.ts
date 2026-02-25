@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Event } from '../types';
-import { NotificationUtils } from '../utils/notification.utils';
+import { NotificationUtils } from '@lib/notification.utils';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({

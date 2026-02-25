@@ -13,16 +13,16 @@ import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
-import { useEvents } from "../store/EventsContext";
+import { useEvents } from '@contexts/EventsContext';
 import { useToast } from "../contexts/ToastContext";
 import { EventFormData, RecurrenceType, PREDEFINED_TAGS } from "../types";
-import { COLORS } from "../constants/colors";
+import { COLORS } from '@themes/colors';
 import { STRINGS } from "../constants/strings";
-import { DateUtils } from "../utils/date.utils";
-import { ValidationUtils } from "../utils/validation.utils";
-import ReminderSettings from "../components/ReminderSettings";
-import TimePicker from "../components/TimePicker";
-import RecurrenceTypePicker from "../components/RecurrenceTypePicker";
+import { DateUtils } from '@lib/date.utils';
+import { ValidationUtils } from '@lib/validation.utils';
+import ReminderSettings from "@components/molecules/ReminderSettings";
+import TimePicker from "@components/molecules/TimePicker";
+import RecurrenceTypePicker from "@components/molecules/RecurrenceTypePicker";
 import * as PremiumService from "../services/premium.service";
 import { MAX_TITLE_LENGTH } from "../constants/config";
 
@@ -49,7 +49,7 @@ const AddEventScreen: React.FC = () => {
     isLunarCalendar: false,
     tags: [],
     remindDaysBefore: [1, 7],
-    reminderTime: { hour: now.getHours(), minute: now.getMinutes() },
+    reminderTime: { hour: 9, minute: 0 },
     isRecurring: true, // Default yearly recurring
   });
 
@@ -191,6 +191,49 @@ const AddEventScreen: React.FC = () => {
       : [...currentDays, days];
 
     setFormData({ ...formData, remindDaysBefore: newDays });
+  };
+
+  // Auto-deselect invalid reminder options when event date changes (one-time events only)
+  useEffect(() => {
+    if (formData.isRecurring) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    setFormData((prev) => {
+      if (prev.isRecurring) return prev;
+
+      const validDays = prev.remindDaysBefore.filter((daysBefore) => {
+        const notifDate = new Date(prev.eventDate);
+        notifDate.setHours(0, 0, 0, 0);
+        notifDate.setDate(notifDate.getDate() - daysBefore);
+        return notifDate >= today;
+      });
+
+      if (validDays.length === prev.remindDaysBefore.length) return prev;
+      return { ...prev, remindDaysBefore: validDays };
+    });
+  }, [formData.eventDate, formData.isRecurring]);
+
+  // Compute minTime for TimePicker: only when a selected reminder fires today (one-time events)
+  const getReminderMinTime = () => {
+    if (formData.isRecurring) return undefined;
+
+    const now = new Date();
+    const todayOnly = new Date(now);
+    todayOnly.setHours(0, 0, 0, 0);
+
+    const hasReminderToday = formData.remindDaysBefore.some((daysBefore) => {
+      const notifDate = new Date(formData.eventDate);
+      notifDate.setHours(0, 0, 0, 0);
+      notifDate.setDate(notifDate.getDate() - daysBefore);
+      return notifDate.getTime() === todayOnly.getTime();
+    });
+
+    if (hasReminderToday) {
+      return { hour: now.getHours(), minute: now.getMinutes() };
+    }
+    return undefined;
   };
 
   // Form steps for progress indicator
@@ -609,14 +652,17 @@ const AddEventScreen: React.FC = () => {
         <ReminderSettings
           selectedDays={formData.remindDaysBefore}
           onToggle={toggleReminderDay}
+          eventDate={formData.eventDate}
+          isRecurring={formData.isRecurring}
         />
 
         {/* Reminder Time */}
         <TimePicker
-          selectedTime={formData.reminderTime || { hour: now.getHours(), minute: now.getMinutes() }}
+          selectedTime={formData.reminderTime || { hour: 9, minute: 0 }}
           onTimeChange={(time) =>
             setFormData({ ...formData, reminderTime: time })
           }
+          minTime={getReminderMinTime()}
         />
 
         {/* Section: Nhãn */}

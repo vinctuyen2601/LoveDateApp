@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '@themes/colors';
 
 const { width, height } = Dimensions.get('window');
 
