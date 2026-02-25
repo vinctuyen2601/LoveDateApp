@@ -19,7 +19,8 @@ export interface Article {
   tags?: string[]; // Searchable tags
   likes?: number; // Like count
   views?: number; // View count
-  isPublished?: boolean; // Publication status
+  status?: 'draft' | 'published' | 'archived'; // Status from backend API
+  isPublished?: boolean; // Legacy field (kept for local fallback articles)
   isFeatured?: boolean; // Featured article flag
   createdAt?: string; // ISO date string
   updatedAt?: string; // ISO date string
@@ -358,16 +359,16 @@ export const filterArticlesByCategory = (
   category: ArticleCategory
 ): Article[] => {
   if (category === 'all') {
-    return articles.filter(article => article.isPublished !== false);
+    return articles.filter(article => article.status !== 'draft' && article.status !== 'archived');
   }
   return articles.filter(
-    article => article.category === category && article.isPublished !== false
+    article => article.category === category && article.status !== 'draft' && article.status !== 'archived'
   );
 };
 
 // Helper function to get featured articles
 export const getFeaturedArticles = (articles: Article[]): Article[] => {
-  return articles.filter(article => article.isFeatured === true && article.isPublished !== false);
+  return articles.filter(article => article.isFeatured === true && article.status !== 'draft' && article.status !== 'archived');
 };
 
 // Helper function to search articles
@@ -377,7 +378,7 @@ export const searchArticles = (articles: Article[], query: string): Article[] =>
     const titleMatch = article.title.toLowerCase().includes(lowerQuery);
     const contentMatch = article.content.toLowerCase().includes(lowerQuery);
     const tagsMatch = article.tags?.some(tag => tag.toLowerCase().includes(lowerQuery));
-    return (titleMatch || contentMatch || tagsMatch) && article.isPublished !== false;
+    return (titleMatch || contentMatch || tagsMatch) && article.status !== 'draft' && article.status !== 'archived';
   });
 };
 
@@ -412,7 +413,7 @@ export const getRelatedArticles = (
     .filter(
       a => a.id !== currentArticle.id &&
            a.category === currentArticle.category &&
-           a.isPublished !== false
+           a.status !== 'draft' && a.status !== 'archived'
     )
     .slice(0, limit);
 };

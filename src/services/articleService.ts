@@ -20,7 +20,7 @@ export const fetchArticlesFromAPI = async (): Promise<Article[]> => {
   try {
     const data = await apiService.get('/articles');
     const articles = (data.articles || data) as Article[];
-    return articles.filter((article) => article.isPublished !== false);
+    return articles.filter((article) => article.status !== 'draft' && article.status !== 'archived');
   } catch (error) {
     console.error('Error fetching articles from CMS:', error);
     throw error;
