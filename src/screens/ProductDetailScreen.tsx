@@ -15,13 +15,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import RenderHTML from 'react-native-render-html';
 import { AffiliateProduct } from '../types';
 import { COLORS } from '@themes/colors';
-import {
-  formatPrice,
-  SERVICE_CATEGORIES,
-  OCCASION_OPTIONS,
-} from '../data/affiliateProducts';
+import { htmlStyles } from '../styles/htmlStyles';
+import { formatPrice, SERVICE_CATEGORIES } from '../data/affiliateProducts';
+import { useMasterData } from '../contexts/MasterDataContext';
 import {
   trackProductView,
   trackAffiliateClick,
@@ -37,6 +36,7 @@ const ProductDetailScreen: React.FC = () => {
   const { product } = route.params as { product: AffiliateProduct };
 
   const [similarProducts, setSimilarProducts] = useState<AffiliateProduct[]>([]);
+  const { occasions } = useMasterData();
 
   const categoryInfo = SERVICE_CATEGORIES.find((c) => c.id === product.category);
 
@@ -69,13 +69,9 @@ const ProductDetailScreen: React.FC = () => {
   }, [product.id, product.category]);
 
   const productOccasions = useMemo(() => {
-    if (!product.occasion || product.occasion.length === 0) {
-      return [] as Array<(typeof OCCASION_OPTIONS)[number]>;
-    }
-    return OCCASION_OPTIONS.filter((o) =>
-      product.occasion!.includes(o.id)
-    );
-  }, [product.occasion]);
+    if (!product.occasion || product.occasion.length === 0) return [];
+    return occasions.filter((o) => product.occasion!.includes(o.id));
+  }, [product.occasion, occasions]);
 
   const handleBuy = () => {
     const url = product.affiliateUrl;
@@ -248,7 +244,11 @@ const ProductDetailScreen: React.FC = () => {
             />
             <Text style={styles.cardHeaderText}>Mô tả</Text>
           </View>
-          <Text style={styles.descriptionText}>{product.description}</Text>
+          <RenderHTML
+            contentWidth={screenWidth - 64}
+            source={{ html: product.description }}
+            tagsStyles={htmlStyles}
+          />
         </View>
 
         {/* Details Card */}
@@ -603,12 +603,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
-  descriptionText: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: COLORS.textPrimary,
-  },
-
   // Detail Rows
   detailRow: {
     flexDirection: 'row',

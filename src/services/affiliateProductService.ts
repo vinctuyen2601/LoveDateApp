@@ -55,6 +55,11 @@ export const getProductsByBudget = async (budgetRange: string, limit: number = 3
   return (data.products || data) as AffiliateProduct[];
 };
 
+export const getExperienceProducts = async (limit: number = 10): Promise<AffiliateProduct[]> => {
+  const data = await apiService.get(`/products/experiences`, { params: { limit } });
+  return (data.products || data) as AffiliateProduct[];
+};
+
 // ==================== FILTER HELPERS (client-side, dùng cho các nơi khác) ====================
 
 export const getProductById = async (productId: string): Promise<AffiliateProduct | null> => {

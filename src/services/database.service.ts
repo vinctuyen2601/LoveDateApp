@@ -410,6 +410,15 @@ export async function initializeTables(
       CREATE INDEX IF NOT EXISTS idx_plan_order ON subscription_plans(displayOrder);
     `);
 
+    // Master data cache table (stores API-fetched master data for offline use)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS master_data_cache (
+        type TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing tables:", error);
@@ -1203,3 +1212,34 @@ class LegacyDatabaseService {
 
 // Export singleton instance for backward compatibility
 export const databaseService = LegacyDatabaseService.getInstance();
+
+// ─── Master data cache helpers ────────────────────────────────────────────────
+
+export async function saveMasterDataCache(
+  db: SQLite.SQLiteDatabase,
+  type: string,
+  data: unknown[]
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO master_data_cache (type, data, updatedAt)
+     VALUES (?, ?, ?)
+     ON CONFLICT(type) DO UPDATE SET data = excluded.data, updatedAt = excluded.updatedAt`,
+    [type, JSON.stringify(data), new Date().toISOString()]
+  );
+}
+
+export async function loadMasterDataCache<T>(
+  db: SQLite.SQLiteDatabase,
+  type: string
+): Promise<T[] | null> {
+  const row = await db.getFirstAsync<{ data: string }>(
+    `SELECT data FROM master_data_cache WHERE type = ?`,
+    [type]
+  );
+  if (!row) return null;
+  try {
+    return JSON.parse(row.data) as T[];
+  } catch {
+    return null;
+  }
+}

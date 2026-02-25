@@ -35,65 +35,6 @@ export const SERVICE_CATEGORIES = [
   { id: 'travel' as AffiliateCategory, name: 'Du lịch', icon: 'airplane-outline', color: '#3498DB' },
 ] as const;
 
-// ==================== EXPERIENCE PACKAGES ====================
-export interface ExperiencePackage {
-  id: string;
-  name: string;
-  description: string;
-  priceFrom: string;
-  icon: string;
-  color: string;
-  affiliateUrl: string;
-}
-
-export const EXPERIENCE_PACKAGES: ExperiencePackage[] = [
-  {
-    id: 'exp_001',
-    name: 'Dinner by Candlelight',
-    description: 'Bữa tối lãng mạn bên ánh nến tại nhà hàng 5 sao',
-    priceFrom: 'Từ 800k/người',
-    icon: 'flame',
-    color: '#FF6B6B',
-    affiliateUrl: '#',
-  },
-  {
-    id: 'exp_002',
-    name: 'Spa Couple',
-    description: 'Trải nghiệm spa thư giãn dành cho cặp đôi',
-    priceFrom: 'Từ 500k/người',
-    icon: 'leaf',
-    color: '#2ECC71',
-    affiliateUrl: '#',
-  },
-  {
-    id: 'exp_003',
-    name: 'Cooking Class',
-    description: 'Lớp nấu ăn cho cặp đôi - học và thưởng thức',
-    priceFrom: 'Từ 600k/người',
-    icon: 'restaurant',
-    color: '#FF8C00',
-    affiliateUrl: '#',
-  },
-  {
-    id: 'exp_004',
-    name: 'Rooftop Bar',
-    description: 'Ngắm hoàng hôn tại rooftop bar sang trọng',
-    priceFrom: 'Từ 300k/người',
-    icon: 'wine',
-    color: '#9B59B6',
-    affiliateUrl: '#',
-  },
-  {
-    id: 'exp_005',
-    name: 'City Tour',
-    description: 'Khám phá thành phố cùng nhau trên xe vintage',
-    priceFrom: 'Từ 400k/người',
-    icon: 'car',
-    color: '#3498DB',
-    affiliateUrl: '#',
-  },
-];
-
 // ==================== AFFILIATE PRODUCTS ====================
 export const DEFAULT_AFFILIATE_PRODUCTS: AffiliateProduct[] = [
   // ===== GIFTS (15) =====

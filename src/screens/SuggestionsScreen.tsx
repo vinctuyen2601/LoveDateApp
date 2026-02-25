@@ -8,7 +8,6 @@ import {
   RefreshControl,
   Platform,
   StatusBar,
-  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -20,9 +19,9 @@ import {
   trackArticleView,
   refreshArticles,
 } from "../services/articleService";
-import { EXPERIENCE_PACKAGES } from "../data/affiliateProducts";
 import {
   getTrendingProducts,
+  getExperienceProducts,
 } from "../services/affiliateProductService";
 import { AffiliateProduct, AffiliateCategory } from "../types";
 import { useLazySection } from "../hooks/useLazySection";
@@ -31,6 +30,7 @@ import HeroBanner from "../components/suggestions/HeroBanner";
 import ServiceCategories from "../components/suggestions/ServiceCategories";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
 import ProductCard from "../components/suggestions/ProductCard";
+import ExperienceCard from "../components/suggestions/ExperienceCard";
 import OccasionCards from "../components/suggestions/OccasionCard";
 import BudgetFilter from "../components/suggestions/BudgetFilter";
 import SurveyModal from "../components/suggestions/SurveyModal";
@@ -44,6 +44,7 @@ const SuggestionsScreen: React.FC = () => {
   // Core state
   const [articles, setArticles] = useState<Article[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
+  const [experiences, setExperiences] = useState<AffiliateProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedArticleCategory, setSelectedArticleCategory] = useState<string>("all");
@@ -65,6 +66,7 @@ const SuggestionsScreen: React.FC = () => {
   useEffect(() => {
     loadArticles();
     loadTrending();
+    loadExperiences();
   }, []);
 
   useEffect(() => {
@@ -96,14 +98,24 @@ const SuggestionsScreen: React.FC = () => {
     }
   };
 
+  const loadExperiences = async () => {
+    try {
+      const fetched = await getExperienceProducts();
+      setExperiences(fetched);
+    } catch (error) {
+      console.error("Error loading experiences:", error);
+    }
+  };
+
   // Handlers with useCallback
   const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
       setProductsError(null);
-      const [articlesResult, trendingResult] = await Promise.allSettled([
+      const [articlesResult, trendingResult, experiencesResult] = await Promise.allSettled([
         refreshArticles(),
         getTrendingProducts(),
+        getExperienceProducts(),
       ]);
       if (articlesResult.status === "fulfilled") setArticles(articlesResult.value);
       if (trendingResult.status === "fulfilled") {
@@ -111,6 +123,7 @@ const SuggestionsScreen: React.FC = () => {
       } else {
         setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
       }
+      if (experiencesResult.status === "fulfilled") setExperiences(experiencesResult.value);
     } catch (error) {
       console.error("Error refreshing:", error);
     } finally {
@@ -136,11 +149,6 @@ const SuggestionsScreen: React.FC = () => {
     console.log("Occasion pressed:", occasionId);
   }, []);
 
-  const handleExperiencePress = useCallback((affiliateUrl: string) => {
-    if (affiliateUrl && affiliateUrl !== "#") {
-      Linking.openURL(affiliateUrl);
-    }
-  }, []);
 
   const handleStartSurvey = useCallback(() => {
     setShowSurveyModal(true);
@@ -290,36 +298,23 @@ const SuggestionsScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Trải nghiệm cho cặp đôi</Text>
-              <TouchableOpacity>
-                <Text style={styles.viewAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-            >
-              {EXPERIENCE_PACKAGES.map((exp) => (
-                <PressableCard
-                  key={exp.id}
-                  style={[styles.experienceCard, { backgroundColor: exp.color }]}
-                  onPress={() => handleExperiencePress(exp.affiliateUrl)}
-                >
-                  <Ionicons name={exp.icon as any} size={32} color={COLORS.white} />
-                  <Text style={styles.experienceName}>{exp.name}</Text>
-                  <Text style={styles.experienceDesc} numberOfLines={2}>
-                    {exp.description}
-                  </Text>
-                  <View style={styles.experienceBottom}>
-                    <Text style={styles.experiencePrice}>{exp.priceFrom}</Text>
-                    <View style={styles.experienceCta}>
-                      <Text style={styles.experienceCtaText}>Đặt ngay</Text>
-                      <Ionicons name="arrow-forward" size={12} color={COLORS.white} />
-                    </View>
-                  </View>
-                </PressableCard>
-              ))}
-            </ScrollView>
+            {experiences.length === 0 ? (
+              <View style={styles.offlineBanner}>
+                <Ionicons name="compass-outline" size={20} color={COLORS.textSecondary} />
+                <Text style={styles.offlineBannerText}>Chưa có trải nghiệm nào</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalScroll}
+              >
+                {experiences.map((exp) => (
+                  <ExperienceCard key={exp.id} product={exp} />
+                ))}
+              </ScrollView>
+            )}
           </View>
         ) : (
           <View style={styles.section}>
@@ -422,53 +417,6 @@ const styles = StyleSheet.create({
   toolCardSub: {
     fontSize: 12,
     color: COLORS.textSecondary,
-  },
-
-  // Experience Cards
-  experienceCard: {
-    width: 220,
-    borderRadius: 16,
-    padding: 16,
-    marginRight: 12,
-    justifyContent: "space-between",
-    minHeight: 170,
-  },
-  experienceName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.white,
-    marginTop: 8,
-  },
-  experienceDesc: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.85)",
-    lineHeight: 17,
-    marginTop: 4,
-  },
-  experienceBottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-  },
-  experiencePrice: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.9)",
-  },
-  experienceCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    gap: 4,
-  },
-  experienceCtaText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.white,
   },
 
   // Offline / empty state banner

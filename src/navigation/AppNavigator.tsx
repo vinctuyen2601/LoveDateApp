@@ -14,6 +14,7 @@ import ActivitySuggestionsScreen from '../screens/ActivitySuggestionsScreen';
 import PremiumScreen from '../screens/PremiumScreen';
 import ArticleDetailScreen from '../screens/ArticleDetailScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
+import ExperienceDetailScreen from '../screens/ExperienceDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -121,6 +122,13 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="ProductDetail"
           component={ProductDetailScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="ExperienceDetail"
+          component={ExperienceDetailScreen}
           options={{
             headerShown: false,
           }}

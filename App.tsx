@@ -5,6 +5,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { MasterDataProvider } from './src/contexts/MasterDataContext';
 import { AchievementProvider } from './src/contexts/AchievementContext';
 import { EventsProvider } from './src/contexts/EventsContext';
 import { SyncProvider } from './src/contexts/SyncContext';
@@ -148,6 +149,7 @@ function AppContent() {
   return (
     <SafeAreaProvider>
       <ToastProvider>
+        <MasterDataProvider>
         <AuthProvider>
           <AchievementProvider>
             <EventsProvider>
@@ -164,6 +166,7 @@ function AppContent() {
             </EventsProvider>
           </AchievementProvider>
         </AuthProvider>
+        </MasterDataProvider>
       </ToastProvider>
     </SafeAreaProvider>
   );
