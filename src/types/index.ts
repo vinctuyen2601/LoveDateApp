@@ -908,6 +908,7 @@ export interface AffiliateProduct {
   rating: number;
   reviewCount: number;
   imageUrl?: string;
+  galleryUrls?: string[];
   affiliateUrl: string;
   affiliatePartner?: string;
   occasion?: string[];

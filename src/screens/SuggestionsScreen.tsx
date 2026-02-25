@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import {
 } from "../services/articleService";
 import { EXPERIENCE_PACKAGES } from "../data/affiliateProducts";
 import {
-  getProducts,
+  getTrendingProducts,
 } from "../services/affiliateProductService";
 import { AffiliateProduct, AffiliateCategory } from "../types";
 import { useLazySection } from "../hooks/useLazySection";
@@ -43,7 +43,7 @@ const SuggestionsScreen: React.FC = () => {
 
   // Core state
   const [articles, setArticles] = useState<Article[]>([]);
-  const [products, setProducts] = useState<AffiliateProduct[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedArticleCategory, setSelectedArticleCategory] = useState<string>("all");
@@ -61,20 +61,10 @@ const SuggestionsScreen: React.FC = () => {
   const showBudget = useLazySection(6);
   const showExperiences = useLazySection(7);
 
-  // Memoized computed values
-  const trendingProducts = useMemo(
-    () =>
-      products
-        .filter((p) => p.isPopular)
-        .sort((a, b) => b.reviewCount - a.reviewCount)
-        .slice(0, 8),
-    [products]
-  );
-
   // Load data
   useEffect(() => {
     loadArticles();
-    loadProducts();
+    loadTrending();
   }, []);
 
   useEffect(() => {
@@ -95,13 +85,13 @@ const SuggestionsScreen: React.FC = () => {
     }
   };
 
-  const loadProducts = async () => {
+  const loadTrending = async () => {
     try {
       setProductsError(null);
-      const fetchedProducts = await getProducts();
-      setProducts(fetchedProducts);
+      const fetched = await getTrendingProducts();
+      setTrendingProducts(fetched);
     } catch (error) {
-      console.error("Error loading products:", error);
+      console.error("Error loading trending products:", error);
       setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
     }
   };
@@ -111,13 +101,13 @@ const SuggestionsScreen: React.FC = () => {
     try {
       setRefreshing(true);
       setProductsError(null);
-      const [articlesResult, productsResult] = await Promise.allSettled([
+      const [articlesResult, trendingResult] = await Promise.allSettled([
         refreshArticles(),
-        getProducts(),
+        getTrendingProducts(),
       ]);
       if (articlesResult.status === "fulfilled") setArticles(articlesResult.value);
-      if (productsResult.status === "fulfilled") {
-        setProducts(productsResult.value);
+      if (trendingResult.status === "fulfilled") {
+        setTrendingProducts(trendingResult.value);
       } else {
         setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
       }
@@ -350,7 +340,7 @@ const SuggestionsScreen: React.FC = () => {
       <ResultsModal
         visible={showResultsModal}
         suggestions={resultSuggestions}
-        products={products}
+        products={trendingProducts}
         onClose={() => setShowResultsModal(false)}
         onRetake={handleRetakeSurvey}
       />

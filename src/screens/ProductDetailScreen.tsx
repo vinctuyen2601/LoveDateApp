@@ -10,6 +10,7 @@ import {
   Share,
   Linking,
   Dimensions,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -77,9 +78,13 @@ const ProductDetailScreen: React.FC = () => {
   }, [product.occasion]);
 
   const handleBuy = () => {
-    if (product.affiliateUrl && product.affiliateUrl !== '#') {
-      trackAffiliateClick(product.id);
-      Linking.openURL(product.affiliateUrl);
+    const url = product.affiliateUrl;
+    if (!url || url === '#') return;
+    trackAffiliateClick(product.id);
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      Linking.openURL(url);
     }
   };
 
@@ -91,10 +96,6 @@ const ProductDetailScreen: React.FC = () => {
     } catch {
       // User cancelled
     }
-  };
-
-  const handleSimilarProduct = (similarProduct: AffiliateProduct) => {
-    navigation.replace('ProductDetail', { product: similarProduct });
   };
 
   // Render star rating
@@ -139,21 +140,64 @@ const ProductDetailScreen: React.FC = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Hero Section */}
-        <LinearGradient
-          colors={[product.color, product.color + 'CC']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroGradient}
-        >
-          <View style={styles.heroIconCircle}>
-            <Ionicons name={product.icon as any} size={64} color={COLORS.white} />
-          </View>
-          {discountPercent > 0 && (
-            <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeText}>-{discountPercent}%</Text>
+        {product.galleryUrls && product.galleryUrls.length > 0 ? (
+          <View style={styles.galleryContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.galleryScroll}
+            >
+              {product.galleryUrls.map((url, index) => (
+                <Image
+                  key={index}
+                  source={{ uri: url }}
+                  style={styles.galleryImage}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.galleryDots}>
+              {product.galleryUrls.map((_, index) => (
+                <View key={index} style={styles.dot} />
+              ))}
             </View>
-          )}
-        </LinearGradient>
+            {discountPercent > 0 && (
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>-{discountPercent}%</Text>
+              </View>
+            )}
+          </View>
+        ) : product.imageUrl ? (
+          <View style={styles.heroImageContainer}>
+            <Image
+              source={{ uri: product.imageUrl }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+            {discountPercent > 0 && (
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>-{discountPercent}%</Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <LinearGradient
+            colors={[product.color, product.color + 'CC']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroGradient}
+          >
+            <View style={styles.heroIconCircle}>
+              <Ionicons name={product.icon as any} size={64} color={COLORS.white} />
+            </View>
+            {discountPercent > 0 && (
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>-{discountPercent}%</Text>
+              </View>
+            )}
+          </LinearGradient>
+        )}
 
         {/* Product Info Card */}
         <View style={styles.infoCard}>
@@ -393,6 +437,40 @@ const styles = StyleSheet.create({
   },
 
   // Hero
+  heroImageContainer: {
+    height: 260,
+    overflow: 'hidden',
+  },
+  heroImage: {
+    width: '100%',
+    height: 260,
+  },
+  galleryContainer: {
+    height: 260,
+    overflow: 'hidden',
+  },
+  galleryScroll: {
+    height: 260,
+  },
+  galleryImage: {
+    width: screenWidth,
+    height: 260,
+  },
+  galleryDots: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+  },
   heroGradient: {
     height: 200,
     alignItems: 'center',

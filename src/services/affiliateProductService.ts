@@ -38,7 +38,24 @@ export const trackAffiliateClick = async (productId: string): Promise<void> => {
   }
 };
 
-// ==================== FILTER HELPERS ====================
+// ==================== DEDICATED SECTION APIs ====================
+
+export const getTrendingProducts = async (limit: number = 8): Promise<AffiliateProduct[]> => {
+  const data = await apiService.get(`/products/trending`, { params: { limit } });
+  return (data.products || data) as AffiliateProduct[];
+};
+
+export const getProductsByOccasion = async (occasionId: string, limit: number = 20): Promise<AffiliateProduct[]> => {
+  const data = await apiService.get(`/products/by-occasion/${occasionId}`, { params: { limit } });
+  return (data.products || data) as AffiliateProduct[];
+};
+
+export const getProductsByBudget = async (budgetRange: string, limit: number = 3): Promise<AffiliateProduct[]> => {
+  const data = await apiService.get(`/products/by-budget/${encodeURIComponent(budgetRange)}`, { params: { limit } });
+  return (data.products || data) as AffiliateProduct[];
+};
+
+// ==================== FILTER HELPERS (client-side, dùng cho các nơi khác) ====================
 
 export const getProductById = async (productId: string): Promise<AffiliateProduct | null> => {
   const products = await getProducts();
@@ -50,22 +67,8 @@ export const getProductsByCategory = async (category: AffiliateCategory): Promis
   return products.filter(p => p.category === category);
 };
 
-export const getProductsByBudget = async (budget: string): Promise<AffiliateProduct[]> => {
-  const products = await getProducts();
-  return products.filter(p => p.budget?.includes(budget));
-};
-
-export const getProductsByOccasion = async (occasion: string): Promise<AffiliateProduct[]> => {
-  const products = await getProducts();
-  return products.filter(p => p.occasion?.includes(occasion));
-};
-
 export const getPopularProductsAsync = async (limit: number = 8): Promise<AffiliateProduct[]> => {
-  const products = await getProducts();
-  return products
-    .filter(p => p.isPopular)
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, limit);
+  return getTrendingProducts(limit);
 };
 
 export const getRelatedProductsForArticleAsync = async (articleTags?: string[]): Promise<AffiliateProduct[]> => {

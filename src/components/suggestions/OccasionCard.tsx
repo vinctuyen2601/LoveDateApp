@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
 import { OCCASION_OPTIONS } from '../../data/affiliateProducts';
-import { getProducts } from '../../services/affiliateProductService';
+import { getProductsByOccasion } from '../../services/affiliateProductService';
 import PressableCard from '@components/atoms/PressableCard';
 
 interface OccasionCardsProps {
@@ -16,13 +16,15 @@ const OccasionCards: React.FC<OccasionCardsProps> = ({ onOccasionPress }) => {
   useEffect(() => {
     const loadCounts = async () => {
       try {
-        const allProducts = await getProducts();
+        const results = await Promise.all(
+          OCCASION_OPTIONS.map((occasion) =>
+            getProductsByOccasion(occasion.id, 50)
+              .then((products) => ({ id: occasion.id, count: products.length }))
+              .catch(() => ({ id: occasion.id, count: 0 }))
+          )
+        );
         const counts: Record<string, number> = {};
-        OCCASION_OPTIONS.forEach((occasion) => {
-          counts[occasion.id] = allProducts.filter(
-            (p) => p.occasion?.includes(occasion.id)
-          ).length;
-        });
+        results.forEach(({ id, count }) => { counts[id] = count; });
         setOccasionCounts(counts);
       } catch {
         // Fallback - show 0 for all

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { AffiliateProduct } from '../../types';
@@ -22,9 +22,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
   if (variant === 'vertical') {
     return (
       <PressableCard style={styles.verticalCard} onPress={handlePress}>
-        <View style={[styles.verticalIcon, { backgroundColor: product.color }]}>
-          <Ionicons name={product.icon as any} size={24} color={COLORS.white} />
-        </View>
+        {product.imageUrl ? (
+          <Image
+            source={{ uri: product.imageUrl }}
+            style={styles.verticalImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.verticalIcon, { backgroundColor: product.color }]}>
+            <Ionicons name={product.icon as any} size={24} color={COLORS.white} />
+          </View>
+        )}
         <View style={styles.verticalContent}>
           <Text style={styles.verticalName} numberOfLines={2}>{product.name}</Text>
           <Text style={styles.verticalDesc} numberOfLines={1}>{product.description}</Text>
@@ -43,16 +51,33 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
 
   return (
     <PressableCard style={styles.card} onPress={handlePress}>
-      <View style={[styles.gradientHeader, { backgroundColor: product.color }]}>
-        <Ionicons name={product.icon as any} size={28} color={COLORS.white} />
-        {product.originalPrice && product.price && (
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>
-              -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-            </Text>
-          </View>
-        )}
-      </View>
+      {product.imageUrl ? (
+        <View style={styles.imageHeader}>
+          <Image
+            source={{ uri: product.imageUrl }}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
+          {product.originalPrice && product.price && (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>
+                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+              </Text>
+            </View>
+          )}
+        </View>
+      ) : (
+        <View style={[styles.gradientHeader, { backgroundColor: product.color }]}>
+          <Ionicons name={product.icon as any} size={28} color={COLORS.white} />
+          {product.originalPrice && product.price && (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>
+                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={styles.cardBody}>
         <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
@@ -94,6 +119,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     marginRight: 12,
+  },
+  imageHeader: {
+    height: 120,
+    overflow: 'hidden',
+  },
+  productImage: {
+    width: '100%',
+    height: 120,
   },
   gradientHeader: {
     height: 48,
@@ -182,6 +215,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
+  },
+  verticalImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    marginRight: 12,
   },
   verticalIcon: {
     width: 44,
