@@ -6,9 +6,9 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Platform,
-  StatusBar,
+  Image,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar, DateData } from "react-native-calendars";
 import { useEvents } from '@contexts/EventsContext';
@@ -19,6 +19,9 @@ import { COLORS } from '@themes/colors';
 import { CALENDAR_THEME } from '@themes/calendarTheme';
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
+import { getTrendingProducts } from "../services/affiliateProductService";
+import { AffiliateProduct } from "../types";
+import ProductCard from "../components/suggestions/ProductCard";
 import { format, addDays } from "date-fns";
 import { vi } from "date-fns/locale";
 import { DateUtils } from '@lib/date.utils';
@@ -46,7 +49,16 @@ const getEventIcon = (primaryTag: string) => {
   }
 };
 
+const CATEGORY_NAMES: Record<string, string> = {
+  gifts: 'Quà tặng',
+  dates: 'Hẹn hò',
+  communication: 'Giao tiếp',
+  zodiac: 'Cung hoàng đạo',
+  personality: 'Tính cách',
+};
+
 const HomeScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { events, isLoading, refreshEvents } = useEvents();
   const { sync } = useSync();
@@ -141,6 +153,14 @@ const HomeScreen: React.FC = () => {
 
   const [articles] = useState(() => getFeaturedArticles(DEFAULT_ARTICLES));
 
+  const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
+
+  React.useEffect(() => {
+    getTrendingProducts()
+      .then(setTrendingProducts)
+      .catch(() => {});
+  }, []);
+
   const handleSurveyPress = () =>
     navigation.navigate("Suggestions", { openSurvey: true });
   const handleEventPress = (event: Event) =>
@@ -202,25 +222,25 @@ const HomeScreen: React.FC = () => {
     {
       id: "survey",
       icon: "heart-circle" as const,
-      title: "Khảo sát tính cách",
-      subtitle: "Gợi ý quà tặng",
+      title: "Khảo sát\ntính cách",
+      subtitle: "Gợi ý quà phù hợp với nửa kia",
       color: COLORS.primary,
       onPress: handleSurveyPress,
     },
     {
       id: "mbti",
       icon: "people" as const,
-      title: "Trắc nghiệm MBTI",
-      subtitle: "16 loại tính cách",
-      color: COLORS.secondary,
-      onPress: handleSurveyPress,
+      title: "Trắc nghiệm\nMBTI",
+      subtitle: "Khám phá 16 loại tính cách",
+      color: '#1A9E6E',
+      onPress: () => navigation.navigate("MBTISurvey"),
     },
     {
       id: "add",
-      icon: "add-circle" as const,
-      title: "Thêm sự kiện",
-      subtitle: "Tạo mới ngay",
-      color: COLORS.success,
+      icon: "calendar-outline" as const,
+      title: "Thêm\nsự kiện",
+      subtitle: "Lên lịch kỷ niệm quan trọng",
+      color: COLORS.info,
       onPress: handleAddEvent,
     },
   ];
@@ -232,7 +252,7 @@ const HomeScreen: React.FC = () => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 56 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -360,11 +380,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderLeft}>
-              <Ionicons
-                name="flash-outline"
-                size={20}
-                color={COLORS.primary}
-              />
+              <Ionicons name="flash-outline" size={20} color={COLORS.primary} />
               <Text style={styles.sectionTitle}>Khám phá</Text>
             </View>
           </View>
@@ -376,27 +392,22 @@ const HomeScreen: React.FC = () => {
             {quickActions.map((action) => (
               <PressableCard
                 key={action.id}
-                style={styles.quickActionCard}
+                style={[styles.quickActionCard, { backgroundColor: action.color }]}
                 onPress={action.onPress}
               >
-                <View
-                  style={[
-                    styles.quickActionIcon,
-                    { backgroundColor: action.color + "15" },
-                  ]}
-                >
-                  <Ionicons
-                    name={action.icon}
-                    size={28}
-                    color={action.color}
-                  />
+                {/* Decorative circle top-right */}
+                <View style={styles.qaDecorCircle} />
+                <View style={styles.qaIconBg}>
+                  <Ionicons name={action.icon} size={26} color="rgba(255,255,255,0.95)" />
                 </View>
-                <Text style={styles.quickActionTitle} numberOfLines={1}>
-                  {action.title}
-                </Text>
-                <Text style={styles.quickActionSubtitle} numberOfLines={1}>
-                  {action.subtitle}
-                </Text>
+                <Text style={styles.qaTitle}>{action.title}</Text>
+                <Text style={styles.qaSub} numberOfLines={2}>{action.subtitle}</Text>
+                <Ionicons
+                  name="arrow-forward-circle"
+                  size={20}
+                  color="rgba(255,255,255,0.5)"
+                  style={styles.qaArrow}
+                />
               </PressableCard>
             ))}
           </ScrollView>
@@ -406,67 +417,124 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderLeft}>
-              <Ionicons
-                name="book-outline"
-                size={20}
-                color={COLORS.primary}
-              />
+              <Ionicons name="book-outline" size={20} color={COLORS.primary} />
               <Text style={styles.sectionTitle}>Bài viết nổi bật</Text>
             </View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Suggestions")}
-            >
+            <TouchableOpacity onPress={() => navigation.navigate("AllArticles")}>
               <Text style={styles.viewAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Featured hero card — first article */}
+          {articles.length > 0 && (
+            <PressableCard
+              style={[styles.featuredArticle, { backgroundColor: articles[0].color }]}
+              onPress={() => navigation.navigate("ArticleDetail", { article: articles[0] })}
+            >
+              {/* Background image */}
+              {articles[0].imageUrl && (
+                <Image
+                  source={{ uri: articles[0].imageUrl }}
+                  style={styles.featuredBgImage}
+                  resizeMode="cover"
+                />
+              )}
+              {/* Dark overlay for text readability */}
+              <View style={[styles.featuredOverlay, !articles[0].imageUrl && { backgroundColor: 'rgba(0,0,0,0.15)' }]} />
+              {/* Decorative large icon watermark (shown when no image) */}
+              {!articles[0].imageUrl && (
+                <Ionicons
+                  name={articles[0].icon}
+                  size={96}
+                  color="rgba(255,255,255,0.12)"
+                  style={styles.featuredDecorIcon}
+                />
+              )}
+              <View style={styles.featuredInner}>
+                <View style={styles.featuredCatBadge}>
+                  <Text style={styles.featuredCatText}>
+                    {CATEGORY_NAMES[articles[0].category] ?? 'Bài viết'}
+                  </Text>
+                </View>
+                <Text style={styles.featuredTitle} numberOfLines={2}>
+                  {articles[0].title}
+                </Text>
+                <View style={styles.featuredMeta}>
+                  <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.8)" />
+                  <Text style={styles.featuredMetaText}>
+                    {articles[0].readTime ?? 5} phút đọc
+                  </Text>
+                  <View style={styles.featuredReadBtn}>
+                    <Text style={[styles.featuredReadBtnText, { color: articles[0].color }]}>
+                      Đọc ngay
+                    </Text>
+                    <Ionicons name="arrow-forward" size={11} color={articles[0].color} />
+                  </View>
+                </View>
+              </View>
+            </PressableCard>
+          )}
+
+          {/* Remaining articles — horizontal tile scroll */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.articlesScroll}
           >
-            {articles.slice(0, 4).map((article) => (
+            {articles.slice(1, 5).map((article) => (
               <PressableCard
                 key={article.id}
                 style={styles.articleCard}
-                onPress={() => navigation.navigate("Suggestions")}
+                onPress={() => navigation.navigate("ArticleDetail", { article })}
               >
-                <View
-                  style={[
-                    styles.articleColorBar,
-                    { backgroundColor: article.color },
-                  ]}
-                />
-                <View style={styles.articleContent}>
-                  <View
-                    style={[
-                      styles.articleIconCircle,
-                      { backgroundColor: article.color + "15" },
-                    ]}
-                  >
-                    <Ionicons
-                      name={article.icon}
-                      size={20}
-                      color={article.color}
+                <View style={[styles.articleCardTop, { backgroundColor: article.color }]}>
+                  {article.imageUrl ? (
+                    <Image
+                      source={{ uri: article.imageUrl }}
+                      style={styles.articleCardTopImage}
+                      resizeMode="cover"
                     />
-                  </View>
+                  ) : (
+                    <Ionicons name={article.icon} size={24} color="rgba(255,255,255,0.95)" />
+                  )}
+                </View>
+                <View style={styles.articleCardBody}>
                   <Text style={styles.articleTitle} numberOfLines={2}>
                     {article.title}
                   </Text>
                   <View style={styles.articleMeta}>
-                    <Ionicons
-                      name="time-outline"
-                      size={12}
-                      color={COLORS.textSecondary}
-                    />
-                    <Text style={styles.articleReadTime}>
-                      {article.readTime} phút
-                    </Text>
+                    <Ionicons name="time-outline" size={11} color={COLORS.textSecondary} />
+                    <Text style={styles.articleReadTime}>{article.readTime ?? 5} phút</Text>
                   </View>
                 </View>
               </PressableCard>
             ))}
           </ScrollView>
         </View>
+
+        {/* Trending Products */}
+        {trendingProducts.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderLeft}>
+                <Ionicons name="trending-up" size={20} color={COLORS.primary} />
+                <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate("AllProducts")}>
+                <Text style={styles.viewAllText}>Xem tất cả</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.productsScroll}
+            >
+              {trendingProducts.slice(0, 6).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={{ height: 30 }} />
       </ScrollView>
@@ -489,8 +557,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 56 : 56,
+    paddingTop: 0,
   },
   // Empty hint
   emptyHint: {
@@ -631,83 +698,182 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
 
-  // Quick Actions
+  // Quick Actions — full-color cards
   quickActionsScroll: {
     gap: 12,
   },
   quickActionCard: {
-    width: 140,
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
+    width: 158,
+    borderRadius: 18,
     padding: 16,
-    alignItems: "center",
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
+    minHeight: 148,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    overflow: 'hidden',
   },
-  quickActionIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
+  qaDecorCircle: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    top: -20,
+    right: -20,
   },
-  quickActionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    textAlign: "center",
-    marginBottom: 2,
+  qaIconBg: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
-  quickActionSubtitle: {
+  qaTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.white,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  qaSub: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    textAlign: "center",
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 15,
+    flex: 1,
+  },
+  qaArrow: {
+    marginTop: 10,
+    alignSelf: 'flex-end',
   },
 
-  // Articles
+  // Articles — featured hero + tile cards
+  featuredArticle: {
+    marginHorizontal: 4,
+    borderRadius: 18,
+    height: 168,
+    overflow: 'hidden',
+    marginBottom: 14,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  featuredBgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  featuredOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+  },
+  featuredDecorIcon: {
+    position: 'absolute',
+    right: -10,
+    top: -10,
+  },
+  featuredInner: {
+    flex: 1,
+    padding: 18,
+    justifyContent: 'flex-end',
+  },
+  featuredCatBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  featuredCatText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+  featuredTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.white,
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  featuredMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  featuredMetaText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+    flex: 1,
+  },
+  featuredReadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  featuredReadBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  productsScroll: {
+    paddingHorizontal: 4,
+  },
   articlesScroll: {
     gap: 12,
   },
   articleCard: {
-    width: 170,
+    width: 148,
     backgroundColor: COLORS.white,
     borderRadius: 14,
-    overflow: "hidden",
+    overflow: 'hidden',
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.07,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 2,
   },
-  articleColorBar: {
-    height: 6,
-    width: "100%",
+  articleCardTop: {
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  articleContent: {
-    padding: 14,
+  articleCardTopImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  articleIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
+  articleCardBody: {
+    padding: 10,
   },
   articleTitle: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: '600',
     color: COLORS.textPrimary,
-    lineHeight: 18,
-    marginBottom: 8,
+    lineHeight: 17,
+    marginBottom: 7,
   },
   articleMeta: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   articleReadTime: {

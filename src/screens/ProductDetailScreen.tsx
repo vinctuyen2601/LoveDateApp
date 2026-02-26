@@ -6,12 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
-  StatusBar,
   Share,
   Linking,
   Dimensions,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,6 +31,7 @@ import ProductCard from '../components/suggestions/ProductCard';
 const { width: screenWidth } = Dimensions.get('window');
 
 const ProductDetailScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { product } = route.params as { product: AffiliateProduct };
@@ -115,7 +116,7 @@ const ProductDetailScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 8 : 8,
+    paddingTop: 0,
     paddingBottom: 12,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

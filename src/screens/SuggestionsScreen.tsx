@@ -6,9 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Platform,
-  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { COLORS } from '@themes/colors';
@@ -23,23 +22,25 @@ import {
   getTrendingProducts,
   getExperienceProducts,
 } from "../services/affiliateProductService";
-import { AffiliateProduct, AffiliateCategory } from "../types";
+import { AffiliateProduct } from "../types";
 import { useLazySection } from "../hooks/useLazySection";
 import { LoadingState } from "@components/atoms/LoadingState";
 import HeroBanner from "../components/suggestions/HeroBanner";
-import ServiceCategories from "../components/suggestions/ServiceCategories";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
 import ProductCard from "../components/suggestions/ProductCard";
 import ExperienceCard from "../components/suggestions/ExperienceCard";
 import OccasionCards from "../components/suggestions/OccasionCard";
+import { useMasterData } from "../contexts/MasterDataContext";
 import BudgetFilter from "../components/suggestions/BudgetFilter";
 import SurveyModal from "../components/suggestions/SurveyModal";
 import ResultsModal from "../components/suggestions/ResultsModal";
 import PressableCard from "@components/atoms/PressableCard";
 
 const SuggestionsScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const { occasions } = useMasterData();
 
   // Core state
   const [articles, setArticles] = useState<Article[]>([]);
@@ -139,15 +140,14 @@ const SuggestionsScreen: React.FC = () => {
     [navigation]
   );
 
-  const handleCategoryPress = useCallback((category: AffiliateCategory) => {
-    // TODO: Navigate to filtered product list or scroll to section
-    console.log("Category pressed:", category);
-  }, []);
-
   const handleOccasionPress = useCallback((occasionId: string) => {
-    // TODO: Show filtered products modal
-    console.log("Occasion pressed:", occasionId);
-  }, []);
+    const occasion = occasions.find((o) => o.id === occasionId);
+    navigation.navigate('OccasionProducts', {
+      occasionId,
+      occasionName: occasion?.name ?? occasionId,
+      occasionColor: occasion?.color,
+    });
+  }, [occasions, navigation]);
 
 
   const handleStartSurvey = useCallback(() => {
@@ -175,7 +175,7 @@ const SuggestionsScreen: React.FC = () => {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 10 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -187,38 +187,59 @@ const SuggestionsScreen: React.FC = () => {
         {/* Section 1: Hero Banner */}
         <HeroBanner onStartSurvey={handleStartSurvey} />
 
-        {/* Section 2: Service Categories */}
-        <ServiceCategories onCategoryPress={handleCategoryPress} />
-
-        {/* Section 3: Survey + MBTI Compact */}
+        {/* Section 2: Personalization Tools */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, styles.sectionTitlePadded]}>
-            Công cụ cá nhân hóa
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Công cụ cá nhân hóa</Text>
+          </View>
           <View style={styles.toolCards}>
-            <PressableCard style={styles.toolCard} onPress={handleStartSurvey}>
-              <View style={styles.toolCardLeft}>
-                <Ionicons name="heart-circle" size={28} color={COLORS.primary} />
+            {/* Survey card */}
+            <PressableCard style={[styles.toolCard, { backgroundColor: COLORS.primary }]} onPress={handleStartSurvey}>
+              <View style={styles.toolIconWrap}>
+                <Ionicons name="heart-circle" size={36} color="rgba(255,255,255,0.9)" />
               </View>
-              <View style={styles.toolCardContent}>
-                <Text style={styles.toolCardTitle}>Khảo sát tính cách</Text>
-                <Text style={styles.toolCardSub}>12 câu hỏi • 2 phút</Text>
+              <Text style={styles.toolTitle}>Khảo sát{'\n'}tính cách</Text>
+              <Text style={styles.toolDesc}>Tìm quà phù hợp nhất với nửa kia của bạn</Text>
+              <View style={styles.toolPills}>
+                <View style={styles.toolPill}>
+                  <Ionicons name="help-circle-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>12 câu</Text>
+                </View>
+                <View style={styles.toolPill}>
+                  <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>2 phút</Text>
+                </View>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+              <View style={styles.toolCta}>
+                <Text style={[styles.toolCtaText, { color: COLORS.primary }]}>Bắt đầu</Text>
+                <Ionicons name="arrow-forward" size={13} color={COLORS.primary} />
+              </View>
             </PressableCard>
 
+            {/* MBTI card */}
             <PressableCard
-              style={[styles.toolCard, styles.toolCardMbti]}
+              style={[styles.toolCard, { backgroundColor: '#1A9E6E' }]}
               onPress={() => navigation.navigate("MBTISurvey")}
             >
-              <View style={styles.toolCardLeft}>
-                <Ionicons name="people" size={28} color={COLORS.success} />
+              <View style={styles.toolIconWrap}>
+                <Ionicons name="people" size={36} color="rgba(255,255,255,0.9)" />
               </View>
-              <View style={styles.toolCardContent}>
-                <Text style={styles.toolCardTitle}>Trắc nghiệm MBTI</Text>
-                <Text style={styles.toolCardSub}>40 câu hỏi • 10 phút</Text>
+              <Text style={styles.toolTitle}>Trắc nghiệm{'\n'}MBTI</Text>
+              <Text style={styles.toolDesc}>Khám phá tính cách và sự tương hợp</Text>
+              <View style={styles.toolPills}>
+                <View style={styles.toolPill}>
+                  <Ionicons name="help-circle-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>40 câu</Text>
+                </View>
+                <View style={styles.toolPill}>
+                  <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>10 phút</Text>
+                </View>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+              <View style={styles.toolCta}>
+                <Text style={[styles.toolCtaText, { color: '#1A9E6E' }]}>Bắt đầu</Text>
+                <Ionicons name="arrow-forward" size={13} color="#1A9E6E" />
+              </View>
             </PressableCard>
           </View>
         </View>
@@ -231,6 +252,7 @@ const SuggestionsScreen: React.FC = () => {
             selectedCategory={selectedArticleCategory}
             onCategoryChange={handleArticleCategoryChange}
             onArticlePress={handleArticlePress}
+            onViewAll={() => navigation.navigate('AllArticles')}
           />
         ) : (
           <View style={styles.section}>
@@ -243,7 +265,7 @@ const SuggestionsScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('AllProducts')}>
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
@@ -349,8 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   scrollContent: {
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 10 : 10,
+    paddingTop: 0,
   },
   section: {
     marginTop: 24,
@@ -380,43 +401,77 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  // Tool Cards (Survey + MBTI)
+  // Tool Cards (Survey + MBTI) — 2-column gradient cards
   toolCards: {
+    flexDirection: "row",
     paddingHorizontal: 16,
-    gap: 10,
+    gap: 12,
   },
   toolCard: {
+    flex: 1,
+    borderRadius: 18,
+    padding: 16,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  toolIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  toolTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.white,
+    lineHeight: 20,
+    marginBottom: 6,
+  },
+  toolDesc: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.8)",
+    lineHeight: 15,
+    marginBottom: 12,
+    flexShrink: 1,
+  },
+  toolPills: {
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 14,
+    flexWrap: "wrap",
+  },
+  toolPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    padding: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    gap: 3,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
-  toolCardMbti: {
-    borderLeftColor: COLORS.success,
-  },
-  toolCardLeft: {
-    marginRight: 12,
-  },
-  toolCardContent: {
-    flex: 1,
-  },
-  toolCardTitle: {
-    fontSize: 15,
+  toolPillText: {
+    fontSize: 10,
     fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginBottom: 2,
+    color: "rgba(255,255,255,0.95)",
   },
-  toolCardSub: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+  toolCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    paddingVertical: 8,
+  },
+  toolCtaText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   // Offline / empty state banner

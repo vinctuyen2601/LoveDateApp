@@ -105,19 +105,33 @@ export async function initializeTables(
         icon TEXT,
         color TEXT,
         content TEXT NOT NULL,
+        status TEXT DEFAULT 'published',
         imageUrl TEXT,
         author TEXT,
         readTime INTEGER,
         tags TEXT,
         likes INTEGER DEFAULT 0,
         views INTEGER DEFAULT 0,
-        isPublished INTEGER DEFAULT 1,
         isFeatured INTEGER DEFAULT 0,
+        publishedAt TEXT,
         version INTEGER DEFAULT 0,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Migrate existing articles table: add status column if missing (replaces isPublished)
+    try {
+      await db.execAsync(`ALTER TABLE articles ADD COLUMN status TEXT DEFAULT 'published';`);
+      await db.execAsync(`UPDATE articles SET status = CASE WHEN isPublished = 1 THEN 'published' ELSE 'draft' END WHERE status IS NULL;`);
+    } catch {
+      // Column already exists — skip
+    }
+    try {
+      await db.execAsync(`ALTER TABLE articles ADD COLUMN publishedAt TEXT;`);
+    } catch {
+      // Column already exists — skip
+    }
 
     // Surveys table
     await db.execAsync(`
@@ -897,7 +911,7 @@ class LegacyDatabaseService {
     try {
       const query = includeUnpublished
         ? "SELECT * FROM articles ORDER BY updatedAt DESC"
-        : "SELECT * FROM articles WHERE isPublished = 1 ORDER BY updatedAt DESC";
+        : "SELECT * FROM articles WHERE status = 'published' ORDER BY updatedAt DESC";
       const rows = (await this.db.getAllAsync(query)) as DatabaseArticle[];
       return rows.map((row) => ({
         id: row.id,
@@ -906,14 +920,15 @@ class LegacyDatabaseService {
         icon: row.icon,
         color: row.color,
         content: row.content,
+        status: (row.status ?? 'published') as Article["status"],
         imageUrl: row.imageUrl ?? undefined,
         author: row.author ?? undefined,
         readTime: row.readTime ?? undefined,
         tags: row.tags ? JSON.parse(row.tags) : [],
         likes: row.likes,
         views: row.views,
-        isPublished: Boolean(row.isPublished),
         isFeatured: Boolean(row.isFeatured),
+        publishedAt: row.publishedAt ?? undefined,
         version: row.version,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -1011,16 +1026,17 @@ class LegacyDatabaseService {
         for (const a of articles) {
           await this.db!.runAsync(
             `INSERT OR REPLACE INTO articles
-              (id, title, category, icon, color, content, imageUrl, author, readTime,
-               tags, likes, views, isPublished, isFeatured, version, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              (id, title, category, icon, color, content, status, imageUrl, author, readTime,
+               tags, likes, views, isFeatured, publishedAt, version, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               a.id, a.title, a.category, a.icon, a.color, a.content,
+              a.status ?? 'published',
               a.imageUrl ?? null, a.author ?? null, a.readTime ?? null,
               a.tags ? JSON.stringify(a.tags) : null,
               a.likes, a.views,
-              a.isPublished ? 1 : 0,
               a.isFeatured ? 1 : 0,
+              a.publishedAt ?? null,
               a.version, a.createdAt, a.updatedAt,
             ]
           );

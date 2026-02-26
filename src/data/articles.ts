@@ -20,8 +20,8 @@ export interface Article {
   likes?: number; // Like count
   views?: number; // View count
   status?: 'draft' | 'published' | 'archived'; // Status from backend API
-  isPublished?: boolean; // Legacy field (kept for local fallback articles)
   isFeatured?: boolean; // Featured article flag
+  publishedAt?: string; // ISO date when published
   createdAt?: string; // ISO date string
   updatedAt?: string; // ISO date string
   version?: number; // Version for conflict resolution
@@ -46,10 +46,10 @@ export const DEFAULT_ARTICLES: Article[] = [
     category: 'gifts',
     icon: 'gift',
     color: '#FF6B6B',
-    imageUrl: undefined,
+    imageUrl: 'https://picsum.photos/seed/gift-birthday/640/360',
     readTime: 5,
     tags: ['quà tặng', 'sinh nhật', 'người yêu', 'top 10'],
-    isPublished: true,
+    status: 'published',
     isFeatured: true,
     content: `
 <h3>1. Hoa tươi &amp; Socola cao cấp</h3>
@@ -92,10 +92,10 @@ export const DEFAULT_ARTICLES: Article[] = [
     category: 'zodiac',
     icon: 'sparkles',
     color: '#F39C12',
-    imageUrl: undefined,
+    imageUrl: 'https://picsum.photos/seed/zodiac-stars/640/360',
     readTime: 7,
     tags: ['cung hoàng đạo', 'quà tặng', 'tính cách'],
-    isPublished: true,
+    status: 'published',
     content: `**♈ Bạch Dương (21/3 - 19/4)**
 Năng động, thích phiêu lưu → Quà: Dụng cụ thể thao, vé xem concert, đồ công nghệ.
 
@@ -141,10 +141,10 @@ Lãng mạn, mơ mộng → Quà: Thơ, nhạc, tranh, buổi hẹn lãng mạn.
     category: 'dates',
     icon: 'heart',
     color: '#FF69B4',
-    imageUrl: undefined,
+    imageUrl: 'https://picsum.photos/seed/romantic-couple/640/360',
     readTime: 4,
     tags: ['hẹn hò', 'lãng mạn', 'tiết kiệm', 'date ideas'],
-    isPublished: true,
+    status: 'published',
     isFeatured: true,
     content: `**1. Picnic công viên**
 Chuẩn bị thức ăn, khăn trải, ngồi dưới bóng cây trò chuyện.
@@ -185,10 +185,10 @@ Cùng ngồi viết, sau đó đọc cho nhau nghe.`,
     category: 'communication',
     icon: 'chatbubbles',
     color: '#3498DB',
-    imageUrl: undefined,
+    imageUrl: 'https://picsum.photos/seed/love-language/640/360',
     readTime: 6,
     tags: ['ngôn ngữ yêu thương', 'love languages', 'giao tiếp'],
-    isPublished: true,
+    status: 'published',
     isFeatured: true,
     content: `**1. Words of Affirmation (Lời nói khẳng định)**
 Người này cần nghe: "Anh yêu em", "Em làm tốt lắm", "Anh tự hào về em".
@@ -229,10 +229,10 @@ Họ cần ôm, nắm tay, hôn, vuốt ve.
     category: 'gifts',
     icon: 'gift',
     color: '#FF6B6B',
-    imageUrl: undefined,
+    imageUrl: 'https://picsum.photos/seed/couple-journey/640/360',
     readTime: 5,
     tags: ['quà tặng', 'mối quan hệ', 'giai đoạn yêu'],
-    isPublished: true,
+    status: 'published',
     content: `**Giai đoạn 1: Mới quen (1-3 tháng)**
 ❌ Tránh: Quà quá đắt, quá riêng tư (nội y, trang sức đắt tiền)
 ✅ Nên: Hoa, socola, sách, voucher cafe, móc khóa cute
@@ -267,10 +267,10 @@ Họ cần ôm, nắm tay, hôn, vuốt ve.
     category: 'personality',
     icon: 'people',
     color: '#2ECC71',
-    imageUrl: undefined,
+    imageUrl: 'https://picsum.photos/seed/personality-type/640/360',
     readTime: 6,
     tags: ['MBTI', 'tính cách', 'personality'],
-    isPublished: true,
+    status: 'published',
     content: `**Nhóm Analyst (NT) - Nhà phân tích**
 INTJ, INTP, ENTJ, ENTP
 → Thích: Logic, tri thức, thảo luận sâu

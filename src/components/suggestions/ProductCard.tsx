@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { AffiliateProduct } from '../../types';
 import { COLORS } from '@themes/colors';
 import { formatPrice } from '../../data/affiliateProducts';
 import PressableCard from '@components/atoms/PressableCard';
+import { trackAffiliateClick } from '../../services/affiliateProductService';
 
 interface ProductCardProps {
   product: AffiliateProduct;
@@ -17,6 +18,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
 
   const handlePress = () => {
     navigation.navigate('ProductDetail', { product });
+  };
+
+  const handleBuyPress = () => {
+    if (product.affiliateUrl) {
+      trackAffiliateClick(product.id);
+      Linking.openURL(product.affiliateUrl);
+    }
   };
 
   if (variant === 'vertical') {
@@ -41,8 +49,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           {product.price && (
             <Text style={styles.verticalPrice}>{formatPrice(product.price)}</Text>
           )}
-          <TouchableOpacity style={styles.verticalCta}>
-            <Text style={styles.verticalCtaText}>Xem</Text>
+          <TouchableOpacity style={styles.verticalCta} onPress={handleBuyPress}>
+            <Text style={styles.verticalCtaText}>Mua</Text>
           </TouchableOpacity>
         </View>
       </PressableCard>
@@ -97,8 +105,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           <Text style={styles.reviewCount}>({product.reviewCount})</Text>
         </View>
 
-        <TouchableOpacity style={[styles.ctaButton, { borderColor: product.color }]}>
-          <Text style={[styles.ctaText, { color: product.color }]}>Xem ngay</Text>
+        <TouchableOpacity style={[styles.ctaButton, { borderColor: product.color }]} onPress={handleBuyPress}>
+          <Text style={[styles.ctaText, { color: product.color }]}>Mua ngay</Text>
           <Ionicons name="arrow-forward" size={14} color={product.color} />
         </TouchableOpacity>
       </View>

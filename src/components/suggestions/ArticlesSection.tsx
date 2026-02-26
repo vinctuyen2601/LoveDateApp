@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from '@themes/colors';
@@ -112,22 +113,19 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
               style={styles.articleCard}
               onPress={() => onArticlePress(article)}
             >
-              <View
-                style={[styles.articleColorBar, { backgroundColor: article.color }]}
-              />
-              <View style={styles.articleBody}>
-                <View
-                  style={[
-                    styles.articleIconWrap,
-                    { backgroundColor: article.color + "15" },
-                  ]}
-                >
-                  <Ionicons
-                    name={article.icon}
-                    size={20}
-                    color={article.color}
+              {/* Image or colored banner */}
+              <View style={[styles.articleBanner, { backgroundColor: article.color }]}>
+                {article.imageUrl ? (
+                  <Image
+                    source={{ uri: article.imageUrl }}
+                    style={styles.articleBannerImage}
+                    resizeMode="cover"
                   />
-                </View>
+                ) : (
+                  <Ionicons name={article.icon} size={28} color="rgba(255,255,255,0.85)" />
+                )}
+              </View>
+              <View style={styles.articleBody}>
                 <Text style={styles.articleTitle} numberOfLines={2}>
                   {article.title}
                 </Text>
@@ -223,19 +221,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 3,
   },
-  articleColorBar: {
-    height: 8,
+  articleBanner: {
+    height: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  articleBannerImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   articleBody: {
     padding: 12,
-  },
-  articleIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
   },
   articleTitle: {
     fontSize: 14,

@@ -12,7 +12,7 @@ import {
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useSQLiteContext } from "expo-sqlite";
+// TODO(monetization): import { useSQLiteContext } from "expo-sqlite"; // cần lại khi re-enable premium check
 import { useEvents } from '@contexts/EventsContext';
 import { useToast } from "../contexts/ToastContext";
 import { EventFormData, RecurrenceType, PREDEFINED_TAGS } from "../types";
@@ -23,13 +23,13 @@ import { ValidationUtils } from '@lib/validation.utils';
 import ReminderSettings from "@components/molecules/ReminderSettings";
 import TimePicker from "@components/molecules/TimePicker";
 import RecurrenceTypePicker from "@components/molecules/RecurrenceTypePicker";
-import * as PremiumService from "../services/premium.service";
+// TODO(monetization): import * as PremiumService from "../services/premium.service";
 import { MAX_TITLE_LENGTH } from "../constants/config";
 
 const AddEventScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const db = useSQLiteContext();
+  // TODO(monetization): const db = useSQLiteContext(); // cần lại khi re-enable premium check
   const { addEvent, updateEvent, getEventById } = useEvents();
   const { showSuccess, showError } = useToast();
 
@@ -111,24 +111,11 @@ const AddEventScreen: React.FC = () => {
       return;
     }
 
-    // Check premium limit for new events (not for editing)
-    if (!isEditMode) {
-      const { canCreate, reason, limit } = await PremiumService.canCreateEvent(db, 'default-user');
-      if (!canCreate) {
-        Alert.alert(
-          'Đạt giới hạn miễn phí',
-          reason || `Bạn đã đạt giới hạn ${limit} sự kiện. Nâng cấp lên Premium để tạo không giới hạn!`,
-          [
-            { text: 'Để sau', style: 'cancel' },
-            {
-              text: 'Nâng cấp Premium',
-              onPress: () => navigation.navigate('Premium'),
-            },
-          ]
-        );
-        return;
-      }
-    }
+    // TODO(monetization): Re-enable event limit khi có đủ user base
+    // if (!isEditMode) {
+    //   const { canCreate, reason, limit } = await PremiumService.canCreateEvent(db, 'default-user');
+    //   if (!canCreate) { ... navigate('Premium') ... }
+    // }
 
     try {
       setIsSubmitting(true);

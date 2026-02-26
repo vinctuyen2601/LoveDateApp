@@ -1,14 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
-  Platform,
-  StatusBar,
   Animated,
-  Easing,
-  View,
   Text,
   TouchableOpacity,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from '@themes/colors';
 
@@ -19,22 +16,16 @@ interface NotificationBannerProps {
   onDismiss?: () => void;
 }
 
-const SCROLL_SPEED = 50; // px per second
-const GAP = 100; // spacing between two copies
-
 const NotificationBanner: React.FC<NotificationBannerProps> = ({
   message,
   icon = "notifications",
   dismissible = true,
   onDismiss,
 }) => {
+  const insets = useSafeAreaInsets();
   const [isDismissed, setIsDismissed] = useState(false);
-  const [textWidth, setTextWidth] = useState(0);
-  const slideAnim = useRef(new Animated.Value(-100)).current;
-  const scrollAnim = useRef(new Animated.Value(0)).current;
-  const animRef = useRef<Animated.CompositeAnimation | null>(null);
+  const slideAnim = useRef(new Animated.Value(-120)).current;
 
-  // Slide in
   useEffect(() => {
     if (message && !isDismissed) {
       Animated.spring(slideAnim, {
@@ -46,38 +37,9 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
     }
   }, [message, isDismissed]);
 
-  // Marquee: always scroll
-  useEffect(() => {
-    animRef.current?.stop();
-    scrollAnim.setValue(0);
-
-    if (textWidth <= 0) return;
-
-    const oneLoopDistance = textWidth + GAP;
-    const duration = (oneLoopDistance / SCROLL_SPEED) * 1000;
-
-    animRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.delay(2000),
-        Animated.timing(scrollAnim, {
-          toValue: -oneLoopDistance,
-          duration,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    animRef.current.start();
-
-    return () => {
-      animRef.current?.stop();
-    };
-  }, [textWidth, message]);
-
   const handleDismiss = () => {
-    animRef.current?.stop();
     Animated.timing(slideAnim, {
-      toValue: -100,
+      toValue: -120,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
@@ -90,31 +52,13 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
 
   return (
     <Animated.View
-      style={[styles.banner, { transform: [{ translateY: slideAnim }] }]}
+      style={[
+        styles.banner,
+        { paddingTop: insets.top + 10, transform: [{ translateY: slideAnim }] },
+      ]}
     >
-      <Ionicons name={icon} size={18} color={COLORS.white} />
-
-      {/* Hidden: measure real text width */}
-      <Text
-        style={styles.hiddenText}
-        onLayout={(e) => setTextWidth(Math.ceil(e.nativeEvent.layout.width))}
-      >
-        {message}
-      </Text>
-
-      <View style={styles.textContainer}>
-        <Animated.View
-          style={[
-            styles.textRow,
-            { transform: [{ translateX: scrollAnim }] },
-          ]}
-        >
-          <Text style={styles.text}>{message}</Text>
-          <View style={{ width: GAP }} />
-          <Text style={styles.text}>{message}</Text>
-        </Animated.View>
-      </View>
-
+      <Ionicons name={icon} size={18} color={COLORS.white} style={styles.icon} />
+      <Text style={styles.text}>{message}</Text>
       {dismissible && (
         <TouchableOpacity
           onPress={handleDismiss}
@@ -135,11 +79,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 10 : 10,
     paddingBottom: 10,
     gap: 10,
     zIndex: 1000,
@@ -149,30 +91,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  hiddenText: {
-    position: "absolute",
-    opacity: 0,
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  textContainer: {
-    flex: 1,
-    overflow: "hidden",
-    height: 20,
-  },
-  textRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 20,
+  icon: {
+    marginTop: 1,
   },
   text: {
+    flex: 1,
     fontSize: 13,
     color: COLORS.white,
     fontWeight: "500",
+    lineHeight: 18,
   },
   dismissButton: {
     padding: 4,
     opacity: 0.8,
+    marginTop: 1,
   },
 });
 

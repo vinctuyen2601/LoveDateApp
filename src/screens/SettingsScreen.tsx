@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import { useNavigation } from '@react-navigation/native';
+// TODO(monetization): import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@contexts/AuthContext';
 import { useSync } from '@contexts/SyncContext';
 import { useToast } from '../contexts/ToastContext';
@@ -22,7 +22,7 @@ import { NotificationUtils } from '@lib/notification.utils';
 import { COLORS } from '@themes/colors';
 import { APP_VERSION } from '../constants/config';
 const SettingsScreen: React.FC = () => {
-  const navigation = useNavigation<any>();
+  // TODO(monetization): const navigation = useNavigation<any>();
   const { user, isAnonymous, linkedProviders, logout, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = useAuth();
   const { sync, syncStatus } = useSync();
   const { showSuccess, showError } = useToast();
@@ -254,10 +254,9 @@ const SettingsScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Premium Section */}
+      {/* TODO(monetization): Re-enable Premium section khi có đủ user base
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Premium</Text>
-
         <SettingItem
           icon="star"
           title="Nâng cấp Premium"
@@ -266,6 +265,7 @@ const SettingsScreen: React.FC = () => {
           color={COLORS.warning}
         />
       </View>
+      */}
 
       {/* Sync Section */}
       <View style={styles.section}>

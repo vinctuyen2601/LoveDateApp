@@ -110,12 +110,10 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
 
       // 2. Fetch from API and update cache
       try {
-        const response = await apiService.get<{
+        const data = await apiService.get<{
           occasions: { id: string; label: string; value: string }[];
           productCategories: { id: string; label: string; value: string }[];
         }>('/master-data');
-
-        const data = response.data;
 
         if (data.occasions?.length > 0) {
           setOccasions(mergeOccasions(data.occasions));

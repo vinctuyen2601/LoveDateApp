@@ -6,13 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
-  StatusBar,
   Share,
   Linking,
   Dimensions,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import RenderHTML from 'react-native-render-html';
 import { AffiliateProduct } from '../types';
@@ -54,6 +54,7 @@ const EXPERIENCE_CATEGORY_META: Record<string, { label: string; icon: string; co
 };
 
 const ExperienceDetailScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { product } = route.params as { product: AffiliateProduct };
@@ -118,7 +119,7 @@ const ExperienceDetailScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
         </TouchableOpacity>
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 8 : 8,
+    paddingTop: 0,
     paddingBottom: 12,
     backgroundColor: COLORS.white,
     borderBottomWidth: 1,

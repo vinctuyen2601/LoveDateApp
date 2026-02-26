@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
   Dimensions,
   Platform,
   StatusBar,
   SafeAreaView,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import { shareAsync } from 'expo-sharing';
+import MBTIShareCard from '../components/share/MBTIShareCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
@@ -51,6 +55,25 @@ const MBTISurveyScreen: React.FC = () => {
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<MBTIResult | null>(null);
   const [surveyFor, setSurveyFor] = useState<'self' | 'partner' | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const cardRef = useRef<View>(null);
+
+  const handleShareCard = async () => {
+    if (!cardRef.current) return;
+    setIsSharing(true);
+    try {
+      const uri = await captureRef(cardRef, { format: 'png', quality: 1 });
+      await shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Chia sẻ kết quả MBTI',
+      });
+    } catch {
+      // user cancelled hoặc lỗi
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   // 40 câu hỏi MBTI chuẩn - 10 câu mỗi chiều
   const mbtiQuestions: MBTIQuestion[] = [
@@ -821,6 +844,15 @@ const MBTISurveyScreen: React.FC = () => {
             </View>
           </View>
 
+          {/* Nút Share */}
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={() => setShowShareModal(true)}
+          >
+            <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.shareButtonText}>Chia sẻ kết quả</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.restartButton} onPress={handleRestart}>
             <Ionicons name="refresh" size={20} color={COLORS.white} />
             <Text style={styles.restartButtonText}>Làm lại bài test</Text>
@@ -828,6 +860,55 @@ const MBTISurveyScreen: React.FC = () => {
 
           <View style={{ height: 40 }} />
         </ScrollView>
+
+        {/* Share Modal */}
+        <Modal
+          visible={showShareModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowShareModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHandle} />
+
+              <Text style={styles.modalTitle}>Chia sẻ kết quả MBTI</Text>
+              <Text style={styles.modalSubtitle}>
+                Bạn bè sẽ thấy loại tính cách của bạn 🎉
+              </Text>
+
+              {/* Card preview — đây là view sẽ được chụp */}
+              <View style={styles.cardWrapper}>
+                <View ref={cardRef} collapsable={false}>
+                  <MBTIShareCard result={result!} />
+                </View>
+              </View>
+
+              {/* Actions */}
+              <TouchableOpacity
+                style={[styles.shareActionBtn, isSharing && styles.shareActionBtnDisabled]}
+                onPress={handleShareCard}
+                disabled={isSharing}
+              >
+                {isSharing ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <Ionicons name="share-social" size={20} color={COLORS.white} />
+                )}
+                <Text style={styles.shareActionText}>
+                  {isSharing ? 'Đang xử lý...' : 'Chia sẻ ngay'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setShowShareModal(false)}
+              >
+                <Text style={styles.modalCloseBtnText}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   }
@@ -1190,6 +1271,96 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.white,
+  },
+
+  // Share button (trên restartButton)
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    gap: 8,
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  shareButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+
+  // Share Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 36,
+    alignItems: 'center',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+  },
+  cardWrapper: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    marginBottom: 24,
+  },
+  shareActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 15,
+    gap: 8,
+    width: '100%',
+    marginBottom: 12,
+  },
+  shareActionBtnDisabled: {
+    opacity: 0.7,
+  },
+  shareActionText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  modalCloseBtn: {
+    paddingVertical: 10,
+  },
+  modalCloseBtnText: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
 });
 

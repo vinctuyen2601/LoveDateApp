@@ -5,11 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
   StatusBar,
   Share,
   Dimensions,
+  Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import RenderHTML from 'react-native-render-html';
@@ -25,6 +26,7 @@ import PressableCard from '@components/atoms/PressableCard';
 const { width: screenWidth } = Dimensions.get('window');
 
 const ArticleDetailScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { article } = route.params as { article: Article };
@@ -83,45 +85,62 @@ const ArticleDetailScreen: React.FC = () => {
     navigation.replace('ArticleDetail', { article: relatedArticle });
   };
 
+  const heroPaddingTop = insets.top + 8;
+
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Bài viết</Text>
-
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
-            <Ionicons name="share-outline" size={24} color={COLORS.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton} onPress={handleLike}>
-            <Ionicons
-              name={isLiked ? 'heart' : 'heart-outline'}
-              size={24}
-              color={isLiked ? COLORS.error : COLORS.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <StatusBar translucent barStyle="light-content" backgroundColor="transparent" />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
-        <View style={[styles.heroSection, { backgroundColor: article.color + '15' }]}>
-          <View style={[styles.heroIcon, { backgroundColor: article.color + '30' }]}>
-            <Ionicons name={article.icon as any} size={48} color={article.color} />
-          </View>
-          <Text style={styles.articleTitle}>{article.title}</Text>
-          {categoryInfo && (
-            <View style={[styles.categoryBadge, { backgroundColor: article.color }]}>
-              <Text style={styles.categoryBadgeText}>{categoryInfo.name}</Text>
+        {/* ── Hero Image ── */}
+        <View style={styles.heroWrapper}>
+          {article.imageUrl ? (
+            <Image
+              source={{ uri: article.imageUrl }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.heroImage, { backgroundColor: article.color, alignItems: 'center', justifyContent: 'center' }]}>
+              <Ionicons name={article.icon as any} size={88} color="rgba(255,255,255,0.2)" />
             </View>
           )}
+
+          {/* Gradient overlay — dark at bottom for text */}
+          <View style={styles.heroGradient} />
+
+          {/* Floating back button */}
+          <TouchableOpacity
+            style={[styles.heroBack, { top: heroPaddingTop }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+          </TouchableOpacity>
+
+          {/* Floating share + like */}
+          <View style={[styles.heroActionRow, { top: heroPaddingTop }]}>
+            <TouchableOpacity style={styles.heroActionBtn} onPress={handleShare}>
+              <Ionicons name="share-outline" size={20} color={COLORS.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.heroActionBtn} onPress={handleLike}>
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={20}
+                color={isLiked ? '#FF6B6B' : COLORS.white}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Category badge + title at bottom */}
+          <View style={styles.heroContent}>
+            {categoryInfo && (
+              <View style={[styles.heroCatBadge, { backgroundColor: article.color }]}>
+                <Ionicons name={article.icon as any} size={11} color={COLORS.white} />
+                <Text style={styles.heroCatText}>{categoryInfo.name}</Text>
+              </View>
+            )}
+            <Text style={styles.heroTitle} numberOfLines={3}>{article.title}</Text>
+          </View>
         </View>
 
         {/* Metadata Bar */}
@@ -274,64 +293,78 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 8 : 8,
-    paddingBottom: 12,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 4,
-  },
   scrollView: {
     flex: 1,
   },
 
-  // Hero
-  heroSection: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
+  // ── Hero image ──────────────────────────────────────────────────────────────
+  heroWrapper: {
+    height: 260,
+    overflow: 'hidden',
   },
-  heroIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  heroGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 160,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  heroBack: {
+    position: 'absolute',
+    left: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  articleTitle: {
-    fontSize: 24,
+  heroActionRow: {
+    position: 'absolute',
+    right: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  heroActionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroContent: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+  },
+  heroCatBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  heroCatText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    lineHeight: 32,
-    marginBottom: 12,
-  },
-  categoryBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  categoryBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
     color: COLORS.white,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.white,
+    lineHeight: 27,
   },
 
   // Metadata

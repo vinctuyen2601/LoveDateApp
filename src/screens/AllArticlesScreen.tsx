@@ -1,0 +1,774 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  TextInput,
+  Image,
+  Dimensions,
+  ListRenderItem,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { COLORS } from '@themes/colors';
+import { Article } from '../data/articles';
+import { getArticles, trackArticleView } from '../services/articleService';
+import { useMasterData } from '../contexts/MasterDataContext';
+import PressableCard from '@components/atoms/PressableCard';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// ─── Sort ─────────────────────────────────────────────────────────────────────
+
+type SortKey = 'popular' | 'newest' | 'liked' | 'quick';
+
+const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
+  { key: 'popular', label: 'Phổ biến nhất',  icon: 'eye-outline' },
+  { key: 'newest',  label: 'Mới nhất',        icon: 'time-outline' },
+  { key: 'liked',   label: 'Được yêu thích',  icon: 'heart-outline' },
+  { key: 'quick',   label: 'Đọc nhanh nhất',  icon: 'flash-outline' },
+];
+
+function applySort(articles: Article[], key: SortKey): Article[] {
+  const arr = [...articles];
+  if (key === 'newest')  return arr.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+  if (key === 'liked')   return arr.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
+  if (key === 'quick')   return arr.sort((a, b) => (a.readTime ?? 99) - (b.readTime ?? 99));
+  // popular: views desc, featured first
+  return arr.sort((a, b) => {
+    if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+    return (b.views ?? 0) - (a.views ?? 0);
+  });
+}
+
+// ─── Category config ──────────────────────────────────────────────────────────
+
+const STATIC_CATEGORIES = [
+  { id: 'all',           name: 'Tất cả',        icon: 'apps',         color: COLORS.primary },
+  { id: 'gifts',         name: 'Quà tặng',      icon: 'gift',         color: '#FF6B6B' },
+  { id: 'dates',         name: 'Hẹn hò',        icon: 'heart',        color: '#E91E63' },
+  { id: 'communication', name: 'Giao tiếp',     icon: 'chatbubbles',  color: '#2196F3' },
+  { id: 'zodiac',        name: 'Hoàng đạo',     icon: 'sparkles',     color: '#FF9800' },
+  { id: 'personality',   name: 'Tính cách',     icon: 'people',       color: '#4CAF50' },
+];
+
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}
+
+// ─── Hero card (featured, full-width) ─────────────────────────────────────────
+
+const HeroCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => (
+  <PressableCard style={styles.heroCard} onPress={onPress}>
+    {article.imageUrl ? (
+      <Image source={{ uri: article.imageUrl }} style={styles.heroImage} resizeMode="cover" />
+    ) : (
+      <View style={[styles.heroImage, { backgroundColor: article.color, alignItems: 'center', justifyContent: 'center' }]}>
+        <Ionicons name={article.icon as any} size={56} color="rgba(255,255,255,0.4)" />
+      </View>
+    )}
+
+    {/* Gradient overlay */}
+    <View style={styles.heroOverlay}>
+      <View style={styles.heroBadgeRow}>
+        <View style={[styles.heroCategoryBadge, { backgroundColor: article.color }]}>
+          <Ionicons name={article.icon as any} size={11} color={COLORS.white} />
+          <Text style={styles.heroCategoryText}>
+            {STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? article.category}
+          </Text>
+        </View>
+        {article.isFeatured && (
+          <View style={styles.featuredBadge}>
+            <Ionicons name="star" size={10} color="#FFB300" />
+            <Text style={styles.featuredText}>Nổi bật</Text>
+          </View>
+        )}
+      </View>
+
+      <Text style={styles.heroTitle} numberOfLines={2}>{article.title}</Text>
+
+      <View style={styles.heroMeta}>
+        <View style={styles.heroMetaItem}>
+          <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.8)" />
+          <Text style={styles.heroMetaText}>{article.readTime ?? 5} phút đọc</Text>
+        </View>
+        <View style={styles.heroMetaItem}>
+          <Ionicons name="eye-outline" size={13} color="rgba(255,255,255,0.8)" />
+          <Text style={styles.heroMetaText}>{formatCount(article.views ?? 0)}</Text>
+        </View>
+        <View style={styles.heroMetaItem}>
+          <Ionicons name="heart-outline" size={13} color="rgba(255,255,255,0.8)" />
+          <Text style={styles.heroMetaText}>{formatCount(article.likes ?? 0)}</Text>
+        </View>
+      </View>
+    </View>
+  </PressableCard>
+);
+
+// ─── Editorial list card ───────────────────────────────────────────────────────
+
+const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
+  const catInfo = STATIC_CATEGORIES.find((c) => c.id === article.category);
+
+  return (
+    <PressableCard style={styles.listCard} onPress={onPress}>
+      {/* Thumbnail */}
+      {article.imageUrl ? (
+        <Image source={{ uri: article.imageUrl }} style={styles.listThumb} resizeMode="cover" />
+      ) : (
+        <View style={[styles.listThumb, styles.listThumbIcon, { backgroundColor: article.color + '20' }]}>
+          <Ionicons name={article.icon as any} size={22} color={article.color} />
+        </View>
+      )}
+
+      {/* Content */}
+      <View style={styles.listContent}>
+        {/* Category + read time */}
+        <View style={styles.listTopRow}>
+          <View style={[styles.listCatBadge, { backgroundColor: catInfo?.color ?? article.color }]}>
+            <Text style={styles.listCatText}>{catInfo?.name ?? article.category}</Text>
+          </View>
+          <View style={styles.listReadTime}>
+            <Ionicons name="time-outline" size={11} color={COLORS.textSecondary} />
+            <Text style={styles.listReadTimeText}>{article.readTime ?? 5} phút</Text>
+          </View>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.listTitle} numberOfLines={2}>{article.title}</Text>
+
+        {/* Stats */}
+        <View style={styles.listStats}>
+          <View style={styles.listStat}>
+            <Ionicons name="eye-outline" size={12} color={COLORS.textSecondary} />
+            <Text style={styles.listStatText}>{formatCount(article.views ?? 0)}</Text>
+          </View>
+          <View style={styles.listStat}>
+            <Ionicons name="heart-outline" size={12} color="#E91E63" />
+            <Text style={styles.listStatText}>{formatCount(article.likes ?? 0)}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Right arrow */}
+      <Ionicons name="chevron-forward" size={16} color={COLORS.border} style={styles.listArrow} />
+    </PressableCard>
+  );
+};
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
+
+type ListItem =
+  | { type: 'hero'; article: Article }
+  | { type: 'article'; article: Article }
+  | { type: 'count'; count: number; activeFilters: number };
+
+const AllArticlesScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+
+  const [articles, setArticles]         = useState<Article[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState<string | null>(null);
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [categoryId, setCategoryId]     = useState('all');
+  const [sort, setSort]                 = useState<SortKey>('popular');
+  const [showSort, setShowSort]         = useState(false);
+
+  // Debounce
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    getArticles()
+      .then(setArticles)
+      .catch(() => setError('Không thể tải bài viết.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleArticlePress = useCallback((article: Article) => {
+    trackArticleView(article.id);
+    navigation.navigate('ArticleDetail', { article });
+  }, [navigation]);
+
+  // Filtered + sorted
+  const filtered = useMemo(() => {
+    let result = articles.filter(
+      (a) => !a.status || a.status === 'published'
+    );
+    if (debouncedQuery.trim()) {
+      const q = debouncedQuery.toLowerCase();
+      result = result.filter(
+        (a) => a.title.toLowerCase().includes(q) || a.tags?.some((t) => t.toLowerCase().includes(q))
+      );
+    }
+    if (categoryId !== 'all') {
+      result = result.filter((a) => a.category === categoryId);
+    }
+    return applySort(result, sort);
+  }, [articles, debouncedQuery, categoryId, sort]);
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (debouncedQuery.trim()) n++;
+    if (categoryId !== 'all') n++;
+    return n;
+  }, [debouncedQuery, categoryId]);
+
+  const clearAll = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedQuery('');
+    setCategoryId('all');
+    setSort('popular');
+  }, []);
+
+  // Build list data: hero (first) + count bar + rest as list cards
+  const listData = useMemo((): ListItem[] => {
+    if (filtered.length === 0) return [];
+    const [hero, ...rest] = filtered;
+    return [
+      { type: 'hero', article: hero },
+      { type: 'count', count: filtered.length, activeFilters: activeFilterCount },
+      ...rest.map((a): ListItem => ({ type: 'article', article: a })),
+    ];
+  }, [filtered, activeFilterCount]);
+
+  const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label ?? '';
+
+  const renderItem: ListRenderItem<ListItem> = useCallback(({ item }) => {
+    if (item.type === 'hero') {
+      return <HeroCard article={item.article} onPress={() => handleArticlePress(item.article)} />;
+    }
+    if (item.type === 'count') {
+      return (
+        <View style={styles.resultsBar}>
+          <Text style={styles.resultsCount}>
+            {item.count} bài viết{item.activeFilters > 0 ? ' (đang lọc)' : ''}
+          </Text>
+          {item.activeFilters > 0 && (
+            <TouchableOpacity onPress={clearAll}>
+              <Text style={styles.clearText}>Xóa bộ lọc</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+    return <ArticleListCard article={item.article} onPress={() => handleArticlePress(item.article)} />;
+  }, [handleArticlePress, clearAll]);
+
+  const keyExtractor = useCallback((item: ListItem, index: number) => {
+    if (item.type === 'count') return 'count-bar';
+    return item.article.id + '-' + index;
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      {/* ── Header ── */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Cẩm nang yêu thương</Text>
+          <Text style={styles.headerSub}>Bí quyết cho tình yêu bền lâu</Text>
+        </View>
+        {activeFilterCount > 0 ? (
+          <TouchableOpacity style={styles.clearBadge} onPress={clearAll}>
+            <Text style={styles.clearBadgeText}>Xóa ({activeFilterCount})</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.iconBtn} />
+        )}
+      </View>
+
+      {/* ── Search + Sort row ── */}
+      <View style={styles.searchRow}>
+        <Ionicons name="search-outline" size={17} color={COLORS.textSecondary} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm bài viết, chủ đề..."
+          placeholderTextColor={COLORS.textSecondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        <TouchableOpacity style={styles.sortPill} onPress={() => setShowSort(true)}>
+          <Ionicons name="swap-vertical-outline" size={14} color={COLORS.primary} />
+          <Text style={styles.sortPillText} numberOfLines={1}>
+            {sort === 'popular' ? 'Sắp xếp' : activeSortLabel}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Category tabs ── */}
+      <View style={styles.categoryBar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsRow}
+        >
+          {STATIC_CATEGORIES.map((cat) => {
+            const active = categoryId === cat.id;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.catChip, active && { backgroundColor: cat.color, borderColor: cat.color }]}
+                onPress={() => setCategoryId(cat.id)}
+              >
+                <Ionicons name={cat.icon as any} size={13} color={active ? COLORS.white : cat.color} />
+                <Text style={[styles.catChipText, { color: active ? COLORS.white : cat.color }]}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* ── Content ── */}
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.stateText}>Đang tải bài viết...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Ionicons name="wifi-outline" size={44} color={COLORS.textSecondary} />
+          <Text style={styles.stateText}>{error}</Text>
+        </View>
+      ) : filtered.length === 0 ? (
+        <View style={styles.center}>
+          <Ionicons name="document-text-outline" size={44} color={COLORS.textSecondary} />
+          <Text style={styles.stateText}>
+            {activeFilterCount > 0 ? 'Không tìm thấy bài viết phù hợp' : 'Chưa có bài viết nào'}
+          </Text>
+          {activeFilterCount > 0 && (
+            <TouchableOpacity style={styles.retryBtn} onPress={clearAll}>
+              <Text style={styles.retryBtnText}>Xóa bộ lọc</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        <FlatList
+          data={listData}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        />
+      )}
+
+      {/* ── Sort sheet ── */}
+      {showSort && (
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowSort(false)}>
+          <TouchableOpacity style={styles.sheet} activeOpacity={1} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Sắp xếp theo</Text>
+            {SORT_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={styles.sheetRow}
+                onPress={() => { setSort(option.key); setShowSort(false); }}
+              >
+                <Ionicons
+                  name={option.icon as any}
+                  size={20}
+                  color={sort === option.key ? COLORS.primary : COLORS.textSecondary}
+                />
+                <Text style={[styles.sheetRowText, sort === option.key && styles.sheetRowActive]}>
+                  {option.label}
+                </Text>
+                {sort === option.key && (
+                  <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+
+  // Header — warm gradient feel
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 0,
+    paddingBottom: 14,
+    paddingHorizontal: 12,
+    backgroundColor: '#C62A47',
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  headerSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 2,
+  },
+  clearBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    width: 40,
+    alignItems: 'center',
+  },
+  clearBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+
+  // Search + sort row
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 12,
+    marginVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 4,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+  },
+  sortPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary + '12',
+    borderWidth: 1,
+    borderColor: COLORS.primary + '30',
+    maxWidth: 100,
+  },
+  sortPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.primary,
+    flexShrink: 1,
+  },
+
+  // Category chips
+  categoryBar: {
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingVertical: 8,
+  },
+  chipsRow: {
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  catChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  catChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // List
+  list: {
+    paddingBottom: 40,
+  },
+
+  // Hero card
+  heroCard: {
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: 200,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  heroOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+    padding: 14,
+  },
+  heroBadgeRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
+  },
+  heroCategoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  heroCategoryText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,179,0,0.25)',
+    borderWidth: 1,
+    borderColor: '#FFB300',
+  },
+  featuredText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFB300',
+  },
+  heroTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.white,
+    lineHeight: 23,
+    marginBottom: 10,
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  heroMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  heroMetaText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+  },
+
+  // Results bar
+  resultsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  resultsCount: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  clearText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+
+  // Editorial list card
+  listCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: 14,
+    padding: 12,
+    elevation: 1,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+  },
+  listThumb: {
+    width: 76,
+    height: 76,
+    borderRadius: 12,
+    marginRight: 12,
+    flexShrink: 0,
+  },
+  listThumbIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
+    flex: 1,
+    gap: 5,
+  },
+  listTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  listCatBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  listCatText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  listReadTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  listReadTimeText: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  listTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    lineHeight: 19,
+  },
+  listStats: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  listStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  listStatText: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  listArrow: {
+    marginLeft: 6,
+    flexShrink: 0,
+  },
+
+  // States
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 32,
+  },
+  stateText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary,
+  },
+  retryBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+
+  // Sort sheet
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 32,
+    paddingTop: 12,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  sheetRowText: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  sheetRowActive: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+});
+
+export default AllArticlesScreen;

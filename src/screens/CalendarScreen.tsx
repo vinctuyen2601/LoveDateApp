@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
-  Platform,
-  StatusBar,
   Image,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useEvents } from '@contexts/EventsContext';
@@ -28,6 +27,7 @@ import { EmptyState } from "@components/atoms/EmptyState";
 const { width } = Dimensions.get("window");
 
 const CalendarScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { events, isLoading, refreshEvents, deleteEvent } = useEvents();
@@ -230,7 +230,7 @@ const CalendarScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Header with Month Stats */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <Ionicons name="calendar" size={28} color={COLORS.primary} />
@@ -492,8 +492,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.white,
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 16 : 16,
+    paddingTop: 0,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
@@ -504,8 +503,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   headerWithBanner: {
-    paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 72 : 108,
+    paddingTop: 0,
   },
   headerContent: {
     flexDirection: "row",

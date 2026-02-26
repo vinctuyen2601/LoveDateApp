@@ -594,14 +594,15 @@ export interface Article {
   icon: string;
   color: string;
   content: string;
+  status: 'draft' | 'published' | 'archived';
   imageUrl?: string;
   author?: string;
   readTime?: number;
   tags?: string[];
   likes: number;
   views: number;
-  isPublished: boolean;
   isFeatured: boolean;
+  publishedAt?: string;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -614,14 +615,15 @@ export interface DatabaseArticle {
   icon: string;
   color: string;
   content: string;
+  status: string;
   imageUrl: string | null;
   author: string | null;
   readTime: number | null;
   tags: string | null; // JSON string
   likes: number;
   views: number;
-  isPublished: number; // SQLite boolean
   isFeatured: number; // SQLite boolean
+  publishedAt: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;

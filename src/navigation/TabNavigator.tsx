@@ -5,7 +5,7 @@ import { COLORS } from '@themes/colors';
 import HomeScreen from '../screens/HomeScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import SuggestionsScreen from '../screens/SuggestionsScreen';
-import AnalyticsScreen from '../screens/AnalyticsScreen';
+// TODO: Analytics tab — implement thống kê (streak, sự kiện theo tháng, sản phẩm đã xem)
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -23,8 +23,6 @@ const TabNavigator: React.FC = () => {
             iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Suggestions') {
             iconName = focused ? 'bulb' : 'bulb-outline';
-          } else if (route.name === 'Analytics') {
-            iconName = focused ? 'stats-chart' : 'stats-chart-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'settings' : 'settings-outline';
           }
@@ -79,14 +77,6 @@ const TabNavigator: React.FC = () => {
         component={SuggestionsScreen}
         options={{
           title: 'Gợi ý',
-          headerShown: false,
-        }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
-        options={{
-          title: 'Thống kê',
           headerShown: false,
         }}
       />
