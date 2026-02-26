@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.importantdates",
+      "bundleIdentifier": "com.lovedate.importantdates",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",
@@ -30,7 +30,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourcompany.importantdates",
+      "package": "com.lovedate.importantdates",
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
