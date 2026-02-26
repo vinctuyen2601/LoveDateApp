@@ -1,28 +1,25 @@
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
-import { databaseService } from './database.service';
-import { notificationEnhancedService } from './notificationEnhanced.service';
+import * as SQLite from 'expo-sqlite';
+import { getAllEvents, DB_NAME } from './database.service';
+import { scheduleUpcomingNotifications } from './notificationScheduler.service';
 
 const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND_NOTIFICATION_TASK';
 
 /**
  * Background task to reschedule notifications
- * This runs periodically even when the app is closed
- *
- * TODO: This needs to be updated to work with the new database context pattern.
- * Background tasks run outside the app context, so we need to handle database
- * initialization differently here.
+ * Chạy định kỳ kể cả khi app đóng hoàn toàn.
+ * Mở DB trực tiếp — không dùng React context (không tồn tại trong background).
  */
 TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async () => {
   try {
     console.log('[Background Task] Running notification reschedule task');
 
-    // Get all events from database
-    const events = await databaseService.getAllEvents();
+    // Mở DB trực tiếp, không qua SQLiteProvider/React context
+    const db = await SQLite.openDatabaseAsync(DB_NAME);
+    const events = await getAllEvents(db);
 
-    // Reschedule notifications for all events
-    // Note: Enhanced service may not have database initialized in background context
-    await notificationEnhancedService.rescheduleAllNotifications(events);
+    await scheduleUpcomingNotifications(events);
 
     console.log('[Background Task] Successfully rescheduled notifications');
 

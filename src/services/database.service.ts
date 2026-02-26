@@ -67,9 +67,7 @@ export async function initializeTables(
 
     // Add tags column if it doesn't exist (migration)
     try {
-      await db.execAsync(
-        "ALTER TABLE events ADD COLUMN tags TEXT;"
-      );
+      await db.execAsync("ALTER TABLE events ADD COLUMN tags TEXT;");
       console.log("Added tags column to events table");
     } catch (error: any) {
       // Column might already exist, ignore error
@@ -122,8 +120,12 @@ export async function initializeTables(
 
     // Migrate existing articles table: add status column if missing (replaces isPublished)
     try {
-      await db.execAsync(`ALTER TABLE articles ADD COLUMN status TEXT DEFAULT 'published';`);
-      await db.execAsync(`UPDATE articles SET status = CASE WHEN isPublished = 1 THEN 'published' ELSE 'draft' END WHERE status IS NULL;`);
+      await db.execAsync(
+        `ALTER TABLE articles ADD COLUMN status TEXT DEFAULT 'published';`
+      );
+      await db.execAsync(
+        `UPDATE articles SET status = CASE WHEN isPublished = 1 THEN 'published' ELSE 'draft' END WHERE status IS NULL;`
+      );
     } catch {
       // Column already exists — skip
     }
@@ -452,7 +454,7 @@ function dbEventToEvent(dbEvent: DatabaseEvent): Event {
     tags: dbEvent.tags ? JSON.parse(dbEvent.tags) : [],
     reminderSettings: dbEvent.reminderSettings
       ? JSON.parse(dbEvent.reminderSettings)
-      : { remindDaysBefore: [] },
+      : { remindDaysBefore: [1, 7], reminderTime: { hour: 9, minute: 0 } },
     isRecurring: Boolean(dbEvent.isRecurring),
     recurrencePattern: dbEvent.recurrencePattern
       ? JSON.parse(dbEvent.recurrencePattern)
@@ -920,7 +922,7 @@ class LegacyDatabaseService {
         icon: row.icon,
         color: row.color,
         content: row.content,
-        status: (row.status ?? 'published') as Article["status"],
+        status: (row.status ?? "published") as Article["status"],
         imageUrl: row.imageUrl ?? undefined,
         author: row.author ?? undefined,
         readTime: row.readTime ?? undefined,
@@ -1030,14 +1032,24 @@ class LegacyDatabaseService {
                tags, likes, views, isFeatured, publishedAt, version, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              a.id, a.title, a.category, a.icon, a.color, a.content,
-              a.status ?? 'published',
-              a.imageUrl ?? null, a.author ?? null, a.readTime ?? null,
+              a.id,
+              a.title,
+              a.category,
+              a.icon,
+              a.color,
+              a.content,
+              a.status ?? "published",
+              a.imageUrl ?? null,
+              a.author ?? null,
+              a.readTime ?? null,
               a.tags ? JSON.stringify(a.tags) : null,
-              a.likes, a.views,
+              a.likes,
+              a.views,
               a.isFeatured ? 1 : 0,
               a.publishedAt ?? null,
-              a.version, a.createdAt, a.updatedAt,
+              a.version,
+              a.createdAt,
+              a.updatedAt,
             ]
           );
         }
@@ -1058,14 +1070,20 @@ class LegacyDatabaseService {
                totalTaken, isFeatured, version, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              s.id, s.title, s.description ?? null,
-              s.type, s.status,
-              s.icon ?? null, s.color ?? null,
+              s.id,
+              s.title,
+              s.description ?? null,
+              s.type,
+              s.status,
+              s.icon ?? null,
+              s.color ?? null,
               JSON.stringify(s.questions),
               s.results ? JSON.stringify(s.results) : null,
               s.totalTaken,
               s.isFeatured ? 1 : 0,
-              s.version, s.createdAt, s.updatedAt,
+              s.version,
+              s.createdAt,
+              s.updatedAt,
             ]
           );
         }
@@ -1086,12 +1104,20 @@ class LegacyDatabaseService {
                phoneNumber, imageUrl, description, tags, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              a.id, a.name, a.category,
-              a.location ?? null, a.address ?? null, a.priceRange ?? null,
-              a.rating ?? null, a.bookingUrl ?? null, a.phoneNumber ?? null,
-              a.imageUrl ?? null, a.description ?? null,
+              a.id,
+              a.name,
+              a.category,
+              a.location ?? null,
+              a.address ?? null,
+              a.priceRange ?? null,
+              a.rating ?? null,
+              a.bookingUrl ?? null,
+              a.phoneNumber ?? null,
+              a.imageUrl ?? null,
+              a.description ?? null,
               a.tags ? JSON.stringify(a.tags) : null,
-              a.createdAt, a.updatedAt,
+              a.createdAt,
+              a.updatedAt,
             ]
           );
         }
@@ -1113,7 +1139,10 @@ class LegacyDatabaseService {
                relatedProducts, relatedArticles, status, version, deletedAt, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              g.id, g.title, g.description, g.type,
+              g.id,
+              g.title,
+              g.description,
+              g.type,
               g.category ? JSON.stringify(g.category) : null,
               g.budget ? JSON.stringify(g.budget) : null,
               g.occasion ? JSON.stringify(g.occasion) : null,
@@ -1126,7 +1155,7 @@ class LegacyDatabaseService {
               g.tips ? JSON.stringify(g.tips) : null,
               g.relatedProducts ? JSON.stringify(g.relatedProducts) : null,
               g.relatedArticles ? JSON.stringify(g.relatedArticles) : null,
-              g.status ?? 'published',
+              g.status ?? "published",
               g.version ?? 0,
               g.deletedAt ?? null,
               g.createdAt ?? new Date().toISOString(),
@@ -1140,7 +1169,9 @@ class LegacyDatabaseService {
     }
   }
 
-  async bulkUpsertChecklistTemplates(templates: ChecklistTemplate[]): Promise<void> {
+  async bulkUpsertChecklistTemplates(
+    templates: ChecklistTemplate[]
+  ): Promise<void> {
     if (!this.db || templates.length === 0) return;
     try {
       await this.db.withTransactionAsync(async () => {
@@ -1150,10 +1181,13 @@ class LegacyDatabaseService {
               (id, eventCategory, items, relationshipSpecific, status, version, deletedAt, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              t.id, t.eventCategory,
+              t.id,
+              t.eventCategory,
               JSON.stringify(t.items),
-              t.relationshipSpecific ? JSON.stringify(t.relationshipSpecific) : null,
-              t.status ?? 'published',
+              t.relationshipSpecific
+                ? JSON.stringify(t.relationshipSpecific)
+                : null,
+              t.status ?? "published",
               t.version ?? 0,
               t.deletedAt ?? null,
               t.createdAt ?? new Date().toISOString(),
@@ -1178,10 +1212,15 @@ class LegacyDatabaseService {
                status, version, deletedAt, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              b.id, b.badgeType, b.name, b.description, b.icon, b.color,
+              b.id,
+              b.badgeType,
+              b.name,
+              b.description,
+              b.icon,
+              b.color,
               JSON.stringify(b.requirements),
               b.rewards ? JSON.stringify(b.rewards) : null,
-              b.status ?? 'published',
+              b.status ?? "published",
               b.version ?? 0,
               b.deletedAt ?? null,
               b.createdAt ?? new Date().toISOString(),
@@ -1195,7 +1234,9 @@ class LegacyDatabaseService {
     }
   }
 
-  async bulkUpsertSubscriptionPlans(plans: SubscriptionProduct[]): Promise<void> {
+  async bulkUpsertSubscriptionPlans(
+    plans: SubscriptionProduct[]
+  ): Promise<void> {
     if (!this.db || plans.length === 0) return;
     try {
       await this.db.withTransactionAsync(async () => {
@@ -1206,12 +1247,17 @@ class LegacyDatabaseService {
                isPopular, displayOrder, status, version, deletedAt, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              p.id, p.planType, p.name, p.description ?? null,
-              p.price, p.currency, p.billingCycle ?? null,
+              p.id,
+              p.planType,
+              p.name,
+              p.description ?? null,
+              p.price,
+              p.currency,
+              p.billingCycle ?? null,
               JSON.stringify(p.features),
               p.isPopular ? 1 : 0,
               p.displayOrder ?? 0,
-              p.status ?? 'published',
+              p.status ?? "published",
               p.version ?? 0,
               p.deletedAt ?? null,
               p.createdAt ?? new Date().toISOString(),

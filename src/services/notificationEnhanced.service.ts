@@ -39,15 +39,14 @@ class NotificationEnhancedService {
     try {
       this.db = database;
 
+      // Setup notification channels FIRST (Android) — không cần permission để tạo channel
+      await NotificationUtils.setupNotificationChannels();
+
       // Request permissions
       const hasPermission = await NotificationUtils.requestPermissions();
       if (!hasPermission) {
-        console.warn('⚠️ Notification permissions not granted');
-        return;
+        console.warn('⚠️ Notification permissions not granted — channels đã sẵn sàng khi được cấp quyền');
       }
-
-      // Setup notification channels (Android)
-      await NotificationUtils.setupNotificationChannels();
 
       // Setup listeners for delivered notifications
       this.setupDeliveryListeners();

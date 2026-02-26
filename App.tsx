@@ -15,6 +15,7 @@ import AppNavigator, { navigate } from './src/navigation/AppNavigator';
 import { PermissionModal } from './src/components/organisms/PermissionModal';
 import { notificationEnhancedService } from './src/services/notificationEnhanced.service';
 import { scheduleUpcomingNotifications } from './src/services/notificationScheduler.service';
+import { NotificationUtils } from './src/lib/notification.utils';
 import * as DB from './src/services/database.service';
 import { dataSeedService } from './src/services/dataSeed.service';
 import { backgroundTaskService } from './src/services/backgroundTask.service';
@@ -135,6 +136,7 @@ function AppContent() {
       console.log('Notification permission granted');
       // Reschedule notifications after permission granted
       try {
+        await NotificationUtils.setupNotificationChannels();
         const events = await DB.getAllEvents(db);
         await scheduleUpcomingNotifications(events);
         console.log('Notifications rescheduled after permission granted');
