@@ -18,6 +18,7 @@ import ExperienceDetailScreen from '../screens/ExperienceDetailScreen';
 import OccasionProductsScreen from '../screens/OccasionProductsScreen';
 import AllProductsScreen from '../screens/AllProductsScreen';
 import AllArticlesScreen from '../screens/AllArticlesScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
 const Stack = createStackNavigator();
 
@@ -149,6 +150,11 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="AllArticles"
           component={AllArticlesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
           options={{ headerShown: false }}
         />
         {/* Auth screen available from Settings if user wants to link account */}

@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-// TODO(monetization): import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@contexts/AuthContext';
 import { useSync } from '@contexts/SyncContext';
 import { useToast } from '../contexts/ToastContext';
@@ -22,8 +22,8 @@ import { NotificationUtils } from '@lib/notification.utils';
 import { COLORS } from '@themes/colors';
 import { APP_VERSION } from '../constants/config';
 const SettingsScreen: React.FC = () => {
-  // TODO(monetization): const navigation = useNavigation<any>();
-  const { user, isAnonymous, linkedProviders, logout, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = useAuth();
+  const navigation = useNavigation<any>();
+  const { user, isAnonymous, linkedProviders, logout, deleteAccount, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = useAuth();
   const { sync, syncStatus } = useSync();
   const { showSuccess, showError } = useToast();
 
@@ -124,6 +124,28 @@ const SettingsScreen: React.FC = () => {
           },
         },
       ].filter(Boolean) as any
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Xóa tài khoản',
+      'Toàn bộ dữ liệu của bạn sẽ bị xóa vĩnh viễn và không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa tài khoản',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              showSuccess('Tài khoản đã được xóa');
+            } catch (error: any) {
+              Alert.alert('Lỗi', error.message || 'Không thể xóa tài khoản');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -335,6 +357,22 @@ const SettingsScreen: React.FC = () => {
           onPress={() => Alert.alert('Ngày Quan Trọng', `Version: ${APP_VERSION || '1.0.0'}\n\nỨng dụng nhắc nhở những ngày quan trọng trong cuộc sống.`)}
         />
 
+        <SettingItem
+          icon="shield-checkmark"
+          title="Chính sách bảo mật"
+          subtitle="Quyền riêng tư & affiliate"
+          onPress={() => navigation.navigate('PrivacyPolicy')}
+        />
+
+      </View>
+
+      {/* Danger Zone */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Vùng nguy hiểm</Text>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+          <Text style={styles.deleteText}>Xóa tài khoản</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Logout */}
@@ -619,6 +657,22 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 12,
     fontWeight: '600',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: COLORS.error + '30',
+  },
+  deleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.error,
   },
   logoutButton: {
     flexDirection: 'row',

@@ -52,6 +52,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           <TouchableOpacity style={styles.verticalCta} onPress={handleBuyPress}>
             <Text style={styles.verticalCtaText}>Mua</Text>
           </TouchableOpacity>
+          <Text style={styles.affiliateLabel}>AD</Text>
         </View>
       </PressableCard>
     );
@@ -109,6 +110,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           <Text style={[styles.ctaText, { color: product.color }]}>Mua ngay</Text>
           <Ionicons name="arrow-forward" size={14} color={product.color} />
         </TouchableOpacity>
+        <Text style={styles.affiliateLabel}>* Liên kết affiliate</Text>
       </View>
     </PressableCard>
   );
@@ -271,6 +273,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  affiliateLabel: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    opacity: 0.6,
+    marginTop: 4,
   },
 });
 

@@ -312,6 +312,35 @@ class AuthService {
   }
 
   /**
+   * Delete account permanently
+   * Calls backend to delete account, then clears all local data.
+   * Works even if backend is unreachable (local-only account).
+   */
+  async deleteAccount(): Promise<void> {
+    try {
+      // Try to delete account on backend
+      try {
+        await apiService.delete('/auth/delete-account');
+      } catch (error) {
+        console.log('Backend delete failed (non-critical, clearing local data anyway):', error);
+      }
+
+      // Always clear local storage
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.AUTH_TOKEN,
+        STORAGE_KEYS.USER_DATA,
+        STORAGE_KEYS.IS_ANONYMOUS,
+      ]);
+
+      apiService.setAuthToken(null);
+      console.log('Account deleted successfully');
+    } catch (error) {
+      console.error('Delete account error:', error);
+      throw new AuthError('Không thể xóa tài khoản, vui lòng thử lại');
+    }
+  }
+
+  /**
    * Logout
    */
   async logout(): Promise<void> {

@@ -113,6 +113,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      setIsLoading(true);
+      await authService.deleteAccount();
+
+      setUser(null);
+      setTokens(null);
+      setIsAuthenticated(false);
+      setIsAnonymous(false);
+      setLinkedProviders([]);
+
+      // Create new anonymous account after deletion
+      await autoLogin();
+    } catch (error) {
+      console.error('Delete account failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -252,6 +273,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loginWithGoogle,
     register,
     logout,
+    deleteAccount,
     refreshToken,
     linkWithEmailPassword,
     linkWithGoogle,

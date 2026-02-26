@@ -439,6 +439,7 @@ export interface AuthContextValue {
     displayName: string
   ) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   refreshToken: () => Promise<void>;
   // 🆕 Linking methods
   linkWithEmailPassword: (
