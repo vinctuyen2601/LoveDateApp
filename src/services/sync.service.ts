@@ -74,16 +74,10 @@ class SyncService {
         // Don't throw — content sync failure shouldn't block event sync
       }
 
-      // Get events that need sync
+      // Get events that need sync (may be empty — still need to pull from server)
       const eventsNeedingSync = await databaseService.getEventsNeedingSync();
 
-      if (eventsNeedingSync.length === 0) {
-        console.log('No events to sync');
-        this.notifyListeners({ isSyncing: false, error: null });
-        return;
-      }
-
-      console.log(`Syncing ${eventsNeedingSync.length} events...`);
+      console.log(`Syncing ${eventsNeedingSync.length} local events, pulling server changes...`);
 
       // Get last sync version
       const lastSyncVersionStr = await databaseService.getSyncMetadata('lastSyncVersion');

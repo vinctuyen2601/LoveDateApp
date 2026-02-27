@@ -456,6 +456,7 @@ export interface AuthContextValue {
     verificationId: string,
     code: string
   ) => Promise<void>;
+  updateProfile: (displayName: string) => Promise<void>;
 }
 
 export interface EventsContextValue {

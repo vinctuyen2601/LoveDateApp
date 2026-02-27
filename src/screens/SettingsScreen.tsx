@@ -2,29 +2,60 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
   TextInput,
   Modal,
-  Switch,
   Linking,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@contexts/AuthContext';
-import { useSync } from '@contexts/SyncContext';
 import { useToast } from '../contexts/ToastContext';
-import { NotificationUtils } from '@lib/notification.utils';
+import { syncService } from '../services/sync.service';
 import { COLORS } from '@themes/colors';
 import { APP_VERSION } from '../constants/config';
+
+const AVATAR_COLOR_KEY = '@user_avatar_color';
+const AVATAR_PHOTO_KEY = '@user_avatar_photo';
+
+const AVATAR_COLORS = [
+  '#FF6B6B', '#FF8E53', '#FFC048', '#51CF66',
+  '#339AF0', '#845EF7', '#F06595', '#20C997',
+];
+
+const getInitials = (name: string): string => {
+  if (!name?.trim()) return '?';
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) return words[0][0].toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+};
+
+const getDefaultColor = (name: string): string => {
+  if (!name) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash + name.charCodeAt(i)) % AVATAR_COLORS.length;
+  }
+  return AVATAR_COLORS[hash];
+};
+
+const formatMemberSince = (dateStr: string): string => {
+  try {
+    return new Date(dateStr).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+  } catch {
+    return '';
+  }
+};
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { user, isAnonymous, linkedProviders, logout, deleteAccount, linkWithEmailPassword, linkWithGoogle, linkWithFacebook } = useAuth();
-  const { sync, syncStatus } = useSync();
+  const { user, isAnonymous, linkedProviders, logout, updateProfile, linkWithEmailPassword } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [showLinkEmailModal, setShowLinkEmailModal] = useState(false);
@@ -32,69 +63,91 @@ const SettingsScreen: React.FC = () => {
   const [linkPassword, setLinkPassword] = useState('');
   const [linkDisplayName, setLinkDisplayName] = useState('');
   const [isLinking, setIsLinking] = useState(false);
-  const [notificationEnabled, setNotificationEnabled] = useState(false);
-  const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
-  // Check notification permissions on mount
+
+  // Edit profile state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [avatarBgColor, setAvatarBgColor] = useState(AVATAR_COLORS[0]);
+  const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[0]);
+  const [avatarPhotoUri, setAvatarPhotoUri] = useState<string | null>(null);
+  const [selectedPhotoUri, setSelectedPhotoUri] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load saved avatar color & photo
   useEffect(() => {
-    checkNotificationPermissions();
-  }, []);
+    if (!user?.id) return;
+    Promise.all([
+      AsyncStorage.getItem(AVATAR_COLOR_KEY),
+      AsyncStorage.getItem(AVATAR_PHOTO_KEY),
+    ]).then(([savedColor, savedPhoto]) => {
+      const color = savedColor || getDefaultColor(user.displayName || '');
+      setAvatarBgColor(color);
+      setSelectedColor(color);
+      if (savedPhoto) setAvatarPhotoUri(savedPhoto);
+    }).catch(() => {});
+  }, [user?.id]);
 
-  const checkNotificationPermissions = async () => {
-    try {
-      setIsCheckingPermissions(true);
-      const { status } = await Notifications.getPermissionsAsync();
-      setNotificationEnabled(status === 'granted');
-    } catch (error) {
-      console.error('Error checking notification permissions:', error);
-    } finally {
-      setIsCheckingPermissions(false);
+  const handleOpenEditModal = () => {
+    setEditName(user?.displayName || '');
+    setSelectedColor(avatarBgColor);
+    setSelectedPhotoUri(avatarPhotoUri);
+    setShowEditModal(true);
+  };
+
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Cần quyền truy cập',
+        'Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện.',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          {
+            text: 'Mở cài đặt',
+            onPress: () => Platform.OS === 'ios' ? Linking.openURL('app-settings:') : Linking.openSettings(),
+          },
+        ]
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setSelectedPhotoUri(result.assets[0].uri);
     }
   };
 
-  const handleToggleNotifications = async (value: boolean) => {
+  const handleRemovePhoto = () => {
+    setSelectedPhotoUri(null);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      showError('Vui lòng nhập tên hiển thị');
+      return;
+    }
     try {
-      if (value) {
-        // Request permissions
-        const hasPermission = await NotificationUtils.requestPermissions();
-        if (hasPermission) {
-          setNotificationEnabled(true);
-          showSuccess('✅ Đã bật thông báo thành công!');
-        } else {
-          setNotificationEnabled(false);
-          showError('❌ Không có quyền gửi thông báo. Vui lòng bật trong cài đặt.');
-        }
+      setIsSaving(true);
+      await updateProfile(editName.trim());
+      await AsyncStorage.setItem(AVATAR_COLOR_KEY, selectedColor);
+      setAvatarBgColor(selectedColor);
+      if (selectedPhotoUri) {
+        await AsyncStorage.setItem(AVATAR_PHOTO_KEY, selectedPhotoUri);
+        setAvatarPhotoUri(selectedPhotoUri);
       } else {
-        // Note: We can't actually disable notifications from the app
-        // We can only guide users to system settings
-        Alert.alert(
-          'Tắt thông báo',
-          'Để tắt thông báo, vui lòng vào Cài đặt > Ứng dụng > Ngày Quan Trọng > Thông báo',
-          [
-            { text: 'Hủy', style: 'cancel' },
-            {
-              text: 'Mở cài đặt',
-              onPress: () => {
-                if (Platform.OS === 'ios') {
-                  Linking.openURL('app-settings:');
-                } else {
-                  Linking.openSettings();
-                }
-              },
-            },
-          ]
-        );
+        await AsyncStorage.removeItem(AVATAR_PHOTO_KEY);
+        setAvatarPhotoUri(null);
       }
+      setShowEditModal(false);
+      showSuccess('✅ Đã cập nhật hồ sơ thành công!');
     } catch (error: any) {
-      showError(error.message || 'Không thể thay đổi cài đặt thông báo');
-    }
-  };
-
-  const handleSync = async () => {
-    try {
-      await sync();
-      showSuccess('✅ Đã đồng bộ dữ liệu thành công');
-    } catch (error: any) {
-      showError(error.message || 'Không thể đồng bộ');
+      showError(error.message || 'Không thể cập nhật hồ sơ');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -127,28 +180,6 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Xóa tài khoản',
-      'Toàn bộ dữ liệu của bạn sẽ bị xóa vĩnh viễn và không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa tài khoản',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount();
-              showSuccess('Tài khoản đã được xóa');
-            } catch (error: any) {
-              Alert.alert('Lỗi', error.message || 'Không thể xóa tài khoản');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const handleLinkEmail = async () => {
     if (!linkEmail || !linkPassword || !linkDisplayName) {
       Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
@@ -163,32 +194,12 @@ const SettingsScreen: React.FC = () => {
       setLinkPassword('');
       setLinkDisplayName('');
       showSuccess('🎉 Tài khoản đã được liên kết với email thành công!');
+      // Sync local events lên server (background, không block UI)
+      syncService.sync().catch(err => console.warn('Post-link sync failed:', err));
     } catch (error: any) {
       showError(error.message || 'Không thể liên kết tài khoản');
     } finally {
       setIsLinking(false);
-    }
-  };
-
-  const handleLinkGoogle = async () => {
-    try {
-      await linkWithGoogle();
-      showSuccess('✅ Đã liên kết với Google thành công');
-    } catch (error: any) {
-      if (!error.message.includes('sẽ cần implement')) {
-        showError(error.message);
-      }
-    }
-  };
-
-  const handleLinkFacebook = async () => {
-    try {
-      await linkWithFacebook();
-      showSuccess('✅ Đã liên kết với Facebook thành công');
-    } catch (error: any) {
-      if (!error.message.includes('sẽ cần implement')) {
-        showError(error.message);
-      }
     }
   };
 
@@ -203,13 +214,18 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Tài khoản</Text>
 
         {/* User Info */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Ionicons
-              name={isAnonymous ? 'person-outline' : 'person'}
-              size={40}
-              color={COLORS.primary}
-            />
+        <TouchableOpacity style={styles.profileCard} onPress={handleOpenEditModal} activeOpacity={0.8}>
+          <View style={styles.avatarWrap}>
+            <View style={[styles.avatar, { backgroundColor: avatarPhotoUri ? 'transparent' : avatarBgColor }]}>
+              {avatarPhotoUri ? (
+                <Image source={{ uri: avatarPhotoUri }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.initialsText}>{getInitials(user?.displayName || 'ND')}</Text>
+              )}
+            </View>
+            <View style={styles.editAvatarBtn}>
+              <Ionicons name="pencil" size={11} color={COLORS.white} />
+            </View>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>{user?.displayName || 'Người dùng'}</Text>
@@ -221,8 +237,12 @@ const SettingsScreen: React.FC = () => {
             ) : (
               <Text style={styles.userEmail}>{user?.email}</Text>
             )}
+            {user?.createdAt ? (
+              <Text style={styles.memberSince}>Thành viên từ {formatMemberSince(user.createdAt)}</Text>
+            ) : null}
           </View>
-        </View>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+        </TouchableOpacity>
 
         {/* Anonymous Warning */}
         {isAnonymous && (
@@ -231,8 +251,7 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.warningContent}>
               <Text style={styles.warningTitle}>Liên kết tài khoản để backup!</Text>
               <Text style={styles.warningText}>
-                Dữ liệu của bạn chỉ lưu trên thiết bị này. Hãy liên kết với email, Google, hoặc
-                Facebook để đồng bộ cross-device.
+                Dữ liệu của bạn chỉ lưu trên thiết bị này. Hãy liên kết với email để không mất dữ liệu khi đổi máy.
               </Text>
             </View>
           </View>
@@ -254,23 +273,10 @@ const SettingsScreen: React.FC = () => {
           />
 
           <SettingItem
-            icon="logo-google"
-            title="Google"
-            subtitle={isLinked('google.com') ? 'Đã liên kết' : 'Chưa liên kết'}
-            onPress={handleLinkGoogle}
-            linked={isLinked('google.com')}
-            disabled={isLinked('google.com')}
-            color="#DB4437"
-          />
-
-          <SettingItem
-            icon="logo-facebook"
-            title="Facebook"
-            subtitle={isLinked('facebook.com') ? 'Đã liên kết' : 'Chưa liên kết'}
-            onPress={handleLinkFacebook}
-            linked={isLinked('facebook.com')}
-            disabled={isLinked('facebook.com')}
-            color="#1877F2"
+            icon="log-in-outline"
+            title="Đã có tài khoản?"
+            subtitle="Đăng nhập để khôi phục dữ liệu"
+            onPress={() => navigation.navigate('Auth')}
           />
 
         </View>
@@ -288,63 +294,6 @@ const SettingsScreen: React.FC = () => {
         />
       </View>
       */}
-
-      {/* Sync Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Đồng bộ</Text>
-
-        <SettingItem
-          icon="sync"
-          title="Đồng bộ ngay"
-          subtitle={
-            syncStatus.lastSyncAt
-              ? `Lần cuối: ${new Date(syncStatus.lastSyncAt).toLocaleString('vi-VN')}`
-              : 'Chưa đồng bộ'
-          }
-          onPress={handleSync}
-          showBadge={syncStatus.pendingCount > 0}
-          badgeText={syncStatus.pendingCount.toString()}
-        />
-
-      </View>
-
-      {/* Notifications Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông báo</Text>
-
-        {/* Enable/Disable Notifications */}
-        <View style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: notificationEnabled ? COLORS.primary + '20' : COLORS.background }]}>
-              <Ionicons
-                name="notifications"
-                size={22}
-                color={notificationEnabled ? COLORS.primary : COLORS.textSecondary}
-              />
-            </View>
-            <View style={styles.settingText}>
-              <Text style={styles.settingTitle}>
-                Bật thông báo
-              </Text>
-              <Text style={styles.settingSubtitle}>
-                {isCheckingPermissions
-                  ? 'Đang kiểm tra...'
-                  : notificationEnabled
-                    ? 'Thông báo đã được bật'
-                    : 'Nhấn để bật thông báo'}
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={notificationEnabled}
-            onValueChange={handleToggleNotifications}
-            disabled={isCheckingPermissions}
-            trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
-            thumbColor={COLORS.white}
-          />
-        </View>
-
-      </View>
 
       {/* App Info */}
       <View style={styles.section}>
@@ -366,20 +315,96 @@ const SettingsScreen: React.FC = () => {
 
       </View>
 
-      {/* Danger Zone */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Vùng nguy hiểm</Text>
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-          <Text style={styles.deleteText}>Xóa tài khoản</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Logout */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
         <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chỉnh sửa hồ sơ</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Avatar preview — tap to pick image */}
+            <View style={styles.editAvatarPreview}>
+              <TouchableOpacity style={styles.editAvatarTouchable} onPress={handlePickImage} activeOpacity={0.8}>
+                {selectedPhotoUri ? (
+                  <Image source={{ uri: selectedPhotoUri }} style={styles.editAvatarLarge} />
+                ) : (
+                  <View style={[styles.editAvatarLarge, { backgroundColor: selectedColor }]}>
+                    <Text style={styles.initialsTextLarge}>
+                      {getInitials(editName || user?.displayName || 'ND')}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.cameraOverlay}>
+                  <Ionicons name="camera" size={14} color={COLORS.white} />
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.pickImageHint}>Nhấn để chọn ảnh</Text>
+              {selectedPhotoUri && (
+                <TouchableOpacity style={styles.removePhotoBtn} onPress={handleRemovePhoto}>
+                  <Ionicons name="trash-outline" size={13} color={COLORS.error} />
+                  <Text style={styles.removePhotoBtnText}>Xóa ảnh</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Color picker — only shown when no photo selected */}
+            {!selectedPhotoUri && (
+              <>
+                <Text style={styles.fieldLabel}>Màu avatar</Text>
+                <View style={styles.colorPalette}>
+                  {AVATAR_COLORS.map(color => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[styles.colorDot, { backgroundColor: color }, selectedColor === color && styles.colorDotSelected]}
+                      onPress={() => setSelectedColor(color)}
+                    >
+                      {selectedColor === color && (
+                        <Ionicons name="checkmark" size={14} color={COLORS.white} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* Display name input */}
+            <Text style={styles.fieldLabel}>Tên hiển thị</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nhập tên của bạn"
+              value={editName}
+              onChangeText={setEditName}
+              autoCapitalize="words"
+              maxLength={50}
+            />
+
+            <TouchableOpacity
+              style={[styles.linkButton, isSaving && styles.linkButtonDisabled]}
+              onPress={handleSaveProfile}
+              disabled={isSaving}
+            >
+              <Text style={styles.linkButtonText}>
+                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Link Email Modal */}
       <Modal
@@ -745,6 +770,116 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Avatar & Edit Profile
+  avatarWrap: {
+    position: 'relative',
+    marginRight: 16,
+  },
+  initialsText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  editAvatarBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+  },
+  memberSince: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 3,
+  },
+  // Edit Profile Modal
+  editAvatarPreview: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  editAvatarLarge: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initialsTextLarge: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  colorPalette: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  colorDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  colorDotSelected: {
+    borderWidth: 3,
+    borderColor: COLORS.textPrimary,
+  },
+  // Photo avatar
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  editAvatarTouchable: {
+    position: 'relative',
+  },
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+  },
+  pickImageHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 8,
+  },
+  removePhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: COLORS.error + '12',
+  },
+  removePhotoBtnText: {
+    fontSize: 12,
+    color: COLORS.error,
+    fontWeight: '500',
   },
 });
 

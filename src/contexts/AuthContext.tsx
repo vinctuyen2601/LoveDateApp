@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthTokens, AuthContextValue } from '../types';
 import { authService } from '../services/auth.service';
+import { syncService } from '../services/sync.service';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -56,6 +57,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Check if anonymous
         const anon = await authService.isAnonymous();
         setIsAnonymous(anon);
+
+        // Nếu đã có tài khoản thật → pull events từ server về (background)
+        if (!anon) {
+          syncService.sync().catch(err => console.warn('Startup sync failed:', err));
+        }
       }
     } catch (error) {
       console.error('Auto login failed:', error);
@@ -230,6 +236,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // 🆕 Update profile (displayName)
+  const updateProfile = async (displayName: string) => {
+    try {
+      const updatedUser = await authService.updateProfile(displayName);
+      setUser(updatedUser);
+    } catch (error) {
+      console.error('Update profile failed:', error);
+      throw error;
+    }
+  };
+
   // 🆕 Link with Phone Number
   const linkWithPhoneNumber = async (phoneNumber: string) => {
     try {
@@ -280,6 +297,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     linkWithFacebook,
     linkWithPhoneNumber,
     completeLinkWithPhone,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

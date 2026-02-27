@@ -211,17 +211,27 @@ class AuthService {
   }
 
   /**
-   * 🆕 Get linked providers
+   * Get linked providers — derived from user fields (BE has no providers array)
    */
   async getLinkedProviders(): Promise<string[]> {
     try {
-      // Get user data from backend
       const user = await this.getSavedUser();
       if (!user) return [];
 
-      // Backend should return providers array in user object
-      // For now, return empty array if not implemented
-      return (user as any).providers || [];
+      const providers: string[] = [];
+
+      // Linked with email/password if not anonymous and has a real email
+      if (
+        !user.isAnonymous &&
+        user.email &&
+        !user.email.startsWith('device_') &&
+        !user.email.endsWith('@local.device') &&
+        !user.email.match(/^anonymous_\d+/)
+      ) {
+        providers.push('password');
+      }
+
+      return providers;
     } catch (error) {
       console.error('Get linked providers error:', error);
       return [];
@@ -487,6 +497,29 @@ class AuthService {
         console.error('Anonymous login also failed:', anonError);
         return null;
       }
+    }
+  }
+
+  /**
+   * Update user profile (displayName)
+   */
+  async updateProfile(displayName: string): Promise<User> {
+    try {
+      try {
+        const updatedUser = await apiService.put<User>('/users/me', { displayName });
+        await this.saveUser(updatedUser);
+        return updatedUser;
+      } catch (backendError) {
+        // Update locally if backend fails (e.g., anonymous user or offline)
+        const currentUser = await this.getSavedUser();
+        if (!currentUser) throw new AuthError('Không tìm thấy tài khoản');
+        const updatedUser: User = { ...currentUser, displayName };
+        await this.saveUser(updatedUser);
+        return updatedUser;
+      }
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      throw new AuthError(this.getErrorMessage(error), error.code);
     }
   }
 

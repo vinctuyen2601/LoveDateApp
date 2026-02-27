@@ -11,13 +11,15 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@contexts/AuthContext';
 import { COLORS } from '@themes/colors';
 import { STRINGS } from '../constants/strings';
 import { ValidationUtils } from '@lib/validation.utils';
 
 const AuthScreen: React.FC = () => {
-  const { login, register, loginWithGoogle } = useAuth();
+  const navigation = useNavigation();
+  const { login, register } = useAuth();
 
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -108,25 +110,13 @@ const AuthScreen: React.FC = () => {
         await register(email, password, displayName);
       }
 
-      // Success - navigation will be handled by AuthContext
+      // Đóng modal sau khi thành công
+      navigation.goBack();
     } catch (error: any) {
       Alert.alert(
         'Lỗi',
         error.message || (isLogin ? 'Đăng nhập thất bại' : 'Đăng ký thất bại')
       );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setIsLoading(true);
-      await loginWithGoogle();
-    } catch (error: any) {
-      if (error.message !== 'Google Sign-In not implemented yet') {
-        Alert.alert('Lỗi', error.message || 'Đăng nhập Google thất bại');
-      }
     } finally {
       setIsLoading(false);
     }
@@ -272,23 +262,6 @@ const AuthScreen: React.FC = () => {
                 ? STRINGS.auth_login
                 : STRINGS.auth_register}
             </Text>
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>hoặc</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Google Sign In */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleLogin}
-            disabled={isLoading}
-          >
-            <Ionicons name="logo-google" size={20} color={COLORS.error} />
-            <Text style={styles.googleButtonText}>{STRINGS.auth_login_google}</Text>
           </TouchableOpacity>
 
           {/* Toggle Login/Register */}

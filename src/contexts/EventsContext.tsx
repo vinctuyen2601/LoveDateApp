@@ -6,6 +6,8 @@ import { scheduleUpcomingNotifications } from '../services/notificationScheduler
 import * as ChecklistService from '../services/checklist.service';
 import * as StreakService from '../services/streak.service';
 import { useAchievement } from './AchievementContext';
+import { syncService } from '../services/sync.service';
+import { authService } from '../services/auth.service';
 
 const EventsContext = createContext<EventsContextValue | undefined>(undefined);
 
@@ -113,6 +115,11 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       // Refresh state + reschedule all notifications for updated event list
       await refreshAndReschedule();
 
+      // Sync lên server nếu đã đăng nhập (background)
+      authService.isAnonymous().then(isAnon => {
+        if (!isAnon) syncService.sync().catch(err => console.warn('Event add sync failed:', err));
+      });
+
       return savedEvent;
     } catch (err: any) {
       console.error('Failed to add event:', err);
@@ -138,11 +145,18 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       }
       if (formData.isRecurring !== undefined) updates.isRecurring = formData.isRecurring;
       if (formData.recurrencePattern !== undefined) updates.recurrencePattern = formData.recurrencePattern;
+      updates.needsSync = true;
+      updates.version = Date.now();
 
       const updatedEvent = await DB.updateEvent(db, id, updates);
 
       // Refresh state + reschedule all notifications for updated event list
       await refreshAndReschedule();
+
+      // Sync lên server nếu đã đăng nhập (background)
+      authService.isAnonymous().then(isAnon => {
+        if (!isAnon) syncService.sync().catch(err => console.warn('Event update sync failed:', err));
+      });
 
       return updatedEvent;
     } catch (err: any) {

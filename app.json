@@ -45,6 +45,12 @@
           "color": "#ffffff"
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện."
+        }
+      ],
       "expo-font",
       "expo-sqlite",
       "@react-native-community/datetimepicker",
