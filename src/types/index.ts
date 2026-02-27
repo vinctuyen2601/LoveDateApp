@@ -922,6 +922,9 @@ export interface AffiliateProduct {
   isFeatured: boolean;
   isPopular: boolean;
 
+  // AI-generated per-product reasoning (returned by /products/ai-suggest)
+  reason?: string;
+
   // CMS fields
   status?: 'draft' | 'published' | 'archived';
   version?: number;

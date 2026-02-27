@@ -85,14 +85,32 @@ const HomeScreen: React.FC = () => {
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const sevenDaysLater = addDays(now, 7);
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const sevenDaysLater = addDays(todayStart, 7);
     return events
       .filter((event) => {
         if (!event.eventDate) return false;
         const eventDate = new Date(event.eventDate);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate >= now && eventDate <= sevenDaysLater;
+        const eventDateDay = new Date(eventDate);
+        eventDateDay.setHours(0, 0, 0, 0);
+
+        if (eventDateDay > todayStart) {
+          // Ngày tương lai: luôn hiển thị trong cửa sổ 7 ngày
+          return eventDateDay <= sevenDaysLater;
+        }
+        if (eventDateDay.getTime() === todayStart.getTime()) {
+          // Sự kiện hôm nay:
+          // - Lặp lại: luôn hiển thị (vẫn còn ý nghĩa trong ngày)
+          // - Một lần: chỉ hiển thị nếu chưa qua thời điểm nhắc nhở
+          if (event.isRecurring) return true;
+          const reminderTime = event.reminderSettings?.reminderTime;
+          if (!reminderTime) return eventDate >= now;
+          const reminderDate = new Date(eventDate);
+          reminderDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
+          return reminderDate > now;
+        }
+        return false; // Ngày đã qua
       })
       .sort(
         (a, b) =>
@@ -167,6 +185,36 @@ const HomeScreen: React.FC = () => {
     navigation.navigate("EventDetail", { eventId: event.id });
   const handleAddEvent = () => navigation.navigate("AddEvent");
   const handleViewCalendar = () => navigation.navigate("Calendar");
+  const handleGiftSuggestPress = () => {
+    // Prefer upcoming event, fall back to any event, then generic
+    const targetEvent = upcomingEvents[0] ?? events[0];
+    if (targetEvent) {
+      navigation.navigate("GiftSuggestions", {
+        eventId: targetEvent.id,
+        event: targetEvent,
+      });
+    } else {
+      // No events yet — use a generic occasion so AI can still suggest
+      const genericEvent: Event = {
+        id: 'general',
+        title: 'Dịp đặc biệt',
+        tags: ['other'],
+        eventDate: new Date().toISOString(),
+        isLunarCalendar: false,
+        isRecurring: false,
+        isDeleted: false,
+        reminderSettings: { remindDaysBefore: [] },
+        version: 0,
+        needsSync: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      navigation.navigate("GiftSuggestions", {
+        eventId: 'general',
+        event: genericEvent,
+      });
+    }
+  };
 
   // ===== SHARED EVENT CARD =====
   const renderEventCard = (
@@ -242,6 +290,24 @@ const HomeScreen: React.FC = () => {
       subtitle: "Lên lịch kỷ niệm quan trọng",
       color: COLORS.info,
       onPress: handleAddEvent,
+    },
+    {
+      id: "gifts",
+      icon: "gift-outline" as const,
+      title: "Gợi ý\nquà AI ✨",
+      subtitle: "Tìm quà tặng ý nghĩa cho nửa kia",
+      color: '#D97706',
+      onPress: handleGiftSuggestPress,
+    },
+    {
+      id: "activities",
+      icon: "map-outline" as const,
+      title: "Gợi ý\nhoạt động",
+      subtitle: "Ý tưởng hẹn hò, nhà hàng, spa...",
+      color: COLORS.secondary,
+      onPress: () => navigation.navigate("ActivitySuggestions", {
+        event: upcomingEvents[0] ?? events[0] ?? undefined,
+      }),
     },
   ];
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,94 +6,213 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  Image,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { AIGiftSuggestion } from "../../types";
-import { COLORS } from '@themes/colors';
+import { AffiliateProduct } from "../../types";
+import { COLORS } from "@themes/colors";
+
+const CATEGORY_VI: Record<string, string> = {
+  gift: "Quà tặng",
+  restaurant: "Nhà hàng",
+  hotel: "Khách sạn",
+  spa: "Spa",
+  travel: "Du lịch",
+};
+
+// Gradient fallback colors per category
+const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
+  gift: ["#FF6B6B", "#FF8E53"],
+  spa: ["#A18CD1", "#FBC2EB"],
+  restaurant: ["#F093FB", "#F5576C"],
+  hotel: ["#4FACFE", "#00F2FE"],
+  travel: ["#43E97B", "#38F9D7"],
+};
+
+function formatPrice(price?: number): string | null {
+  if (price == null) return null;
+  if (price >= 1_000_000) {
+    const m = price / 1_000_000;
+    return `${m % 1 === 0 ? m : m.toFixed(1)}M`;
+  }
+  if (price >= 1_000) return `${Math.round(price / 1_000)}k`;
+  return String(price);
+}
 
 interface GiftSuggestionCardProps {
-  suggestion: AIGiftSuggestion;
+  product: AffiliateProduct;
   onSave?: (giftName: string) => void;
   showSaveButton?: boolean;
 }
 
 const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
-  suggestion,
+  product,
   onSave,
   showSaveButton = true,
 }) => {
-  const handleOpenLink = (url: string) => {
-    Linking.canOpenURL(url)
+  const [imageError, setImageError] = useState(false);
+
+  const handleOpenLink = () => {
+    Linking.canOpenURL(product.affiliateUrl)
       .then((supported) => {
         if (supported) {
-          Linking.openURL(url);
+          Linking.openURL(product.affiliateUrl);
         } else {
           Alert.alert("Lỗi", "Không thể mở liên kết này");
         }
       })
-      .catch((err) => console.error("Error opening URL:", err));
+      .catch(() => Alert.alert("Lỗi", "Không thể mở liên kết"));
   };
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave(suggestion.name);
-    }
-  };
+  const priceFormatted = formatPrice(product.price);
+  const discount =
+    product.originalPrice &&
+    product.price &&
+    product.originalPrice > product.price
+      ? Math.round((1 - product.price / product.originalPrice) * 100)
+      : 0;
+
+  const showImage = product.imageUrl && !imageError;
+  const gradientColors = CATEGORY_GRADIENTS[product.category] ?? [
+    "#FF6B6B",
+    "#4ECDC4",
+  ];
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons name="gift-outline" size={24} color={COLORS.primary} />
-          <Text style={styles.name} numberOfLines={2}>
-            {suggestion.name}
+      {/* Image / Fallback */}
+      <View style={styles.imageWrapper}>
+        {showImage ? (
+          <Image
+            source={{ uri: product.imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <LinearGradient
+            colors={gradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.imageFallback}
+          >
+            <Text style={styles.fallbackIcon}>{product.icon || "🎁"}</Text>
+          </LinearGradient>
+        )}
+
+        {/* Discount badge (top-right) */}
+        {discount > 0 && (
+          <View style={styles.discountOverlay}>
+            <Text style={styles.discountOverlayText}>-{discount}%</Text>
+          </View>
+        )}
+
+        {/* Featured / Popular badges (top-left) */}
+        {(product.isFeatured || product.isPopular) && (
+          <View style={styles.featuredOverlay}>
+            {product.isFeatured && (
+              <View
+                style={[
+                  styles.overlayBadge,
+                  { backgroundColor: COLORS.primary },
+                ]}
+              >
+                <Text style={styles.overlayBadgeText}>⭐ Nổi bật</Text>
+              </View>
+            )}
+            {product.isPopular && (
+              <View
+                style={[styles.overlayBadge, { backgroundColor: "#D97706" }]}
+              >
+                <Text style={styles.overlayBadgeText}>🔥 Phổ biến</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Category badge (bottom-left on image) */}
+        <View style={styles.categoryOverlay}>
+          <Text style={styles.categoryOverlayText}>
+            {CATEGORY_VI[product.category] || product.category}
           </Text>
         </View>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{suggestion.category}</Text>
-        </View>
       </View>
 
-      {/* Price Range */}
-      <View style={styles.priceContainer}>
-        <Ionicons name="pricetag-outline" size={16} color={COLORS.textSecondary} />
-        <Text style={styles.priceText}>{suggestion.priceRange}</Text>
-      </View>
-
-      {/* Description */}
-      <Text style={styles.description} numberOfLines={3}>
-        {suggestion.description}
-      </Text>
-
-      {/* Reasoning */}
-      <View style={styles.reasoningContainer}>
-        <Ionicons name="bulb-outline" size={16} color={COLORS.primary} />
-        <Text style={styles.reasoningText} numberOfLines={3}>
-          {suggestion.reasoning}
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Name */}
+        <Text style={styles.name} numberOfLines={2}>
+          {product.name}
         </Text>
-      </View>
 
-      {/* Actions */}
-      <View style={styles.actions}>
-        {/* Purchase Links */}
-        {suggestion.purchaseLinks && suggestion.purchaseLinks.length > 0 && (
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => handleOpenLink(suggestion.purchaseLinks![0])}
-          >
-            <Ionicons name="cart-outline" size={18} color={COLORS.primary} />
-            <Text style={styles.linkButtonText}>Mua ngay</Text>
-          </TouchableOpacity>
-        )}
+        {/* Price row */}
+        <View style={styles.priceRow}>
+          {priceFormatted ? (
+            <>
+              <Text style={styles.priceText}>{priceFormatted}</Text>
+              {discount > 0 && product.originalPrice && (
+                <Text style={styles.originalPrice}>
+                  {formatPrice(product.originalPrice)}
+                </Text>
+              )}
+            </>
+          ) : (
+            <Text style={styles.priceText}>
+              {product.priceRange || "Xem giá"}
+            </Text>
+          )}
 
-        {/* Save Button */}
-        {showSaveButton && onSave && (
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Ionicons name="bookmark-outline" size={18} color={COLORS.white} />
-            <Text style={styles.saveButtonText}>Lưu lại</Text>
+          {/* Rating (right-aligned) */}
+          {product.rating != null && Number(product.rating) > 0 && (
+            <View style={styles.ratingBadge}>
+              <Ionicons name="star" size={12} color="#F59E0B" />
+              <Text style={styles.ratingText}>
+                {Number(product.rating).toFixed(1)}
+              </Text>
+              {product.reviewCount > 0 && (
+                <Text style={styles.reviewCount}>({product.reviewCount})</Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Description */}
+        {product.description ? (
+          <Text style={styles.description} numberOfLines={2}>
+            {product.description}
+          </Text>
+        ) : null}
+
+        {/* AI Reason callout */}
+        {product.reason ? (
+          <View style={styles.reasonBox}>
+            <Text style={styles.reasonIcon}>💡</Text>
+            <Text style={styles.reasonText}>{product.reason}</Text>
+          </View>
+        ) : null}
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.buyButton} onPress={handleOpenLink}>
+            <Ionicons name="cart-outline" size={16} color={COLORS.white} />
+            <Text style={styles.buyButtonText}>Mua ngay</Text>
           </TouchableOpacity>
-        )}
+
+          {showSaveButton && onSave && (
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={() => onSave(product.name)}
+            >
+              <Ionicons
+                name="bookmark-outline"
+                size={16}
+                color={COLORS.primary}
+              />
+              <Text style={styles.saveButtonText}>Lưu</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -103,113 +222,197 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
+    marginBottom: 14,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
+
+  // Image area
+  imageWrapper: {
+    width: "100%",
+    height: 160,
+    position: "relative",
   },
-  headerLeft: {
-    flex: 1,
-    flexDirection: "row",
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  imageFallback: {
+    width: "100%",
+    height: "100%",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
+  },
+  fallbackIcon: {
+    fontSize: 52,
+  },
+
+  // Overlays on image
+  discountOverlay: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#DC2626",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  discountOverlayText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.white,
+  },
+  featuredOverlay: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    gap: 4,
+    flexDirection: "column",
+  },
+  overlayBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  overlayBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  categoryOverlay: {
+    position: "absolute",
+    bottom: 8,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  categoryOverlayText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+
+  // Content below image
+  content: {
+    padding: 12,
   },
   name: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
     color: COLORS.textPrimary,
+    lineHeight: 21,
+    marginBottom: 6,
   },
-  categoryBadge: {
-    backgroundColor: `${COLORS.primary}20`,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  categoryText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  priceContainer: {
+  priceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 12,
+    marginBottom: 6,
+    flexWrap: "wrap",
   },
   priceText: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+  originalPrice: {
+    fontSize: 13,
     color: COLORS.textSecondary,
+    textDecorationLine: "line-through",
+  },
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginLeft: "auto",
+    backgroundColor: "#FFFBEB",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#92400E",
+  },
+  reviewCount: {
+    fontSize: 11,
+    color: "#B45309",
   },
   description: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.textPrimary,
-    marginBottom: 12,
-  },
-  reasoningContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    backgroundColor: `${COLORS.primary}08`,
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  reasoningText: {
-    flex: 1,
     fontSize: 13,
     lineHeight: 18,
     color: COLORS.textSecondary,
-    fontStyle: "italic",
+    marginBottom: 10,
   },
   actions: {
     flexDirection: "row",
     gap: 8,
+    marginTop: 2,
   },
-  linkButton: {
+  buyButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 5,
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.white,
-  },
-  linkButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  saveButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
     borderRadius: 10,
     backgroundColor: COLORS.primary,
+  },
+  buyButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  saveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.white,
   },
   saveButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.white,
+    color: COLORS.primary,
+  },
+
+  // AI reason callout
+  reasonBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    backgroundColor: "#F0FDF4",
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.success,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
+  reasonIcon: {
+    fontSize: 14,
+    marginTop: 1,
+  },
+  reasonText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#166534",
+    fontStyle: "italic",
   },
 });
 

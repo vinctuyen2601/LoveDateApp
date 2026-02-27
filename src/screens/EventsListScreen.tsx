@@ -48,15 +48,43 @@ const EventsListScreen: React.FC = () => {
       case 'upcoming':
         filtered = filtered.filter((event) => {
           const eventDate = new Date(event.eventDate);
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate >= today;
+          const eventDateDay = new Date(eventDate);
+          eventDateDay.setHours(0, 0, 0, 0);
+
+          if (eventDateDay > today) return true; // Ngày tương lai
+
+          if (eventDateDay.getTime() === today.getTime()) {
+            // Hôm nay: lặp lại luôn hiển thị, một lần chỉ khi chưa qua giờ nhắc
+            if (event.isRecurring) return true;
+            const now = new Date();
+            const reminderTime = event.reminderSettings?.reminderTime;
+            if (!reminderTime) return eventDate >= now;
+            const reminderDate = new Date(eventDate);
+            reminderDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
+            return reminderDate > now;
+          }
+          return false; // Ngày đã qua
         });
         break;
       case 'past':
         filtered = filtered.filter((event) => {
           const eventDate = new Date(event.eventDate);
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate < today;
+          const eventDateDay = new Date(eventDate);
+          eventDateDay.setHours(0, 0, 0, 0);
+
+          if (eventDateDay < today) return true; // Ngày trước hôm nay
+
+          if (eventDateDay.getTime() === today.getTime()) {
+            // Hôm nay: một lần và đã qua giờ nhắc → chuyển vào "đã qua"
+            if (event.isRecurring) return false;
+            const now = new Date();
+            const reminderTime = event.reminderSettings?.reminderTime;
+            if (!reminderTime) return eventDate < now;
+            const reminderDate = new Date(eventDate);
+            reminderDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
+            return reminderDate <= now;
+          }
+          return false;
         });
         break;
       case 'birthday':

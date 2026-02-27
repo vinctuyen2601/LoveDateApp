@@ -1,503 +1,532 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   TextInput,
-  Alert,
-} from "react-native";
-import { useSQLiteContext } from "expo-sqlite";
-import { Ionicons } from "@expo/vector-icons";
-import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
+  Animated,
+} from 'react-native';
+import { useSQLiteContext } from 'expo-sqlite';
+import { Ionicons } from '@expo/vector-icons';
+import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
-import { Event, AIGiftSuggestion, GiftHistoryItem as GiftHistoryItemType } from "../types";
-import { generateGiftSuggestionsWithFallback } from "../services/giftSuggestion.service";
+import { AffiliateProduct, Event, GiftHistoryItem as GiftHistoryItemType } from '../types';
+import { generateGiftSuggestionsWithFallback } from '../services/giftSuggestion.service';
 import {
   getGiftHistory,
   createGiftItem,
   deleteGiftItem,
   markGiftAsPurchased,
-} from "../services/giftHistory.service";
-import GiftSuggestionCard from "@components/molecules/GiftSuggestionCard";
-import GiftHistoryItem from "@components/molecules/GiftHistoryItem";
-import { useToast } from "../contexts/ToastContext";
+} from '../services/giftHistory.service';
+import GiftSuggestionCard from '@components/molecules/GiftSuggestionCard';
+import GiftHistoryItem from '@components/molecules/GiftHistoryItem';
+import { useToast } from '../contexts/ToastContext';
 
 type GiftSuggestionsScreenRouteProp = RouteProp<
   { GiftSuggestions: { eventId: string; event: Event } },
-  "GiftSuggestions"
+  'GiftSuggestions'
 >;
+
+const TAG_LABEL: Record<string, string> = {
+  birthday: 'sinh nhật', anniversary: 'kỷ niệm', valentine: 'Valentine',
+  women_day_8_3: '8/3', women_day_20_10: '20/10', christmas: 'Giáng sinh',
+  holiday: 'ngày lễ', other: 'dịp đặc biệt',
+};
+
+const BUDGET_PRESETS = [
+  { label: 'Dưới 200k',    min: 0,         max: 200_000 },
+  { label: '200k–500k',    min: 200_000,   max: 500_000 },
+  { label: '500k–1triệu',  min: 500_000,   max: 1_000_000 },
+  { label: '1–3 triệu',    min: 1_000_000, max: 3_000_000 },
+  { label: 'Trên 3 triệu', min: 3_000_000, max: 20_000_000 },
+];
+
+const QUICK_IDEAS = [
+  '🌸 Hoa & quà combo',
+  '📚 Sách hay',
+  '☕ Cà phê, trà',
+  '💄 Mỹ phẩm',
+  '🎮 Công nghệ',
+  '💆 Spa, thư giãn',
+  '👗 Thời trang',
+  '🍫 Bánh ngọt',
+];
+
+// ── Skeleton card ──────────────────────────────────────────────────────────
+
+const SkeletonCard: React.FC = () => {
+  const anim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [anim]);
+
+  return (
+    <Animated.View style={[styles.skeletonCard, { opacity: anim }]}>
+      <View style={styles.skeletonHeader}>
+        <View style={styles.skeletonCircle} />
+        <View style={styles.skeletonLines}>
+          <View style={[styles.skeletonLine, { width: '70%' }]} />
+          <View style={[styles.skeletonLine, { width: '40%', marginTop: 6 }]} />
+        </View>
+        <View style={styles.skeletonBadge} />
+      </View>
+      <View style={[styles.skeletonLine, { width: '50%', marginBottom: 10 }]} />
+      <View style={[styles.skeletonLine, { width: '100%', height: 36, borderRadius: 10 }]} />
+    </Animated.View>
+  );
+};
+
+// ── Main screen ────────────────────────────────────────────────────────────
 
 const GiftSuggestionsScreen: React.FC = () => {
   const route = useRoute<GiftSuggestionsScreenRouteProp>();
   const navigation = useNavigation();
   const db = useSQLiteContext();
+  const insets = useSafeAreaInsets();
   const { showSuccess, showError } = useToast();
 
   const { eventId, event } = route.params;
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<AIGiftSuggestion[]>([]);
-  const [isAI, setIsAI] = useState(false);
+  const defaultOccasion = TAG_LABEL[event.tags?.[0]] || 'dịp đặc biệt';
+  const defaultPrompt = `Gợi ý quà ${defaultOccasion}: ${event.title}`;
+
+  const [isLoading, setIsLoading]     = useState(false);
+  const [suggestions, setSuggestions] = useState<AffiliateProduct[]>([]);
+  const [isAI, setIsAI]               = useState(false);
+  const [reasoning, setReasoning]     = useState('');
   const [giftHistory, setGiftHistory] = useState<GiftHistoryItemType[]>([]);
+  const [activeTab, setActiveTab]     = useState<'suggestions' | 'history'>('suggestions');
 
-  // Budget settings
-  const [minBudget, setMinBudget] = useState("500000");
-  const [maxBudget, setMaxBudget] = useState("3000000");
-  const [preferences, setPreferences] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [aiPrompt, setAiPrompt]   = useState(defaultPrompt);
+  const [budgetIdx, setBudgetIdx] = useState(1);
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<"suggestions" | "history">("suggestions");
-
-  useEffect(() => {
-    loadGiftHistory();
-  }, []);
+  useEffect(() => { loadGiftHistory(); }, []);
 
   const loadGiftHistory = async () => {
     try {
       const history = await getGiftHistory(db, eventId);
       setGiftHistory(history);
-    } catch (error) {
-      console.error("Error loading gift history:", error);
-    }
+    } catch {}
   };
 
   const handleGenerateSuggestions = async () => {
+    if (!aiPrompt.trim()) return;
     try {
       setIsLoading(true);
-
-      const budget = {
-        min: parseInt(minBudget) || 500000,
-        max: parseInt(maxBudget) || 3000000,
-      };
+      setReasoning('');
+      setSuggestions([]);
 
       const result = await generateGiftSuggestionsWithFallback(db, {
         event,
-        budget,
-        preferences: preferences.trim() || undefined,
+        budget: { min: BUDGET_PRESETS[budgetIdx].min, max: BUDGET_PRESETS[budgetIdx].max },
+        preferences: aiPrompt.trim(),
       });
 
       setSuggestions(result.suggestions);
       setIsAI(result.isAI);
-      setShowFilters(false);
+      setReasoning(result.reasoning || '');
 
       if (!result.isAI) {
-        showError("Không thể kết nối AI. Hiển thị gợi ý mặc định.");
+        showError('Không kết nối được AI. Hiển thị từ danh mục.');
+      } else if (result.suggestions.length === 0) {
+        showError('Không tìm thấy sản phẩm phù hợp. Thử mô tả khác.');
       }
-    } catch (error) {
-      console.error("Error generating suggestions:", error);
-      showError("Không thể tạo gợi ý quà tặng");
+    } catch {
+      showError('Không thể tạo gợi ý quà tặng');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const appendIdea = (idea: string) => {
+    const clean = idea.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    setAiPrompt((prev) => {
+      if (prev.endsWith(clean)) return prev;
+      return prev ? `${prev}, ${clean.toLowerCase()}` : clean;
+    });
   };
 
   const handleSaveGift = async (giftName: string) => {
     try {
       await createGiftItem(db, eventId, giftName);
       await loadGiftHistory();
-      showSuccess(`Đã lưu "${giftName}" vào danh sách`);
-      setActiveTab("history");
-    } catch (error) {
-      console.error("Error saving gift:", error);
-      showError("Không thể lưu quà tặng");
-    }
+      showSuccess(`Đã lưu "${giftName}"`);
+      setActiveTab('history');
+    } catch { showError('Không thể lưu quà tặng'); }
   };
 
   const handleTogglePurchase = async (id: string) => {
     try {
       await markGiftAsPurchased(db, id);
       await loadGiftHistory();
-      showSuccess("Đã cập nhật trạng thái");
-    } catch (error) {
-      console.error("Error toggling purchase:", error);
-      showError("Không thể cập nhật");
-    }
+    } catch { showError('Không thể cập nhật'); }
   };
 
   const handleDeleteGift = async (id: string) => {
     try {
       await deleteGiftItem(db, id);
       await loadGiftHistory();
-      showSuccess("Đã xóa quà tặng");
-    } catch (error) {
-      console.error("Error deleting gift:", error);
-      showError("Không thể xóa quà tặng");
-    }
+      showSuccess('Đã xóa');
+    } catch { showError('Không thể xóa'); }
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
+        <View style={styles.headerTitleWrap}>
           <Text style={styles.headerTitle}>Gợi ý quà tặng</Text>
-          <Text style={styles.headerSubtitle}>{event.title}</Text>
+          <Text style={styles.headerSub} numberOfLines={1}>{event.title}</Text>
         </View>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "suggestions" && styles.tabActive]}
-          onPress={() => setActiveTab("suggestions")}
-        >
-          <Ionicons
-            name="bulb-outline"
-            size={20}
-            color={activeTab === "suggestions" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "suggestions" && styles.tabTextActive,
-            ]}
+        {(['suggestions', 'history'] as const).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            onPress={() => setActiveTab(tab)}
           >
-            Gợi ý
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "history" && styles.tabActive]}
-          onPress={() => setActiveTab("history")}
-        >
-          <Ionicons
-            name="gift-outline"
-            size={20}
-            color={activeTab === "history" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text
-            style={[styles.tabText, activeTab === "history" && styles.tabTextActive]}
-          >
-            Danh sách ({giftHistory.length})
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name={tab === 'suggestions' ? 'sparkles-outline' : 'bookmark-outline'}
+              size={17}
+              color={activeTab === tab ? COLORS.primary : COLORS.textSecondary}
+            />
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tab === 'suggestions' ? 'Gợi ý AI' : `Đã lưu (${giftHistory.length})`}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === "suggestions" ? (
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+
+        {activeTab === 'suggestions' ? (
           <>
-            {/* Filter Section */}
-            <View style={styles.section}>
-              <TouchableOpacity
-                style={styles.filterToggle}
-                onPress={() => setShowFilters(!showFilters)}
-              >
-                <Ionicons name="options-outline" size={20} color={COLORS.primary} />
-                <Text style={styles.filterToggleText}>
-                  {showFilters ? "Ẩn bộ lọc" : "Tùy chỉnh gợi ý"}
-                </Text>
-                <Ionicons
-                  name={showFilters ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color={COLORS.textSecondary}
+            {/* ── AI Search Card ─────────────────────────────────────── */}
+            <View style={styles.aiCard}>
+              {/* Title row */}
+              <View style={styles.aiCardTitle}>
+                <Text style={styles.aiSparkle}>✨</Text>
+                <Text style={styles.aiCardLabel}>Mô tả nhu cầu của bạn</Text>
+              </View>
+
+              {/* Text input */}
+              <View style={styles.inputWrap}>
+                <TextInput
+                  style={styles.aiInput}
+                  value={aiPrompt}
+                  onChangeText={setAiPrompt}
+                  multiline
+                  numberOfLines={2}
+                  placeholder="VD: sinh nhật bạn gái thích yoga, cà phê..."
+                  placeholderTextColor={COLORS.textLight}
+                  textAlignVertical="top"
                 />
-              </TouchableOpacity>
-
-              {showFilters && (
-                <View style={styles.filtersContainer}>
-                  <Text style={styles.filterLabel}>Ngân sách (VNĐ)</Text>
-                  <View style={styles.budgetRow}>
-                    <TextInput
-                      style={styles.budgetInput}
-                      placeholder="Từ"
-                      keyboardType="numeric"
-                      value={minBudget}
-                      onChangeText={setMinBudget}
-                    />
-                    <Text style={styles.budgetSeparator}>-</Text>
-                    <TextInput
-                      style={styles.budgetInput}
-                      placeholder="Đến"
-                      keyboardType="numeric"
-                      value={maxBudget}
-                      onChangeText={setMaxBudget}
-                    />
-                  </View>
-
-                  <Text style={styles.filterLabel}>Sở thích / Ghi chú</Text>
-                  <TextInput
-                    style={styles.preferencesInput}
-                    placeholder="VD: Thích đọc sách, yêu thích màu xanh..."
-                    multiline
-                    numberOfLines={3}
-                    value={preferences}
-                    onChangeText={setPreferences}
-                  />
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={styles.generateButton}
-                onPress={handleGenerateSuggestions}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color={COLORS.white} />
-                ) : (
-                  <>
-                    <Ionicons name="sparkles" size={20} color={COLORS.white} />
-                    <Text style={styles.generateButtonText}>
-                      Tạo gợi ý quà tặng
-                    </Text>
-                  </>
+                {aiPrompt.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearBtn}
+                    onPress={() => setAiPrompt(defaultPrompt)}
+                  >
+                    <Ionicons name="refresh-outline" size={16} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
                 )}
+              </View>
+
+              {/* Quick idea chips */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.ideasRow}>
+                {QUICK_IDEAS.map((idea) => (
+                  <TouchableOpacity key={idea} style={styles.ideaChip} onPress={() => appendIdea(idea)}>
+                    <Text style={styles.ideaChipText}>{idea}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Budget label + chips */}
+              <Text style={styles.budgetLabel}>Ngân sách</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.budgetRow}>
+                {BUDGET_PRESETS.map((p, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[styles.budgetChip, budgetIdx === i && styles.budgetChipActive]}
+                    onPress={() => setBudgetIdx(i)}
+                  >
+                    <Text style={[styles.budgetChipText, budgetIdx === i && styles.budgetChipTextActive]}>
+                      {p.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Generate button */}
+              <TouchableOpacity
+                style={[styles.generateBtn, isLoading && styles.generateBtnDisabled]}
+                onPress={handleGenerateSuggestions}
+                disabled={isLoading || !aiPrompt.trim()}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="sparkles" size={19} color={COLORS.white} />
+                <Text style={styles.generateBtnText}>
+                  {isLoading ? 'Đang tìm quà...' : 'Tìm quà với AI'}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {/* AI Badge */}
-            {suggestions.length > 0 && (
-              <View style={styles.aiBadgeContainer}>
-                <View style={[styles.aiBadge, !isAI && styles.aiBadgeFallback]}>
-                  <Ionicons
-                    name={isAI ? "sparkles" : "information-circle"}
-                    size={16}
-                    color={isAI ? COLORS.primary : COLORS.textSecondary}
-                  />
-                  <Text style={styles.aiBadgeText}>
-                    {isAI ? "Gợi ý bởi AI" : "Gợi ý mặc định"}
-                  </Text>
-                </View>
+            {/* ── AI Reasoning banner ────────────────────────────────── */}
+            {(reasoning || (!isLoading && suggestions.length > 0 && !isAI)) && (
+              <View style={[styles.reasoningBanner, !isAI && styles.reasoningBannerFallback]}>
+                <Text style={styles.reasoningIcon}>{isAI ? '🤖' : 'ℹ️'}</Text>
+                <Text style={[styles.reasoningText, !isAI && styles.reasoningTextFallback]}>
+                  {isAI
+                    ? (reasoning || 'Gợi ý được tạo bởi AI dựa trên mô tả của bạn')
+                    : 'Hiển thị từ danh mục (không có kết nối AI)'}
+                </Text>
+                {isAI && (
+                  <TouchableOpacity onPress={() => { setSuggestions([]); setReasoning(''); }}>
+                    <Text style={styles.reasoningDismiss}>✕</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
-            {/* Suggestions List */}
-            {suggestions.length > 0 ? (
-              suggestions.map((suggestion, index) => (
-                <GiftSuggestionCard
-                  key={index}
-                  suggestion={suggestion}
-                  onSave={handleSaveGift}
-                  showSaveButton
-                />
-              ))
-            ) : (
+            {/* ── Loading skeletons ──────────────────────────────────── */}
+            {isLoading && (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            )}
+
+            {/* ── Results ───────────────────────────────────────────── */}
+            {!isLoading && suggestions.length > 0 && (
+              <>
+                <Text style={styles.resultCount}>{suggestions.length} gợi ý</Text>
+                {suggestions.map((product) => (
+                  <GiftSuggestionCard
+                    key={product.id}
+                    product={product}
+                    onSave={handleSaveGift}
+                    showSaveButton
+                  />
+                ))}
+              </>
+            )}
+
+            {/* ── Empty state ────────────────────────────────────────── */}
+            {!isLoading && suggestions.length === 0 && (
               <View style={styles.emptyState}>
-                <Ionicons name="gift-outline" size={64} color={COLORS.textSecondary} />
-                <Text style={styles.emptyStateTitle}>
-                  Chưa có gợi ý nào
-                </Text>
-                <Text style={styles.emptyStateText}>
-                  Nhấn "Tạo gợi ý quà tặng" để nhận gợi ý từ AI
+                <Text style={styles.emptyIcon}>🎁</Text>
+                <Text style={styles.emptyTitle}>Chưa có gợi ý nào</Text>
+                <Text style={styles.emptyText}>
+                  Mô tả dịp tặng quà và nhấn{' '}
+                  <Text style={{ fontWeight: '700', color: COLORS.primary }}>"Tìm quà với AI"</Text>
                 </Text>
               </View>
             )}
           </>
         ) : (
+          /* ── History tab ──────────────────────────────────────────── */
           <>
-            {/* Gift History List */}
             {giftHistory.length > 0 ? (
-              <View style={styles.section}>
-                {giftHistory.map((item) => (
-                  <GiftHistoryItem
-                    key={item.id}
-                    item={item}
-                    onTogglePurchase={handleTogglePurchase}
-                    onDelete={handleDeleteGift}
-                  />
-                ))}
-              </View>
+              giftHistory.map((item) => (
+                <GiftHistoryItem
+                  key={item.id}
+                  item={item}
+                  onTogglePurchase={handleTogglePurchase}
+                  onDelete={handleDeleteGift}
+                />
+              ))
             ) : (
               <View style={styles.emptyState}>
-                <Ionicons name="list-outline" size={64} color={COLORS.textSecondary} />
-                <Text style={styles.emptyStateTitle}>
-                  Danh sách trống
-                </Text>
-                <Text style={styles.emptyStateText}>
-                  Lưu các gợi ý yêu thích để theo dõi
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyTitle}>Danh sách trống</Text>
+                <Text style={styles.emptyText}>
+                  Nhấn "Lưu lại" trên gợi ý để theo dõi quà đã chọn
                 </Text>
               </View>
             )}
           </>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container:  { flex: 1, backgroundColor: COLORS.background },
+
+  // Header
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    paddingTop: 48,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingBottom: 14,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    elevation: 2, shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4,
   },
-  backButton: {
-    marginRight: 12,
-  },
-  headerTitleContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
+  backButton:      { padding: 4, marginRight: 8 },
+  headerTitleWrap: { flex: 1 },
+  headerTitle:     { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+  headerSub:       { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+
+  // Tabs
   tabs: {
-    flexDirection: "row",
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    flexDirection: 'row', backgroundColor: COLORS.white,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 6, paddingVertical: 13,
+    borderBottomWidth: 2.5, borderBottomColor: 'transparent',
   },
-  tabActive: {
-    borderBottomColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: COLORS.textSecondary,
-  },
-  tabTextActive: {
-    color: COLORS.primary,
-    fontWeight: "600",
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  filterToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  tabActive:     { borderBottomColor: COLORS.primary },
+  tabText:       { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },
+  tabTextActive: { color: COLORS.primary, fontWeight: '700' },
+
+  // Scroll
+  scroll:        { flex: 1 },
+  scrollContent: { padding: 16 },
+
+  // AI Card
+  aiCard: {
     backgroundColor: COLORS.white,
-    padding: 14,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: `${COLORS.primary}25`,
+    // subtle tinted background
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  aiCardTitle: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: 6, marginBottom: 12,
+  },
+  aiSparkle:   { fontSize: 18 },
+  aiCardLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+
+  // Input
+  inputWrap: {
+    backgroundColor: COLORS.background,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 8,
     marginBottom: 12,
   },
-  filterToggleText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.primary,
-    marginLeft: 8,
-  },
-  filtersContainer: {
-    backgroundColor: COLORS.white,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  filterLabel: {
+  aiInput: {
     fontSize: 14,
-    fontWeight: "600",
     color: COLORS.textPrimary,
-    marginBottom: 8,
+    minHeight: 52,
+    lineHeight: 20,
   },
-  budgetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
+  clearBtn: {
+    alignSelf: 'flex-end',
+    padding: 2,
+    marginTop: 2,
   },
-  budgetInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-  },
-  budgetSeparator: {
-    marginHorizontal: 8,
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  preferencesInput: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  generateButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  generateButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.white,
-  },
-  aiBadgeContainer: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  aiBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: `${COLORS.primary}15`,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+
+  // Quick ideas
+  ideasRow: { gap: 8, paddingBottom: 4, marginBottom: 14 },
+  ideaChip: {
+    paddingHorizontal: 12, paddingVertical: 7,
     borderRadius: 20,
+    backgroundColor: COLORS.background,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  aiBadgeFallback: {
-    backgroundColor: `${COLORS.textSecondary}15`,
+  ideaChipText: { fontSize: 12, color: COLORS.textSecondary },
+
+  // Budget
+  budgetLabel: {
+    fontSize: 12, fontWeight: '600', color: COLORS.textSecondary,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+    marginBottom: 10,
   },
-  aiBadgeText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
+  budgetRow: { gap: 8, paddingBottom: 2, marginBottom: 16 },
+  budgetChip: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, backgroundColor: COLORS.background,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
+  budgetChipActive:     { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  budgetChipText:       { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
+  budgetChipTextActive: { color: COLORS.white, fontWeight: '600' },
+
+  // Generate button
+  generateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14, borderRadius: 14,
   },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginTop: 16,
-    marginBottom: 8,
+  generateBtnDisabled: { opacity: 0.6 },
+  generateBtnText:     { fontSize: 15, fontWeight: '700', color: COLORS.white },
+
+  // Reasoning banner
+  reasoningBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    backgroundColor: `${COLORS.primary}10`,
+    borderRadius: 12, padding: 12, marginBottom: 14,
+    borderLeftWidth: 3, borderLeftColor: COLORS.primary,
   },
-  emptyStateText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    paddingHorizontal: 32,
+  reasoningBannerFallback: {
+    backgroundColor: `${COLORS.textSecondary}08`,
+    borderLeftColor: COLORS.textSecondary,
   },
+  reasoningIcon:    { fontSize: 15, marginTop: 1 },
+  reasoningText:    { flex: 1, fontSize: 13, lineHeight: 19, color: COLORS.textPrimary, fontStyle: 'italic' },
+  reasoningTextFallback: { color: COLORS.textSecondary },
+  reasoningDismiss: { fontSize: 14, color: COLORS.textSecondary, padding: 2 },
+
+  // Result count
+  resultCount: {
+    fontSize: 13, color: COLORS.textSecondary,
+    fontWeight: '500', marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+
+  // Skeleton
+  skeletonCard: {
+    backgroundColor: COLORS.white, borderRadius: 16,
+    padding: 16, marginBottom: 14,
+    elevation: 1, shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3,
+  },
+  skeletonHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
+  skeletonCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.borderLight },
+  skeletonLines:  { flex: 1 },
+  skeletonLine:   { height: 12, backgroundColor: COLORS.borderLight, borderRadius: 6 },
+  skeletonBadge:  { width: 50, height: 22, borderRadius: 11, backgroundColor: COLORS.borderLight },
+
+  // Empty state
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 56 },
+  emptyIcon:  { fontSize: 52, marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
+  emptyText:  { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 28, lineHeight: 21 },
 });
 
 export default GiftSuggestionsScreen;

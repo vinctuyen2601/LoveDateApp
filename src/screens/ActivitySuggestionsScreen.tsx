@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,485 +6,403 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
-  RefreshControl,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useSQLiteContext } from 'expo-sqlite';
-import { ActivitySuggestion } from '../types';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
-import ActivityCard from '@components/molecules/ActivityCard';
-import * as ActivityService from '../services/activitySuggestion.service';
+import { AffiliateProduct, Event } from '../types';
+import { apiService } from '../services/api.service';
+import GiftSuggestionCard from '@components/molecules/GiftSuggestionCard';
+import { useToast } from '../contexts/ToastContext';
 
-type TabType = 'restaurant' | 'activity' | 'location';
+type ActivitySuggestionsRouteProp = RouteProp<
+  { ActivitySuggestions: { event?: Event } },
+  'ActivitySuggestions'
+>;
+
+const QUICK_IDEAS = [
+  '🍽️ Nhà hàng lãng mạn',
+  '☕ Cà phê hẹn hò',
+  '🎬 Xem phim cùng nhau',
+  '💆 Spa thư giãn',
+  '🎵 Live music',
+  '🌊 Picnic ngoài trời',
+  '🎮 Cùng chơi game',
+  '🏃 Hoạt động thể thao',
+  '🛍️ Đi mua sắm',
+  '🎨 Học làm đồ thủ công',
+];
+
+const BUDGET_PRESETS = [
+  { label: 'Dưới 200k',   max: 200_000 },
+  { label: '200k–500k',   max: 500_000 },
+  { label: '500k–1 triệu', max: 1_000_000 },
+  { label: '1–3 triệu',   max: 3_000_000 },
+  { label: 'Trên 3 triệu', max: 10_000_000 },
+];
+
+// ── Skeleton card ───────────────────────────────────────────────────────────
+
+const SkeletonCard: React.FC = () => {
+  const anim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [anim]);
+
+  return (
+    <Animated.View style={[styles.skeletonCard, { opacity: anim }]}>
+      <View style={styles.skeletonImage} />
+      <View style={styles.skeletonContent}>
+        <View style={[styles.skeletonLine, { width: '75%', marginBottom: 8 }]} />
+        <View style={[styles.skeletonLine, { width: '45%', marginBottom: 12 }]} />
+        <View style={[styles.skeletonLine, { width: '100%', height: 36, borderRadius: 10 }]} />
+      </View>
+    </Animated.View>
+  );
+};
+
+// ── Main screen ─────────────────────────────────────────────────────────────
 
 const ActivitySuggestionsScreen: React.FC = () => {
   const navigation = useNavigation();
-  const route = useRoute<any>();
-  const db = useSQLiteContext();
+  const route = useRoute<ActivitySuggestionsRouteProp>();
+  const insets = useSafeAreaInsets();
+  const { showError } = useToast();
 
-  // State
-  const [activeTab, setActiveTab] = useState<TabType>('restaurant');
-  const [activities, setActivities] = useState<ActivitySuggestion[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<ActivitySuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const event = route.params?.event;
 
-  // Filters
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [minRating, setMinRating] = useState<number>(0);
+  const defaultPrompt = event
+    ? `Gợi ý hoạt động cho dịp ${event.title}`
+    : 'Gợi ý hoạt động hẹn hò lãng mạn';
 
-  // Load activities
-  const loadActivities = async (category: TabType) => {
+  const [aiPrompt, setAiPrompt]       = useState(defaultPrompt);
+  const [budgetIdx, setBudgetIdx]     = useState(1);
+  const [isLoading, setIsLoading]     = useState(false);
+  const [suggestions, setSuggestions] = useState<AffiliateProduct[]>([]);
+  const [isAI, setIsAI]               = useState(false);
+  const [reasoning, setReasoning]     = useState('');
+
+  const appendIdea = (idea: string) => {
+    const clean = idea.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    setAiPrompt((prev) => {
+      if (prev.endsWith(clean)) return prev;
+      return prev ? `${prev}, ${clean.toLowerCase()}` : clean;
+    });
+  };
+
+  const handleGenerate = async () => {
+    if (!aiPrompt.trim()) return;
     try {
       setIsLoading(true);
-      const results = await ActivityService.getActivitiesByCategory(db, category);
-      setActivities(results);
-      setFilteredActivities(results);
-    } catch (error) {
-      console.error('Error loading activities:', error);
+      setReasoning('');
+      setSuggestions([]);
+
+      const budget = BUDGET_PRESETS[budgetIdx];
+      const prompt = `${aiPrompt.trim()}, ngân sách dưới ${Math.round(budget.max / 1_000)}k, loại: nhà hàng, spa, hoạt động, địa điểm vui chơi`;
+
+      const data = await apiService.post('/products/ai-suggest', { prompt });
+      const products: AffiliateProduct[] = data.products || [];
+
+      setSuggestions(products);
+      setIsAI(true);
+      setReasoning(data.reasoning || '');
+
+      if (products.length === 0) {
+        showError('Không tìm thấy hoạt động phù hợp. Thử mô tả khác.');
+      }
+    } catch {
+      showError('Không thể kết nối AI. Vui lòng thử lại.');
+      setIsAI(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initial load
-  useEffect(() => {
-    loadActivities(activeTab);
-  }, [activeTab]);
-
-  // Apply filters
-  useEffect(() => {
-    let filtered = [...activities];
-
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (activity) =>
-          activity.name.toLowerCase().includes(query) ||
-          activity.description?.toLowerCase().includes(query) ||
-          activity.tags?.some((tag) => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Price range filter
-    if (selectedPriceRange) {
-      filtered = filtered.filter((activity) => activity.priceRange === selectedPriceRange);
-    }
-
-    // Location filter
-    if (selectedLocation) {
-      filtered = filtered.filter((activity) =>
-        activity.location?.toLowerCase().includes(selectedLocation.toLowerCase())
-      );
-    }
-
-    // Rating filter
-    if (minRating > 0) {
-      filtered = filtered.filter((activity) => (activity.rating || 0) >= minRating);
-    }
-
-    setFilteredActivities(filtered);
-  }, [searchQuery, selectedPriceRange, selectedLocation, minRating, activities]);
-
-  // Refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadActivities(activeTab);
-    setIsRefreshing(false);
-  };
-
-  // Clear filters
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedPriceRange(null);
-    setSelectedLocation(null);
-    setMinRating(0);
-  };
-
-  const hasActiveFilters =
-    searchQuery || selectedPriceRange || selectedLocation || minRating > 0;
-
-  // Get unique locations for filter
-  const availableLocations = Array.from(
-    new Set(activities.map((a) => a.location).filter(Boolean))
-  ).slice(0, 5);
-
-  // Tab configuration
-  const tabs: { key: TabType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'restaurant', label: 'Nhà hàng', icon: 'restaurant' },
-    { key: 'activity', label: 'Hoạt động', icon: 'game-controller' },
-    { key: 'location', label: 'Địa điểm', icon: 'location' },
-  ];
-
-  const priceRanges = ['₫', '₫₫', '₫₫₫', '₫₫₫₫'];
-  const ratingOptions = [4.5, 4.0, 3.5];
-
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Gợi ý hoạt động</Text>
-        <View style={styles.backButton} />
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>Gợi ý hoạt động</Text>
+          {event && (
+            <Text style={styles.headerSub} numberOfLines={1}>{event.title}</Text>
+          )}
+        </View>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={COLORS.textSecondary} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Tìm kiếm..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={COLORS.textSecondary}
-        />
-        {searchQuery ? (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        ) : null}
-      </View>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
 
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Ionicons
-              name={tab.icon}
-              size={20}
-              color={activeTab === tab.key ? COLORS.white : COLORS.textSecondary}
+        {/* ── AI Card ─────────────────────────────────────────────────── */}
+        <View style={styles.aiCard}>
+          {/* Title */}
+          <View style={styles.aiCardTitle}>
+            <Text style={styles.aiSparkle}>🗺️</Text>
+            <Text style={styles.aiCardLabel}>Bạn muốn làm gì hôm nay?</Text>
+          </View>
+
+          {/* Text input */}
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.aiInput}
+              value={aiPrompt}
+              onChangeText={setAiPrompt}
+              multiline
+              numberOfLines={2}
+              placeholder="VD: nhà hàng lãng mạn view đẹp, ăn tối sinh nhật..."
+              placeholderTextColor={COLORS.textLight}
+              textAlignVertical="top"
             />
-            <Text
-              style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Filters */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersContainer}
-      >
-        {/* Price Range Filter */}
-        {activeTab === 'restaurant' && (
-          <>
-            {priceRanges.map((price) => (
+            {aiPrompt.length > 0 && (
               <TouchableOpacity
-                key={price}
-                style={[
-                  styles.filterChip,
-                  selectedPriceRange === price && styles.filterChipActive,
-                ]}
-                onPress={() =>
-                  setSelectedPriceRange(selectedPriceRange === price ? null : price)
-                }
+                style={styles.clearBtn}
+                onPress={() => setAiPrompt(defaultPrompt)}
               >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    selectedPriceRange === price && styles.filterChipTextActive,
-                  ]}
-                >
-                  {price}
+                <Ionicons name="refresh-outline" size={16} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Quick idea chips */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.ideasRow}>
+            {QUICK_IDEAS.map((idea) => (
+              <TouchableOpacity key={idea} style={styles.ideaChip} onPress={() => appendIdea(idea)}>
+                <Text style={styles.ideaChipText}>{idea}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Budget */}
+          <Text style={styles.budgetLabel}>Ngân sách / người</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.budgetRow}>
+            {BUDGET_PRESETS.map((p, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.budgetChip, budgetIdx === i && styles.budgetChipActive]}
+                onPress={() => setBudgetIdx(i)}
+              >
+                <Text style={[styles.budgetChipText, budgetIdx === i && styles.budgetChipTextActive]}>
+                  {p.label}
                 </Text>
               </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Generate button */}
+          <TouchableOpacity
+            style={[styles.generateBtn, (isLoading || !aiPrompt.trim()) && styles.generateBtnDisabled]}
+            onPress={handleGenerate}
+            disabled={isLoading || !aiPrompt.trim()}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="sparkles" size={19} color={COLORS.white} />
+            <Text style={styles.generateBtnText}>
+              {isLoading ? 'Đang tìm...' : 'Tìm hoạt động với AI'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── AI Reasoning banner ──────────────────────────────────────── */}
+        {(reasoning || (!isLoading && suggestions.length > 0 && !isAI)) && (
+          <View style={[styles.reasoningBanner, !isAI && styles.reasoningBannerFallback]}>
+            <Text style={styles.reasoningIcon}>{isAI ? '🤖' : 'ℹ️'}</Text>
+            <Text style={[styles.reasoningText, !isAI && styles.reasoningTextFallback]}>
+              {isAI
+                ? (reasoning || 'Gợi ý được tạo bởi AI dựa trên mô tả của bạn')
+                : 'Không có kết nối AI'}
+            </Text>
+            {isAI && (
+              <TouchableOpacity onPress={() => { setSuggestions([]); setReasoning(''); }}>
+                <Text style={styles.reasoningDismiss}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* ── Skeleton loading ─────────────────────────────────────────── */}
+        {isLoading && (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
+
+        {/* ── Results ─────────────────────────────────────────────────── */}
+        {!isLoading && suggestions.length > 0 && (
+          <>
+            <Text style={styles.resultCount}>{suggestions.length} gợi ý</Text>
+            {suggestions.map((product) => (
+              <GiftSuggestionCard
+                key={product.id}
+                product={product}
+                showSaveButton={false}
+              />
             ))}
           </>
         )}
 
-        {/* Rating Filter */}
-        {ratingOptions.map((rating) => (
-          <TouchableOpacity
-            key={rating}
-            style={[styles.filterChip, minRating === rating && styles.filterChipActive]}
-            onPress={() => setMinRating(minRating === rating ? 0 : rating)}
-          >
-            <Ionicons
-              name="star"
-              size={14}
-              color={
-                minRating === rating ? COLORS.white : COLORS.warning
-              }
-            />
-            <Text
-              style={[
-                styles.filterChipText,
-                minRating === rating && styles.filterChipTextActive,
-              ]}
-            >
-              {rating}+
-            </Text>
-          </TouchableOpacity>
-        ))}
-
-        {/* Location Filter */}
-        {availableLocations.map((location) => (
-          <TouchableOpacity
-            key={location}
-            style={[
-              styles.filterChip,
-              selectedLocation === location && styles.filterChipActive,
-            ]}
-            onPress={() =>
-              setSelectedLocation(selectedLocation === location ? null : location!)
-            }
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                selectedLocation === location && styles.filterChipTextActive,
-              ]}
-            >
-              {location}
-            </Text>
-          </TouchableOpacity>
-        ))}
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <TouchableOpacity style={styles.clearFiltersButton} onPress={clearFilters}>
-            <Ionicons name="close-circle" size={16} color={COLORS.error} />
-            <Text style={styles.clearFiltersText}>Xóa bộ lọc</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
-
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Đang tải...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
-            />
-          }
-        >
-          {/* Results Count */}
-          <View style={styles.resultsHeader}>
-            <Text style={styles.resultsCount}>
-              {filteredActivities.length} kết quả
+        {/* ── Empty state ──────────────────────────────────────────────── */}
+        {!isLoading && suggestions.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>🗺️</Text>
+            <Text style={styles.emptyTitle}>Tìm ý tưởng hẹn hò</Text>
+            <Text style={styles.emptyText}>
+              Mô tả bạn muốn làm gì và nhấn{' '}
+              <Text style={{ fontWeight: '700', color: COLORS.secondary }}>"Tìm hoạt động với AI"</Text>
             </Text>
           </View>
+        )}
 
-          {/* Activity List */}
-          {filteredActivities.length > 0 ? (
-            filteredActivities.map((activity) => (
-              <ActivityCard
-                key={activity.id}
-                activity={activity}
-                showBookingButton={true}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="sad-outline" size={64} color={COLORS.textSecondary} />
-              <Text style={styles.emptyText}>Không tìm thấy kết quả</Text>
-              {hasActiveFilters && (
-                <TouchableOpacity style={styles.emptyButton} onPress={clearFilters}>
-                  <Text style={styles.emptyButtonText}>Xóa bộ lọc</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {/* Bottom Spacing */}
-          <View style={{ height: 30 }} />
-        </ScrollView>
-      )}
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+
+  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingBottom: 14,
     backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    elevation: 2, shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  backButton:      { padding: 4, marginRight: 8 },
+  headerTitleWrap: { flex: 1 },
+  headerTitle:     { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+  headerSub:       { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+
+  // Scroll
+  scroll:        { flex: 1 },
+  scrollContent: { padding: 16 },
+
+  // AI Card
+  aiCard: {
     backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: `${COLORS.secondary}30`,
+    shadowColor: COLORS.secondary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  aiCardTitle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  aiSparkle:   { fontSize: 18 },
+  aiCardLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+
+  // Input
+  inputWrap: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 10,
-    padding: 4,
-    gap: 4,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    gap: 6,
+    paddingTop: 10,
+    paddingBottom: 8,
+    marginBottom: 12,
   },
-  activeTab: {
-    backgroundColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  activeTabText: {
-    color: COLORS.white,
-  },
-  filtersContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 4,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  filterChipTextActive: {
-    color: COLORS.white,
-  },
-  clearFiltersButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${COLORS.error}10`,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 4,
-  },
-  clearFiltersText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.error,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  loadingText: {
+  aiInput: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 12,
+    color: COLORS.textPrimary,
+    minHeight: 52,
+    lineHeight: 20,
   },
-  scrollView: {
-    flex: 1,
+  clearBtn: { alignSelf: 'flex-end', padding: 2, marginTop: 2 },
+
+  // Quick ideas
+  ideasRow: { gap: 8, paddingBottom: 4, marginBottom: 14 },
+  ideaChip: {
+    paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: COLORS.background,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  scrollContent: {
-    paddingTop: 8,
+  ideaChipText: { fontSize: 12, color: COLORS.textSecondary },
+
+  // Budget
+  budgetLabel: {
+    fontSize: 12, fontWeight: '600', color: COLORS.textSecondary,
+    textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10,
   },
-  resultsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  budgetRow: { gap: 8, paddingBottom: 2, marginBottom: 16 },
+  budgetChip: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, backgroundColor: COLORS.background,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  resultsCount: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+  budgetChipActive:     { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
+  budgetChipText:       { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
+  budgetChipTextActive: { color: COLORS.white, fontWeight: '600' },
+
+  // Generate button
+  generateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: COLORS.secondary,
+    paddingVertical: 14, borderRadius: 14,
   },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 48,
+  generateBtnDisabled: { opacity: 0.6 },
+  generateBtnText:     { fontSize: 15, fontWeight: '700', color: COLORS.white },
+
+  // Reasoning banner
+  reasoningBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    backgroundColor: `${COLORS.secondary}12`,
+    borderRadius: 12, padding: 12, marginBottom: 14,
+    borderLeftWidth: 3, borderLeftColor: COLORS.secondary,
   },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginTop: 16,
-    marginBottom: 16,
+  reasoningBannerFallback: {
+    backgroundColor: `${COLORS.textSecondary}08`,
+    borderLeftColor: COLORS.textSecondary,
   },
-  emptyButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  reasoningIcon:         { fontSize: 15, marginTop: 1 },
+  reasoningText:         { flex: 1, fontSize: 13, lineHeight: 19, color: COLORS.textPrimary, fontStyle: 'italic' },
+  reasoningTextFallback: { color: COLORS.textSecondary },
+  reasoningDismiss:      { fontSize: 14, color: COLORS.textSecondary, padding: 2 },
+
+  // Result count
+  resultCount: {
+    fontSize: 13, color: COLORS.textSecondary,
+    fontWeight: '500', marginBottom: 10, paddingHorizontal: 2,
   },
-  emptyButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.white,
+
+  // Skeleton
+  skeletonCard: {
+    backgroundColor: COLORS.white, borderRadius: 16,
+    marginBottom: 14, overflow: 'hidden',
+    elevation: 1, shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3,
   },
+  skeletonImage:   { width: '100%', height: 140, backgroundColor: COLORS.borderLight },
+  skeletonContent: { padding: 14 },
+  skeletonLine:    { height: 12, backgroundColor: COLORS.borderLight, borderRadius: 6 },
+
+  // Empty state
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 56 },
+  emptyIcon:  { fontSize: 52, marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
+  emptyText:  { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 28, lineHeight: 21 },
 });
 
 export default ActivitySuggestionsScreen;
