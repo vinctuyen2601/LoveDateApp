@@ -6,7 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Dimensions,
 } from "react-native";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -192,7 +195,12 @@ const SuggestionsScreen: React.FC = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Công cụ cá nhân hóa</Text>
           </View>
-          <View style={styles.toolCards}>
+          {/* ✅ Fix: ScrollView horizontal thay vì View cố định */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.toolCards}
+          >
             {/* Survey card */}
             <PressableCard style={[styles.toolCard, { backgroundColor: COLORS.primary }]} onPress={handleStartSurvey}>
               <View style={styles.toolIconWrap}>
@@ -241,7 +249,70 @@ const SuggestionsScreen: React.FC = () => {
                 <Ionicons name="arrow-forward" size={13} color="#1A9E6E" />
               </View>
             </PressableCard>
-          </View>
+
+            {/* AI Gift Suggestion card */}
+            <PressableCard
+              style={[styles.toolCard, { backgroundColor: '#D97706' }]}
+              onPress={() => navigation.navigate("GiftSuggestions", {
+                eventId: 'general',
+                event: {
+                  id: 'general', title: 'Dịp đặc biệt', tags: ['other'],
+                  eventDate: new Date().toISOString(), isLunarCalendar: false,
+                  isRecurring: false, isDeleted: false,
+                  reminderSettings: { remindDaysBefore: [] },
+                  version: 0, needsSync: false,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                },
+              })}
+            >
+              <View style={styles.toolIconWrap}>
+                <Ionicons name="sparkles" size={36} color="rgba(255,255,255,0.9)" />
+              </View>
+              <Text style={styles.toolTitle}>Gợi ý{'\n'}quà AI ✨</Text>
+              <Text style={styles.toolDesc}>AI tìm quà phù hợp theo ngân sách & dịp</Text>
+              <View style={styles.toolPills}>
+                <View style={styles.toolPill}>
+                  <Ionicons name="flash-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>AI tạo</Text>
+                </View>
+                <View style={styles.toolPill}>
+                  <Ionicons name="pricetag-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>Link mua</Text>
+                </View>
+              </View>
+              <View style={styles.toolCta}>
+                <Text style={[styles.toolCtaText, { color: '#D97706' }]}>Tìm quà</Text>
+                <Ionicons name="arrow-forward" size={13} color="#D97706" />
+              </View>
+            </PressableCard>
+
+            {/* AI Activity Suggestion card */}
+            <PressableCard
+              style={[styles.toolCard, { backgroundColor: COLORS.secondary }]}
+              onPress={() => navigation.navigate("ActivitySuggestions", {})}
+            >
+              <View style={styles.toolIconWrap}>
+                <Ionicons name="map-outline" size={36} color="rgba(255,255,255,0.9)" />
+              </View>
+              <Text style={styles.toolTitle}>Gợi ý{'\n'}hoạt động</Text>
+              <Text style={styles.toolDesc}>Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn</Text>
+              <View style={styles.toolPills}>
+                <View style={styles.toolPill}>
+                  <Ionicons name="restaurant-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>Ẩm thực</Text>
+                </View>
+                <View style={styles.toolPill}>
+                  <Ionicons name="leaf-outline" size={11} color="rgba(255,255,255,0.9)" />
+                  <Text style={styles.toolPillText}>Spa</Text>
+                </View>
+              </View>
+              <View style={styles.toolCta}>
+                <Text style={[styles.toolCtaText, { color: COLORS.secondary }]}>Khám phá</Text>
+                <Ionicons name="arrow-forward" size={13} color={COLORS.secondary} />
+              </View>
+            </PressableCard>
+          </ScrollView>
         </View>
 
         {/* Section 4: Articles */}
@@ -401,14 +472,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  // Tool Cards (Survey + MBTI) — 2-column gradient cards
+  // Tool Cards — horizontal scroll, fixed-width cards
   toolCards: {
     flexDirection: "row",
     paddingHorizontal: 16,
+    paddingRight: 24,
     gap: 12,
   },
   toolCard: {
-    flex: 1,
+    // ~46% screen width so 2 cards visible + peek of 3rd
+    width: Math.round((SCREEN_WIDTH - 32 - 12) * 0.52),
     borderRadius: 18,
     padding: 16,
     elevation: 4,
