@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 
-const LAST_UPDATED = '01/01/2025';
+const LAST_UPDATED = '27/02/2025';
 const APP_NAME = 'Ngày Quan Trọng';
 const CONTACT_EMAIL = 'support@ngayquantrong.app';
 
@@ -87,18 +87,15 @@ const PrivacyPolicyScreen: React.FC = () => {
             <B>Xem dữ liệu:</B> Toàn bộ dữ liệu bạn nhập luôn hiển thị trong ứng dụng.
           </Bullet>
           <Bullet>
-            <B>Xóa dữ liệu:</B> Bạn có thể xóa tài khoản và toàn bộ dữ liệu bất cứ lúc nào
-            trong Cài đặt → Xóa tài khoản.
-          </Bullet>
-          <Bullet>
-            <B>Xuất dữ liệu:</B> Liên hệ chúng tôi qua email để yêu cầu xuất dữ liệu.
+            <B>Xóa / Xuất dữ liệu:</B> Liên hệ chúng tôi qua email để yêu cầu xóa hoặc xuất
+            toàn bộ dữ liệu của bạn.
           </Bullet>
         </Section>
 
         <Section title="6. Thông báo (Push Notifications)">
           <P>
             Ứng dụng gửi thông báo nhắc nhở các ngày quan trọng. Bạn có thể bật/tắt thông báo
-            bất cứ lúc nào trong Cài đặt → Thông báo hoặc trong cài đặt hệ thống của thiết bị.
+            bất cứ lúc nào trong cài đặt hệ thống của thiết bị.
           </P>
         </Section>
 
