@@ -185,6 +185,32 @@ export const getArticleById = async (articleId: string): Promise<Article | null>
 };
 
 /**
+ * Gợi ý bài viết dựa trên kết quả khảo sát qua AI
+ * Flow: surveyResult → POST /articles/ai-suggest → AI trả articleIds → map sang Article[]
+ */
+export const suggestArticlesForSurvey = async (
+  surveyType: 'personality' | 'mbti',
+  surveyResult: Record<string, any>,
+): Promise<Article[]> => {
+  try {
+    const data = await apiService.post('/articles/ai-suggest', { surveyType, surveyResult });
+    const articleIds: string[] = data.articleIds ?? [];
+    if (articleIds.length === 0) throw new Error('no ids');
+
+    // Map từ cache (đã có sẵn) theo thứ tự AI trả về
+    const allArticles = await getArticles();
+    const byId = new Map(allArticles.map(a => [a.id, a]));
+    return articleIds.map(id => byId.get(id)).filter((a): a is Article => !!a);
+  } catch {
+    // Fallback: lọc client-side từ cache
+    const allArticles = await getArticles();
+    return allArticles
+      .filter(a => a.category === 'personality' || a.category === 'communication')
+      .slice(0, 4);
+  }
+};
+
+/**
  * Sync local changes to backend (for future admin features)
  */
 export const syncArticle = async (article: Article): Promise<Article> => {

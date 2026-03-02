@@ -58,6 +58,7 @@ const SuggestionsScreen: React.FC = () => {
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [resultSuggestions, setResultSuggestions] = useState<Suggestion[]>([]);
+  const [resultSurveyAnswers, setResultSurveyAnswers] = useState<Record<string, any>>({});
 
   // Lazy loading sections
   const showArticles = useLazySection(3);
@@ -157,8 +158,9 @@ const SuggestionsScreen: React.FC = () => {
     setShowSurveyModal(true);
   }, []);
 
-  const handleSurveyComplete = useCallback((suggestions: Suggestion[]) => {
+  const handleSurveyComplete = useCallback((suggestions: Suggestion[], answers: Record<string, any>) => {
     setResultSuggestions(suggestions);
+    setResultSurveyAnswers(answers);
     setShowSurveyModal(false);
     setTimeout(() => {
       setShowResultsModal(true);
@@ -201,26 +203,29 @@ const SuggestionsScreen: React.FC = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.toolCards}
           >
-            {/* Survey card */}
-            <PressableCard style={[styles.toolCard, { backgroundColor: COLORS.primary }]} onPress={handleStartSurvey}>
+            {/* Personality Survey card */}
+            <PressableCard
+              style={[styles.toolCard, { backgroundColor: '#7C3AED' }]}
+              onPress={() => navigation.navigate("PersonalitySurvey")}
+            >
               <View style={styles.toolIconWrap}>
-                <Ionicons name="heart-circle" size={36} color="rgba(255,255,255,0.9)" />
+                <Ionicons name="person-circle-outline" size={36} color="rgba(255,255,255,0.9)" />
               </View>
               <Text style={styles.toolTitle}>Khảo sát{'\n'}tính cách</Text>
-              <Text style={styles.toolDesc}>Tìm quà phù hợp nhất với nửa kia của bạn</Text>
+              <Text style={styles.toolDesc}>Khám phá phong cách yêu thương của bạn</Text>
               <View style={styles.toolPills}>
                 <View style={styles.toolPill}>
                   <Ionicons name="help-circle-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>12 câu</Text>
+                  <Text style={styles.toolPillText}>8 câu</Text>
                 </View>
                 <View style={styles.toolPill}>
                   <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>2 phút</Text>
+                  <Text style={styles.toolPillText}>3 phút</Text>
                 </View>
               </View>
               <View style={styles.toolCta}>
-                <Text style={[styles.toolCtaText, { color: COLORS.primary }]}>Bắt đầu</Text>
-                <Ionicons name="arrow-forward" size={13} color={COLORS.primary} />
+                <Text style={[styles.toolCtaText, { color: '#7C3AED' }]}>Khám phá</Text>
+                <Ionicons name="arrow-forward" size={13} color="#7C3AED" />
               </View>
             </PressableCard>
 
@@ -429,6 +434,7 @@ const SuggestionsScreen: React.FC = () => {
         visible={showResultsModal}
         suggestions={resultSuggestions}
         products={trendingProducts}
+        surveyAnswers={resultSurveyAnswers}
         onClose={() => setShowResultsModal(false)}
         onRetake={handleRetakeSurvey}
       />

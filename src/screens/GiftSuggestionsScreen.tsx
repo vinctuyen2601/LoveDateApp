@@ -8,6 +8,7 @@ import {
   TextInput,
   Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -30,32 +31,91 @@ type GiftSuggestionsScreenRouteProp = RouteProp<
   'GiftSuggestions'
 >;
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
 const TAG_LABEL: Record<string, string> = {
   birthday: 'sinh nhật', anniversary: 'kỷ niệm', valentine: 'Valentine',
   women_day_8_3: '8/3', women_day_20_10: '20/10', christmas: 'Giáng sinh',
   holiday: 'ngày lễ', other: 'dịp đặc biệt',
 };
 
+const TAG_ICON: Record<string, string> = {
+  birthday: '🎂', anniversary: '💑', valentine: '💝',
+  women_day_8_3: '🌹', women_day_20_10: '🌺', christmas: '🎄',
+  holiday: '🎉', other: '✨',
+};
+
 const BUDGET_PRESETS = [
-  { label: 'Dưới 200k',    min: 0,         max: 200_000 },
-  { label: '200k–500k',    min: 200_000,   max: 500_000 },
-  { label: '500k–1triệu',  min: 500_000,   max: 1_000_000 },
-  { label: '1–3 triệu',    min: 1_000_000, max: 3_000_000 },
-  { label: 'Trên 3 triệu', min: 3_000_000, max: 20_000_000 },
+  { label: 'Dưới 200k',   min: 0,         max: 200_000 },
+  { label: '200k–500k',   min: 200_000,   max: 500_000 },
+  { label: '500k–1tr',    min: 500_000,   max: 1_000_000 },
+  { label: '1–3 triệu',   min: 1_000_000, max: 3_000_000 },
+  { label: 'Trên 3tr',    min: 3_000_000, max: 20_000_000 },
 ];
 
-const QUICK_IDEAS = [
-  '🌸 Hoa & quà combo',
-  '📚 Sách hay',
-  '☕ Cà phê, trà',
-  '💄 Mỹ phẩm',
-  '🎮 Công nghệ',
-  '💆 Spa, thư giãn',
-  '👗 Thời trang',
-  '🍫 Bánh ngọt',
+const RECIPIENTS = [
+  { key: 'girlfriend', label: 'Bạn gái',    icon: '👩' },
+  { key: 'boyfriend',  label: 'Bạn trai',   icon: '👦' },
+  { key: 'wife',       label: 'Vợ',         icon: '👰' },
+  { key: 'husband',    label: 'Chồng',      icon: '🤵' },
+  { key: 'mom',        label: 'Mẹ',         icon: '🤱' },
+  { key: 'dad',        label: 'Bố',         icon: '👨' },
+  { key: 'friend',     label: 'Bạn bè',     icon: '🤝' },
+  { key: 'colleague',  label: 'Đồng nghiệp', icon: '💼' },
 ];
 
-// ── Skeleton card ──────────────────────────────────────────────────────────
+const INTEREST_TAGS = [
+  { key: 'coffee',   label: 'Cà phê',     icon: '☕' },
+  { key: 'yoga',     label: 'Yoga',        icon: '🧘' },
+  { key: 'books',    label: 'Đọc sách',   icon: '📚' },
+  { key: 'travel',   label: 'Du lịch',    icon: '✈️' },
+  { key: 'cooking',  label: 'Nấu ăn',     icon: '🍳' },
+  { key: 'sports',   label: 'Thể thao',   icon: '⚽' },
+  { key: 'music',    label: 'Âm nhạc',    icon: '🎵' },
+  { key: 'gaming',   label: 'Game',        icon: '🎮' },
+  { key: 'fashion',  label: 'Thời trang', icon: '👗' },
+  { key: 'beauty',   label: 'Làm đẹp',   icon: '💄' },
+  { key: 'tech',     label: 'Công nghệ',  icon: '💻' },
+  { key: 'art',      label: 'Nghệ thuật', icon: '🎨' },
+  { key: 'wellness', label: 'Sức khỏe',  icon: '💪' },
+  { key: 'flowers',  label: 'Hoa & cây', icon: '🌸' },
+];
+
+// ── AI Thinking dots animation ─────────────────────────────────────────────────
+
+const AIThinkingDots: React.FC = () => {
+  const d1 = useRef(new Animated.Value(0.3)).current;
+  const d2 = useRef(new Animated.Value(0.3)).current;
+  const d3 = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const pulse = (dot: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 1,   duration: 380, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0.3, duration: 380, useNativeDriver: true }),
+        ])
+      ).start();
+    };
+    pulse(d1, 0);
+    pulse(d2, 160);
+    pulse(d3, 320);
+  }, []);
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 5, alignItems: 'center' }}>
+      {[d1, d2, d3].map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.white, opacity: dot }}
+        />
+      ))}
+    </View>
+  );
+};
+
+// ── Skeleton card ──────────────────────────────────────────────────────────────
 
 const SkeletonCard: React.FC = () => {
   const anim = useRef(new Animated.Value(0.4)).current;
@@ -63,7 +123,7 @@ const SkeletonCard: React.FC = () => {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 1,   duration: 700, useNativeDriver: true }),
         Animated.timing(anim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
       ])
     ).start();
@@ -71,34 +131,30 @@ const SkeletonCard: React.FC = () => {
 
   return (
     <Animated.View style={[styles.skeletonCard, { opacity: anim }]}>
-      <View style={styles.skeletonHeader}>
-        <View style={styles.skeletonCircle} />
-        <View style={styles.skeletonLines}>
-          <View style={[styles.skeletonLine, { width: '70%' }]} />
-          <View style={[styles.skeletonLine, { width: '40%', marginTop: 6 }]} />
-        </View>
-        <View style={styles.skeletonBadge} />
+      <View style={styles.skeletonImage} />
+      <View style={styles.skeletonContent}>
+        <View style={[styles.skeletonLine, { width: '65%', height: 14 }]} />
+        <View style={[styles.skeletonLine, { width: '40%', marginTop: 8 }]} />
+        <View style={[styles.skeletonLine, { width: '100%', height: 38, borderRadius: 12, marginTop: 12 }]} />
       </View>
-      <View style={[styles.skeletonLine, { width: '50%', marginBottom: 10 }]} />
-      <View style={[styles.skeletonLine, { width: '100%', height: 36, borderRadius: 10 }]} />
     </Animated.View>
   );
 };
 
-// ── Main screen ────────────────────────────────────────────────────────────
+// ── Main screen ────────────────────────────────────────────────────────────────
 
 const GiftSuggestionsScreen: React.FC = () => {
-  const route = useRoute<GiftSuggestionsScreenRouteProp>();
+  const route    = useRoute<GiftSuggestionsScreenRouteProp>();
   const navigation = useNavigation();
-  const db = useSQLiteContext();
-  const insets = useSafeAreaInsets();
+  const db       = useSQLiteContext();
+  const insets   = useSafeAreaInsets();
   const { showSuccess, showError } = useToast();
 
   const { eventId, event } = route.params;
-
   const defaultOccasion = TAG_LABEL[event.tags?.[0]] || 'dịp đặc biệt';
-  const defaultPrompt = `Gợi ý quà ${defaultOccasion}: ${event.title}`;
+  const occasionIcon    = TAG_ICON[event.tags?.[0]] || '✨';
 
+  // ── State ───────────────────────────────────────────────────────────────────
   const [isLoading, setIsLoading]     = useState(false);
   const [suggestions, setSuggestions] = useState<AffiliateProduct[]>([]);
   const [isAI, setIsAI]               = useState(false);
@@ -106,8 +162,12 @@ const GiftSuggestionsScreen: React.FC = () => {
   const [giftHistory, setGiftHistory] = useState<GiftHistoryItemType[]>([]);
   const [activeTab, setActiveTab]     = useState<'suggestions' | 'history'>('suggestions');
 
-  const [aiPrompt, setAiPrompt]   = useState(defaultPrompt);
-  const [budgetIdx, setBudgetIdx] = useState(1);
+  // AI form state
+  const [selectedRecipient,  setSelectedRecipient]  = useState('');
+  const [selectedInterests,  setSelectedInterests]  = useState<string[]>([]);
+  const [budgetIdx,          setBudgetIdx]           = useState(1);
+  const [customNote,         setCustomNote]          = useState('');
+  const [showCustomNote,     setShowCustomNote]      = useState(false);
 
   useEffect(() => { loadGiftHistory(); }, []);
 
@@ -118,8 +178,43 @@ const GiftSuggestionsScreen: React.FC = () => {
     } catch {}
   };
 
+  const toggleInterest = (key: string) => {
+    setSelectedInterests(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
+
+  // ── Build rich AI prompt ────────────────────────────────────────────────────
+  const buildPrompt = (): string => {
+    const parts: string[] = [];
+
+    const recipientObj = RECIPIENTS.find(r => r.key === selectedRecipient);
+    if (recipientObj) {
+      parts.push(`Tặng quà ${defaultOccasion} cho ${recipientObj.label}`);
+    } else {
+      parts.push(`Tặng quà ${defaultOccasion}: ${event.title}`);
+    }
+
+    if (selectedInterests.length > 0) {
+      const labels = selectedInterests
+        .map(k => INTEREST_TAGS.find(t => t.key === k)?.label)
+        .filter(Boolean)
+        .join(', ');
+      parts.push(`người nhận thích ${labels}`);
+    }
+
+    const budget = BUDGET_PRESETS[budgetIdx];
+    parts.push(`ngân sách ${budget.label}`);
+
+    if (customNote.trim()) {
+      parts.push(customNote.trim());
+    }
+
+    return parts.join(', ');
+  };
+
+  // ── Generate ────────────────────────────────────────────────────────────────
   const handleGenerateSuggestions = async () => {
-    if (!aiPrompt.trim()) return;
     try {
       setIsLoading(true);
       setReasoning('');
@@ -127,8 +222,11 @@ const GiftSuggestionsScreen: React.FC = () => {
 
       const result = await generateGiftSuggestionsWithFallback(db, {
         event,
-        budget: { min: BUDGET_PRESETS[budgetIdx].min, max: BUDGET_PRESETS[budgetIdx].max },
-        preferences: aiPrompt.trim(),
+        budget: {
+          min: BUDGET_PRESETS[budgetIdx].min,
+          max: BUDGET_PRESETS[budgetIdx].max,
+        },
+        preferences: buildPrompt(),
       });
 
       setSuggestions(result.suggestions);
@@ -138,7 +236,7 @@ const GiftSuggestionsScreen: React.FC = () => {
       if (!result.isAI) {
         showError('Không kết nối được AI. Hiển thị từ danh mục.');
       } else if (result.suggestions.length === 0) {
-        showError('Không tìm thấy sản phẩm phù hợp. Thử mô tả khác.');
+        showError('Không tìm thấy sản phẩm phù hợp. Thử thay đổi lựa chọn.');
       }
     } catch {
       showError('Không thể tạo gợi ý quà tặng');
@@ -147,14 +245,7 @@ const GiftSuggestionsScreen: React.FC = () => {
     }
   };
 
-  const appendIdea = (idea: string) => {
-    const clean = idea.replace(/^[\p{Emoji}\s]+/u, '').trim();
-    setAiPrompt((prev) => {
-      if (prev.endsWith(clean)) return prev;
-      return prev ? `${prev}, ${clean.toLowerCase()}` : clean;
-    });
-  };
-
+  // ── History actions ─────────────────────────────────────────────────────────
   const handleSaveGift = async (giftName: string) => {
     try {
       await createGiftItem(db, eventId, giftName);
@@ -179,20 +270,34 @@ const GiftSuggestionsScreen: React.FC = () => {
     } catch { showError('Không thể xóa'); }
   };
 
+  const hasSelections = !!selectedRecipient || selectedInterests.length > 0;
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>Gợi ý quà tặng</Text>
-          <Text style={styles.headerSub} numberOfLines={1}>{event.title}</Text>
-        </View>
-      </View>
 
-      {/* Tabs */}
+      {/* ── Gradient Header ─────────────────────────────────────────────────── */}
+      <LinearGradient
+        colors={['#FF6B6B', '#FF8E53']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 10 }]}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={26} color={COLORS.white} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerOccasion}>{occasionIcon}  {defaultOccasion.toUpperCase()}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{event.title}</Text>
+          <View style={styles.headerBadge}>
+            <Ionicons name="sparkles" size={11} color="#FF6B6B" />
+            <Text style={styles.headerBadgeText}>Gợi ý bởi AI</Text>
+          </View>
+        </View>
+        <View style={{ width: 38 }} />
+      </LinearGradient>
+
+      {/* ── Tabs ──────────────────────────────────────────────────────────────── */}
       <View style={styles.tabs}>
         {(['suggestions', 'history'] as const).map((tab) => (
           <TouchableOpacity
@@ -206,106 +311,239 @@ const GiftSuggestionsScreen: React.FC = () => {
               color={activeTab === tab ? COLORS.primary : COLORS.textSecondary}
             />
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'suggestions' ? 'Gợi ý AI' : `Đã lưu (${giftHistory.length})`}
+              {tab === 'suggestions' ? 'Tìm quà AI' : `Đã lưu (${giftHistory.length})`}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {activeTab === 'suggestions' ? (
           <>
-            {/* ── AI Search Card ─────────────────────────────────────── */}
-            <View style={styles.aiCard}>
-              {/* Title row */}
-              <View style={styles.aiCardTitle}>
-                <Text style={styles.aiSparkle}>✨</Text>
-                <Text style={styles.aiCardLabel}>Mô tả nhu cầu của bạn</Text>
+            {/* ── AI Assistant Card ──────────────────────────────────────────── */}
+            <View style={styles.assistantCard}>
+
+              {/* Assistant header */}
+              <View style={styles.assistantHeader}>
+                <LinearGradient
+                  colors={['#FF6B6B', '#FF8E53']}
+                  style={styles.assistantAvatar}
+                >
+                  <Text style={{ fontSize: 20 }}>✨</Text>
+                </LinearGradient>
+                <View style={styles.assistantHeaderText}>
+                  <Text style={styles.assistantName}>Trợ lý quà tặng AI</Text>
+                  <Text style={styles.assistantOnline}>● Đang hoạt động</Text>
+                </View>
+                <View style={styles.aiBadge}>
+                  <Text style={styles.aiBadgeText}>AI</Text>
+                </View>
               </View>
 
-              {/* Text input */}
-              <View style={styles.inputWrap}>
-                <TextInput
-                  style={styles.aiInput}
-                  value={aiPrompt}
-                  onChangeText={setAiPrompt}
-                  multiline
-                  numberOfLines={2}
-                  placeholder="VD: sinh nhật bạn gái thích yoga, cà phê..."
-                  placeholderTextColor={COLORS.textLight}
-                  textAlignVertical="top"
-                />
-                {aiPrompt.length > 0 && (
-                  <TouchableOpacity
-                    style={styles.clearBtn}
-                    onPress={() => setAiPrompt(defaultPrompt)}
-                  >
-                    <Ionicons name="refresh-outline" size={16} color={COLORS.textSecondary} />
-                  </TouchableOpacity>
-                )}
+              {/* Chat bubble from AI */}
+              <View style={styles.chatBubble}>
+                <Text style={styles.chatBubbleText}>
+                  Xin chào! Mình sẽ giúp bạn tìm món quà{' '}
+                  <Text style={{ fontWeight: '700' }}>{defaultOccasion}</Text>{' '}
+                  hoàn hảo nhất 🎁{'\n'}
+                  Hãy cho mình biết thêm để gợi ý chính xác hơn nhé!
+                </Text>
               </View>
 
-              {/* Quick idea chips */}
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.ideasRow}>
-                {QUICK_IDEAS.map((idea) => (
-                  <TouchableOpacity key={idea} style={styles.ideaChip} onPress={() => appendIdea(idea)}>
-                    <Text style={styles.ideaChipText}>{idea}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              {/* ── Bước 1: Tặng cho ai ─────────────────────────────────────── */}
+              <View style={styles.stepSection}>
+                <View style={styles.stepLabelRow}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>1</Text>
+                  </View>
+                  <Text style={styles.stepLabel}>Tặng quà cho ai?</Text>
+                  {selectedRecipient && (
+                    <View style={styles.stepDoneBadge}>
+                      <Ionicons name="checkmark" size={11} color={COLORS.white} />
+                    </View>
+                  )}
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recipientRow}
+                >
+                  {RECIPIENTS.map((r) => {
+                    const active = selectedRecipient === r.key;
+                    return (
+                      <TouchableOpacity
+                        key={r.key}
+                        style={[styles.recipientChip, active && styles.recipientChipActive]}
+                        onPress={() => setSelectedRecipient(active ? '' : r.key)}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={styles.recipientIcon}>{r.icon}</Text>
+                        <Text style={[styles.recipientLabel, active && styles.recipientLabelActive]}>
+                          {r.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
 
-              {/* Budget label + chips */}
-              <Text style={styles.budgetLabel}>Ngân sách</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.budgetRow}>
-                {BUDGET_PRESETS.map((p, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={[styles.budgetChip, budgetIdx === i && styles.budgetChipActive]}
-                    onPress={() => setBudgetIdx(i)}
-                  >
-                    <Text style={[styles.budgetChipText, budgetIdx === i && styles.budgetChipTextActive]}>
-                      {p.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              {/* ── Bước 2: Sở thích ──────────────────────────────────────────── */}
+              <View style={styles.stepSection}>
+                <View style={styles.stepLabelRow}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>2</Text>
+                  </View>
+                  <Text style={styles.stepLabel}>Họ thích gì?</Text>
+                  {selectedInterests.length > 0 && (
+                    <View style={styles.stepCountBadge}>
+                      <Text style={styles.stepCountText}>{selectedInterests.length}</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.interestGrid}>
+                  {INTEREST_TAGS.map((tag) => {
+                    const active = selectedInterests.includes(tag.key);
+                    return (
+                      <TouchableOpacity
+                        key={tag.key}
+                        style={[styles.interestChip, active && styles.interestChipActive]}
+                        onPress={() => toggleInterest(tag.key)}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={styles.interestIcon}>{tag.icon}</Text>
+                        <Text style={[styles.interestLabel, active && styles.interestLabelActive]}>
+                          {tag.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
 
-              {/* Generate button */}
+              {/* ── Bước 3: Ngân sách ────────────────────────────────────────── */}
+              <View style={styles.stepSection}>
+                <View style={styles.stepLabelRow}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>3</Text>
+                  </View>
+                  <Text style={styles.stepLabel}>Ngân sách</Text>
+                  <View style={styles.stepDoneBadge}>
+                    <Ionicons name="checkmark" size={11} color={COLORS.white} />
+                  </View>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.budgetRow}
+                >
+                  {BUDGET_PRESETS.map((p, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={[styles.budgetChip, budgetIdx === i && styles.budgetChipActive]}
+                      onPress={() => setBudgetIdx(i)}
+                    >
+                      <Text style={[styles.budgetChipText, budgetIdx === i && styles.budgetChipTextActive]}>
+                        {p.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* ── Bước 4: Ghi chú thêm (tùy chọn) ──────────────────────── */}
               <TouchableOpacity
-                style={[styles.generateBtn, isLoading && styles.generateBtnDisabled]}
-                onPress={handleGenerateSuggestions}
-                disabled={isLoading || !aiPrompt.trim()}
-                activeOpacity={0.85}
+                style={styles.addNoteRow}
+                onPress={() => setShowCustomNote(!showCustomNote)}
               >
-                <Ionicons name="sparkles" size={19} color={COLORS.white} />
-                <Text style={styles.generateBtnText}>
-                  {isLoading ? 'Đang tìm quà...' : 'Tìm quà với AI'}
+                <Ionicons
+                  name={showCustomNote ? 'chevron-up-circle-outline' : 'add-circle-outline'}
+                  size={18}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.addNoteText}>
+                  {showCustomNote ? 'Thu gọn' : 'Thêm mô tả chi tiết (tùy chọn)'}
                 </Text>
               </TouchableOpacity>
+
+              {showCustomNote && (
+                <View style={styles.customNoteWrap}>
+                  <TextInput
+                    style={styles.customNoteInput}
+                    value={customNote}
+                    onChangeText={setCustomNote}
+                    multiline
+                    numberOfLines={2}
+                    placeholder="VD: Họ mới chuyển nhà, thích màu pastel, có dị ứng mùi hương..."
+                    placeholderTextColor={COLORS.textLight}
+                    textAlignVertical="top"
+                  />
+                </View>
+              )}
             </View>
 
-            {/* ── AI Reasoning banner ────────────────────────────────── */}
-            {(reasoning || (!isLoading && suggestions.length > 0 && !isAI)) && (
+            {/* ── Generate Button ───────────────────────────────────────────── */}
+            <TouchableOpacity
+              onPress={handleGenerateSuggestions}
+              disabled={isLoading}
+              activeOpacity={0.88}
+              style={styles.generateBtnWrap}
+            >
+              <LinearGradient
+                colors={isLoading ? ['#C8C8C8', '#B0B0B0'] : ['#FF6B6B', '#FF8E53']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.generateBtn}
+              >
+                {isLoading ? (
+                  <>
+                    <AIThinkingDots />
+                    <Text style={styles.generateBtnText}>AI đang tìm quà...</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="sparkles" size={20} color={COLORS.white} />
+                    <Text style={styles.generateBtnText}>
+                      {hasSelections ? 'Tìm quà phù hợp' : 'Tìm quà với AI'}
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* ── AI Loading banner ──────────────────────────────────────────── */}
+            {isLoading && (
+              <View style={styles.loadingBanner}>
+                <Text style={styles.loadingBannerText}>
+                  🤖 AI đang phân tích và chọn lọc quà phù hợp nhất...
+                </Text>
+              </View>
+            )}
+
+            {/* ── AI Reasoning banner ───────────────────────────────────────── */}
+            {!isLoading && (reasoning || (suggestions.length > 0 && !isAI)) && (
               <View style={[styles.reasoningBanner, !isAI && styles.reasoningBannerFallback]}>
-                <Text style={styles.reasoningIcon}>{isAI ? '🤖' : 'ℹ️'}</Text>
+                <View style={styles.reasoningAvatar}>
+                  <Text style={{ fontSize: 13 }}>{isAI ? '🤖' : 'ℹ️'}</Text>
+                </View>
                 <Text style={[styles.reasoningText, !isAI && styles.reasoningTextFallback]}>
                   {isAI
-                    ? (reasoning || 'Gợi ý được tạo bởi AI dựa trên mô tả của bạn')
+                    ? (reasoning || 'Gợi ý được tạo bởi AI dựa trên thông tin của bạn')
                     : 'Hiển thị từ danh mục (không có kết nối AI)'}
                 </Text>
                 {isAI && (
                   <TouchableOpacity onPress={() => { setSuggestions([]); setReasoning(''); }}>
-                    <Text style={styles.reasoningDismiss}>✕</Text>
+                    <Ionicons name="close" size={16} color={COLORS.textSecondary} />
                   </TouchableOpacity>
                 )}
               </View>
             )}
 
-            {/* ── Loading skeletons ──────────────────────────────────── */}
+            {/* ── Loading skeletons ─────────────────────────────────────────── */}
             {isLoading && (
               <>
                 <SkeletonCard />
@@ -314,10 +552,13 @@ const GiftSuggestionsScreen: React.FC = () => {
               </>
             )}
 
-            {/* ── Results ───────────────────────────────────────────── */}
+            {/* ── Results ──────────────────────────────────────────────────── */}
             {!isLoading && suggestions.length > 0 && (
               <>
-                <Text style={styles.resultCount}>{suggestions.length} gợi ý</Text>
+                <View style={styles.resultHeader}>
+                  <Ionicons name="sparkles" size={15} color={COLORS.primary} />
+                  <Text style={styles.resultCount}>{suggestions.length} gợi ý dành cho bạn</Text>
+                </View>
                 {suggestions.map((product) => (
                   <GiftSuggestionCard
                     key={product.id}
@@ -329,20 +570,20 @@ const GiftSuggestionsScreen: React.FC = () => {
               </>
             )}
 
-            {/* ── Empty state ────────────────────────────────────────── */}
+            {/* ── Empty state ───────────────────────────────────────────────── */}
             {!isLoading && suggestions.length === 0 && (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyIcon}>🎁</Text>
                 <Text style={styles.emptyTitle}>Chưa có gợi ý nào</Text>
                 <Text style={styles.emptyText}>
-                  Mô tả dịp tặng quà và nhấn{' '}
-                  <Text style={{ fontWeight: '700', color: COLORS.primary }}>"Tìm quà với AI"</Text>
+                  Chọn người nhận & sở thích rồi nhấn{'\n'}
+                  <Text style={{ fontWeight: '700', color: COLORS.primary }}>"Tìm quà phù hợp"</Text>
                 </Text>
               </View>
             )}
           </>
         ) : (
-          /* ── History tab ──────────────────────────────────────────── */
+          /* ── History tab ──────────────────────────────────────────────────── */
           <>
             {giftHistory.length > 0 ? (
               giftHistory.map((item) => (
@@ -371,162 +612,367 @@ const GiftSuggestionsScreen: React.FC = () => {
   );
 };
 
+// ── Styles ─────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: COLORS.background },
 
-  // Header
+  // ── Gradient Header
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingBottom: 14,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
-    elevation: 2, shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 18,
   },
-  backButton:      { padding: 4, marginRight: 8 },
-  headerTitleWrap: { flex: 1 },
-  headerTitle:     { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
-  headerSub:       { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  backButton: { padding: 6, marginRight: 4 },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerOccasion: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.80)',
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  headerTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: COLORS.white,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  headerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  headerBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FF6B6B',
+  },
 
-  // Tabs
+  // ── Tabs
   tabs: {
-    flexDirection: 'row', backgroundColor: COLORS.white,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    flexDirection: 'row',
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    elevation: 2,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
   tab: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 6, paddingVertical: 13,
+    justifyContent: 'center', gap: 6, paddingVertical: 14,
     borderBottomWidth: 2.5, borderBottomColor: 'transparent',
   },
   tabActive:     { borderBottomColor: COLORS.primary },
   tabText:       { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },
   tabTextActive: { color: COLORS.primary, fontWeight: '700' },
 
-  // Scroll
+  // ── Scroll
   scroll:        { flex: 1 },
   scrollContent: { padding: 16 },
 
-  // AI Card
-  aiCard: {
+  // ── AI Assistant Card
+  assistantCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 14,
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
+    elevation: 4,
     borderWidth: 1,
-    borderColor: `${COLORS.primary}25`,
-    // subtle tinted background
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: 'rgba(255,107,107,0.10)',
   },
-  aiCardTitle: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 6, marginBottom: 12,
+  assistantHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
   },
-  aiSparkle:   { fontSize: 18 },
-  aiCardLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  assistantAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assistantHeaderText: { flex: 1 },
+  assistantName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  assistantOnline: {
+    fontSize: 12,
+    color: COLORS.success,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  aiBadge: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  aiBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.white,
+    letterSpacing: 0.5,
+  },
 
-  // Input
-  inputWrap: {
+  // ── Chat bubble
+  chatBubble: {
+    backgroundColor: 'rgba(255,107,107,0.07)',
+    borderRadius: 16,
+    borderTopLeftRadius: 4,
+    padding: 14,
+    marginBottom: 18,
+    borderLeftWidth: 3,
+    borderLeftColor: 'rgba(255,107,107,0.35)',
+  },
+  chatBubbleText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: COLORS.textPrimary,
+  },
+
+  // ── Step sections
+  stepSection: { marginBottom: 18 },
+  stepLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  stepBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+  stepLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  stepDoneBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepCountBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
+
+  // ── Recipient chips
+  recipientRow: { gap: 8, paddingBottom: 4 },
+  recipientChip: {
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: COLORS.background,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    minWidth: 72,
+  },
+  recipientChipActive: {
+    backgroundColor: 'rgba(255,107,107,0.10)',
+    borderColor: COLORS.primary,
+  },
+  recipientIcon:  { fontSize: 22, marginBottom: 5 },
+  recipientLabel: { fontSize: 11, fontWeight: '500', color: COLORS.textSecondary, textAlign: 'center' },
+  recipientLabelActive: { color: COLORS.primary, fontWeight: '700' },
+
+  // ── Interest chips (wrappable grid)
+  interestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  interestChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: COLORS.background,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  interestChipActive: {
+    backgroundColor: 'rgba(255,107,107,0.10)',
+    borderColor: COLORS.primary,
+  },
+  interestIcon:  { fontSize: 13 },
+  interestLabel: { fontSize: 12, fontWeight: '500', color: COLORS.textSecondary },
+  interestLabelActive: { color: COLORS.primary, fontWeight: '700' },
+
+  // ── Budget
+  budgetRow: { gap: 8, paddingBottom: 2 },
+  budgetChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: COLORS.background,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  budgetChipActive:     { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  budgetChipText:       { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
+  budgetChipTextActive: { color: COLORS.white, fontWeight: '700' },
+
+  // ── Add note toggle
+  addNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+  },
+  addNoteText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  customNoteWrap: {
+    marginTop: 8,
     backgroundColor: COLORS.background,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 8,
-    marginBottom: 12,
+    padding: 12,
   },
-  aiInput: {
+  customNoteInput: {
     fontSize: 14,
     color: COLORS.textPrimary,
-    minHeight: 52,
-    lineHeight: 20,
-  },
-  clearBtn: {
-    alignSelf: 'flex-end',
-    padding: 2,
-    marginTop: 2,
+    minHeight: 50,
+    lineHeight: 21,
   },
 
-  // Quick ideas
-  ideasRow: { gap: 8, paddingBottom: 4, marginBottom: 14 },
-  ideaChip: {
-    paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  ideaChipText: { fontSize: 12, color: COLORS.textSecondary },
-
-  // Budget
-  budgetLabel: {
-    fontSize: 12, fontWeight: '600', color: COLORS.textSecondary,
-    textTransform: 'uppercase', letterSpacing: 0.6,
-    marginBottom: 10,
-  },
-  budgetRow: { gap: 8, paddingBottom: 2, marginBottom: 16 },
-  budgetChip: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: COLORS.background,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  budgetChipActive:     { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  budgetChipText:       { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
-  budgetChipTextActive: { color: COLORS.white, fontWeight: '600' },
-
-  // Generate button
+  // ── Generate button
+  generateBtnWrap: { marginBottom: 14, borderRadius: 16, overflow: 'hidden' },
   generateBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14, borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 17,
   },
-  generateBtnDisabled: { opacity: 0.6 },
-  generateBtnText:     { fontSize: 15, fontWeight: '700', color: COLORS.white },
+  generateBtnText: { fontSize: 16, fontWeight: '800', color: COLORS.white },
 
-  // Reasoning banner
+  // ── Loading banner
+  loadingBanner: {
+    backgroundColor: 'rgba(255,107,107,0.08)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+    alignItems: 'center',
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
+  },
+  loadingBannerText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // ── Reasoning banner
   reasoningBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: `${COLORS.primary}10`,
-    borderRadius: 12, padding: 12, marginBottom: 14,
-    borderLeftWidth: 3, borderLeftColor: COLORS.primary,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(255,107,107,0.08)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
   },
   reasoningBannerFallback: {
     backgroundColor: `${COLORS.textSecondary}08`,
     borderLeftColor: COLORS.textSecondary,
   },
-  reasoningIcon:    { fontSize: 15, marginTop: 1 },
-  reasoningText:    { flex: 1, fontSize: 13, lineHeight: 19, color: COLORS.textPrimary, fontStyle: 'italic' },
+  reasoningAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,107,107,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  reasoningText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    color: COLORS.textPrimary,
+    fontStyle: 'italic',
+  },
   reasoningTextFallback: { color: COLORS.textSecondary },
-  reasoningDismiss: { fontSize: 14, color: COLORS.textSecondary, padding: 2 },
 
-  // Result count
-  resultCount: {
-    fontSize: 13, color: COLORS.textSecondary,
-    fontWeight: '500', marginBottom: 10,
+  // ── Result header
+  resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
     paddingHorizontal: 2,
   },
+  resultCount: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
 
-  // Skeleton
+  // ── Skeleton
   skeletonCard: {
-    backgroundColor: COLORS.white, borderRadius: 16,
-    padding: 16, marginBottom: 14,
-    elevation: 1, shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    marginBottom: 14,
+    overflow: 'hidden',
+    elevation: 1,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
-  skeletonHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
-  skeletonCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.borderLight },
-  skeletonLines:  { flex: 1 },
-  skeletonLine:   { height: 12, backgroundColor: COLORS.borderLight, borderRadius: 6 },
-  skeletonBadge:  { width: 50, height: 22, borderRadius: 11, backgroundColor: COLORS.borderLight },
+  skeletonImage:   { width: '100%', height: 145, backgroundColor: COLORS.borderLight },
+  skeletonContent: { padding: 12 },
+  skeletonLine:    { height: 12, backgroundColor: COLORS.borderLight, borderRadius: 6 },
 
-  // Empty state
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 56 },
-  emptyIcon:  { fontSize: 52, marginBottom: 16 },
+  // ── Empty state
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  emptyIcon:  { fontSize: 54, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
-  emptyText:  { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 28, lineHeight: 21 },
+  emptyText:  { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 28, lineHeight: 22 },
 });
 
 export default GiftSuggestionsScreen;

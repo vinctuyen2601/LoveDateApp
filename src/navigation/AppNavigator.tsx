@@ -9,6 +9,7 @@ import AddEventScreen from '../screens/AddEventScreen';
 import EventDetailScreen from '../screens/EventDetailScreen';
 import EventsListScreen from '../screens/EventsListScreen';
 import MBTISurveyScreen from '../screens/MBTISurveyScreen';
+import PersonalitySurveyScreen from '../screens/PersonalitySurveyScreen';
 import GiftSuggestionsScreen from '../screens/GiftSuggestionsScreen';
 import ActivitySuggestionsScreen from '../screens/ActivitySuggestionsScreen';
 import PremiumScreen from '../screens/PremiumScreen';
@@ -114,6 +115,14 @@ const AppNavigator: React.FC = () => {
             title: 'Khảo sát MBTI',
             presentation: 'modal',
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="PersonalitySurvey"
+          component={PersonalitySurveyScreen}
+          options={{
+            headerShown: false,
+            presentation: 'modal',
           }}
         />
         <Stack.Screen

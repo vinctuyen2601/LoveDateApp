@@ -5,4 +5,5 @@ declare module '@env' {
   export const REACT_APP_ENV: string;
   export const REACT_APP_VERSION: string;
   export const REACT_APP_DEBUG: string;
+  export const REACT_APP_WEB_URL: string;
 }

@@ -3,12 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Modal,
   TextInput,
   Animated,
-  LayoutAnimation,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from '@themes/colors';
@@ -28,8 +26,23 @@ interface SurveyQuestion {
 interface SurveyModalProps {
   visible: boolean;
   onClose: () => void;
-  onComplete: (suggestions: Suggestion[]) => void;
+  onComplete: (suggestions: Suggestion[], answers: Record<string, any>) => void;
 }
+
+const QUESTION_ICONS: Record<string, string> = {
+  gender: 'people-outline',
+  relationship: 'heart-outline',
+  relationship_duration: 'time-outline',
+  personality: 'person-outline',
+  hobbies: 'game-controller-outline',
+  hobbies_other: 'create-outline',
+  needs: 'star-outline',
+  love_language: 'chatbubble-ellipses-outline',
+  style: 'shirt-outline',
+  budget: 'wallet-outline',
+  occasion: 'calendar-outline',
+  gift_purpose: 'gift-outline',
+};
 
 const SurveyModal: React.FC<SurveyModalProps> = ({
   visible,
@@ -39,12 +52,10 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   const [surveyStep, setSurveyStep] = useState(0);
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
   const progressAnim = useRef(new Animated.Value(0)).current;
-  const [currentMultipleSelections, setCurrentMultipleSelections] = useState<
-    string[]
-  >([]);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const [currentMultipleSelections, setCurrentMultipleSelections] = useState<string[]>([]);
   const [currentTextInput, setCurrentTextInput] = useState<string>("");
 
-  // Reset state when modal opens
   useEffect(() => {
     if (visible) {
       setSurveyAnswers({});
@@ -52,8 +63,17 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
       setCurrentMultipleSelections([]);
       setCurrentTextInput("");
       progressAnim.setValue(0);
+      fadeAnim.setValue(1);
     }
   }, [visible]);
+
+  const animateNext = (cb: () => void) => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 140, useNativeDriver: true }).start();
+    setTimeout(() => {
+      cb();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    }, 140);
+  };
 
   const getSurveyQuestions = (): SurveyQuestion[] => [
     {
@@ -298,7 +318,6 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   });
 
   const currentQuestion = currentFilteredQuestions[surveyStep];
-  const remainingQuestions = currentFilteredQuestions.length - surveyStep - 1;
 
   useEffect(() => {
     if (visible && currentFilteredQuestions.length > 0) {
@@ -313,7 +332,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   const generateSuggestions = useCallback(
     (finalAnswers: Record<string, any>) => {
       const topSuggestions = filterSuggestions(finalAnswers, 10);
-      onComplete(topSuggestions);
+      onComplete(topSuggestions, finalAnswers);
     },
     [onComplete]
   );
@@ -324,10 +343,11 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
         const newAnswers = { ...surveyAnswers, [currentQuestion.id]: answer };
         setSurveyAnswers(newAnswers);
         if (surveyStep < currentFilteredQuestions.length - 1) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setSurveyStep(surveyStep + 1);
-          setCurrentMultipleSelections([]);
-          setCurrentTextInput("");
+          animateNext(() => {
+            setSurveyStep(surveyStep + 1);
+            setCurrentMultipleSelections([]);
+            setCurrentTextInput("");
+          });
         } else {
           generateSuggestions(newAnswers);
         }
@@ -364,9 +384,11 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
     const newAnswers = { ...surveyAnswers, [currentQuestion.id]: answerValue };
     setSurveyAnswers(newAnswers);
     if (surveyStep < currentFilteredQuestions.length - 1) {
-      setSurveyStep(surveyStep + 1);
-      setCurrentMultipleSelections([]);
-      setCurrentTextInput("");
+      animateNext(() => {
+        setSurveyStep(surveyStep + 1);
+        setCurrentMultipleSelections([]);
+        setCurrentTextInput("");
+      });
     } else {
       generateSuggestions(newAnswers);
     }
@@ -385,9 +407,11 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
       const newAnswers = { ...surveyAnswers, [currentQuestion.id]: "" };
       setSurveyAnswers(newAnswers);
       if (surveyStep < currentFilteredQuestions.length - 1) {
-        setSurveyStep(surveyStep + 1);
-        setCurrentMultipleSelections([]);
-        setCurrentTextInput("");
+        animateNext(() => {
+          setSurveyStep(surveyStep + 1);
+          setCurrentMultipleSelections([]);
+          setCurrentTextInput("");
+        });
       } else {
         generateSuggestions(newAnswers);
       }
@@ -400,6 +424,10 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
     generateSuggestions,
   ]);
 
+  const isNextDisabled =
+    (currentQuestion?.type === 'multiple' && currentMultipleSelections.length === 0) ||
+    (currentQuestion?.type === 'text' && currentTextInput.trim().length === 0);
+
   return (
     <Modal
       visible={visible}
@@ -407,162 +435,162 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.surveyModal}>
-          <View style={styles.surveyModalHeader}>
-            <Text style={styles.surveyModalTitle}>Khảo sát cá nhân hóa</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+      <View style={styles.overlay}>
+        <View style={styles.sheet}>
+          {/* Drag handle */}
+          <View style={styles.handle} />
+
+          {/* Header */}
+          <View style={styles.sheetHeader}>
+            {surveyStep > 0 ? (
+              <TouchableOpacity
+                onPress={() => {
+                  const prevStep = surveyStep - 1;
+                  const prevQuestion = currentFilteredQuestions[prevStep];
+                  animateNext(() => {
+                    setSurveyStep(prevStep);
+                    // Restore previous answers so user sees what they selected before
+                    if (prevQuestion?.type === 'multiple') {
+                      setCurrentMultipleSelections(surveyAnswers[prevQuestion.id] ?? []);
+                    } else {
+                      setCurrentMultipleSelections([]);
+                    }
+                    if (prevQuestion?.type === 'text') {
+                      setCurrentTextInput(surveyAnswers[prevQuestion.id] ?? '');
+                    } else {
+                      setCurrentTextInput('');
+                    }
+                  });
+                }}
+                style={styles.headerBtn}
+              >
+                <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.headerBtnPlaceholder} />
+            )}
+            <Text style={styles.headerProgress}>
+              Câu {surveyStep + 1}/{currentFilteredQuestions.length}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.headerBtn}>
+              <Ionicons name="close" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.surveyProgress}>
-            <View style={styles.surveyProgressBar}>
-              <Animated.View
-                style={[
-                  styles.surveyProgressFill,
-                  {
-                    width: progressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ["0%", "100%"],
-                    }),
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.surveyProgressInfo}>
-              <Text style={styles.surveyProgressText}>
-                Câu {surveyStep + 1}/{currentFilteredQuestions.length}
-              </Text>
-              {remainingQuestions > 0 && (
-                <Text style={styles.surveyRemainingText}>
-                  Còn {remainingQuestions} câu nữa
-                </Text>
-              )}
-            </View>
+          {/* Progress bar */}
+          <View style={styles.progressTrack}>
+            <Animated.View
+              style={[
+                styles.progressFill,
+                {
+                  width: progressAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0%", "100%"],
+                  }),
+                },
+              ]}
+            />
           </View>
 
           {currentQuestion && (
-            <ScrollView
-              style={styles.surveyQuestion}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={styles.questionText}>
-                {currentQuestion.question}
-              </Text>
-              {currentQuestion.questionHint && (
-                <Text style={styles.questionDescription}>
-                  {currentQuestion.questionHint}
-                </Text>
-              )}
-
-              {/* Single Choice */}
-              {currentQuestion.type === "single" && (
-                <View style={styles.optionsContainer}>
-                  {currentQuestion.options?.map((option, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.optionButton}
-                      onPress={() => handleSurveyAnswer(option)}
-                    >
-                      <Text style={styles.optionText}>{option}</Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color={COLORS.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  ))}
+            <>
+              <Animated.ScrollView
+                style={[styles.scrollArea, { opacity: fadeAnim }]}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Question icon */}
+                <View style={styles.questionIconWrap}>
+                  <Ionicons
+                    name={(QUESTION_ICONS[currentQuestion.id] ?? 'gift-outline') as any}
+                    size={26}
+                    color={COLORS.primary}
+                  />
                 </View>
-              )}
 
-              {/* Multiple Choice */}
-              {currentQuestion.type === "multiple" && (
-                <>
-                  <View style={styles.optionsContainer}>
+                <Text style={styles.questionText}>{currentQuestion.question}</Text>
+                {currentQuestion.questionHint && (
+                  <Text style={styles.questionHint}>{currentQuestion.questionHint}</Text>
+                )}
+
+                {/* Single Choice */}
+                {currentQuestion.type === "single" && (
+                  <View style={styles.optionsWrap}>
                     {currentQuestion.options?.map((option, index) => {
-                      const isSelected =
-                        currentMultipleSelections.includes(option);
-                      const isDisabled =
-                        !isSelected &&
-                        currentQuestion.maxSelections &&
-                        currentMultipleSelections.length >=
-                          currentQuestion.maxSelections;
+                      const isSelected = surveyAnswers[currentQuestion.id] === option;
                       return (
                         <TouchableOpacity
                           key={index}
-                          style={[
-                            styles.checkboxOption,
-                            isSelected && styles.checkboxOptionSelected,
-                            isDisabled
-                              ? styles.checkboxOptionDisabled
-                              : undefined,
-                          ]}
+                          style={[styles.optionBtn, isSelected && styles.optionBtnSelected]}
                           onPress={() => handleSurveyAnswer(option)}
-                          disabled={!!isDisabled}
+                          activeOpacity={0.8}
                         >
-                          <View
-                            style={[
-                              styles.checkbox,
-                              isSelected && styles.checkboxSelected,
-                            ]}
-                          >
-                            {isSelected && (
-                              <Ionicons
-                                name="checkmark"
-                                size={16}
-                                color={COLORS.white}
-                              />
-                            )}
+                          <View style={[styles.optionRadio, isSelected && styles.optionRadioSelected]}>
+                            {isSelected && <View style={styles.optionRadioDot} />}
                           </View>
-                          <Text
-                            style={[
-                              styles.checkboxText,
-                              isSelected && styles.checkboxTextSelected,
-                              isDisabled
-                                ? styles.checkboxTextDisabled
-                                : undefined,
-                            ]}
-                          >
+                          <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                             {option}
                           </Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
-                  {currentQuestion.maxSelections && (
-                    <Text style={styles.selectionCounter}>
-                      Đã chọn {currentMultipleSelections.length}/
-                      {currentQuestion.maxSelections}
-                    </Text>
-                  )}
-                  <TouchableOpacity
-                    style={[
-                      styles.continueButton,
-                      currentMultipleSelections.length === 0 &&
-                        styles.continueButtonDisabled,
-                    ]}
-                    onPress={handleContinue}
-                    disabled={currentMultipleSelections.length === 0}
-                  >
-                    <Text style={styles.continueButtonText}>Tiếp tục</Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={20}
-                      color={COLORS.white}
-                    />
-                  </TouchableOpacity>
-                </>
-              )}
+                )}
 
-              {/* Text Input */}
-              {currentQuestion.type === "text" && (
-                <>
+                {/* Multiple Choice */}
+                {currentQuestion.type === "multiple" && (
+                  <>
+                    {currentQuestion.maxSelections && (
+                      <Text style={styles.selectionHint}>
+                        Chọn tối đa {currentQuestion.maxSelections} đáp án • Đã chọn{" "}
+                        {currentMultipleSelections.length}/{currentQuestion.maxSelections}
+                      </Text>
+                    )}
+                    <View style={styles.optionsWrap}>
+                      {currentQuestion.options?.map((option, index) => {
+                        const isSelected = currentMultipleSelections.includes(option);
+                        const isDisabled =
+                          !isSelected &&
+                          !!currentQuestion.maxSelections &&
+                          currentMultipleSelections.length >= currentQuestion.maxSelections;
+                        return (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.optionBtn,
+                              isSelected && styles.optionBtnSelected,
+                              isDisabled && styles.optionBtnDisabled,
+                            ]}
+                            onPress={() => handleSurveyAnswer(option)}
+                            disabled={isDisabled}
+                            activeOpacity={0.8}
+                          >
+                            <View style={[styles.checkBox, isSelected && styles.checkBoxSelected]}>
+                              {isSelected && (
+                                <Ionicons name="checkmark" size={13} color="#fff" />
+                              )}
+                            </View>
+                            <Text
+                              style={[
+                                styles.optionText,
+                                isSelected && styles.optionTextSelected,
+                                isDisabled && styles.optionTextDisabled,
+                              ]}
+                            >
+                              {option}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </>
+                )}
+
+                {/* Text Input */}
+                {currentQuestion.type === "text" && (
                   <TextInput
                     style={styles.textInput}
-                    placeholder={
-                      currentQuestion.placeholder || "Nhập câu trả lời..."
-                    }
+                    placeholder={currentQuestion.placeholder || "Nhập câu trả lời..."}
                     placeholderTextColor={COLORS.textSecondary}
                     value={currentTextInput}
                     onChangeText={setCurrentTextInput}
@@ -570,43 +598,41 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
                     numberOfLines={4}
                     textAlignVertical="top"
                   />
-                  <View style={styles.textInputActions}>
-                    <TouchableOpacity
-                      style={styles.skipButton}
-                      onPress={handleSkip}
-                    >
-                      <Text style={styles.skipButtonText}>Bỏ qua</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.continueButton,
-                        currentTextInput.trim().length === 0 &&
-                          styles.continueButtonDisabled,
-                      ]}
-                      onPress={handleContinue}
-                      disabled={currentTextInput.trim().length === 0}
-                    >
-                      <Text style={styles.continueButtonText}>Tiếp tục</Text>
-                      <Ionicons
-                        name="arrow-forward"
-                        size={20}
-                        color={COLORS.white}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </ScrollView>
-          )}
+                )}
+              </Animated.ScrollView>
 
-          {surveyStep > 0 && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setSurveyStep(surveyStep - 1)}
-            >
-              <Ionicons name="arrow-back" size={20} color={COLORS.primary} />
-              <Text style={styles.backButtonText}>Quay lại</Text>
-            </TouchableOpacity>
+              {/* Footer — only for multiple/text types */}
+              {currentQuestion.type !== "single" && (
+                <View style={styles.footer}>
+                  {currentQuestion.type === "text" && (
+                    <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
+                      <Text style={styles.skipBtnText}>Bỏ qua</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]}
+                    onPress={handleContinue}
+                    disabled={isNextDisabled}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.nextBtnText, isNextDisabled && styles.nextBtnTextDisabled]}>
+                      {surveyStep < currentFilteredQuestions.length - 1
+                        ? "Tiếp theo"
+                        : "Xem gợi ý"}
+                    </Text>
+                    <Ionicons
+                      name={
+                        surveyStep < currentFilteredQuestions.length - 1
+                          ? "arrow-forward"
+                          : "sparkles"
+                      }
+                      size={18}
+                      color={isNextDisabled ? COLORS.textSecondary : "#fff"}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
           )}
         </View>
       </View>
@@ -615,208 +641,188 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
-  surveyModal: {
+  sheet: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 32,
-    maxHeight: "80%",
+    maxHeight: "88%",
   },
-  surveyModalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  surveyModalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
-  },
-  surveyProgress: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  surveyProgressBar: {
-    height: 8,
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: COLORS.border,
-    borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 8,
+    alignSelf: "center",
+    marginTop: 12,
+    marginBottom: 4,
   },
-  surveyProgressFill: {
-    height: "100%",
-    backgroundColor: COLORS.primary,
-    borderRadius: 4,
-  },
-  surveyProgressInfo: {
+  sheetHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  surveyProgressText: {
-    fontSize: 12,
+  headerBtn: { padding: 6 },
+  headerBtnPlaceholder: { width: 34 },
+  headerProgress: {
+    fontSize: 14,
+    fontWeight: "600",
     color: COLORS.textSecondary,
   },
-  surveyRemainingText: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: "500",
+  progressTrack: {
+    height: 4,
+    backgroundColor: COLORS.border,
+    marginHorizontal: 16,
+    borderRadius: 2,
+    marginBottom: 4,
   },
-  surveyQuestion: {
-    padding: 20,
+  progressFill: {
+    height: "100%",
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
+  },
+  scrollArea: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  questionIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: `${COLORS.primary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
   questionText: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 19,
+    fontWeight: "700",
     color: COLORS.textPrimary,
+    lineHeight: 27,
     marginBottom: 8,
   },
-  questionDescription: {
-    fontSize: 14,
+  questionHint: {
+    fontSize: 13,
     color: COLORS.textSecondary,
+    lineHeight: 19,
     marginBottom: 20,
-    lineHeight: 20,
   },
-  optionsContainer: {
+  selectionHint: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  optionsWrap: { gap: 10 },
+  optionBtn: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 12,
-  },
-  optionButton: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: COLORS.background,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 15,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
   },
-  optionText: {
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
-  checkboxOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.background,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  checkboxOptionSelected: {
-    backgroundColor: `${COLORS.primary}10`,
+  optionBtnSelected: {
     borderColor: COLORS.primary,
+    backgroundColor: `${COLORS.primary}0D`,
   },
-  checkboxOptionDisabled: {
-    opacity: 0.5,
+  optionBtnDisabled: { opacity: 0.45 },
+  optionRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+    flexShrink: 0,
   },
-  checkbox: {
-    width: 24,
-    height: 24,
+  optionRadioSelected: { borderColor: COLORS.primary },
+  optionRadioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+  },
+  checkBox: {
+    width: 20,
+    height: 20,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: COLORS.border,
-    marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 1,
+    flexShrink: 0,
   },
-  checkboxSelected: {
+  checkBoxSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  checkboxText: {
-    fontSize: 15,
-    color: COLORS.textPrimary,
+  optionText: {
     flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
   },
-  checkboxTextSelected: {
-    color: COLORS.primary,
-    fontWeight: "500",
-  },
-  checkboxTextDisabled: {
-    color: COLORS.textLight,
-  },
-  selectionCounter: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textAlign: "center",
-    marginTop: 12,
-    marginBottom: 8,
-  },
+  optionTextSelected: { color: COLORS.primary, fontWeight: "600" },
+  optionTextDisabled: { color: COLORS.textLight },
   textInput: {
     backgroundColor: COLORS.background,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     fontSize: 15,
     color: COLORS.textPrimary,
     minHeight: 100,
-    marginBottom: 16,
   },
-  textInputActions: {
+  footer: {
     flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  continueButton: {
-    flexDirection: "row",
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    flex: 1,
-    marginTop: 8,
-  },
-  continueButtonDisabled: {
-    backgroundColor: COLORS.textLight,
-    opacity: 0.5,
-  },
-  continueButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  skipButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    borderWidth: 1,
+  skipBtn: {
+    paddingVertical: 15,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 100,
   },
-  skipButtonText: {
+  skipBtnText: {
+    fontSize: 14,
     color: COLORS.textSecondary,
-    fontSize: 16,
     fontWeight: "500",
   },
-  backButton: {
+  nextBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 20,
-    paddingVertical: 12,
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 15,
   },
-  backButtonText: {
-    fontSize: 15,
-    color: COLORS.primary,
-    marginLeft: 8,
-    fontWeight: "600",
-  },
+  nextBtnDisabled: { backgroundColor: COLORS.border },
+  nextBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  nextBtnTextDisabled: { color: COLORS.textSecondary },
 });
 
 export default React.memo(SurveyModal);

@@ -35,9 +35,14 @@ const TAG_OCCASION: Record<string, string> = {
 
 function buildPrompt(params: GiftSuggestionParams): string {
   const { event, budget, preferences } = params;
-  const tagText = event.tags.map((t) => TAG_LABEL[t] || t).join(', ') || 'dip dac biet'; // fallback rarely used
 
-  // Always anchor with event context so AI knows the occasion
+  // If screen already built a rich prompt (recipient + interests + budget), use it directly
+  if (preferences?.trim() && preferences.trim().length > 25) {
+    return preferences.trim();
+  }
+
+  // Fallback: build from event data when preferences is minimal
+  const tagText = event.tags.map((t) => TAG_LABEL[t] || t).join(', ') || 'dịp đặc biệt';
   let prompt = `Tìm quà tặng dịp ${tagText}: ${event.title}`;
 
   if (budget) {
@@ -45,7 +50,6 @@ function buildPrompt(params: GiftSuggestionParams): string {
     prompt += `, ngân sách dưới ${maxK}k`;
   }
 
-  // User's extra notes are appended as additional context
   if (preferences?.trim()) {
     prompt += `, ${preferences.trim()}`;
   }

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
+  Animated,
   Dimensions,
   Platform,
   StatusBar,
@@ -14,10 +15,20 @@ import {
 } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import { shareAsync } from 'expo-sharing';
+import { LinearGradient } from 'expo-linear-gradient';
 import MBTIShareCard from '../components/share/MBTIShareCard';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
+import { Article } from '../data/articles';
+import { suggestArticlesForSurvey } from '../services/articleService';
+
+const MBTI_COLORS: [string, string] = ['#0EA5E9', '#6366F1'];
+
+const MBTI_CATEGORY_LABELS: Record<string, string> = {
+  personality: 'Tính cách', communication: 'Giao tiếp',
+  dates: 'Hẹn hò', gifts: 'Quà tặng', zodiac: 'Cung hoàng đạo', all: 'Tổng hợp',
+};
 
 const { width, height } = Dimensions.get('window');
 
@@ -57,7 +68,29 @@ const MBTISurveyScreen: React.FC = () => {
   const [surveyFor, setSurveyFor] = useState<'self' | 'partner' | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const cardRef = useRef<View>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!showResult || !result) return;
+    suggestArticlesForSurvey('mbti', {
+      mbtiType: result.type,
+      description: result.description,
+      loveStyle: result.loveStyle,
+      compatibility: result.compatibility,
+    })
+      .then(setRelatedArticles)
+      .catch(() => {});
+  }, [showResult]);
+
+  const animateTransition = (cb: () => void) => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }).start();
+    setTimeout(() => {
+      cb();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    }, 120);
+  };
 
   const handleShareCard = async () => {
     if (!cardRef.current) return;
@@ -695,9 +728,7 @@ const MBTISurveyScreen: React.FC = () => {
     setAnswers(newAnswers);
 
     if (currentStep < mbtiQuestions.length - 1) {
-      setTimeout(() => {
-        setCurrentStep(currentStep + 1);
-      }, 200);
+      animateTransition(() => setCurrentStep(currentStep + 1));
     } else {
       // Survey completed
       const mbtiType = calculateMBTI();
@@ -727,68 +758,87 @@ const MBTISurveyScreen: React.FC = () => {
 
   if (!surveyFor) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.introContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="close" size={28} color={COLORS.textPrimary} />
-          </TouchableOpacity>
+      <View style={styles.flex}>
+        <StatusBar barStyle="light-content" />
+        <LinearGradient colors={MBTI_COLORS} style={styles.flex}>
+          <SafeAreaView style={[styles.flex, styles.introWrap]}>
+            <TouchableOpacity style={styles.introCloseBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
 
-          <View style={styles.introContent}>
-            <Text style={styles.introEmoji}>🧠</Text>
-            <Text style={styles.introTitle}>Khám phá tính cách MBTI</Text>
-            <Text style={styles.introDescription}>
-              Trả lời 40 câu hỏi để hiểu rõ hơn về bản thân hoặc người thương của bạn
+            <View style={styles.introBadge}>
+              <Text style={styles.introBadgeText}>🧠 Trắc nghiệm MBTI</Text>
+            </View>
+
+            <View style={styles.introIconWrap}>
+              <Ionicons name="analytics-outline" size={72} color="rgba(255,255,255,0.9)" />
+            </View>
+
+            <Text style={styles.introTitle}>Khám phá tính cách{"\n"}MBTI của bạn</Text>
+            <Text style={styles.introSub}>
+              40 câu hỏi khoa học giúp bạn hiểu rõ bản thân hoặc người thương qua 16 nhóm tính cách chuẩn quốc tế.
             </Text>
 
+            <View style={styles.introStats}>
+              {[
+                { icon: 'help-circle-outline', text: '40 câu hỏi' },
+                { icon: 'time-outline', text: '10 phút' },
+                { icon: 'people-outline', text: '16 nhóm tính cách' },
+              ].map(s => (
+                <View style={styles.introStat} key={s.text}>
+                  <Ionicons name={s.icon as any} size={18} color="rgba(255,255,255,0.85)" />
+                  <Text style={styles.introStatText}>{s.text}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Text style={styles.introChooseLabel}>Bạn muốn khảo sát cho ai?</Text>
+
             <View style={styles.introCards}>
-              <TouchableOpacity
-                style={styles.introCard}
-                onPress={() => setSurveyFor('self')}
-              >
-                <View style={[styles.introCardIcon, { backgroundColor: `${COLORS.primary}15` }]}>
-                  <Ionicons name="person" size={40} color={COLORS.primary} />
+              <TouchableOpacity style={styles.introCard} onPress={() => setSurveyFor('self')} activeOpacity={0.85}>
+                <View style={[styles.introCardIcon, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                  <Ionicons name="person" size={32} color="#fff" />
                 </View>
                 <Text style={styles.introCardTitle}>Cho bản thân</Text>
-                <Text style={styles.introCardDesc}>Tìm hiểu về tính cách của bạn</Text>
+                <Text style={styles.introCardDesc}>Tìm hiểu tính cách của bạn</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.introCard}
-                onPress={() => setSurveyFor('partner')}
-              >
-                <View style={[styles.introCardIcon, { backgroundColor: `${COLORS.categoryAnniversary}15` }]}>
-                  <Ionicons name="heart" size={40} color={COLORS.categoryAnniversary} />
+              <TouchableOpacity style={styles.introCard} onPress={() => setSurveyFor('partner')} activeOpacity={0.85}>
+                <View style={[styles.introCardIcon, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                  <Ionicons name="heart" size={32} color="#fff" />
                 </View>
                 <Text style={styles.introCardTitle}>Cho người thương</Text>
                 <Text style={styles.introCardDesc}>Hiểu rõ hơn về người ấy</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle" size={20} color={COLORS.info} />
-              <Text style={styles.infoText}>
-                Bài test dựa trên 16 nhóm tính cách MBTI chuẩn quốc tế
-              </Text>
-            </View>
-          </View>
-        </View>
-      </SafeAreaView>
+          </SafeAreaView>
+        </LinearGradient>
+      </View>
     );
   }
 
   if (showResult && result) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.resultContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="close" size={28} color={COLORS.textPrimary} />
-          </TouchableOpacity>
+      <View style={styles.flex}>
+        <StatusBar barStyle="light-content" />
+        <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} contentContainerStyle={styles.resultContainer}>
+          {/* Gradient header */}
+          <LinearGradient colors={MBTI_COLORS} style={styles.resultGradientHeader}>
+            <SafeAreaView>
+              <TouchableOpacity style={styles.resultCloseBtn} onPress={() => navigation.goBack()}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+              <View style={styles.resultHeaderInner}>
+                <Text style={styles.resultEmoji}>🎉</Text>
+                <View style={styles.resultTypeBadge}>
+                  <Text style={styles.resultType}>{result.type}</Text>
+                </View>
+                <Text style={styles.resultDescription}>{result.description}</Text>
+              </View>
+            </SafeAreaView>
+          </LinearGradient>
 
-          <View style={styles.resultHeader}>
-            <Text style={styles.resultEmoji}>🎉</Text>
-            <Text style={styles.resultType}>{result.type}</Text>
-            <Text style={styles.resultDescription}>{result.description}</Text>
-          </View>
+          <View style={styles.resultBody}>
 
           <View style={styles.resultSection}>
             <Text style={styles.sectionTitle}>💪 Điểm mạnh</Text>
@@ -858,7 +908,34 @@ const MBTISurveyScreen: React.FC = () => {
             <Text style={styles.restartButtonText}>Làm lại bài test</Text>
           </TouchableOpacity>
 
+          {/* Related Articles */}
+          {relatedArticles.length > 0 && (
+            <View style={styles.articlesSection}>
+              <Text style={styles.articlesSectionTitle}>📖 Có thể bạn quan tâm</Text>
+              {relatedArticles.map((article, i) => (
+                <TouchableOpacity
+                  key={article.id}
+                  style={[styles.articleCard, i > 0 && styles.articleCardBorder]}
+                  onPress={() => (navigation as any).navigate('ArticleDetail', { article })}
+                  activeOpacity={0.72}
+                >
+                  <View style={[styles.articleIconBox, { backgroundColor: article.color + '22' }]}>
+                    <Ionicons name={article.icon as any} size={22} color={article.color} />
+                  </View>
+                  <View style={styles.articleInfo}>
+                    <Text style={styles.articleTitle} numberOfLines={2}>{article.title}</Text>
+                    <Text style={styles.articleMeta}>
+                      {MBTI_CATEGORY_LABELS[article.category] ?? article.category} · {article.readTime ?? 5} phút đọc
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           <View style={{ height: 40 }} />
+          </View>{/* end resultBody */}
         </ScrollView>
 
         {/* Share Modal */}
@@ -909,7 +986,7 @@ const MBTISurveyScreen: React.FC = () => {
             </View>
           </View>
         </Modal>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -931,7 +1008,11 @@ const MBTISurveyScreen: React.FC = () => {
         <View style={[styles.progressBar, { width: `${progress}%` }]} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.questionContainer}>
+      <Animated.ScrollView
+        style={{ flex: 1, opacity: fadeAnim }}
+        contentContainerStyle={styles.questionContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.categoryBadge}>
           {currentQuestion.category === 'EI' && '💬 Năng lượng'}
           {currentQuestion.category === 'SN' && '🧠 Thu nhận thông tin'}
@@ -948,6 +1029,7 @@ const MBTISurveyScreen: React.FC = () => {
               answers[currentStep] === currentQuestion.dimensionA && styles.optionButtonSelected,
             ]}
             onPress={() => handleAnswer(currentQuestion.dimensionA)}
+            activeOpacity={0.8}
           >
             <View style={styles.optionContent}>
               <View style={[
@@ -973,6 +1055,7 @@ const MBTISurveyScreen: React.FC = () => {
               answers[currentStep] === currentQuestion.dimensionB && styles.optionButtonSelected,
             ]}
             onPress={() => handleAnswer(currentQuestion.dimensionB)}
+            activeOpacity={0.8}
           >
             <View style={styles.optionContent}>
               <View style={[
@@ -992,211 +1075,123 @@ const MBTISurveyScreen: React.FC = () => {
             </View>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  introContainer: {
-    flex: 1,
-    padding: 20,
+
+  // ── Intro (gradient) ──
+  introWrap: { paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' },
+  introCloseBtn: { position: 'absolute', top: 16, right: 16, padding: 8, zIndex: 10 },
+  introBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 6, marginBottom: 24,
   },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 8,
-  },
-  introContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  introEmoji: {
-    fontSize: 80,
-    marginBottom: 20,
+  introBadgeText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  introIconWrap: {
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
   introTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginBottom: 12,
-    textAlign: 'center',
+    fontSize: 26, fontWeight: '800', color: '#fff',
+    textAlign: 'center', lineHeight: 34, marginBottom: 12,
   },
-  introDescription: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 40,
+  introSub: {
+    fontSize: 14, color: 'rgba(255,255,255,0.82)',
+    textAlign: 'center', lineHeight: 22, marginBottom: 24,
   },
-  introCards: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 30,
+  introStats: { flexDirection: 'row', gap: 20, marginBottom: 28 },
+  introStat: { alignItems: 'center', gap: 6 },
+  introStatText: { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
+  introChooseLabel: {
+    fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '600',
+    marginBottom: 14, letterSpacing: 0.5, textTransform: 'uppercase',
   },
+  introCards: { flexDirection: 'row', gap: 14, width: '100%' },
   introCard: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    flex: 1, borderRadius: 18, padding: 20, alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
   },
   introCardIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    width: 64, height: 64, borderRadius: 32,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
   },
-  introCardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    marginBottom: 8,
-  },
-  introCardDesc: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${COLORS.info}15`,
-    padding: 16,
-    borderRadius: 12,
-    gap: 10,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    color: COLORS.info,
-    lineHeight: 18,
-  },
+  introCardTitle: { fontSize: 15, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  introCardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.75)', textAlign: 'center' },
+
+  // ── Survey header / progress ──
+  closeButton: { alignSelf: 'flex-end', padding: 8 },
+  introContainer: { flex: 1, padding: 20 },
+  introContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  infoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: `${COLORS.info}15`, padding: 16, borderRadius: 12, gap: 10 },
+  infoText: { flex: 1, fontSize: 13, color: COLORS.info, lineHeight: 18 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: COLORS.white,
   },
-  headerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
+  headerText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
   progressBarContainer: {
-    height: 4,
-    backgroundColor: COLORS.border,
+    height: 4, backgroundColor: COLORS.border,
+    marginHorizontal: 16, borderRadius: 2, marginBottom: 4,
   },
-  progressBar: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-  },
-  questionContainer: {
-    padding: 20,
-  },
+  progressBar: { height: '100%', backgroundColor: '#6366F1', borderRadius: 2 },
+  questionContainer: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
   categoryBadge: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
-    marginBottom: 16,
+    alignSelf: 'flex-start',
+    fontSize: 12, fontWeight: '700', color: '#6366F1',
+    backgroundColor: '#6366F115', borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 5, marginBottom: 16,
   },
   question: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-    lineHeight: 32,
-    marginBottom: 32,
+    fontSize: 22, fontWeight: '700', color: COLORS.textPrimary,
+    lineHeight: 30, marginBottom: 24,
   },
-  optionsContainer: {
-    gap: 16,
-  },
+  optionsContainer: { gap: 12 },
   optionButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    backgroundColor: COLORS.surface, borderRadius: 14,
+    padding: 16, borderWidth: 1.5, borderColor: COLORS.border,
   },
-  optionButtonSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: `${COLORS.primary}08`,
-  },
-  optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+  optionButtonSelected: { borderColor: '#6366F1', backgroundColor: '#6366F10D' },
+  optionContent: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   optionRadio: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2,
+    borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center',
+    marginTop: 1, flexShrink: 0,
   },
-  optionRadioSelected: {
-    borderColor: COLORS.primary,
+  optionRadioSelected: { borderColor: '#6366F1' },
+  optionRadioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#6366F1' },
+  optionText: { flex: 1, fontSize: 15, color: COLORS.textPrimary, lineHeight: 22 },
+  optionTextSelected: { color: '#6366F1', fontWeight: '600' },
+
+  // ── Result ──
+  resultContainer: { paddingBottom: 24 },
+  resultGradientHeader: { paddingHorizontal: 24, paddingBottom: 32 },
+  resultHeaderInner: { alignItems: 'center', marginTop: 8, marginBottom: 4 },
+  resultEmoji: { fontSize: 52, marginBottom: 10 },
+  resultTypeBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 20,
+    paddingHorizontal: 20, paddingVertical: 6, marginBottom: 12,
   },
-  optionRadioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.primary,
-  },
-  optionText: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.textPrimary,
-    lineHeight: 22,
-  },
-  optionTextSelected: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  resultContainer: {
-    padding: 20,
-  },
-  resultHeader: {
-    alignItems: 'center',
-    marginBottom: 32,
-    marginTop: 20,
-  },
-  resultEmoji: {
-    fontSize: 60,
-    marginBottom: 16,
-  },
-  resultType: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 12,
-  },
+  resultType: { fontSize: 22, fontWeight: '800', color: '#fff' },
   resultDescription: {
-    fontSize: 18,
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    lineHeight: 26,
-    paddingHorizontal: 20,
+    fontSize: 14, color: 'rgba(255,255,255,0.88)', textAlign: 'center', lineHeight: 22,
   },
+  resultCloseBtn: { position: 'absolute', top: 0, right: 0, padding: 8 },
+  resultBody: { padding: 16, gap: 12 },
+  resultHeader: { alignItems: 'center', marginBottom: 32, marginTop: 20 },
   resultSection: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
@@ -1362,6 +1357,25 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
+
+  // Related articles
+  articlesSection: {
+    backgroundColor: COLORS.surface, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  articlesSectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 4 },
+  articleCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10,
+  },
+  articleCardBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  articleIconBox: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  articleEmoji: { fontSize: 22 },
+  articleInfo: { flex: 1 },
+  articleTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 20, marginBottom: 3 },
+  articleMeta: { fontSize: 12, color: COLORS.textSecondary },
 });
 
 export default MBTISurveyScreen;

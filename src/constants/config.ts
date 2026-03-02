@@ -3,6 +3,7 @@ import {
   REACT_APP_API_DEV_URL,
   REACT_APP_API_PROD_URL,
   REACT_APP_API_TIMEOUT,
+  REACT_APP_WEB_URL,
 } from '@env';
 
 // API Configuration
@@ -83,6 +84,9 @@ export const MAX_TITLE_LENGTH = 100;
 // App Info
 export const APP_VERSION = '1.0.0';
 export const APP_NAME = 'Ngày Quan Trọng';
+
+// Web URL (for sharing links)
+export const WEB_BASE_URL = REACT_APP_WEB_URL || 'https://ngayyeuthuong.com';
 
 // Feature Flags
 export const FEATURES = {

@@ -574,6 +574,7 @@ export const REMIND_OPTIONS = [
 export const PREDEFINED_TAGS = [
   { value: "birthday", label: "Sinh nhật", icon: "gift", color: "#FF6B6B" },
   { value: "anniversary", label: "Kỷ niệm", icon: "heart", color: "#FF69B4" },
+  { value: "memorial", label: "Ngày giỗ", icon: "flower-outline", color: "#7C3AED" },
   { value: "wife", label: "Vợ", icon: "heart", color: "#E74C3C" },
   { value: "husband", label: "Chồng", icon: "heart-circle", color: "#3498DB" },
   { value: "family", label: "Gia đình", icon: "people", color: "#9B59B6" },

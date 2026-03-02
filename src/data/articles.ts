@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Article interface matching backend schema
 export interface Article {
   id: string; // UUID from backend or local ID
+  slug?: string; // URL-friendly slug for web sharing
   title: string;
   category: ArticleCategory;
   icon: keyof typeof Ionicons.glyphMap;

@@ -16,6 +16,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import RenderHTML from 'react-native-render-html';
 import { COLORS } from '@themes/colors';
 import { htmlStyles } from '@styles/htmlStyles';
+import { WEB_BASE_URL } from '../constants/config';
 import { Article, getRelatedArticles, ARTICLE_CATEGORIES } from '../data/articles';
 import { getRelatedProductsForArticleAsync } from '../services/affiliateProductService';
 import { getArticles } from '../services/articleService';
@@ -67,9 +68,13 @@ const ArticleDetailScreen: React.FC = () => {
   );
 
   const handleShare = async () => {
+    const slug = article.slug || article.id;
+    const url = `${WEB_BASE_URL}/blog/${slug}`;
     try {
       await Share.share({
-        message: `${article.title} - Love Date App`,
+        title: article.title,
+        message: `${article.title}\n${url}`,
+        url, // iOS native share sheet uses this field
       });
     } catch {
       // User cancelled

@@ -102,10 +102,23 @@ export const OtherIcon: React.FC<IconProps> = ({ size = 24, color = '#9C27B0' })
   </Svg>
 );
 
+// Memorial/Death Anniversary Icon (cross)
+export const MemorialIcon: React.FC<IconProps> = ({ size = 24, color = '#7C3AED' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    {/* Vertical beam */}
+    <Rect x="10.5" y="2" width="3" height="20" rx="1.5" fill={color} />
+    {/* Horizontal beam */}
+    <Rect x="4" y="7" width="16" height="3" rx="1.5" fill={color} />
+    {/* Subtle glow base */}
+    <Rect x="9" y="19" width="6" height="1.5" rx="0.75" fill={color} opacity="0.4" />
+  </Svg>
+);
+
 // Export all icons
 export const EventCategoryIcons = {
   birthday: BirthdayIcon,
   anniversary: AnniversaryIcon,
   holiday: HolidayIcon,
+  memorial: MemorialIcon,
   other: OtherIcon,
 };

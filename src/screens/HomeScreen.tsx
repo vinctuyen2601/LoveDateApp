@@ -29,6 +29,7 @@ import {
   BirthdayIcon,
   AnniversaryIcon,
   HolidayIcon,
+  MemorialIcon,
   OtherIcon,
 } from "@components/atoms/EventIcons";
 import NotificationBanner from "@components/molecules/NotificationBanner";
@@ -44,6 +45,8 @@ const getEventIcon = (primaryTag: string) => {
       return AnniversaryIcon;
     case "holiday":
       return HolidayIcon;
+    case "memorial":
+      return MemorialIcon;
     default:
       return OtherIcon;
   }
@@ -56,6 +59,29 @@ const CATEGORY_NAMES: Record<string, string> = {
   zodiac: 'Cung hoàng đạo',
   personality: 'Tính cách',
 };
+
+const EVENT_EMOJIS: Record<string, string> = {
+  birthday: '🎂',
+  anniversary: '💑',
+  holiday: '🎉',
+  memorial: '✝️',
+  other: '⭐',
+};
+
+// Ngày đặc biệt cố định hàng năm (Gregorian)
+const SPECIAL_DATES = [
+  { month: 1,  day: 1,  name: 'Năm Mới Dương Lịch',   emoji: '🎉', color: '#F59E0B', hint: 'Chúc mừng năm mới!' },
+  { month: 2,  day: 14, name: 'Ngày Valentine',        emoji: '💝', color: '#E91E63', hint: 'Ngày của tình yêu' },
+  { month: 3,  day: 8,  name: 'Ngày Quốc tế Phụ nữ',  emoji: '🌷', color: '#9C27B0', hint: 'Tôn vinh những người phụ nữ đặc biệt' },
+  { month: 3,  day: 14, name: 'Ngày Valentine Trắng',  emoji: '🤍', color: '#64748B', hint: 'Ngày đáp lại tình cảm Valentine' },
+  { month: 4,  day: 30, name: 'Ngày Giải phóng',       emoji: '🇻🇳', color: '#EF4444', hint: 'Ngày lễ quốc gia' },
+  { month: 5,  day: 1,  name: 'Ngày Quốc tế Lao động', emoji: '🌟', color: '#F97316', hint: 'Ngày lễ quốc gia' },
+  { month: 6,  day: 1,  name: 'Ngày Quốc tế Thiếu nhi',emoji: '🎠', color: '#06B6D4', hint: 'Ngày dành cho trẻ em' },
+  { month: 9,  day: 2,  name: 'Ngày Quốc khánh',       emoji: '🇻🇳', color: '#EF4444', hint: 'Ngày lễ quốc gia' },
+  { month: 10, day: 20, name: 'Ngày Phụ nữ Việt Nam',  emoji: '🌸', color: '#EC4899', hint: 'Tôn vinh phụ nữ Việt Nam' },
+  { month: 11, day: 20, name: 'Ngày Nhà giáo VN',      emoji: '📚', color: '#10B981', hint: 'Tri ân thầy cô' },
+  { month: 12, day: 25, name: 'Giáng Sinh',            emoji: '🎄', color: '#16A34A', hint: 'Merry Christmas!' },
+];
 
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -127,6 +153,8 @@ const HomeScreen: React.FC = () => {
         return COLORS.categoryAnniversary;
       case "holiday":
         return COLORS.categoryHoliday;
+      case "memorial":
+        return "#7C3AED";
       default:
         return COLORS.categoryOther;
     }
@@ -134,17 +162,46 @@ const HomeScreen: React.FC = () => {
 
   const markedDates = useMemo(() => {
     const marked: any = {};
+    // Lấy năm hiện tại trên calendar để hiển thị recurring events đúng năm
+    const calYear = parseInt(currentMonth.slice(0, 4), 10);
+
     events.forEach((event) => {
       if (!event.eventDate) return;
       const date = new Date(event.eventDate);
       if (isNaN(date.getTime())) return;
-      const eventDate = DateUtils.toLocalDateString(date);
-      if (!marked[eventDate]) {
-        marked[eventDate] = { marked: true, dots: [] };
+
+      let markDate: string;
+      if (event.isRecurring) {
+        // Recurring (sinh nhật, kỷ niệm...): đánh dấu đúng ngày MM-DD
+        // nhưng theo năm đang hiển thị trên calendar
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        markDate = `${calYear}-${mm}-${dd}`;
+      } else {
+        markDate = DateUtils.toLocalDateString(date);
+      }
+
+      if (!marked[markDate]) {
+        marked[markDate] = { marked: true, emojis: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[eventDate].dots.push({ color: getCategoryColor(primaryTag) });
+      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? '⭐');
     });
+
+    // Merge ngày đặc biệt cố định — dùng emoji
+    SPECIAL_DATES.forEach((sd) => {
+      const mm = String(sd.month).padStart(2, '0');
+      const dd = String(sd.day).padStart(2, '0');
+      const dateKey = `${calYear}-${mm}-${dd}`;
+      if (!marked[dateKey]) {
+        marked[dateKey] = { emojis: [] };
+      }
+      if (!marked[dateKey].emojis) {
+        marked[dateKey].emojis = [];
+      }
+      marked[dateKey].emojis.unshift(sd.emoji); // special date emoji first
+    });
+
     if (marked[selectedDate]) {
       marked[selectedDate].selected = true;
       marked[selectedDate].selectedColor = COLORS.primary;
@@ -155,13 +212,31 @@ const HomeScreen: React.FC = () => {
       };
     }
     return marked;
-  }, [events, selectedDate]);
+  }, [events, selectedDate, currentMonth]);
+
+  // Ngày đặc biệt trùng với ngày đang chọn
+  const selectedDateSpecials = useMemo(() => {
+    const [, mm, dd] = selectedDate.split('-');
+    return SPECIAL_DATES.filter(
+      (sd) =>
+        String(sd.month).padStart(2, '0') === mm &&
+        String(sd.day).padStart(2, '0') === dd
+    );
+  }, [selectedDate]);
 
   const selectedDateEvents = useMemo(() => {
     return events.filter((event) => {
       if (!event.eventDate) return false;
-      const eventDate = DateUtils.toLocalDateString(new Date(event.eventDate));
-      return eventDate === selectedDate;
+      const date = new Date(event.eventDate);
+      if (isNaN(date.getTime())) return false;
+
+      if (event.isRecurring) {
+        // Recurring: so khớp MM-DD, bỏ qua năm
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return selectedDate.slice(5) === `${mm}-${dd}`;
+      }
+      return DateUtils.toLocalDateString(date) === selectedDate;
     });
   }, [events, selectedDate]);
 
@@ -397,45 +472,95 @@ const HomeScreen: React.FC = () => {
               onDayPress={handleDayPress}
               onMonthChange={handleMonthChange}
               markedDates={markedDates}
-              markingType="multi-dot"
               theme={CALENDAR_THEME}
               enableSwipeMonths={true}
               hideExtraDays={false}
               firstDay={1}
               renderArrow={(direction: string) => (
                 <Ionicons
-                  name={
-                    direction === "left" ? "chevron-back" : "chevron-forward"
-                  }
+                  name={direction === "left" ? "chevron-back" : "chevron-forward"}
                   size={20}
                   color={COLORS.primary}
                 />
               )}
+              dayComponent={({ date, state, marking }: any) => {
+                const isSelected = !!marking?.selected;
+                const isToday = state === "today";
+                const isDisabled = state === "disabled";
+                const emojis: string[] = marking?.emojis ?? [];
+
+                return (
+                  <TouchableOpacity
+                    onPress={() => date && handleDayPress(date)}
+                    activeOpacity={0.7}
+                    style={styles.dayCell}
+                  >
+                    <View
+                      style={[
+                        styles.dayNumberWrap,
+                        isSelected && styles.dayNumberSelected,
+                        isToday && !isSelected && styles.dayNumberToday,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayNumberText,
+                          isToday && !isSelected && styles.dayTextToday,
+                          isSelected && styles.dayTextSelected,
+                          isDisabled && styles.dayTextDisabled,
+                        ]}
+                      >
+                        {date?.day}
+                      </Text>
+                    </View>
+
+                    {/* Emoji: ngày đặc biệt + sự kiện user */}
+                    {emojis.length > 0 ? (
+                      <View style={styles.dayEmojisRow}>
+                        {emojis.slice(0, 2).map((e, i) => (
+                          <Text key={i} style={styles.dayEmoji}>{e}</Text>
+                        ))}
+                      </View>
+                    ) : (
+                      <View style={styles.dayPlaceholder} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
             />
           </View>
         </View>
 
-        {/* Selected Date Events */}
-        {selectedDateEvents.length > 0 && (
+        {/* Selected Date — Special Days + Events */}
+        {(selectedDateSpecials.length > 0 || selectedDateEvents.length > 0) && (
           <View style={styles.selectedDateSection}>
             <View style={styles.selectedDateHeader}>
-              <Ionicons
-                name="today-outline"
-                size={16}
-                color={COLORS.primary}
-              />
+              <Ionicons name="today-outline" size={16} color={COLORS.primary} />
               <Text style={styles.selectedDateTitle}>
-                Ngay{" "}
-                {format(new Date(selectedDate + "T00:00:00"), "d/M", {
-                  locale: vi,
-                })}
+                Ngày{" "}
+                {format(new Date(selectedDate + "T00:00:00"), "d/M", { locale: vi })}
               </Text>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>
-                  {selectedDateEvents.length}
+                  {selectedDateSpecials.length + selectedDateEvents.length}
                 </Text>
               </View>
             </View>
+
+            {/* Ngày đặc biệt */}
+            {selectedDateSpecials.map((sd, i) => (
+              <View key={`special-${i}`} style={[styles.specialDateCard, { borderLeftColor: sd.color }]}>
+                <View style={[styles.specialDateIconBox, { backgroundColor: sd.color + '20' }]}>
+                  <Text style={styles.specialDateEmoji}>{sd.emoji}</Text>
+                </View>
+                <View style={styles.specialDateContent}>
+                  <Text style={[styles.specialDateName, { color: sd.color }]}>{sd.name}</Text>
+                  <Text style={styles.specialDateHint}>{sd.hint}</Text>
+                </View>
+              </View>
+            ))}
+
+            {/* Sự kiện của người dùng */}
             {selectedDateEvents.map((event) =>
               renderEventCard(event, { showDate: false })
             )}
@@ -734,6 +859,56 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
+  // Custom day cell
+  dayCell: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingBottom: 4,
+    minHeight: 52,
+    width: 36,
+  },
+  dayNumberWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dayNumberSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  dayNumberToday: {
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+  },
+  dayNumberText: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: "400",
+  },
+  dayTextToday: {
+    color: COLORS.primary,
+    fontWeight: "700",
+  },
+  dayTextSelected: {
+    color: COLORS.white,
+    fontWeight: "700",
+  },
+  dayTextDisabled: {
+    color: COLORS.textLight,
+  },
+  dayEmojisRow: {
+    flexDirection: "row",
+    marginTop: 1,
+  },
+  dayEmoji: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  dayPlaceholder: {
+    height: 15,
+  },
+
   // Calendar
   calendarContainer: {
     backgroundColor: COLORS.white,
@@ -762,6 +937,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: COLORS.textPrimary,
+  },
+  specialDateCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  specialDateIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  specialDateEmoji: { fontSize: 26 },
+  specialDateContent: { flex: 1 },
+  specialDateName: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  specialDateHint: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
   },
 
   // Quick Actions — full-color cards
