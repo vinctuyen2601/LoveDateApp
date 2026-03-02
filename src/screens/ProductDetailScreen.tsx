@@ -26,6 +26,7 @@ import {
   trackAffiliateClick,
   getProductsByCategory,
 } from '../services/affiliateProductService';
+import { logProductView, logProductClick } from '../services/analyticsService';
 import ProductCard from '../components/suggestions/ProductCard';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -54,6 +55,7 @@ const ProductDetailScreen: React.FC = () => {
   useEffect(() => {
     // Track view on mount (fire-and-forget)
     trackProductView(product.id);
+    logProductView({ id: product.id, name: product.name, category: product.category, price: product.price });
 
     // Load similar products async
     const loadSimilar = async () => {
@@ -78,6 +80,7 @@ const ProductDetailScreen: React.FC = () => {
     const url = product.affiliateUrl;
     if (!url || url === '#') return;
     trackAffiliateClick(product.id);
+    logProductClick({ id: product.id, name: product.name, affiliateUrl: url });
     if (Platform.OS === 'web') {
       window.open(url, '_blank', 'noopener,noreferrer');
     } else {

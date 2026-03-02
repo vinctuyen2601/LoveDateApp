@@ -1,7 +1,8 @@
-import React, { createRef } from 'react';
+import React, { createRef, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '@contexts/AuthContext';
+import { logScreenView } from '../services/analyticsService';
 import { COLORS } from '@themes/colors';
 import AuthScreen from '../screens/AuthScreen';
 import TabNavigator from './TabNavigator';
@@ -34,6 +35,7 @@ export function navigate(name: string, params?: any) {
 
 const AppNavigator: React.FC = () => {
   const { isLoading } = useAuth();
+  const routeNameRef = useRef<string | undefined>(undefined);
 
   if (isLoading) {
     // Show splash screen while auto-creating anonymous account
@@ -41,7 +43,20 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+      }}
+      onStateChange={() => {
+        const currentRoute = navigationRef.current?.getCurrentRoute();
+        const currentName = currentRoute?.name;
+        if (currentName && currentName !== routeNameRef.current) {
+          logScreenView(currentName);
+          routeNameRef.current = currentName;
+        }
+      }}
+    >
       <Stack.Navigator
         screenOptions={{
           headerStyle: {

@@ -36,6 +36,7 @@ import OccasionCards from "../components/suggestions/OccasionCard";
 import { useMasterData } from "../contexts/MasterDataContext";
 import BudgetFilter from "../components/suggestions/BudgetFilter";
 import SurveyModal from "../components/suggestions/SurveyModal";
+import { logGiftSurveyStart, logGiftSurveyComplete } from "../services/analyticsService";
 import ResultsModal from "../components/suggestions/ResultsModal";
 import PressableCard from "@components/atoms/PressableCard";
 
@@ -155,10 +156,12 @@ const SuggestionsScreen: React.FC = () => {
 
 
   const handleStartSurvey = useCallback(() => {
+    logGiftSurveyStart();
     setShowSurveyModal(true);
   }, []);
 
   const handleSurveyComplete = useCallback((suggestions: Suggestion[], answers: Record<string, any>) => {
+    logGiftSurveyComplete({ occasion: answers.occasion, budget: answers.budget });
     setResultSuggestions(suggestions);
     setResultSurveyAnswers(answers);
     setShowSurveyModal(false);

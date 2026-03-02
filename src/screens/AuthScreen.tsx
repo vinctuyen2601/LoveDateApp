@@ -16,6 +16,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { COLORS } from '@themes/colors';
 import { STRINGS } from '../constants/strings';
 import { ValidationUtils } from '@lib/validation.utils';
+import { logLogin, logSignUp } from '../services/analyticsService';
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -106,8 +107,10 @@ const AuthScreen: React.FC = () => {
 
       if (isLogin) {
         await login(email, password);
+        logLogin('email');
       } else {
         await register(email, password, displayName);
+        logSignUp('email');
       }
 
       // Đóng modal sau khi thành công

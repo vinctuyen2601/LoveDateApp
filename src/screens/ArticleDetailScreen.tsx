@@ -17,6 +17,7 @@ import RenderHTML from 'react-native-render-html';
 import { COLORS } from '@themes/colors';
 import { htmlStyles } from '@styles/htmlStyles';
 import { WEB_BASE_URL } from '../constants/config';
+import { logArticleView, logArticleShare } from '../services/analyticsService';
 import { Article, getRelatedArticles, ARTICLE_CATEGORIES } from '../data/articles';
 import { getRelatedProductsForArticleAsync } from '../services/affiliateProductService';
 import { getArticles } from '../services/articleService';
@@ -38,6 +39,7 @@ const ArticleDetailScreen: React.FC = () => {
   const [relatedProducts, setRelatedProducts] = useState<AffiliateProduct[]>([]);
 
   useEffect(() => {
+    logArticleView({ id: article.id, title: article.title, category: article.category });
     loadArticles();
     loadRelatedProducts();
   }, []);
@@ -76,6 +78,7 @@ const ArticleDetailScreen: React.FC = () => {
         message: `${article.title}\n${url}`,
         url, // iOS native share sheet uses this field
       });
+      logArticleShare({ id: article.id, title: article.title });
     } catch {
       // User cancelled
     }

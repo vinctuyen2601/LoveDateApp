@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { AffiliateProduct } from "../../types";
 import { COLORS } from "@themes/colors";
+import { logProductClick } from "../../services/analyticsService";
 
 const CATEGORY_VI: Record<string, string> = {
   gift: "Quà tặng",
@@ -54,6 +55,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const handleOpenLink = () => {
+    logProductClick({ id: product.id, name: product.name, affiliateUrl: product.affiliateUrl });
     Linking.canOpenURL(product.affiliateUrl)
       .then((supported) => {
         if (supported) {
