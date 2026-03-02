@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Ngày Quan Trọng",
+    "name": "LoveDate",
     "slug": "important-dates-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lovedate.importantdates",
+      "bundleIdentifier": "com.lovedate.mobile",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification", "fetch", "processing"]
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.lovedate.importantdates",
+      "package": "com.lovedate.mobile",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",

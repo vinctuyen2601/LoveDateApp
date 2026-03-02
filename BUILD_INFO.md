@@ -9,7 +9,7 @@
 **Status**: Building...
 
 ## 📍 Build URL
-https://expo.dev/accounts/tuyenvinc/projects/important-dates-mobile/builds/6fb75472-05c7-4923-ab70-955c45646e6d
+https://expo.dev/accounts/tuyenvinc/projects/love-date-mobile/builds/6fb75472-05c7-4923-ab70-955c45646e6d
 
 ## 📦 What's included in this build
 
@@ -139,7 +139,7 @@ eas build --platform android --profile preview --non-interactive
 
 ## 🔗 Useful Links
 
-- [EAS Build Dashboard](https://expo.dev/accounts/tuyenvinc/projects/important-dates-mobile/builds)
+- [EAS Build Dashboard](https://expo.dev/accounts/tuyenvinc/projects/love-date-mobile/builds)
 - [Expo Documentation](https://docs.expo.dev/build/introduction/)
 - [EAS Build Reference](https://docs.expo.dev/build-reference/simulators/)
 

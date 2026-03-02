@@ -3,7 +3,7 @@
 ## 📦 Build hiện tại đang chạy
 
 Build preview APK đang được tạo với EAS Build. Bạn có thể theo dõi tiến trình tại:
-- EAS Dashboard: https://expo.dev/accounts/[your-account]/projects/important-dates-mobile/builds
+- EAS Dashboard: https://expo.dev/accounts/[your-account]/projects/love-date-mobile/builds
 
 ## 🔧 Các thay đổi quan trọng trong build này
 
@@ -26,7 +26,7 @@ Build preview APK đang được tạo với EAS Build. Bạn có thể theo dõ
 ### Bước 1: Download APK
 ```bash
 # EAS sẽ cung cấp link download khi build xong
-# Hoặc xem tại: https://expo.dev/accounts/[your-account]/projects/important-dates-mobile/builds
+# Hoặc xem tại: https://expo.dev/accounts/[your-account]/projects/love-date-mobile/builds
 ```
 
 ### Bước 2: Install trên device

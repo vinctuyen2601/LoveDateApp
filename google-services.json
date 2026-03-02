@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:722189963162:android:a689d9cfa5b6cc1d113423",
+        "mobilesdk_app_id": "1:722189963162:android:17a786ffec898a43113423",
         "android_client_info": {
-          "package_name": "com.lovedate.importantdates"
+          "package_name": "com.lovedate.mobile"
         }
       },
       "oauth_client": [],
