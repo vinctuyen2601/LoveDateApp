@@ -88,3 +88,60 @@ export const getRelatedProductsForArticleAsync = async (articleTags?: string[]):
   );
   return tagged.length >= 3 ? tagged.slice(0, 4) : products.filter(p => p.isPopular).slice(0, 4);
 };
+
+// ==================== PAGINATED API (for AllProductsScreen + OccasionProductsScreen infinite scroll) ====================
+
+export interface ProductPageParams {
+  page: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  occasion?: string;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface ProductPageResponse {
+  data: AffiliateProduct[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/**
+ * Fetch paginated products using the /products/search endpoint (already supports full pagination).
+ * Used for AllProductsScreen with infinite scroll.
+ */
+export const fetchProductsPaginated = async (params: ProductPageParams): Promise<ProductPageResponse> => {
+  const queryParams: Record<string, string | number> = {
+    page: params.page,
+    limit: params.limit ?? 12,
+  };
+  if (params.search?.trim()) queryParams.search = params.search.trim();
+  if (params.category) queryParams.category = params.category;
+  if (params.minPrice != null) queryParams.minPrice = params.minPrice;
+  if (params.maxPrice != null) queryParams.maxPrice = params.maxPrice;
+  if (params.occasion) queryParams.occasion = params.occasion;
+  if (params.sortBy) queryParams.sortBy = params.sortBy;
+  if (params.sortOrder) queryParams.sortOrder = params.sortOrder;
+
+  const data = await apiService.get('/products/search', { params: queryParams });
+  if (Array.isArray(data)) {
+    return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
+  }
+  return data as ProductPageResponse;
+};
+
+/**
+ * Fetch paginated products filtered by occasion.
+ * Supports full filter/sort params, delegates to fetchProductsPaginated.
+ */
+export const fetchProductsByOccasionPaginated = async (
+  occasionId: string,
+  params: Omit<ProductPageParams, 'occasion'>,
+): Promise<ProductPageResponse> => {
+  return fetchProductsPaginated({ ...params, occasion: occasionId });
+};

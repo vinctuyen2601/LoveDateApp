@@ -18,7 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
 import { Article } from '../data/articles';
-import { getArticles, trackArticleView } from '../services/articleService';
+import { getArticles, trackArticleView, fetchArticlesPaginated } from '../services/articleService';
+import { useInfiniteList } from '../hooks/useInfiniteList';
 import { useMasterData } from '../contexts/MasterDataContext';
 import PressableCard from '@components/atoms/PressableCard';
 
@@ -46,17 +47,13 @@ const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
   { key: 'quick',   label: 'Đọc nhanh nhất',  icon: 'flash-outline' },
 ];
 
-function applySort(articles: Article[], key: SortKey): Article[] {
-  const arr = [...articles];
-  if (key === 'newest')  return arr.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
-  if (key === 'liked')   return arr.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
-  if (key === 'quick')   return arr.sort((a, b) => (a.readTime ?? 99) - (b.readTime ?? 99));
-  // popular: views desc, featured first
-  return arr.sort((a, b) => {
-    if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
-    return (b.views ?? 0) - (a.views ?? 0);
-  });
-}
+// Map UI sort key → backend params
+const SORT_PARAMS: Record<SortKey, { sortBy: 'created_at' | 'views' | 'likes'; sortOrder: 'ASC' | 'DESC' }> = {
+  popular: { sortBy: 'views',      sortOrder: 'DESC' },
+  newest:  { sortBy: 'created_at', sortOrder: 'DESC' },
+  liked:   { sortBy: 'likes',      sortOrder: 'DESC' },
+  quick:   { sortBy: 'created_at', sortOrder: 'ASC'  },
+};
 
 // ─── Category config ──────────────────────────────────────────────────────────
 
@@ -185,19 +182,17 @@ const AllArticlesScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
-  const [articles, setArticles]         = useState<Article[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState<string | null>(null);
-  const [searchQuery, setSearchQuery]   = useState('');
+  const [searchQuery, setSearchQuery]       = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [categoryId, setCategoryId]     = useState('all');
-  const [sort, setSort]                 = useState<SortKey>('popular');
-  const [showSort, setShowSort]         = useState(false);
+  const [categoryId, setCategoryId]         = useState('all');
+  const [sort, setSort]                     = useState<SortKey>('popular');
+  const [showSort, setShowSort]             = useState(false);
 
-  // AI mode
-  const [aiMode, setAiMode]           = useState(false);
-  const [aiQuery, setAiQuery]         = useState('');
-  const [aiSearched, setAiSearched]   = useState(false);
+  // AI mode — uses cached articles (all at once)
+  const [aiMode, setAiMode]         = useState(false);
+  const [aiQuery, setAiQuery]       = useState('');
+  const [aiSearched, setAiSearched] = useState(false);
+  const [allArticles, setAllArticles] = useState<Article[]>([]);
 
   const appendTopic = (topic: string) => {
     const clean = topic.replace(/^[\p{Emoji}\s]+/u, '').trim();
@@ -207,40 +202,39 @@ const AllArticlesScreen: React.FC = () => {
     });
   };
 
-  // Debounce
+  // Debounce search — 500ms để tránh spam API
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 500);
     return () => clearTimeout(t);
   }, [searchQuery]);
 
+  // Load cached articles for AI mode only
   useEffect(() => {
-    getArticles()
-      .then(setArticles)
-      .catch(() => setError('Không thể tải bài viết.'))
-      .finally(() => setLoading(false));
-  }, []);
+    if (aiMode && allArticles.length === 0) {
+      getArticles().then(setAllArticles).catch(() => {});
+    }
+  }, [aiMode]);
+
+  // ── Infinite scroll for browse mode ──────────────────────────────────────────
+  const fetchFn = useCallback(
+    (page: number) => fetchArticlesPaginated({
+      page,
+      limit: 12,
+      search: debouncedQuery || undefined,
+      category: categoryId !== 'all' ? categoryId : undefined,
+      ...SORT_PARAMS[sort],
+    }),
+    [debouncedQuery, categoryId, sort],
+  );
+
+  const {
+    items, total, loading, loadingMore, hasMore, error, refresh, loadMore,
+  } = useInfiniteList(fetchFn, [debouncedQuery, categoryId, sort] as const);
 
   const handleArticlePress = useCallback((article: Article) => {
     trackArticleView(article.id);
     navigation.navigate('ArticleDetail', { article });
   }, [navigation]);
-
-  // Filtered + sorted
-  const filtered = useMemo(() => {
-    let result = articles.filter(
-      (a) => !a.status || a.status === 'published'
-    );
-    if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase();
-      result = result.filter(
-        (a) => a.title.toLowerCase().includes(q) || a.tags?.some((t) => t.toLowerCase().includes(q))
-      );
-    }
-    if (categoryId !== 'all') {
-      result = result.filter((a) => a.category === categoryId);
-    }
-    return applySort(result, sort);
-  }, [articles, debouncedQuery, categoryId, sort]);
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
@@ -253,8 +247,7 @@ const AllArticlesScreen: React.FC = () => {
   const aiFiltered = useMemo(() => {
     if (!aiQuery.trim()) return [];
     const keywords = aiQuery.toLowerCase().split(/[,\s]+/).filter((k) => k.length > 1);
-    const base = articles.filter((a) => !a.status || a.status === 'published');
-    return base.filter((article) => {
+    return allArticles.filter((article) => {
       const haystack = [
         article.title,
         ...(article.tags ?? []),
@@ -263,7 +256,7 @@ const AllArticlesScreen: React.FC = () => {
       ].join(' ').toLowerCase();
       return keywords.some((kw) => haystack.includes(kw));
     });
-  }, [articles, aiQuery]);
+  }, [allArticles, aiQuery]);
 
   const clearAll = useCallback(() => {
     setSearchQuery('');
@@ -274,14 +267,14 @@ const AllArticlesScreen: React.FC = () => {
 
   // Build list data: hero (first) + count bar + rest as list cards
   const listData = useMemo((): ListItem[] => {
-    if (filtered.length === 0) return [];
-    const [hero, ...rest] = filtered;
+    if (items.length === 0) return [];
+    const [hero, ...rest] = items;
     return [
       { type: 'hero', article: hero },
-      { type: 'count', count: filtered.length, activeFilters: activeFilterCount },
+      { type: 'count', count: total, activeFilters: activeFilterCount },
       ...rest.map((a): ListItem => ({ type: 'article', article: a })),
     ];
-  }, [filtered, activeFilterCount]);
+  }, [items, total, activeFilterCount]);
 
   const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label ?? '';
 
@@ -402,8 +395,11 @@ const AllArticlesScreen: React.FC = () => {
           <View style={styles.center}>
             <Ionicons name="wifi-outline" size={44} color={COLORS.textSecondary} />
             <Text style={styles.stateText}>{error}</Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
+              <Text style={styles.retryBtnText}>Thử lại</Text>
+            </TouchableOpacity>
           </View>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <View style={styles.center}>
             <Ionicons name="document-text-outline" size={44} color={COLORS.textSecondary} />
             <Text style={styles.stateText}>
@@ -423,6 +419,19 @@ const AllArticlesScreen: React.FC = () => {
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.3}
+            onRefresh={refresh}
+            refreshing={loading && items.length > 0}
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={styles.footerLoader}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                </View>
+              ) : !hasMore && items.length > 0 ? (
+                <Text style={styles.footerEnd}>— Hết danh sách —</Text>
+              ) : null
+            }
           />
         )}
         </>
@@ -893,6 +902,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.white,
+  },
+
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  footerEnd: {
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontSize: 13,
+    color: COLORS.textSecondary,
   },
 
   // Sort sheet

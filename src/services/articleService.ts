@@ -210,6 +210,49 @@ export const suggestArticlesForSurvey = async (
   }
 };
 
+// ==================== PAGINATED API (for AllArticlesScreen infinite scroll) ====================
+
+export interface ArticlePageParams {
+  page: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  sortBy?: 'created_at' | 'views' | 'likes';
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface ArticlePageResponse {
+  data: Article[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/**
+ * Fetch paginated articles directly from API (no cache).
+ * Used for AllArticlesScreen with infinite scroll.
+ */
+export const fetchArticlesPaginated = async (params: ArticlePageParams): Promise<ArticlePageResponse> => {
+  const queryParams: Record<string, string | number> = {
+    page: params.page,
+    limit: params.limit ?? 12,
+    status: 'published',
+  };
+  if (params.search?.trim()) queryParams.search = params.search.trim();
+  if (params.category && params.category !== 'all') queryParams.category = params.category;
+  if (params.sortBy) queryParams.sortBy = params.sortBy;
+  if (params.sortOrder) queryParams.sortOrder = params.sortOrder;
+
+  const data = await apiService.get('/articles', { params: queryParams });
+  // Handle both paginated response { data, total, page, limit, totalPages }
+  // and legacy array response (fallback)
+  if (Array.isArray(data)) {
+    return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
+  }
+  return data as ArticlePageResponse;
+};
+
 /**
  * Sync local changes to backend (for future admin features)
  */

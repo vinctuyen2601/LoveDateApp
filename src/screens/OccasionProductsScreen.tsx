@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
 import { AffiliateProduct } from '../types';
-import { getProductsByOccasion } from '../services/affiliateProductService';
+import { fetchProductsByOccasionPaginated } from '../services/affiliateProductService';
+import { useInfiniteList } from '../hooks/useInfiniteList';
 import ProductCard from '../components/suggestions/ProductCard';
 
 type OccasionProductsRouteProp = RouteProp<
@@ -33,14 +34,13 @@ const BUDGET_FILTERS: { key: BudgetKey; label: string }[] = [
   { key: 'over1m',   label: 'Trên 1M' },
 ];
 
-function matchesBudget(price: number | undefined, key: BudgetKey): boolean {
-  if (key === 'all' || price == null) return true;
-  if (key === 'under200') return price < 200_000;
-  if (key === '200to500') return price >= 200_000 && price < 500_000;
-  if (key === '500to1m')  return price >= 500_000 && price < 1_000_000;
-  if (key === 'over1m')   return price >= 1_000_000;
-  return true;
-}
+const BUDGET_PRICE: Record<BudgetKey, { minPrice?: number; maxPrice?: number }> = {
+  all:        {},
+  under200:   { maxPrice: 200_000 },
+  '200to500': { minPrice: 200_000, maxPrice: 500_000 },
+  '500to1m':  { minPrice: 500_000, maxPrice: 1_000_000 },
+  over1m:     { minPrice: 1_000_000 },
+};
 
 // ─── Sort config ──────────────────────────────────────────────────────────────
 
@@ -53,13 +53,12 @@ const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
   { key: 'rating',     label: 'Đánh giá cao nhất', icon: 'star-outline' },
 ];
 
-function sortProducts(products: AffiliateProduct[], key: SortKey): AffiliateProduct[] {
-  const arr = [...products];
-  if (key === 'price_asc')  return arr.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
-  if (key === 'price_desc') return arr.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-  if (key === 'rating')     return arr.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-  return arr;
-}
+const SORT_PARAMS: Record<SortKey, { sortBy: string; sortOrder: 'ASC' | 'DESC' }> = {
+  default:    { sortBy: 'rating',  sortOrder: 'DESC' },
+  price_asc:  { sortBy: 'price',   sortOrder: 'ASC'  },
+  price_desc: { sortBy: 'price',   sortOrder: 'DESC' },
+  rating:     { sortBy: 'rating',  sortOrder: 'DESC' },
+};
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -69,33 +68,25 @@ const OccasionProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { occasionId, occasionName, occasionColor = COLORS.primary } = route.params;
 
-  const [products, setProducts] = useState<AffiliateProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [budget, setBudget] = useState<BudgetKey>('all');
   const [sort, setSort] = useState<SortKey>('default');
   const [showSortSheet, setShowSortSheet] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getProductsByOccasion(occasionId, 50);
-        setProducts(data);
-      } catch {
-        setError('Không thể tải sản phẩm. Kiểm tra kết nối mạng.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [occasionId]);
+  const fetchFn = useCallback(
+    (page: number) =>
+      fetchProductsByOccasionPaginated(occasionId, {
+        page,
+        limit: 12,
+        ...BUDGET_PRICE[budget],
+        ...SORT_PARAMS[sort],
+      }),
+    [occasionId, budget, sort],
+  );
 
-  const filtered = useMemo(() => {
-    const after = products.filter((p) => matchesBudget(p.price, budget));
-    return sortProducts(after, sort);
-  }, [products, budget, sort]);
+  const { items, total, loading, loadingMore, hasMore, error, refresh, loadMore } = useInfiniteList(
+    fetchFn,
+    [occasionId, budget, sort],
+  );
 
   const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label ?? '';
 
@@ -110,7 +101,7 @@ const OccasionProductsScreen: React.FC = () => {
           <Text style={styles.headerTitle}>{occasionName}</Text>
           {!loading && (
             <Text style={styles.headerCount}>
-              {filtered.length} gợi ý{budget !== 'all' || sort !== 'default' ? ' (đã lọc)' : ''}
+              {total} gợi ý{budget !== 'all' || sort !== 'default' ? ' (đã lọc)' : ''}
             </Text>
           )}
         </View>
@@ -164,8 +155,14 @@ const OccasionProductsScreen: React.FC = () => {
         <View style={styles.center}>
           <Ionicons name="wifi-outline" size={44} color={COLORS.textSecondary} />
           <Text style={styles.stateText}>{error}</Text>
+          <TouchableOpacity
+            style={[styles.resetBtn, { borderColor: occasionColor }]}
+            onPress={refresh}
+          >
+            <Text style={[styles.resetBtnText, { color: occasionColor }]}>Thử lại</Text>
+          </TouchableOpacity>
         </View>
-      ) : filtered.length === 0 ? (
+      ) : items.length === 0 ? (
         <View style={styles.center}>
           <Ionicons name="search-outline" size={44} color={COLORS.textSecondary} />
           <Text style={styles.stateText}>Không có sản phẩm phù hợp</Text>
@@ -178,11 +175,22 @@ const OccasionProductsScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
-          data={filtered}
+          data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => <ProductCard product={item} variant="vertical" />}
           showsVerticalScrollIndicator={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
+          onRefresh={refresh}
+          refreshing={loading}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator style={{ marginVertical: 16 }} color={occasionColor} />
+            ) : !hasMore && items.length > 0 ? (
+              <Text style={styles.footerEnd}>Đã hiển thị tất cả sản phẩm</Text>
+            ) : null
+          }
         />
       )}
 
@@ -346,6 +354,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 32,
+  },
+  footerEnd: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    paddingVertical: 20,
   },
 
   // Sort sheet

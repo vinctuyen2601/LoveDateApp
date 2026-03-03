@@ -19,7 +19,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
 import { AffiliateProduct } from '../types';
-import { getProducts, trackAffiliateClick } from '../services/affiliateProductService';
+import { trackAffiliateClick, fetchProductsPaginated } from '../services/affiliateProductService';
+import { useInfiniteList } from '../hooks/useInfiniteList';
 import { useMasterData } from '../contexts/MasterDataContext';
 import { formatPrice } from '../data/affiliateProducts';
 import PressableCard from '@components/atoms/PressableCard';
@@ -85,27 +86,22 @@ const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
   { key: 'rating',     label: 'Đánh giá cao nhất', icon: 'star-outline' },
 ];
 
-function matchesBudget(price: number | undefined, key: BudgetKey): boolean {
-  if (key === 'all' || price == null) return true;
-  if (key === 'under200') return price < 200_000;
-  if (key === '200to500') return price >= 200_000 && price < 500_000;
-  if (key === '500to1m')  return price >= 500_000 && price < 1_000_000;
-  if (key === 'over1m')   return price >= 1_000_000;
-  return true;
-}
+// Map budget key → { minPrice, maxPrice }
+const BUDGET_PRICE: Record<BudgetKey, { minPrice?: number; maxPrice?: number }> = {
+  all:      {},
+  under200: { maxPrice: 200_000 },
+  '200to500': { minPrice: 200_000, maxPrice: 500_000 },
+  '500to1m':  { minPrice: 500_000, maxPrice: 1_000_000 },
+  over1m:   { minPrice: 1_000_000 },
+};
 
-function applySort(products: AffiliateProduct[], key: SortKey): AffiliateProduct[] {
-  const arr = [...products];
-  if (key === 'price_asc')  return arr.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
-  if (key === 'price_desc') return arr.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-  if (key === 'rating')     return arr.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-  // popular: featured first, then popular, then rest
-  return arr.sort((a, b) => {
-    const scoreA = (a.isFeatured ? 2 : 0) + (a.isPopular ? 1 : 0);
-    const scoreB = (b.isFeatured ? 2 : 0) + (b.isPopular ? 1 : 0);
-    return scoreB - scoreA;
-  });
-}
+// Map sort key → backend sortBy/sortOrder
+const SORT_PARAMS: Record<SortKey, { sortBy: string; sortOrder: 'ASC' | 'DESC' }> = {
+  popular:    { sortBy: 'rating',    sortOrder: 'DESC' },
+  price_asc:  { sortBy: 'price',     sortOrder: 'ASC'  },
+  price_desc: { sortBy: 'price',     sortOrder: 'DESC' },
+  rating:     { sortBy: 'rating',    sortOrder: 'DESC' },
+};
 
 // ─── Grid card ────────────────────────────────────────────────────────────────
 
@@ -184,10 +180,6 @@ const AllProductsScreen: React.FC = () => {
 
   const { showError } = useToast();
 
-  const [products, setProducts]       = useState<AffiliateProduct[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
-
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -233,48 +225,28 @@ const AllProductsScreen: React.FC = () => {
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 500);
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Fetch
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getProducts();
-        setProducts(data);
-      } catch {
-        setError('Không thể tải sản phẩm. Kiểm tra kết nối mạng.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  // Infinite-scroll hook (browse mode)
+  const fetchFn = useCallback(
+    (page: number) =>
+      fetchProductsPaginated({
+        page,
+        limit: 12,
+        search: debouncedQuery.trim() || undefined,
+        category: categoryId !== 'all' ? categoryId : undefined,
+        ...BUDGET_PRICE[budget],
+        ...SORT_PARAMS[sort],
+      }),
+    [debouncedQuery, categoryId, budget, sort],
+  );
 
-  // Computed filtered + sorted list
-  const filtered = useMemo(() => {
-    let result = products;
-
-    if (debouncedQuery.trim()) {
-      const q = debouncedQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description?.toLowerCase().includes(q)
-      );
-    }
-    if (categoryId !== 'all') {
-      result = result.filter((p) => p.category === categoryId);
-    }
-    if (budget !== 'all') {
-      result = result.filter((p) => matchesBudget(p.price, budget));
-    }
-
-    return applySort(result, sort);
-  }, [products, debouncedQuery, categoryId, budget, sort]);
+  const { items, total, loading, loadingMore, hasMore, error, refresh, loadMore } = useInfiniteList(
+    fetchFn,
+    [debouncedQuery, categoryId, budget, sort],
+  );
 
   // Active filter count (excluding sort — sort is always active)
   const activeFilterCount = useMemo(() => {
@@ -406,7 +378,7 @@ const AllProductsScreen: React.FC = () => {
           {!loading && !error && (
             <View style={styles.resultsBar}>
               <Text style={styles.resultsCount}>
-                {filtered.length} sản phẩm{activeFilterCount > 0 ? ' (đang lọc)' : ''}
+                {total} sản phẩm{activeFilterCount > 0 ? ' (đang lọc)' : ''}
               </Text>
               {activeFilterCount > 0 && (
                 <TouchableOpacity onPress={clearAll}>
@@ -426,20 +398,11 @@ const AllProductsScreen: React.FC = () => {
             <View style={styles.center}>
               <Ionicons name="wifi-outline" size={44} color={COLORS.textSecondary} />
               <Text style={styles.stateText}>{error}</Text>
-              <TouchableOpacity
-                style={styles.retryBtn}
-                onPress={() => {
-                  setLoading(true);
-                  getProducts()
-                    .then(setProducts)
-                    .catch(() => setError('Không thể tải sản phẩm.'))
-                    .finally(() => setLoading(false));
-                }}
-              >
+              <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
                 <Text style={styles.retryBtnText}>Thử lại</Text>
               </TouchableOpacity>
             </View>
-          ) : filtered.length === 0 ? (
+          ) : items.length === 0 ? (
             <View style={styles.center}>
               <Ionicons name="search-outline" size={44} color={COLORS.textSecondary} />
               <Text style={styles.stateText}>
@@ -453,7 +416,7 @@ const AllProductsScreen: React.FC = () => {
             </View>
           ) : (
             <FlatList
-              data={filtered}
+              data={items}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               numColumns={2}
@@ -461,6 +424,17 @@ const AllProductsScreen: React.FC = () => {
               contentContainerStyle={styles.grid}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.3}
+              onRefresh={refresh}
+              refreshing={loading}
+              ListFooterComponent={
+                loadingMore ? (
+                  <ActivityIndicator style={{ marginVertical: 16 }} color={COLORS.primary} />
+                ) : !hasMore && items.length > 0 ? (
+                  <Text style={styles.footerEnd}>Đã hiển thị tất cả sản phẩm</Text>
+                ) : null
+              }
             />
           )}
         </>
@@ -548,10 +522,10 @@ const AllProductsScreen: React.FC = () => {
           )}
 
           {/* Default: all products */}
-          {!aiLoading && aiResults.length === 0 && products.length > 0 && (
+          {!aiLoading && aiResults.length === 0 && items.length > 0 && (
             <>
-              <Text style={styles.aiDefaultHeader}>Tất cả sản phẩm ({products.length})</Text>
-              {products.map((p) => (
+              <Text style={styles.aiDefaultHeader}>Tất cả sản phẩm ({total})</Text>
+              {items.map((p) => (
                 <GiftSuggestionCard key={p.id} product={p} showSaveButton={false} />
               ))}
             </>
@@ -777,6 +751,12 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  footerEnd: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    paddingVertical: 20,
   },
 
   // Grid card
