@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   RefreshControl,
   Image,
 } from "react-native";
@@ -24,7 +23,27 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
 import { EmptyState } from "@components/atoms/EmptyState";
 
-const { width } = Dimensions.get("window");
+const EVENT_EMOJIS: Record<string, string> = {
+  birthday: '🎂',
+  anniversary: '💑',
+  holiday: '🎉',
+  memorial: '✝️',
+  other: '⭐',
+};
+
+const SPECIAL_DATES = [
+  { month: 1,  day: 1,  name: 'Năm Mới Dương Lịch',    emoji: '🎉', color: '#F59E0B' },
+  { month: 2,  day: 14, name: 'Ngày Valentine',          emoji: '💝', color: '#E91E63' },
+  { month: 3,  day: 8,  name: 'Ngày Quốc tế Phụ nữ',   emoji: '🌷', color: '#9C27B0' },
+  { month: 3,  day: 14, name: 'Ngày Valentine Trắng',    emoji: '🤍', color: '#64748B' },
+  { month: 4,  day: 30, name: 'Ngày Giải phóng',         emoji: '🇻🇳', color: '#EF4444' },
+  { month: 5,  day: 1,  name: 'Ngày Quốc tế Lao động',  emoji: '🌟', color: '#F97316' },
+  { month: 6,  day: 1,  name: 'Ngày Quốc tế Thiếu nhi', emoji: '🎠', color: '#06B6D4' },
+  { month: 9,  day: 2,  name: 'Ngày Quốc khánh',         emoji: '🇻🇳', color: '#EF4444' },
+  { month: 10, day: 20, name: 'Ngày Phụ nữ Việt Nam',   emoji: '🌸', color: '#EC4899' },
+  { month: 11, day: 20, name: 'Ngày Nhà giáo VN',        emoji: '📚', color: '#10B981' },
+  { month: 12, day: 25, name: 'Giáng Sinh',              emoji: '🎄', color: '#16A34A' },
+];
 
 const CalendarScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -54,67 +73,52 @@ const CalendarScreen: React.FC = () => {
     }
   };
 
-  // Helper function to get category color
-  const getCategoryColor = (category: string): string => {
-    switch (category) {
-      case "birthday":
-        return COLORS.categoryBirthday;
-      case "anniversary":
-        return COLORS.categoryAnniversary;
-      case "holiday":
-        return COLORS.categoryHoliday;
-      default:
-        return COLORS.categoryOther;
-    }
-  };
-
-  // Prepare marked dates for calendar
+  // Prepare marked dates for calendar (emoji-based, same as HomeScreen)
   const markedDates = useMemo(() => {
     const marked: any = {};
+    const calYear = parseInt(currentMonth.slice(0, 4), 10);
 
-    // Mark dates that have events
     events.forEach((event) => {
-      // Validate date
       if (!event.eventDate) return;
-
       const date = new Date(event.eventDate);
-      if (isNaN(date.getTime())) return; // Skip invalid dates
+      if (isNaN(date.getTime())) return;
 
-      const eventDate = DateUtils.toLocalDateString(date);
-
-      if (!marked[eventDate]) {
-        marked[eventDate] = {
-          marked: true,
-          dots: [],
-        };
+      let markDate: string;
+      if (event.isRecurring) {
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        markDate = `${calYear}-${mm}-${dd}`;
+      } else {
+        markDate = DateUtils.toLocalDateString(date);
       }
 
-      // Add dot with primary tag color
+      if (!marked[markDate]) {
+        marked[markDate] = { marked: true, emojis: [] };
+      }
       const primaryTag = event.tags[0] || 'other';
-      const tagColor = getCategoryColor(primaryTag);
-      if (marked[eventDate].dots.length < 3) {
-        marked[eventDate].dots.push({
-          color: tagColor,
-        });
-      }
+      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? '⭐');
+    });
+
+    // Merge special dates
+    SPECIAL_DATES.forEach((sd) => {
+      const mm = String(sd.month).padStart(2, '0');
+      const dd = String(sd.day).padStart(2, '0');
+      const dateKey = `${calYear}-${mm}-${dd}`;
+      if (!marked[dateKey]) marked[dateKey] = { emojis: [] };
+      if (!marked[dateKey].emojis) marked[dateKey].emojis = [];
+      marked[dateKey].emojis.unshift(sd.emoji);
     });
 
     // Highlight selected date
     if (marked[selectedDate]) {
-      marked[selectedDate] = {
-        ...marked[selectedDate],
-        selected: true,
-        selectedColor: COLORS.primary,
-      };
+      marked[selectedDate].selected = true;
+      marked[selectedDate].selectedColor = COLORS.primary;
     } else {
-      marked[selectedDate] = {
-        selected: true,
-        selectedColor: COLORS.primary,
-      };
+      marked[selectedDate] = { selected: true, selectedColor: COLORS.primary };
     }
 
     return marked;
-  }, [events, selectedDate]);
+  }, [events, selectedDate, currentMonth]);
 
   // Get events for selected date
   const selectedDateEvents = useMemo(() => {
@@ -308,62 +312,61 @@ const CalendarScreen: React.FC = () => {
             onDayPress={handleDayPress}
             onMonthChange={handleMonthChange}
             markedDates={markedDates}
-            markingType="multi-dot"
-            theme={{ ...CALENDAR_THEME, textMonthFontSize: 18 }}
+            theme={CALENDAR_THEME}
             enableSwipeMonths={true}
-            hideExtraDays={true}
+            hideExtraDays={false}
             firstDay={1}
             renderArrow={(direction: string) => (
               <Ionicons
                 name={direction === "left" ? "chevron-back" : "chevron-forward"}
-                size={24}
+                size={20}
                 color={COLORS.primary}
               />
             )}
-          />
-        </View>
+            dayComponent={({ date, state, marking }: any) => {
+              const isSelected = !!marking?.selected;
+              const isToday = state === 'today';
+              const isDisabled = state === 'disabled';
+              const emojis: string[] = marking?.emojis ?? [];
 
-        {/* Legend */}
-        <View style={styles.legendContainer}>
-          <Text style={styles.legendTitle}>Danh mục:</Text>
-          <View style={styles.legendItems}>
-            <View style={styles.legendItem}>
-              <View
-                style={[
-                  styles.legendDot,
-                  { backgroundColor: COLORS.categoryBirthday },
-                ]}
-              />
-              <Text style={styles.legendText}>Sinh nhật</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View
-                style={[
-                  styles.legendDot,
-                  { backgroundColor: COLORS.categoryAnniversary },
-                ]}
-              />
-              <Text style={styles.legendText}>Kỷ niệm</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View
-                style={[
-                  styles.legendDot,
-                  { backgroundColor: COLORS.categoryHoliday },
-                ]}
-              />
-              <Text style={styles.legendText}>Ngày lễ</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View
-                style={[
-                  styles.legendDot,
-                  { backgroundColor: COLORS.categoryOther },
-                ]}
-              />
-              <Text style={styles.legendText}>Khác</Text>
-            </View>
-          </View>
+              return (
+                <TouchableOpacity
+                  onPress={() => date && handleDayPress(date)}
+                  activeOpacity={0.7}
+                  style={styles.dayCell}
+                >
+                  <View
+                    style={[
+                      styles.dayNumberWrap,
+                      isSelected && styles.dayNumberSelected,
+                      isToday && !isSelected && styles.dayNumberToday,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayNumberText,
+                        isToday && !isSelected && styles.dayTextToday,
+                        isSelected && styles.dayTextSelected,
+                        isDisabled && styles.dayTextDisabled,
+                      ]}
+                    >
+                      {date?.day}
+                    </Text>
+                  </View>
+
+                  {emojis.length > 0 ? (
+                    <View style={styles.dayEmojisRow}>
+                      {emojis.slice(0, 2).map((e, i) => (
+                        <Text key={i} style={styles.dayEmoji}>{e}</Text>
+                      ))}
+                    </View>
+                  ) : (
+                    <View style={styles.dayPlaceholder} />
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
         </View>
 
         {/* Selected Date Section */}
@@ -567,52 +570,62 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     marginTop: 8,
     marginHorizontal: 4,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  legendContainer: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 4,
-    marginVertical: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
     elevation: 1,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
-  legendTitle: {
+  // Custom day cell (mirrors HomeScreen)
+  dayCell: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingBottom: 4,
+    minHeight: 52,
+    width: 36,
+  },
+  dayNumberWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayNumberSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  dayNumberToday: {
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+  },
+  dayNumberText: {
     fontSize: 14,
-    fontWeight: "600",
     color: COLORS.textPrimary,
-    marginBottom: 12,
+    fontWeight: '400',
   },
-  legendItems: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  dayTextToday: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-    marginBottom: 8,
+  dayTextSelected: {
+    color: COLORS.white,
+    fontWeight: '700',
   },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
+  dayTextDisabled: {
+    color: COLORS.textLight,
   },
-  legendText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
+  dayEmojisRow: {
+    flexDirection: 'row',
+    marginTop: 1,
+  },
+  dayEmoji: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  dayPlaceholder: {
+    height: 15,
   },
   selectedDateContainer: {
     backgroundColor: COLORS.white,

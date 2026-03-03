@@ -15,7 +15,7 @@ import { useEvents } from '@contexts/EventsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Event, ChecklistItem } from '../types';
 import { DateUtils } from '@lib/date.utils';
-import { COLORS, getCategoryColor } from '@themes/colors';
+import { COLORS } from '@themes/colors';
 import { PREDEFINED_TAGS } from '../types';
 import CountdownTimer from '@components/molecules/CountdownTimer';
 import ChecklistSection from '@components/organisms/ChecklistSection';
@@ -120,10 +120,6 @@ const EventDetailScreen: React.FC = () => {
     );
   }
 
-  // Get primary tag (first tag) for color and icon
-  const primaryTag = event.tags[0] || 'other';
-  const primaryColor = getCategoryColor(primaryTag);
-
   // Find tag details from PREDEFINED_TAGS
   const getTagDetails = (tagValue: string) => {
     return PREDEFINED_TAGS.find(t => t.value === tagValue) || {
@@ -133,6 +129,10 @@ const EventDetailScreen: React.FC = () => {
       color: COLORS.textSecondary
     };
   };
+
+  // Get primary tag (first tag) for color and icon
+  const primaryTag = event.tags[0] || 'other';
+  const primaryColor = getTagDetails(primaryTag).color;
 
   const handleEdit = () => {
     navigation.navigate('AddEvent', { eventId: event.id });
@@ -210,96 +210,6 @@ const EventDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Quick Actions - Show important incomplete checklist items */}
-        {!isLoadingChecklist && checklistItems.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="flash" size={22} color={COLORS.warning} />
-              <Text style={styles.sectionTitle}>Hành động nhanh</Text>
-            </View>
-
-            <View style={styles.quickActionsCard}>
-              {checklistItems
-                .filter(item => !item.isCompleted)
-                .slice(0, 3) // Show max 3 items
-                .map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={styles.quickActionButton}
-                    onPress={() => handleToggleChecklistItem(item.id)}
-                  >
-                    <View style={styles.quickActionIcon}>
-                      <Ionicons name="checkmark-circle-outline" size={24} color={COLORS.primary} />
-                    </View>
-                    <Text style={styles.quickActionText} numberOfLines={1}>
-                      {item.title}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
-                  </TouchableOpacity>
-                ))}
-
-              {checklistItems.filter(item => !item.isCompleted).length === 0 && (
-                <View style={styles.quickActionEmpty}>
-                  <Ionicons name="checkmark-circle" size={32} color={COLORS.success} />
-                  <Text style={styles.quickActionEmptyText}>Đã hoàn thành tất cả!</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Checklist Section */}
-        {!isLoadingChecklist && (
-          <View style={styles.section}>
-            <ChecklistSection
-              eventId={event.id}
-              items={checklistItems}
-              onToggle={handleToggleChecklistItem}
-              onDelete={handleDeleteChecklistItem}
-              onAdd={handleAddChecklistItem}
-              showProgress={true}
-              allowAdd={true}
-              allowDelete={true}
-            />
-          </View>
-        )}
-
-        {/* Gift Suggestions Button */}
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.giftSuggestionsButton}
-            onPress={() => navigation.navigate('GiftSuggestions', { eventId: event.id, event })}
-          >
-            <View style={styles.giftSuggestionsIcon}>
-              <Ionicons name="gift" size={24} color={COLORS.primary} />
-            </View>
-            <View style={styles.giftSuggestionsContent}>
-              <Text style={styles.giftSuggestionsTitle}>Gợi ý quà tặng</Text>
-              <Text style={styles.giftSuggestionsSubtitle}>
-                Sử dụng AI để tìm món quà hoàn hảo
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-
-          {/* Activity Suggestions Button (Phase 2 - Task 5) */}
-          <TouchableOpacity
-            style={styles.giftSuggestionsButton}
-            onPress={() => navigation.navigate('ActivitySuggestions', { eventId: event.id, event })}
-          >
-            <View style={styles.giftSuggestionsIcon}>
-              <Ionicons name="restaurant" size={24} color={COLORS.secondary} />
-            </View>
-            <View style={styles.giftSuggestionsContent}>
-              <Text style={styles.giftSuggestionsTitle}>Gợi ý hoạt động</Text>
-              <Text style={styles.giftSuggestionsSubtitle}>
-                Nhà hàng, địa điểm và hoạt động vui chơi
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
         {/* Date Information */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -346,8 +256,60 @@ const EventDetailScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Checklist Section */}
+        {!isLoadingChecklist && (
+          <View style={styles.section}>
+            <ChecklistSection
+              eventId={event.id}
+              items={checklistItems}
+              onToggle={handleToggleChecklistItem}
+              onDelete={handleDeleteChecklistItem}
+              onAdd={handleAddChecklistItem}
+              showProgress={true}
+              allowAdd={true}
+              allowDelete={true}
+            />
+          </View>
+        )}
+
+        {/* Gift Suggestions Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.giftSuggestionsButton, { marginBottom: 12 }]}
+            onPress={() => navigation.navigate('GiftSuggestions', { eventId: event.id, event })}
+          >
+            <View style={styles.giftSuggestionsIcon}>
+              <Ionicons name="gift" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.giftSuggestionsContent}>
+              <Text style={styles.giftSuggestionsTitle}>Gợi ý quà tặng</Text>
+              <Text style={styles.giftSuggestionsSubtitle}>
+                Sử dụng AI để tìm món quà hoàn hảo
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Activity Suggestions Button (Phase 2 - Task 5) */}
+          <TouchableOpacity
+            style={styles.giftSuggestionsButton}
+            onPress={() => navigation.navigate('ActivitySuggestions', { eventId: event.id, event })}
+          >
+            <View style={styles.giftSuggestionsIcon}>
+              <Ionicons name="restaurant" size={24} color={COLORS.secondary} />
+            </View>
+            <View style={styles.giftSuggestionsContent}>
+              <Text style={styles.giftSuggestionsTitle}>Gợi ý hoạt động</Text>
+              <Text style={styles.giftSuggestionsSubtitle}>
+                Nhà hàng, địa điểm và hoạt động vui chơi
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Tags Information */}
-        {event.tags.length > 0 && (
+        {event.tags.length > 1 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="pricetags" size={22} color={COLORS.primary} />
@@ -410,22 +372,6 @@ const EventDetailScreen: React.FC = () => {
             </View>
           </View>
         )}
-
-        {/* Metadata */}
-        <View style={styles.metadataSection}>
-          <View style={styles.metadataRow}>
-            <Text style={styles.metadataLabel}>Được tạo</Text>
-            <Text style={styles.metadataValue}>
-              {new Date(event.createdAt).toLocaleDateString('vi-VN')}
-            </Text>
-          </View>
-          <View style={styles.metadataRow}>
-            <Text style={styles.metadataLabel}>Cập nhật lần cuối</Text>
-            <Text style={styles.metadataValue}>
-              {new Date(event.updatedAt).toLocaleDateString('vi-VN')}
-            </Text>
-          </View>
-        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -591,76 +537,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textPrimary,
   },
-  giftItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
-  },
-  giftText: {
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
-  noteCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
-    elevation: 1,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  noteHeader: {
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  noteYear: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-    gap: 8,
-  },
-  noteLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  noteValue: {
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
-  metadataSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.background,
-  },
-  metadataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  metadataLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  metadataValue: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
   errorContainer: {
     flex: 1,
     alignItems: 'center',
@@ -673,17 +549,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginTop: 16,
     marginBottom: 24,
-  },
-  backButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '600',
   },
   giftSuggestionsButton: {
     flexDirection: 'row',
@@ -718,44 +583,6 @@ const styles = StyleSheet.create({
   giftSuggestionsSubtitle: {
     fontSize: 13,
     color: COLORS.textSecondary,
-  },
-  quickActionsCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 8,
-    elevation: 1,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  quickActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginVertical: 4,
-    backgroundColor: `${COLORS.primary}08`,
-  },
-  quickActionIcon: {
-    marginRight: 12,
-  },
-  quickActionText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
-  },
-  quickActionEmpty: {
-    alignItems: 'center',
-    paddingVertical: 24,
-  },
-  quickActionEmptyText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.success,
-    marginTop: 8,
   },
 });
 
