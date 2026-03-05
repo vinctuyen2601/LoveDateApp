@@ -389,6 +389,22 @@ const AllProductsScreen: React.FC = () => {
           )}
 
           {/* Content */}
+          {/* Local shop promo card */}
+          <TouchableOpacity
+            style={styles.shopPromoCard}
+            onPress={() => navigation.navigate('LocalShop')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.shopPromoEmoji}>🌸🎂</Text>
+            <View style={styles.shopPromoText}>
+              <Text style={styles.shopPromoTitle}>Đặt hoa & bánh giao tận nơi</Text>
+              <Text style={styles.shopPromoSub}>Hàng nội địa · Giao trong ngày · COD</Text>
+            </View>
+            <View style={styles.shopPromoArrow}>
+              <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
+            </View>
+          </TouchableOpacity>
+
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator size="large" color={COLORS.primary} />
@@ -1051,6 +1067,45 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 10,
     paddingHorizontal: 2,
+  },
+
+  // Local shop promo card
+  shopPromoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary + '12',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + '30',
+  },
+  shopPromoEmoji: {
+    fontSize: 22,
+  },
+  shopPromoText: {
+    flex: 1,
+  },
+  shopPromoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  shopPromoSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  shopPromoArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

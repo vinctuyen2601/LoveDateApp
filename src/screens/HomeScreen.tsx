@@ -529,6 +529,22 @@ const HomeScreen: React.FC = () => {
           </View>
         )}
 
+        {/* Local Shop Banner — hiện khi có sự kiện sắp tới */}
+        {upcomingEvents.length > 0 && (
+          <TouchableOpacity
+            style={styles.shopBanner}
+            onPress={() => navigation.navigate('LocalShop')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.shopBannerEmoji}>🌸</Text>
+            <View style={styles.shopBannerText}>
+              <Text style={styles.shopBannerTitle}>Đặt hoa & quà giao tận nơi</Text>
+              <Text style={styles.shopBannerSub}>Gợi ý hoàn hảo cho ngày đặc biệt sắp tới</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+        )}
+
         {/* Quick Actions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -713,6 +729,41 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   // Empty hint
+  shopBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 4,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + '25',
+    elevation: 1,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  shopBannerEmoji: {
+    fontSize: 28,
+  },
+  shopBannerText: {
+    flex: 1,
+  },
+  shopBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  shopBannerSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
   emptyHint: {
     flexDirection: "row",
     alignItems: "center",
