@@ -11,9 +11,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 
-const LAST_UPDATED = '27/02/2025';
-const APP_NAME = 'Ngày Quan Trọng';
-const CONTACT_EMAIL = 'support@ngayquantrong.app';
+const LAST_UPDATED = '06/03/2026';
+const APP_NAME = 'Ngày Yêu Thương';
+const CONTACT_EMAIL = 'support@ngayyeuthuong.com';
 
 const PrivacyPolicyScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -38,36 +38,42 @@ const PrivacyPolicyScreen: React.FC = () => {
             Ứng dụng <B>{APP_NAME}</B> thu thập các thông tin sau để cung cấp dịch vụ:
           </P>
           <Bullet>
-            <B>Dữ liệu sự kiện:</B> Tên sự kiện, ngày tháng, ghi chú bạn nhập vào ứng dụng.
+            <B>Dữ liệu sự kiện:</B> Tên sự kiện, ngày tháng, nhắc nhở bạn nhập vào ứng dụng.
           </Bullet>
           <Bullet>
-            <B>Thông tin tài khoản:</B> Email, tên hiển thị (nếu bạn chọn liên kết tài khoản).
+            <B>Thông tin tài khoản:</B> Email, tên hiển thị (chỉ khi bạn chọn liên kết tài khoản).
           </Bullet>
           <Bullet>
-            <B>Thông tin thiết bị:</B> ID thiết bị ẩn danh dùng để tạo phiên làm việc tự động.
+            <B>Thông tin thiết bị:</B> ID thiết bị ẩn danh dùng để tạo phiên làm việc tự động, không định danh cá nhân.
           </Bullet>
           <Bullet>
-            <B>Dữ liệu sử dụng:</B> Kết quả khảo sát MBTI (lưu cục bộ trên thiết bị).
+            <B>Dữ liệu sử dụng:</B> Màn hình đã xem, thao tác trong ứng dụng (thông qua Google Analytics) nhằm cải thiện trải nghiệm.
+          </Bullet>
+          <Bullet>
+            <B>Kết quả khảo sát:</B> Kết quả MBTI và sở thích (lưu cục bộ trên thiết bị).
           </Bullet>
         </Section>
 
         <Section title="2. Cách chúng tôi sử dụng thông tin">
-          <Bullet>Cung cấp tính năng nhắc nhở ngày quan trọng.</Bullet>
-          <Bullet>Đồng bộ dữ liệu giữa các thiết bị (nếu bạn đăng nhập).</Bullet>
+          <Bullet>Cung cấp tính năng nhắc nhở các ngày yêu thương và sự kiện quan trọng.</Bullet>
+          <Bullet>Đồng bộ dữ liệu giữa các thiết bị (chỉ khi bạn đăng nhập tài khoản).</Bullet>
           <Bullet>Gợi ý quà tặng và hoạt động phù hợp với dịp của bạn.</Bullet>
+          <Bullet>Phân tích ẩn danh để cải thiện tính năng ứng dụng.</Bullet>
           <Bullet>Chúng tôi <B>không bán</B> thông tin cá nhân của bạn cho bên thứ ba.</Bullet>
         </Section>
 
-        <Section title="3. Liên kết affiliate">
-          <P>
-            Ứng dụng có chứa <B>liên kết affiliate</B> đến các sản phẩm và dịch vụ của đối tác.
-            Khi bạn nhấn vào các liên kết này và thực hiện mua hàng, chúng tôi có thể nhận được
-            một khoản hoa hồng nhỏ — <B>không tốn thêm chi phí nào của bạn</B>.
-          </P>
-          <P>
-            Tất cả liên kết affiliate đều được đánh dấu rõ ràng. Chúng tôi chỉ giới thiệu các
-            sản phẩm chúng tôi tin là phù hợp và có giá trị với người dùng.
-          </P>
+        <Section title="3. Dịch vụ bên thứ ba">
+          <P>Ứng dụng sử dụng các dịch vụ bên thứ ba sau:</P>
+          <Bullet>
+            <B>Google Firebase:</B> Xác thực tài khoản và gửi thông báo đẩy. Firebase có thể thu thập thông tin thiết bị theo{' '}
+            <B>Chính sách bảo mật của Google</B>.
+          </Bullet>
+          <Bullet>
+            <B>Google Analytics:</B> Phân tích hành vi sử dụng ẩn danh (màn hình đã xem, tính năng đã dùng). Không thu thập thông tin định danh cá nhân.
+          </Bullet>
+          <Bullet>
+            <B>Liên kết Affiliate:</B> Ứng dụng có liên kết đến sản phẩm/dịch vụ đối tác. Khi bạn mua hàng qua liên kết này, chúng tôi có thể nhận hoa hồng nhỏ — <B>không tốn thêm chi phí của bạn</B>.
+          </Bullet>
         </Section>
 
         <Section title="4. Lưu trữ và bảo mật dữ liệu">
@@ -75,10 +81,13 @@ const PrivacyPolicyScreen: React.FC = () => {
             Dữ liệu sự kiện được lưu <B>cục bộ trên thiết bị</B> của bạn bằng SQLite.
           </Bullet>
           <Bullet>
-            Nếu bạn liên kết tài khoản, dữ liệu được đồng bộ lên máy chủ bảo mật qua HTTPS.
+            Nếu bạn liên kết tài khoản, dữ liệu được đồng bộ lên máy chủ bảo mật qua <B>HTTPS</B>.
           </Bullet>
           <Bullet>
-            Mã xác thực (token) được lưu mã hóa trong bộ nhớ an toàn của thiết bị.
+            Mã xác thực (token) được lưu trong bộ nhớ an toàn của thiết bị.
+          </Bullet>
+          <Bullet>
+            Chúng tôi lưu trữ dữ liệu chừng nào tài khoản của bạn còn hoạt động hoặc cần thiết để cung cấp dịch vụ.
           </Bullet>
         </Section>
 
@@ -87,19 +96,32 @@ const PrivacyPolicyScreen: React.FC = () => {
             <B>Xem dữ liệu:</B> Toàn bộ dữ liệu bạn nhập luôn hiển thị trong ứng dụng.
           </Bullet>
           <Bullet>
-            <B>Xóa / Xuất dữ liệu:</B> Liên hệ chúng tôi qua email để yêu cầu xóa hoặc xuất
-            toàn bộ dữ liệu của bạn.
+            <B>Xóa tài khoản:</B> Bạn có thể xóa tài khoản trực tiếp trong phần Cài đặt của ứng dụng.
+          </Bullet>
+          <Bullet>
+            <B>Xuất / Xóa dữ liệu:</B> Liên hệ chúng tôi qua email để yêu cầu xuất hoặc xóa toàn bộ dữ liệu.
+          </Bullet>
+          <Bullet>
+            <B>Tắt Analytics:</B> Bạn có thể tắt theo dõi Analytics trong Cài đặt hệ thống (Quyền riêng tư → Theo dõi).
           </Bullet>
         </Section>
 
         <Section title="6. Thông báo (Push Notifications)">
           <P>
-            Ứng dụng gửi thông báo nhắc nhở các ngày quan trọng. Bạn có thể bật/tắt thông báo
-            bất cứ lúc nào trong cài đặt hệ thống của thiết bị.
+            Ứng dụng gửi thông báo nhắc nhở các ngày yêu thương quan trọng qua <B>Firebase Cloud Messaging</B>.
+            Bạn có thể bật/tắt thông báo bất cứ lúc nào trong Cài đặt của thiết bị.
           </P>
         </Section>
 
-        <Section title="7. Thay đổi chính sách">
+        <Section title="7. Trẻ em">
+          <P>
+            Ứng dụng <B>không hướng đến trẻ em dưới 13 tuổi</B> và không cố ý thu thập thông tin
+            cá nhân của trẻ em. Nếu phát hiện chúng tôi vô tình thu thập dữ liệu của trẻ em,
+            vui lòng liên hệ ngay để chúng tôi xóa thông tin đó.
+          </P>
+        </Section>
+
+        <Section title="8. Thay đổi chính sách">
           <P>
             Chúng tôi có thể cập nhật chính sách này theo thời gian. Mọi thay đổi quan trọng sẽ
             được thông báo qua ứng dụng. Việc tiếp tục sử dụng ứng dụng sau khi chính sách thay
@@ -107,11 +129,12 @@ const PrivacyPolicyScreen: React.FC = () => {
           </P>
         </Section>
 
-        <Section title="8. Liên hệ">
+        <Section title="9. Liên hệ">
           <P>
             Nếu bạn có câu hỏi về chính sách bảo mật, vui lòng liên hệ:{'\n'}
             <B>{CONTACT_EMAIL}</B>
           </P>
+          <P>Website: <B>https://ngayyeuthuong.com</B></P>
         </Section>
 
         <View style={styles.divider} />
