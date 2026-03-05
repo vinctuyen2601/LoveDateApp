@@ -157,6 +157,16 @@ class ApiService {
   }
 
   /**
+   * GET request — trả về raw response.data, không unwrap .data
+   * Dùng cho các endpoint trả về object có field "data" là một phần của cấu trúc
+   * (vd: { data: [], total, page, totalPages })
+   */
+  async getRaw<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.get<T>(url, config);
+    return response.data;
+  }
+
+  /**
    * POST request
    */
   async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TextInput,
   Animated,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from '@themes/colors';
 import { filterSuggestions, Suggestion } from "../../data/suggestions";
@@ -49,6 +50,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   onClose,
   onComplete,
 }) => {
+  const insets = useSafeAreaInsets();
   const [surveyStep, setSurveyStep] = useState(0);
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -75,7 +77,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
     }, 140);
   };
 
-  const getSurveyQuestions = (): SurveyQuestion[] => [
+  const surveyQuestions = useMemo((): SurveyQuestion[] => [
     {
       id: "gender",
       question: "Người bạn muốn tặng quà thuộc giới tính nào?",
@@ -308,9 +310,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
         "Sang trọng, đẳng cấp",
       ],
     },
-  ];
-
-  const surveyQuestions = getSurveyQuestions();
+  ], [surveyAnswers.gender, surveyAnswers.relationship]);
 
   const currentFilteredQuestions = surveyQuestions.filter((q) => {
     if (!q.condition) return true;
@@ -432,13 +432,10 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
-          {/* Drag handle */}
-          <View style={styles.handle} />
+      <View style={[styles.sheet, { paddingTop: insets.top }]}>
 
           {/* Header */}
           <View style={styles.sheetHeader}>
@@ -603,7 +600,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
 
               {/* Footer — only for multiple/text types */}
               {currentQuestion.type !== "single" && (
-                <View style={styles.footer}>
+                <View style={[styles.footer, { paddingBottom: insets.bottom || 16 }]}>
                   {currentQuestion.type === "text" && (
                     <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
                       <Text style={styles.skipBtnText}>Bỏ qua</Text>
@@ -634,32 +631,15 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
               )}
             </>
           )}
-        </View>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
   sheet: {
+    flex: 1,
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "88%",
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.border,
-    alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 4,
   },
   sheetHeader: {
     flexDirection: "row",
@@ -792,7 +772,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },

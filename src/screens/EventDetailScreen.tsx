@@ -272,25 +272,9 @@ const EventDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Gift Suggestions Button */}
+        {/* Suggestions Buttons */}
         <View style={styles.section}>
-          <TouchableOpacity
-            style={[styles.giftSuggestionsButton, { marginBottom: 12 }]}
-            onPress={() => navigation.navigate('GiftSuggestions', { eventId: event.id, event })}
-          >
-            <View style={styles.giftSuggestionsIcon}>
-              <Ionicons name="gift" size={24} color={COLORS.primary} />
-            </View>
-            <View style={styles.giftSuggestionsContent}>
-              <Text style={styles.giftSuggestionsTitle}>Gợi ý quà tặng</Text>
-              <Text style={styles.giftSuggestionsSubtitle}>
-                Sử dụng AI để tìm món quà hoàn hảo
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-
-          {/* Activity Suggestions Button (Phase 2 - Task 5) */}
+          {/* Activity Suggestions Button */}
           <TouchableOpacity
             style={styles.giftSuggestionsButton}
             onPress={() => navigation.navigate('ActivitySuggestions', { eventId: event.id, event })}

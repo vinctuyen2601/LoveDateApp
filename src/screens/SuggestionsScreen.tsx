@@ -258,43 +258,6 @@ const SuggestionsScreen: React.FC = () => {
               </View>
             </PressableCard>
 
-            {/* AI Gift Suggestion card */}
-            <PressableCard
-              style={[styles.toolCard, { backgroundColor: '#D97706' }]}
-              onPress={() => navigation.navigate("GiftSuggestions", {
-                eventId: 'general',
-                event: {
-                  id: 'general', title: 'Dịp đặc biệt', tags: ['other'],
-                  eventDate: new Date().toISOString(), isLunarCalendar: false,
-                  isRecurring: false, isDeleted: false,
-                  reminderSettings: { remindDaysBefore: [] },
-                  version: 0, needsSync: false,
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                },
-              })}
-            >
-              <View style={styles.toolIconWrap}>
-                <Ionicons name="sparkles" size={36} color="rgba(255,255,255,0.9)" />
-              </View>
-              <Text style={styles.toolTitle}>Gợi ý{'\n'}quà AI ✨</Text>
-              <Text style={styles.toolDesc}>AI tìm quà phù hợp theo ngân sách & dịp</Text>
-              <View style={styles.toolPills}>
-                <View style={styles.toolPill}>
-                  <Ionicons name="flash-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>AI tạo</Text>
-                </View>
-                <View style={styles.toolPill}>
-                  <Ionicons name="pricetag-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>Link mua</Text>
-                </View>
-              </View>
-              <View style={styles.toolCta}>
-                <Text style={[styles.toolCtaText, { color: '#D97706' }]}>Tìm quà</Text>
-                <Ionicons name="arrow-forward" size={13} color="#D97706" />
-              </View>
-            </PressableCard>
-
             {/* AI Activity Suggestion card */}
             <PressableCard
               style={[styles.toolCard, { backgroundColor: COLORS.secondary }]}

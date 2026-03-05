@@ -244,13 +244,14 @@ export const fetchArticlesPaginated = async (params: ArticlePageParams): Promise
   if (params.sortBy) queryParams.sortBy = params.sortBy;
   if (params.sortOrder) queryParams.sortOrder = params.sortOrder;
 
-  const data = await apiService.get('/articles', { params: queryParams });
-  // Handle both paginated response { data, total, page, limit, totalPages }
-  // and legacy array response (fallback)
-  if (Array.isArray(data)) {
-    return { data, total: data.length, page: 1, limit: data.length, totalPages: 1 };
+  // getRaw để nhận đúng { data, total, page, limit, totalPages } từ BE
+  // (apiService.get sẽ unwrap .data → trả về Article[] và mất pagination metadata)
+  const res = await apiService.getRaw<ArticlePageResponse>('/articles', { params: queryParams });
+  if (Array.isArray(res)) {
+    // Fallback nếu BE trả về mảng thuần (legacy)
+    return { data: res, total: res.length, page: 1, limit: res.length, totalPages: 1 };
   }
-  return data as ArticlePageResponse;
+  return res;
 };
 
 /**

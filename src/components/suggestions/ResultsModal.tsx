@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,68 +7,65 @@ import {
   TouchableOpacity,
   Modal,
   Animated,
+  Linking,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "@themes/colors";
-import { Suggestion } from "../../data/suggestions";
 import { AffiliateProduct } from "../../types";
 import { EmptyState } from "@components/atoms/EmptyState";
 import ProductCard from "./ProductCard";
 import { apiService } from "../../services/api.service";
 
+// ── BE response types ──────────────────────────────────────────────────────────
+
+interface GiftCategoryResult {
+  rank: number;
+  categoryKey: string;
+  name: string;
+  icon: string;
+  type: "gift" | "experience";
+  score: number;
+  priceRange: string;
+  specificIdeas: string[];
+  shopeeKeyword: string;
+  isCompanion: boolean;
+  isTrending?: boolean;
+}
+
+interface CompanionGift {
+  categoryKey: string;
+  name: string;
+  icon: string;
+  subType: string;
+  note: string;
+  ideas: string[];
+}
+
+interface GiftSuggestionsResult {
+  categories: GiftCategoryResult[];
+  companion: CompanionGift | null;
+  meta: {
+    occasion: string;
+    occasionKey: string;
+    gender: string;
+    budget: string;
+    experienceLevel: string;
+  };
+}
+
+// ── Props ──────────────────────────────────────────────────────────────────────
+
 interface ResultsModalProps {
   visible: boolean;
-  suggestions: Suggestion[];
-  products: AffiliateProduct[];
   surveyAnswers: Record<string, any>;
   onClose: () => void;
   onRetake: () => void;
+  // Legacy props kept for compatibility — not used in new flow
+  suggestions?: any[];
+  products?: AffiliateProduct[];
 }
-
-// ── Display type (covers both static Suggestion + AI response shape) ──────────
-
-type DisplaySuggestion = {
-  id: string;
-  title: string;
-  type: 'gift' | 'experience' | 'activity' | 'romantic_plan';
-  description: string;
-  whyGreat: string;
-  tips?: string[];
-  budget?: string[];
-};
-
-// ── Constants ──────────────────────────────────────────────────────────────────
-
-const TYPE_INFO = {
-  romantic_plan: {
-    icon: "heart" as const,
-    title: "Kế hoạch lãng mạn",
-    color: COLORS.categoryAnniversary,
-    emoji: "💕",
-  },
-  activity: {
-    icon: "football" as const,
-    title: "Hoạt động cùng nhau",
-    color: COLORS.success,
-    emoji: "🏃",
-  },
-  experience: {
-    icon: "star" as const,
-    title: "Trải nghiệm đặc biệt",
-    color: COLORS.warning,
-    emoji: "⭐",
-  },
-  gift: {
-    icon: "gift" as const,
-    title: "Quà tặng ý nghĩa",
-    color: COLORS.categoryBirthday,
-    emoji: "🎁",
-  },
-};
-
-const SUGGESTION_TYPES = ["romantic_plan", "activity", "experience", "gift"] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -82,30 +79,7 @@ function buildAISummary(answers: Record<string, any>): string {
   return parts.join(" ");
 }
 
-function buildAIPrompt(answers: Record<string, any>): string {
-  const parts: string[] = [];
-  const { gender, relationship, occasion, hobbies = [], budget, personality = [] } = answers;
-
-  if (occasion) parts.push(`Tặng quà ${(occasion as string).toLowerCase()}`);
-  if (gender && relationship) {
-    const who =
-      gender === "Nam"
-        ? "cho bạn trai/chồng"
-        : gender === "Nữ"
-        ? "cho bạn gái/vợ"
-        : `cho ${relationship}`;
-    parts.push(who);
-  }
-  if ((hobbies as string[]).length > 0)
-    parts.push(`thích ${(hobbies as string[]).slice(0, 3).join(", ")}`);
-  if ((personality as string[]).length > 0)
-    parts.push(`tính cách ${(personality as string[]).slice(0, 2).join(", ")}`);
-  if (budget) parts.push(`ngân sách ${budget}`);
-
-  return parts.join(", ") || "Gợi ý quà tặng phù hợp";
-}
-
-// ── AI thinking dots ───────────────────────────────────────────────────────────
+// ── Animated thinking dots ─────────────────────────────────────────────────────
 
 const AIThinkingDots: React.FC = () => {
   const d1 = useRef(new Animated.Value(0.3)).current;
@@ -122,9 +96,7 @@ const AIThinkingDots: React.FC = () => {
         ])
       ).start();
     };
-    pulse(d1, 0);
-    pulse(d2, 160);
-    pulse(d3, 320);
+    pulse(d1, 0); pulse(d2, 160); pulse(d3, 320);
   }, []);
 
   return (
@@ -132,139 +104,230 @@ const AIThinkingDots: React.FC = () => {
       {[d1, d2, d3].map((dot, i) => (
         <Animated.View
           key={i}
-          style={{
-            width: 6, height: 6, borderRadius: 3,
-            backgroundColor: COLORS.primary,
-            opacity: dot,
-          }}
+          style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, opacity: dot }}
         />
       ))}
     </View>
   );
 };
 
-// ── Skeleton placeholder ───────────────────────────────────────────────────────
+// ── Category product drawer (expanded inline) ─────────────────────────────────
 
-const SkeletonProductCard: React.FC = () => {
-  const anim = useRef(new Animated.Value(0.4)).current;
+function budgetToMaxPrice(budget: string | undefined): number | undefined {
+  if (!budget) return undefined;
+  if (budget.includes('Dưới 200k'))                               return 200000;
+  if (budget.includes('200k') && budget.includes('500k'))        return 500000;
+  if (budget.includes('500k'))                                    return 1000000;
+  if (budget.includes('1') && budget.includes('2'))               return 2000000;
+  if (budget.includes('2') && budget.includes('5'))               return 5000000;
+  return undefined; // Trên 5 triệu — không giới hạn
+}
+
+interface CategoryProductsProps {
+  categoryKey: string;
+  shopeeKeyword: string;
+  maxPrice?: number;
+  occasion?: string;
+}
+
+type ProductWithTrending = AffiliateProduct & { isTrending?: boolean };
+
+const CategoryProducts: React.FC<CategoryProductsProps> = ({ categoryKey, shopeeKeyword, maxPrice, occasion }) => {
+  const [products, setProducts] = useState<ProductWithTrending[]>([]);
+  const [hasProducts, setHasProducts] = useState(false);
+  const [loading, setLoading]   = useState(true);
+
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, { toValue: 1, duration: 650, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0.4, duration: 650, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-  return (
-    <Animated.View style={[styles.skeletonCard, { opacity: anim }]}>
-      <View style={styles.skeletonImage} />
-      <View style={styles.skeletonBody}>
-        <View style={[styles.skeletonLine, { width: "70%" }]} />
-        <View style={[styles.skeletonLine, { width: "45%", marginTop: 7 }]} />
-        <View style={[styles.skeletonLine, { width: "100%", height: 32, borderRadius: 8, marginTop: 10 }]} />
+    let cancelled = false;
+    (async () => {
+      try {
+        const params: Record<string, any> = { limit: 6 };
+        if (maxPrice)  params.maxPrice  = maxPrice;
+        if (occasion)  params.occasion  = occasion;
+        const res = await apiService.getRaw<{ data: ProductWithTrending[]; hasProducts: boolean }>(
+          `/products/by-gift-category/${categoryKey}`,
+          { params },
+        );
+        if (cancelled) return;
+        setProducts(res.data ?? []);
+        setHasProducts(res.hasProducts ?? false);
+      } catch {
+        if (!cancelled) { setProducts([]); setHasProducts(false); }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [categoryKey, occasion]);
+
+  if (loading) {
+    return (
+      <View style={styles.productLoadingRow}>
+        <AIThinkingDots />
+        <Text style={styles.productLoadingText}>Đang tìm sản phẩm...</Text>
       </View>
-    </Animated.View>
+    );
+  }
+
+  if (!hasProducts || products.length === 0) {
+    const shopeeUrl = `https://shopee.vn/search?keyword=${encodeURIComponent(shopeeKeyword)}`;
+    return (
+      <TouchableOpacity style={styles.shopeeBtn} onPress={() => Linking.openURL(shopeeUrl)}>
+        <Text style={styles.shopeeBtnText}>🛍️ Tìm trên Shopee</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }}>
+      <View style={{ paddingLeft: 16, paddingRight: 4, flexDirection: "row", gap: 10 }}>
+        {products.map((p) => (
+          <View key={p.id} style={{ position: "relative" }}>
+            <ProductCard product={p} />
+            {p.isTrending && (
+              <View style={styles.trendingBadge}>
+                <Text style={styles.trendingBadgeText}>🔥 Đang hot</Text>
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
+
+// ── Category card ──────────────────────────────────────────────────────────────
+
+interface CategoryCardProps {
+  item: GiftCategoryResult;
+  defaultExpanded?: boolean;
+  maxPrice?: number;
+  occasionKey?: string;
+}
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ item, defaultExpanded = false, maxPrice, occasionKey }) => {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  return (
+    <View style={styles.categoryCard}>
+      {/* Header row */}
+      <TouchableOpacity style={styles.categoryHeader} onPress={() => setExpanded((v) => !v)} activeOpacity={0.8}>
+        <View style={styles.rankBadge}>
+          <Text style={styles.rankText}>{item.rank}</Text>
+        </View>
+        <Text style={styles.categoryIcon}>{item.icon}</Text>
+        <View style={styles.categoryInfo}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={styles.categoryName}>{item.name}</Text>
+            {item.isTrending && (
+              <View style={styles.hotBadge}>
+                <Text style={styles.hotBadgeText}>🔥 Hot</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.categoryPrice}>{item.priceRange}</Text>
+        </View>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={COLORS.textSecondary}
+        />
+      </TouchableOpacity>
+
+      {/* Specific ideas */}
+      {item.specificIdeas.slice(0, 3).map((idea, i) => (
+        <Text key={i} style={styles.ideaText}>• {idea}</Text>
+      ))}
+
+      {/* Expanded: show products */}
+      {expanded && (
+        <View style={styles.productsSection}>
+          <Text style={styles.productsSectionTitle}>🛍️ Sản phẩm gợi ý</Text>
+          <CategoryProducts
+            categoryKey={item.categoryKey}
+            shopeeKeyword={item.shopeeKeyword}
+            maxPrice={maxPrice}
+            occasion={occasionKey}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
+// ── Companion gift card ────────────────────────────────────────────────────────
+
+const CompanionCard: React.FC<{ companion: CompanionGift }> = ({ companion }) => (
+  <View style={styles.companionCard}>
+    <LinearGradient colors={["#FFE0E6", "#FFF0F3"]} style={styles.companionGradient}>
+      <View style={styles.companionHeader}>
+        <Text style={styles.companionIcon}>{companion.icon}</Text>
+        <View style={{ flex: 1 }}>
+          <View style={styles.companionTitleRow}>
+            <Text style={styles.companionTitle}>{companion.name}</Text>
+            <View style={styles.companionBadge}>
+              <Text style={styles.companionBadgeText}>Kèm theo</Text>
+            </View>
+          </View>
+          <Text style={styles.companionNote}>{companion.note}</Text>
+        </View>
+      </View>
+      {companion.ideas.map((idea, i) => (
+        <Text key={i} style={styles.companionIdea}>• {idea}</Text>
+      ))}
+    </LinearGradient>
+  </View>
+);
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
 const ResultsModal: React.FC<ResultsModalProps> = ({
   visible,
-  suggestions,
-  products,
   surveyAnswers,
   onClose,
   onRetake,
 }) => {
   const insets = useSafeAreaInsets();
+  const aiSummary = buildAISummary(surveyAnswers);
 
-  // ── Affiliate products (AI-picked, with fallback to popular) ──────────────
-  const [aiProducts, setAIProducts]   = useState<AffiliateProduct[]>([]);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const [aiReasoning, setAIReasoning] = useState("");
+  const [giftResult, setGiftResult]   = useState<GiftSuggestionsResult | null>(null);
+  const [isLoading, setIsLoading]     = useState(false);
+  const [error, setError]             = useState(false);
 
-  // ── Personalized suggestions (AI-scored & rewritten from BE) ──────────────
-  const [displaySuggestions, setDisplaySuggestions] = useState<DisplaySuggestion[]>([]);
-  const [isLoadingPersonalization, setIsLoadingPersonalization] = useState(false);
-  const [isAIPersonalized, setIsAIPersonalized]       = useState(false);
-  const [personalizationReason, setPersonalizationReason] = useState("");
-
-  const popularProducts = useMemo(
-    () => products.filter((p) => p.isPopular).slice(0, 4),
-    [products]
-  );
-
-  const aiSummary = useMemo(() => buildAISummary(surveyAnswers), [surveyAnswers]);
+  const fetchGiftCategories = useCallback(async () => {
+    if (Object.keys(surveyAnswers).length === 0) return;
+    try {
+      setIsLoading(true);
+      setError(false);
+      const data = await apiService.post("/surveys/gift-suggestions", { answers: surveyAnswers });
+      setGiftResult(data as GiftSuggestionsResult);
+    } catch {
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [surveyAnswers]);
 
   useEffect(() => {
     if (visible) {
-      // Reset & seed with static suggestions immediately
-      setIsAIPersonalized(false);
-      setPersonalizationReason("");
-      setDisplaySuggestions(suggestions.map((s) => ({
-        id: s.id, title: s.title, type: s.type,
-        description: s.description, whyGreat: s.whyGreat,
-        tips: s.tips, budget: s.budget,
-      })));
-      if (Object.keys(surveyAnswers).length > 0) {
-        fetchAIProducts();
-        fetchPersonalizedSuggestions();
-      }
+      setGiftResult(null);
+      fetchGiftCategories();
     }
   }, [visible]);
 
-  // Fetch AI-personalized suggestion cards from BE (scoring + Groq personalization)
-  const fetchPersonalizedSuggestions = async () => {
-    try {
-      setIsLoadingPersonalization(true);
-      const data = await apiService.post("/surveys/ai-suggestions", { answers: surveyAnswers });
-      const items = data.suggestions as DisplaySuggestion[] | undefined;
-      if (items && items.length > 0) {
-        setDisplaySuggestions(items);
-        setPersonalizationReason((data.reasoning as string) || "");
-        setIsAIPersonalized(true);
-      }
-    } catch {
-      // Keep static displaySuggestions silently
-    } finally {
-      setIsLoadingPersonalization(false);
-    }
-  };
-
-  // Fetch AI affiliate products (existing logic)
-  const fetchAIProducts = async () => {
-    try {
-      setIsLoadingAI(true);
-      setAIProducts([]);
-      setAIReasoning("");
-      const prompt = buildAIPrompt(surveyAnswers);
-      const data = await apiService.post("/products/ai-suggest", { prompt });
-      setAIProducts((data.products as AffiliateProduct[]) || []);
-      setAIReasoning((data.reasoning as string) || "");
-    } catch {
-      // Silently fallback to popular products
-    } finally {
-      setIsLoadingAI(false);
-    }
-  };
-
-  const displayProducts = aiProducts.length > 0 ? aiProducts : popularProducts;
+  const categories  = giftResult?.categories ?? [];
+  const companion   = giftResult?.companion ?? null;
+  const maxPrice    = budgetToMaxPrice(giftResult?.meta.budget);
+  const occasionKey = giftResult?.meta.occasionKey;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
 
-        {/* ── Gradient header ───────────────────────────────────────────────── */}
+        {/* ── Header ── */}
         <LinearGradient
           colors={["#FF6B6B", "#FF8E53"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.header}
         >
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -273,7 +336,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Gợi ý dành cho bạn</Text>
             <Text style={styles.headerSub}>
-              {isAIPersonalized ? "✨" : "⚡"} {displaySuggestions.length} gợi ý{isAIPersonalized ? " đã cá nhân hóa" : " phù hợp nhất"}
+              {isLoading ? "⚡ Đang phân tích..." : `✨ ${categories.length} danh mục phù hợp nhất`}
             </Text>
           </View>
           <View style={styles.aiBadge}>
@@ -282,163 +345,84 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
           </View>
         </LinearGradient>
 
-        <ScrollView
-          style={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {displaySuggestions.length === 0 ? (
-            <EmptyState
-              icon="search-outline"
-              title="Không tìm thấy gợi ý phù hợp"
-              subtitle="Thử điều chỉnh câu trả lời hoặc làm khảo sát lại"
-              actionLabel="Làm lại khảo sát"
-              onAction={onRetake}
-            />
-          ) : (
-            <>
-              {/* ── AI summary chat bubble ──────────────────────────────────── */}
-              {aiSummary ? (
-                <View style={styles.aiCard}>
-                  <View style={styles.aiCardHeader}>
-                    <LinearGradient colors={["#FF6B6B", "#FF8E53"]} style={styles.aiAvatar}>
-                      <Text style={{ fontSize: 17 }}>✨</Text>
-                    </LinearGradient>
-                    <View>
-                      <Text style={styles.aiName}>Trợ lý quà tặng AI</Text>
-                      <Text style={styles.aiOnline}>● Đang hoạt động</Text>
-                    </View>
-                  </View>
-                  <View style={styles.aiBubble}>
-                    <Text style={styles.aiBubbleText}>
-                      Mình đã phân tích câu trả lời của bạn và tìm thấy{" "}
-                      <Text style={{ fontWeight: "700" }}>{displaySuggestions.length} gợi ý</Text>{" "}
-                      phù hợp cho{" "}
-                      <Text style={{ fontWeight: "700" }}>{aiSummary}</Text> nhé! 🎉
-                    </Text>
-                  </View>
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+
+          {/* ── AI summary bubble ── */}
+          {aiSummary ? (
+            <View style={styles.aiCard}>
+              <View style={styles.aiCardHeader}>
+                <LinearGradient colors={["#FF6B6B", "#FF8E53"]} style={styles.aiAvatar}>
+                  <Text style={{ fontSize: 17 }}>✨</Text>
+                </LinearGradient>
+                <View>
+                  <Text style={styles.aiName}>Trợ lý quà tặng AI</Text>
+                  <Text style={styles.aiOnline}>● Đang hoạt động</Text>
                 </View>
-              ) : null}
-
-              {/* ── AI-powered products section ─────────────────────────────── */}
-              {(isLoadingAI || displayProducts.length > 0) && (
-                <View style={styles.aiProductsSection}>
-                  <View style={styles.sectionHeader}>
-                    <View style={[styles.sectionIconWrap, { backgroundColor: `${COLORS.categoryBirthday}15` }]}>
-                      <Ionicons name="sparkles" size={17} color={COLORS.categoryBirthday} />
-                    </View>
-                    <Text style={styles.sectionTitle}>🛍️ Sản phẩm AI gợi ý</Text>
-                    {isLoadingAI && <AIThinkingDots />}
-                  </View>
-
-                  {isLoadingAI ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <SkeletonProductCard />
-                      <SkeletonProductCard />
-                    </ScrollView>
-                  ) : (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      {displayProducts.map((p) => (
-                        <ProductCard key={p.id} product={p} />
-                      ))}
-                    </ScrollView>
-                  )}
-
-                  {aiReasoning ? (
-                    <View style={styles.reasoningBanner}>
-                      <Text style={styles.reasoningText}>🤖 {aiReasoning}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              )}
-
-              {/* ── Personalization status banner ────────────────────────── */}
-              {(isLoadingPersonalization || (isAIPersonalized && personalizationReason)) && (
-                <View style={styles.personalizationBanner}>
-                  {isLoadingPersonalization ? (
-                    <>
-                      <AIThinkingDots />
-                      <Text style={styles.personalizationText}>AI đang cá nhân hóa gợi ý...</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Ionicons name="sparkles" size={13} color={COLORS.primary} />
-                      <Text style={styles.personalizationText}>{personalizationReason}</Text>
-                    </>
-                  )}
-                </View>
-              )}
-
-              {/* ── Suggestion sections by type ───────────────────────────── */}
-              {SUGGESTION_TYPES.map((type) => {
-                const typeSuggestions = displaySuggestions.filter((s) => s.type === type);
-                if (typeSuggestions.length === 0) return null;
-                const info = TYPE_INFO[type];
-
-                return (
-                  <View key={type} style={styles.typeSection}>
-                    <View style={styles.sectionHeader}>
-                      <View style={[styles.sectionIconWrap, { backgroundColor: `${info.color}15` }]}>
-                        <Ionicons name={info.icon} size={17} color={info.color} />
-                      </View>
-                      <Text style={styles.sectionTitle}>
-                        {info.emoji} {info.title}
-                      </Text>
-                      <View style={[styles.countBadge, { backgroundColor: `${info.color}15` }]}>
-                        <Text style={[styles.countBadgeText, { color: info.color }]}>
-                          {typeSuggestions.length}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {typeSuggestions.map((suggestion) => (
-                      <View
-                        key={suggestion.id}
-                        style={[styles.suggestionCard, { borderLeftColor: info.color }]}
-                      >
-                        <View style={styles.cardRow}>
-                          <Text style={styles.cardTitle}>{suggestion.title}</Text>
-                          {suggestion.budget && suggestion.budget.length > 0 && (
-                            <View style={styles.budgetBadge}>
-                              <Text style={styles.budgetBadgeText}>{suggestion.budget[0]}</Text>
-                            </View>
-                          )}
-                        </View>
-
-                        <Text style={styles.cardDesc} numberOfLines={3}>
-                          {suggestion.description}
-                        </Text>
-
-                        <View style={styles.whyBox}>
-                          <Ionicons name="checkmark-circle" size={15} color={COLORS.success} />
-                          <Text style={styles.whyText} numberOfLines={2}>
-                            {suggestion.whyGreat}
-                          </Text>
-                        </View>
-
-                        {suggestion.tips && suggestion.tips.length > 0 && (
-                          <View style={styles.tipsBox}>
-                            <Text style={styles.tipsTitle}>💡 Mẹo hay:</Text>
-                            {suggestion.tips.slice(0, 2).map((tip, i) => (
-                              <Text key={i} style={styles.tipText}>• {tip}</Text>
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    ))}
-                  </View>
-                );
-              })}
-
-              {/* ── Bottom action ─────────────────────────────────────────── */}
-              <View style={styles.actions}>
-                <TouchableOpacity style={styles.retakeBtn} onPress={onRetake}>
-                  <Ionicons name="refresh" size={18} color={COLORS.primary} />
-                  <Text style={styles.retakeBtnText}>Làm lại khảo sát</Text>
-                </TouchableOpacity>
               </View>
-            </>
+              <View style={styles.aiBubble}>
+                {isLoading ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <AIThinkingDots />
+                    <Text style={styles.aiBubbleText}>Đang phân tích câu trả lời của bạn...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.aiBubbleText}>
+                    Mình đã chấm điểm <Text style={{ fontWeight: "700" }}>16 danh mục quà</Text> và
+                    tìm ra <Text style={{ fontWeight: "700" }}>{categories.length} lựa chọn</Text> phù hợp
+                    nhất cho{" "}
+                    <Text style={{ fontWeight: "700" }}>{aiSummary}</Text> nhé! 🎉
+                  </Text>
+                )}
+              </View>
+            </View>
+          ) : null}
+
+          {/* ── Loading state ── */}
+          {isLoading && (
+            <View style={styles.loadingBox}>
+              <AIThinkingDots />
+              <Text style={styles.loadingText}>Gift DNA Matrix đang tính điểm...</Text>
+            </View>
           )}
+
+          {/* ── Error state ── */}
+          {error && !isLoading && (
+            <EmptyState
+              icon="alert-circle-outline"
+              title="Không thể tải gợi ý"
+              subtitle="Vui lòng thử lại"
+              actionLabel="Thử lại"
+              onAction={fetchGiftCategories}
+            />
+          )}
+
+          {/* ── Companion gift (hoa) ── */}
+          {!isLoading && companion && <CompanionCard companion={companion} />}
+
+          {/* ── Category cards ── */}
+          {!isLoading && categories.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>🎁 Top danh mục quà phù hợp</Text>
+              {categories.map((cat, idx) => (
+                <CategoryCard
+                  key={cat.categoryKey}
+                  item={cat}
+                  defaultExpanded={idx === 0}
+                  maxPrice={maxPrice}
+                  occasionKey={occasionKey}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* ── Bottom actions ── */}
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.retakeBtn} onPress={onRetake}>
+              <Ionicons name="refresh" size={18} color={COLORS.primary} />
+              <Text style={styles.retakeBtnText}>Làm lại khảo sát</Text>
+            </TouchableOpacity>
+          </View>
+
         </ScrollView>
       </View>
     </Modal>
@@ -452,188 +436,120 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 10,
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 16, paddingVertical: 16, gap: 10,
   },
   closeBtn: { padding: 6 },
   headerCenter: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.white, marginBottom: 2 },
-  headerSub: { fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: "500" },
+  headerSub:   { fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: "500" },
   aiBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: COLORS.white, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
   },
   aiBadgeText: { fontSize: 11, fontWeight: "800", color: "#FF6B6B" },
 
-  // Scroll
   scroll: { flex: 1 },
-  scrollContent: { padding: 16 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
 
   // AI summary card
   aiCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.10,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,107,0.10)",
+    backgroundColor: COLORS.white, borderRadius: 18, padding: 16, marginBottom: 16,
+    shadowColor: "#FF6B6B", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.10,
+    shadowRadius: 10, elevation: 3, borderWidth: 1, borderColor: "rgba(255,107,107,0.10)",
   },
-  aiCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
-  },
-  aiAvatar: {
-    width: 38, height: 38, borderRadius: 19,
-    alignItems: "center", justifyContent: "center",
-  },
+  aiCardHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
+  aiAvatar: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   aiName:   { fontSize: 14, fontWeight: "700", color: COLORS.textPrimary },
   aiOnline: { fontSize: 11, color: COLORS.success, fontWeight: "500", marginTop: 1 },
   aiBubble: {
-    backgroundColor: "rgba(255,107,107,0.07)",
-    borderRadius: 14,
-    borderTopLeftRadius: 4,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: "rgba(255,107,107,0.30)",
+    backgroundColor: "rgba(255,107,107,0.07)", borderRadius: 14, borderTopLeftRadius: 4,
+    padding: 12, borderLeftWidth: 3, borderLeftColor: "rgba(255,107,107,0.30)",
   },
   aiBubbleText: { fontSize: 14, lineHeight: 21, color: COLORS.textPrimary },
 
-  // AI products section
-  aiProductsSection: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
+  // Loading
+  loadingBox: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 10, padding: 20, marginBottom: 12,
   },
-  skeletonCard: {
-    width: 170,
-    backgroundColor: COLORS.borderLight,
-    borderRadius: 14,
-    marginRight: 12,
-    overflow: "hidden",
-  },
-  skeletonImage: { width: "100%", height: 120, backgroundColor: COLORS.border },
-  skeletonBody:  { padding: 12 },
-  skeletonLine:  { height: 12, backgroundColor: COLORS.border, borderRadius: 6 },
-  reasoningBanner: {
-    marginTop: 12,
-    backgroundColor: "rgba(255,107,107,0.07)",
-    borderRadius: 10,
-    padding: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
-  },
-  reasoningText: {
-    fontSize: 12, color: COLORS.textPrimary,
-    fontStyle: "italic", lineHeight: 18,
-  },
+  loadingText: { fontSize: 14, color: COLORS.textSecondary },
 
-  // Section headers
-  sectionHeader: {
-    flexDirection: "row", alignItems: "center",
-    gap: 8, marginBottom: 12,
+  // Companion card
+  companionCard: { marginBottom: 16, borderRadius: 18, overflow: "hidden", elevation: 3,
+    shadowColor: "#FF6B6B", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 8 },
+  companionGradient: { padding: 16 },
+  companionHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 10 },
+  companionIcon: { fontSize: 30 },
+  companionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  companionTitle: { fontSize: 15, fontWeight: "700", color: "#C41E3A", flex: 1 },
+  companionBadge: {
+    backgroundColor: "#FF6B6B", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2,
   },
-  sectionIconWrap: {
-    width: 34, height: 34, borderRadius: 10,
+  companionBadgeText: { fontSize: 10, color: COLORS.white, fontWeight: "700" },
+  companionNote: { fontSize: 12, color: "#8B0000", lineHeight: 17, fontStyle: "italic" },
+  companionIdea: { fontSize: 13, color: "#5D1A1A", lineHeight: 20 },
+
+  // Section title
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: COLORS.textPrimary, marginBottom: 12 },
+
+  // Category card
+  categoryCard: {
+    backgroundColor: COLORS.white, borderRadius: 16, padding: 16, marginBottom: 12,
+    shadowColor: COLORS.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07,
+    shadowRadius: 6, elevation: 2,
+  },
+  categoryHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  rankBadge: {
+    width: 26, height: 26, borderRadius: 13, backgroundColor: "#FF6B6B",
     alignItems: "center", justifyContent: "center",
   },
-  sectionTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: COLORS.textPrimary },
-  countBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  countBadgeText: { fontSize: 12, fontWeight: "700" },
+  rankText: { fontSize: 12, fontWeight: "800", color: COLORS.white },
+  categoryIcon: { fontSize: 24 },
+  categoryInfo: { flex: 1 },
+  categoryName: { fontSize: 15, fontWeight: "700", color: COLORS.textPrimary },
+  categoryPrice: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
+  ideaText: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20, paddingLeft: 4 },
 
-  // Type sections
-  typeSection: { marginBottom: 20 },
+  // Products section inside card
+  productsSection: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  productsSectionTitle: { fontSize: 13, fontWeight: "600", color: COLORS.textPrimary, marginBottom: 10 },
+  productLoadingRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
+  productLoadingText: { fontSize: 13, color: COLORS.textSecondary },
 
-  // Suggestion cards
-  suggestionCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 4,
+  // Trending badges
+  hotBadge: {
+    backgroundColor: "#FF4D2D",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  cardRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    gap: 8,
+  hotBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
+  trendingBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    backgroundColor: "#FF4D2D",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 10,
   },
-  cardTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: COLORS.textPrimary, lineHeight: 21 },
-  budgetBadge: {
-    backgroundColor: `${COLORS.success}15`,
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
-  },
-  budgetBadgeText: { fontSize: 11, color: COLORS.success, fontWeight: "600" },
-  cardDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 19, marginBottom: 10 },
-  whyBox: {
-    flexDirection: "row", alignItems: "flex-start",
-    backgroundColor: `${COLORS.success}08`,
-    borderRadius: 8, padding: 10, gap: 6, marginBottom: 8,
-  },
-  whyText: { flex: 1, fontSize: 13, color: COLORS.textPrimary, lineHeight: 18 },
-  tipsBox: { backgroundColor: COLORS.background, borderRadius: 8, padding: 10 },
-  tipsTitle: { fontSize: 12, fontWeight: "600", color: COLORS.textPrimary, marginBottom: 4 },
-  tipText:  { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 2 },
+  trendingBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
 
-  // Personalization banner
-  personalizationBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: `${COLORS.primary}08`,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 14,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.primary,
+  // Shopee fallback button
+  shopeeBtn: {
+    backgroundColor: "#EE4D2D", borderRadius: 10, paddingVertical: 10,
+    alignItems: "center", marginTop: 4,
   },
-  personalizationText: {
-    flex: 1,
-    fontSize: 12,
-    color: COLORS.textPrimary,
-    fontStyle: "italic",
-    lineHeight: 17,
-  },
+  shopeeBtnText: { color: COLORS.white, fontWeight: "700", fontSize: 14 },
 
   // Actions
-  actions: { marginTop: 4, marginBottom: 28 },
+  actions: { marginTop: 8, marginBottom: 8 },
   retakeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.white,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-    gap: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    backgroundColor: COLORS.white, paddingVertical: 14, borderRadius: 14,
+    borderWidth: 1.5, borderColor: COLORS.primary, gap: 8,
   },
   retakeBtnText: { color: COLORS.primary, fontSize: 15, fontWeight: "600" },
 });

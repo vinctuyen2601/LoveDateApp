@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
 import { Article } from '../data/articles';
-import { getArticles, trackArticleView, fetchArticlesPaginated } from '../services/articleService';
+import { trackArticleView, fetchArticlesPaginated } from '../services/articleService';
 import { useInfiniteList } from '../hooks/useInfiniteList';
 import { useMasterData } from '../contexts/MasterDataContext';
 import PressableCard from '@components/atoms/PressableCard';
@@ -188,11 +188,10 @@ const AllArticlesScreen: React.FC = () => {
   const [sort, setSort]                     = useState<SortKey>('popular');
   const [showSort, setShowSort]             = useState(false);
 
-  // AI mode — uses cached articles (all at once)
+  // AI mode
   const [aiMode, setAiMode]         = useState(false);
   const [aiQuery, setAiQuery]       = useState('');
   const [aiSearched, setAiSearched] = useState(false);
-  const [allArticles, setAllArticles] = useState<Article[]>([]);
 
   const appendTopic = (topic: string) => {
     const clean = topic.replace(/^[\p{Emoji}\s]+/u, '').trim();
@@ -207,13 +206,6 @@ const AllArticlesScreen: React.FC = () => {
     const t = setTimeout(() => setDebouncedQuery(searchQuery), 500);
     return () => clearTimeout(t);
   }, [searchQuery]);
-
-  // Load cached articles for AI mode only
-  useEffect(() => {
-    if (aiMode && allArticles.length === 0) {
-      getArticles().then(setAllArticles).catch(() => {});
-    }
-  }, [aiMode]);
 
   // ── Infinite scroll for browse mode ──────────────────────────────────────────
   const fetchFn = useCallback(
@@ -231,6 +223,21 @@ const AllArticlesScreen: React.FC = () => {
     items, total, loading, loadingMore, hasMore, error, refresh, loadMore,
   } = useInfiniteList(fetchFn, [debouncedQuery, categoryId, sort] as const);
 
+  // ── Infinite scroll for AI mode default list ──────────────────────────────────
+  const aiFetchFn = useCallback(
+    (page: number) => {
+      if (!aiMode) return Promise.resolve({ data: [], total: 0, page: 1, limit: 12, totalPages: 0 });
+      return fetchArticlesPaginated({ page, limit: 12 });
+    },
+    [aiMode],
+  );
+  const {
+    items: aiItems,
+    loadingMore: aiLoadingMore,
+    hasMore: aiHasMore,
+    loadMore: aiLoadMore,
+  } = useInfiniteList(aiFetchFn, [aiMode] as const);
+
   const handleArticlePress = useCallback((article: Article) => {
     trackArticleView(article.id);
     navigation.navigate('ArticleDetail', { article });
@@ -243,20 +250,19 @@ const AllArticlesScreen: React.FC = () => {
     return n;
   }, [debouncedQuery, categoryId]);
 
-  // AI smart filter — keyword match across title, tags, description, category name
+  // AI smart filter — keyword match trên các bài viết đã load (aiItems)
   const aiFiltered = useMemo(() => {
     if (!aiQuery.trim()) return [];
     const keywords = aiQuery.toLowerCase().split(/[,\s]+/).filter((k) => k.length > 1);
-    return allArticles.filter((article) => {
+    return aiItems.filter((article) => {
       const haystack = [
         article.title,
         ...(article.tags ?? []),
-        article.description ?? '',
         STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? '',
       ].join(' ').toLowerCase();
       return keywords.some((kw) => haystack.includes(kw));
     });
-  }, [allArticles, aiQuery]);
+  }, [aiItems, aiQuery]);
 
   const clearAll = useCallback(() => {
     setSearchQuery('');
@@ -439,114 +445,123 @@ const AllArticlesScreen: React.FC = () => {
 
       {/* ── AI mode ── */}
       {aiMode && (
-        <ScrollView
+        <FlatList
           style={styles.aiScroll}
-          showsVerticalScrollIndicator={false}
+          data={!aiSearched || !aiQuery.trim() ? aiItems : []}
+          keyExtractor={(item, i) => `ai-${item.id}-${i}`}
+          renderItem={({ item }) => (
+            <ArticleListCard
+              article={item}
+              onPress={() => handleArticlePress(item)}
+            />
+          )}
           contentContainerStyle={styles.aiScrollContent}
+          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-        >
-          {/* AI input card */}
-          <View style={styles.aiCard}>
-            <View style={styles.aiCardTitle}>
-              <Text style={styles.aiSparkle}>📖</Text>
-              <Text style={styles.aiCardLabel}>Bạn muốn đọc về chủ đề gì?</Text>
-            </View>
-            <View style={styles.aiInputWrap}>
-              <TextInput
-                style={styles.aiTextInput}
-                value={aiQuery}
-                onChangeText={(text) => { setAiQuery(text); setAiSearched(false); }}
-                multiline
-                numberOfLines={2}
-                placeholder="VD: cách tặng quà bạn gái, hẹn hò lần đầu, giao tiếp trong tình yêu..."
-                placeholderTextColor={COLORS.textLight}
-                textAlignVertical="top"
-              />
-              {aiQuery.length > 0 && (
-                <TouchableOpacity
-                  style={styles.aiClearBtn}
-                  onPress={() => { setAiQuery(''); setAiSearched(false); }}
+          onEndReached={!aiSearched || !aiQuery.trim() ? aiLoadMore : undefined}
+          onEndReachedThreshold={0.3}
+          ListHeaderComponent={
+            <View>
+              {/* AI input card */}
+              <View style={styles.aiCard}>
+                <View style={styles.aiCardTitle}>
+                  <Text style={styles.aiSparkle}>📖</Text>
+                  <Text style={styles.aiCardLabel}>Bạn muốn đọc về chủ đề gì?</Text>
+                </View>
+                <View style={styles.aiInputWrap}>
+                  <TextInput
+                    style={styles.aiTextInput}
+                    value={aiQuery}
+                    onChangeText={(text) => { setAiQuery(text); setAiSearched(false); }}
+                    multiline
+                    numberOfLines={2}
+                    placeholder="VD: cách tặng quà bạn gái, hẹn hò lần đầu, giao tiếp trong tình yêu..."
+                    placeholderTextColor={COLORS.textLight}
+                    textAlignVertical="top"
+                  />
+                  {aiQuery.length > 0 && (
+                    <TouchableOpacity
+                      style={styles.aiClearBtn}
+                      onPress={() => { setAiQuery(''); setAiSearched(false); }}
+                    >
+                      <Ionicons name="close-circle-outline" size={16} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Quick topic chips */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.topicRow}
                 >
-                  <Ionicons name="close-circle-outline" size={16} color={COLORS.textSecondary} />
+                  {AI_TOPIC_CHIPS.map((topic) => (
+                    <TouchableOpacity
+                      key={topic}
+                      style={styles.topicChip}
+                      onPress={() => { appendTopic(topic); setAiSearched(false); }}
+                    >
+                      <Text style={styles.topicChipText}>{topic}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <TouchableOpacity
+                  style={[styles.aiSearchBtn, !aiQuery.trim() && styles.aiSearchBtnDisabled]}
+                  onPress={() => setAiSearched(true)}
+                  disabled={!aiQuery.trim()}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="sparkles" size={18} color={COLORS.white} />
+                  <Text style={styles.aiSearchBtnText}>Tìm bài viết phù hợp</Text>
                 </TouchableOpacity>
+              </View>
+
+              {/* AI results (khi đã search) */}
+              {aiSearched && aiQuery.trim() && (
+                aiFiltered.length > 0 ? (
+                  <>
+                    <View style={styles.aiResultHeader}>
+                      <Text style={styles.aiResultCount}>
+                        Tìm thấy {aiFiltered.length} bài viết
+                      </Text>
+                      <TouchableOpacity onPress={() => { setAiQuery(''); setAiSearched(false); }}>
+                        <Text style={styles.aiResultClear}>Xóa</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {aiFiltered.map((article) => (
+                      <ArticleListCard
+                        key={article.id}
+                        article={article}
+                        onPress={() => handleArticlePress(article)}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <View style={styles.aiEmpty}>
+                    <Text style={styles.aiEmptyIcon}>📭</Text>
+                    <Text style={styles.aiEmptyTitle}>Không tìm thấy bài viết</Text>
+                    <Text style={styles.aiEmptyText}>Thử từ khóa khác hoặc chọn chủ đề gợi ý bên trên</Text>
+                  </View>
+                )
+              )}
+
+              {/* Header mặc định */}
+              {(!aiSearched || !aiQuery.trim()) && aiItems.length > 0 && (
+                <Text style={styles.aiDefaultHeader}>Tất cả bài viết</Text>
               )}
             </View>
-
-            {/* Quick topic chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.topicRow}
-            >
-              {AI_TOPIC_CHIPS.map((topic) => (
-                <TouchableOpacity
-                  key={topic}
-                  style={styles.topicChip}
-                  onPress={() => { appendTopic(topic); setAiSearched(false); }}
-                >
-                  <Text style={styles.topicChipText}>{topic}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[styles.aiSearchBtn, !aiQuery.trim() && styles.aiSearchBtnDisabled]}
-              onPress={() => setAiSearched(true)}
-              disabled={!aiQuery.trim()}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="sparkles" size={18} color={COLORS.white} />
-              <Text style={styles.aiSearchBtnText}>Tìm bài viết phù hợp</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* AI results */}
-          {aiSearched && aiQuery.trim() && (
-            aiFiltered.length > 0 ? (
-              <>
-                <View style={styles.aiResultHeader}>
-                  <Text style={styles.aiResultCount}>
-                    Tìm thấy {aiFiltered.length} bài viết
-                  </Text>
-                  <TouchableOpacity onPress={() => { setAiQuery(''); setAiSearched(false); }}>
-                    <Text style={styles.aiResultClear}>Xóa</Text>
-                  </TouchableOpacity>
-                </View>
-                {aiFiltered.map((article) => (
-                  <ArticleListCard
-                    key={article.id}
-                    article={article}
-                    onPress={() => handleArticlePress(article)}
-                  />
-                ))}
-              </>
-            ) : (
-              <View style={styles.aiEmpty}>
-                <Text style={styles.aiEmptyIcon}>📭</Text>
-                <Text style={styles.aiEmptyTitle}>Không tìm thấy bài viết</Text>
-                <Text style={styles.aiEmptyText}>Thử từ khóa khác hoặc chọn chủ đề gợi ý bên trên</Text>
+          }
+          ListFooterComponent={
+            aiLoadingMore ? (
+              <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
               </View>
-            )
-          )}
-
-          {/* Default: show all articles */}
-          {(!aiSearched || !aiQuery.trim()) && articles.length > 0 && (
-            <>
-              <Text style={styles.aiDefaultHeader}>Tất cả bài viết ({articles.filter(a => !a.status || a.status === 'published').length})</Text>
-              {articles
-                .filter((a) => !a.status || a.status === 'published')
-                .map((article) => (
-                  <ArticleListCard
-                    key={article.id}
-                    article={article}
-                    onPress={() => handleArticlePress(article)}
-                  />
-                ))}
-            </>
-          )}
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
+            ) : !aiHasMore && aiItems.length > 0 && (!aiSearched || !aiQuery.trim()) ? (
+              <Text style={styles.footerEnd}>— Hết danh sách —</Text>
+            ) : null
+          }
+        />
       )}
 
       {/* ── Sort sheet ── */}

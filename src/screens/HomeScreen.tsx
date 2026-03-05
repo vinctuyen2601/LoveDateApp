@@ -260,36 +260,6 @@ const HomeScreen: React.FC = () => {
     navigation.navigate("EventDetail", { eventId: event.id });
   const handleAddEvent = () => navigation.navigate("AddEvent");
   const handleViewCalendar = () => navigation.navigate("Calendar");
-  const handleGiftSuggestPress = () => {
-    // Prefer upcoming event, fall back to any event, then generic
-    const targetEvent = upcomingEvents[0] ?? events[0];
-    if (targetEvent) {
-      navigation.navigate("GiftSuggestions", {
-        eventId: targetEvent.id,
-        event: targetEvent,
-      });
-    } else {
-      // No events yet — use a generic occasion so AI can still suggest
-      const genericEvent: Event = {
-        id: 'general',
-        title: 'Dịp đặc biệt',
-        tags: ['other'],
-        eventDate: new Date().toISOString(),
-        isLunarCalendar: false,
-        isRecurring: false,
-        isDeleted: false,
-        reminderSettings: { remindDaysBefore: [] },
-        version: 0,
-        needsSync: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      navigation.navigate("GiftSuggestions", {
-        eventId: 'general',
-        event: genericEvent,
-      });
-    }
-  };
 
   // ===== SHARED EVENT CARD =====
   const renderEventCard = (
@@ -365,14 +335,6 @@ const HomeScreen: React.FC = () => {
       subtitle: "Lên lịch kỷ niệm quan trọng",
       color: COLORS.info,
       onPress: handleAddEvent,
-    },
-    {
-      id: "gifts",
-      icon: "gift-outline" as const,
-      title: "Gợi ý\nquà AI ✨",
-      subtitle: "Tìm quà tặng ý nghĩa cho nửa kia",
-      color: '#D97706',
-      onPress: handleGiftSuggestPress,
     },
     {
       id: "activities",
