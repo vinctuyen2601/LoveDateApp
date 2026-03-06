@@ -18,9 +18,11 @@ const CACHE_DURATION = CACHE_CONFIG.DURATION;
  */
 export const fetchArticlesFromAPI = async (): Promise<Article[]> => {
   try {
-    const data = await apiService.get('/articles');
-    const articles = (data.articles || data) as Article[];
-    return articles.filter((article) => article.status !== 'draft' && article.status !== 'archived');
+    // Backend trả về { data: Article[], total, page, limit, totalPages } (paginated)
+    // Fetch đủ bài cho homepage (limit=50)
+    const res = await apiService.get('/articles', { params: { limit: 50, status: 'published' } });
+    const articles = (Array.isArray(res) ? res : res?.data ?? res?.articles ?? []) as Article[];
+    return articles.filter((a) => a.status !== 'draft' && a.status !== 'archived');
   } catch (error) {
     console.error('Error fetching articles from CMS:', error);
     throw error;

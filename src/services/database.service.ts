@@ -435,6 +435,19 @@ export async function initializeTables(
       );
     `);
 
+    // Article reads table — tracks articles user has opened (hide from suggestions for 120 days)
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS article_reads (
+        article_id TEXT PRIMARY KEY,
+        read_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        synced INTEGER DEFAULT 0
+      );
+    `);
+
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_article_reads_read_at ON article_reads(read_at);
+    `);
+
     console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Error initializing tables:", error);
@@ -1270,6 +1283,31 @@ class LegacyDatabaseService {
       console.error("Error bulk saving subscription plans:", error);
     }
   }
+
+  async markArticleRead(articleId: string): Promise<void> {
+    if (!this.db) return;
+    return markArticleRead(this.db, articleId);
+  }
+
+  async getReadArticleIds(days = 120): Promise<string[]> {
+    if (!this.db) return [];
+    return getReadArticleIds(this.db, days);
+  }
+
+  async getUnsyncedReadArticleIds(): Promise<string[]> {
+    if (!this.db) return [];
+    return getUnsyncedReadArticleIds(this.db);
+  }
+
+  async markArticleReadsAsSynced(articleIds: string[]): Promise<void> {
+    if (!this.db || articleIds.length === 0) return;
+    return markArticleReadsAsSynced(this.db, articleIds);
+  }
+
+  async mergeServerArticleReads(articleIds: string[]): Promise<void> {
+    if (!this.db || articleIds.length === 0) return;
+    return mergeServerArticleReads(this.db, articleIds);
+  }
 }
 
 // Export singleton instance for backward compatibility
@@ -1303,5 +1341,74 @@ export async function loadMasterDataCache<T>(
     return JSON.parse(row.data) as T[];
   } catch {
     return null;
+  }
+}
+
+// ─── Article reads helpers ─────────────────────────────────────────────────────
+
+/** Mark an article as read locally. Call when user opens an article. */
+export async function markArticleRead(
+  db: SQLite.SQLiteDatabase,
+  articleId: string
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO article_reads (article_id, read_at, synced)
+     VALUES (?, ?, 0)
+     ON CONFLICT(article_id) DO UPDATE SET read_at = excluded.read_at, synced = 0`,
+    [articleId, new Date().toISOString()]
+  );
+}
+
+/** Get article IDs read within the last N days (default 120). */
+export async function getReadArticleIds(
+  db: SQLite.SQLiteDatabase,
+  days = 120
+): Promise<string[]> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const rows = await db.getAllAsync<{ article_id: string }>(
+    `SELECT article_id FROM article_reads WHERE read_at > ?`,
+    [cutoff.toISOString()]
+  );
+  return rows.map((r) => r.article_id);
+}
+
+/** Get article IDs that haven't been synced to server yet. */
+export async function getUnsyncedReadArticleIds(
+  db: SQLite.SQLiteDatabase
+): Promise<string[]> {
+  const rows = await db.getAllAsync<{ article_id: string }>(
+    `SELECT article_id FROM article_reads WHERE synced = 0`
+  );
+  return rows.map((r) => r.article_id);
+}
+
+/** Mark article reads as synced after successful server sync. */
+export async function markArticleReadsAsSynced(
+  db: SQLite.SQLiteDatabase,
+  articleIds: string[]
+): Promise<void> {
+  if (articleIds.length === 0) return;
+  const placeholders = articleIds.map(() => '?').join(', ');
+  await db.runAsync(
+    `UPDATE article_reads SET synced = 1 WHERE article_id IN (${placeholders})`,
+    articleIds
+  );
+}
+
+/** Merge article reads received from server (other devices) into local DB. */
+export async function mergeServerArticleReads(
+  db: SQLite.SQLiteDatabase,
+  articleIds: string[]
+): Promise<void> {
+  if (articleIds.length === 0) return;
+  const now = new Date().toISOString();
+  for (const id of articleIds) {
+    await db.runAsync(
+      `INSERT INTO article_reads (article_id, read_at, synced)
+       VALUES (?, ?, 1)
+       ON CONFLICT(article_id) DO NOTHING`,
+      [id, now]
+    );
   }
 }

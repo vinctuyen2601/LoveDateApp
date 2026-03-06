@@ -143,6 +143,7 @@ export interface User {
   displayName?: string;
   photoURL?: string;
   isAnonymous?: boolean;
+  emailVerified?: boolean;
   createdAt: string;
 }
 
@@ -162,6 +163,7 @@ export interface LoginResponse {
 export interface SyncPayload {
   events: Event[];
   lastSyncVersion: number;
+  readArticleIds?: string[];
 }
 
 export interface SyncConflict {
@@ -177,6 +179,7 @@ export interface SyncResponse {
     serverId: string;
   }[];
   lastSyncVersion: number;
+  readArticleIds?: string[];
 }
 
 export interface SyncStatus {
@@ -430,7 +433,9 @@ export interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAnonymous: boolean;
+  isEmailVerified: boolean;
   linkedProviders: string[];
+  resendVerificationEmail: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (

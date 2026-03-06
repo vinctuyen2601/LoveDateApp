@@ -83,17 +83,21 @@ class SyncService {
       const lastSyncVersionStr = await databaseService.getSyncMetadata('lastSyncVersion');
       const lastSyncVersion = lastSyncVersionStr ? parseInt(lastSyncVersionStr) : 0;
 
+      // Get unsynced article reads to send to server
+      const unsyncedReadIds = await databaseService.getUnsyncedReadArticleIds();
+
       // Prepare sync payload
       const payload: SyncPayload = {
         events: eventsNeedingSync,
         lastSyncVersion,
+        ...(unsyncedReadIds.length > 0 && { readArticleIds: unsyncedReadIds }),
       };
 
       // Send to server
       const response = await apiService.post<SyncResponse>('/sync', payload);
 
-      // Process response
-      await this.processSyncResponse(response);
+      // Process response (pass unsyncedReadIds so we know which ones to mark as synced)
+      await this.processSyncResponse(response, unsyncedReadIds);
 
       // Save new sync version
       await databaseService.setSyncMetadata(
@@ -127,7 +131,7 @@ class SyncService {
   /**
    * Process sync response from server
    */
-  private async processSyncResponse(response: SyncResponse): Promise<void> {
+  private async processSyncResponse(response: SyncResponse, sentReadIds: string[] = []): Promise<void> {
     // 1. Process successfully synced events
     for (const processed of response.processedEvents) {
       await databaseService.markEventSynced(processed.localId, processed.serverId);
@@ -160,6 +164,14 @@ class SyncService {
       this.notifyListeners({
         conflicts: response.conflicts,
       });
+    }
+
+    // 4. Sync article reads bidirectionally
+    if (response.readArticleIds && response.readArticleIds.length > 0) {
+      await databaseService.mergeServerArticleReads(response.readArticleIds);
+    }
+    if (sentReadIds.length > 0) {
+      await databaseService.markArticleReadsAsSynced(sentReadIds);
     }
   }
 

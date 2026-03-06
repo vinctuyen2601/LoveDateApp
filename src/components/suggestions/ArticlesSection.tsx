@@ -101,6 +101,16 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
 
       {loading ? (
         <LoadingState variant="skeleton" skeletonType="card" skeletonCount={2} />
+      ) : filteredArticles.length === 0 ? (
+        <View style={styles.emptyArticles}>
+          <Ionicons name="newspaper-outline" size={36} color={COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>Chưa có bài viết</Text>
+          <Text style={styles.emptyText}>
+            {selectedCategory === 'all'
+              ? 'Nội dung đang được cập nhật, quay lại sau nhé!'
+              : 'Chưa có bài viết trong danh mục này.'}
+          </Text>
+        </View>
       ) : (
         <ScrollView
           horizontal
@@ -154,11 +164,6 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
               </View>
             </PressableCard>
           ))}
-          {filteredArticles.length === 0 && !loading && (
-            <View style={styles.emptyArticles}>
-              <Text style={styles.emptyText}>Chưa có bài viết</Text>
-            </View>
-          )}
         </ScrollView>
       )}
     </View>
@@ -269,12 +274,21 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   emptyArticles: {
-    padding: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
     alignItems: "center",
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginTop: 4,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textSecondary,
+    textAlign: "center",
   },
 });
 

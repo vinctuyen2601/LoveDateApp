@@ -1,4 +1,4 @@
-import React, { createRef, useRef } from 'react';
+import React, { createRef, useRef, useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '@contexts/AuthContext';
@@ -21,6 +21,7 @@ import AllProductsScreen from '../screens/AllProductsScreen';
 import AllArticlesScreen from '../screens/AllArticlesScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import LocalShopScreen from '../screens/LocalShopScreen';
+import OnboardingOverlay, { checkOnboardingComplete } from '../components/organisms/OnboardingOverlay';
 
 const Stack = createStackNavigator();
 
@@ -36,6 +37,13 @@ export function navigate(name: string, params?: any) {
 const AppNavigator: React.FC = () => {
   const { isLoading } = useAuth();
   const routeNameRef = useRef<string | undefined>(undefined);
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkOnboardingComplete().then(done => {
+      setShowOnboarding(!done);
+    });
+  }, []);
 
   if (isLoading) {
     // Show splash screen while auto-creating anonymous account
@@ -43,6 +51,7 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
+    <>
     <NavigationContainer
       ref={navigationRef}
       onReady={() => {
@@ -190,6 +199,16 @@ const AppNavigator: React.FC = () => {
         />
       </Stack.Navigator>
     </NavigationContainer>
+    {showOnboarding === true && (
+      <OnboardingOverlay
+        onComplete={() => setShowOnboarding(false)}
+        onRegister={() => {
+          setShowOnboarding(false);
+          navigate('Auth');
+        }}
+      />
+    )}
+    </>
   );
 };
 

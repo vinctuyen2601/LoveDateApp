@@ -85,6 +85,7 @@ const TabNavigator: React.FC = () => {
         component={SettingsScreen}
         options={{
           title: 'Cài đặt',
+          headerShown: false,
         }}
       />
     </Tab.Navigator>

@@ -18,7 +18,9 @@ import { Event } from "../types";
 import { COLORS } from '@themes/colors';
 import { CALENDAR_THEME } from '@themes/calendarTheme';
 import { useNavigation } from "@react-navigation/native";
-import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
+import { getFeaturedArticles } from "../data/articles";
+import { getArticles } from "../services/articleService";
+import { databaseService } from "../services/database.service";
 import { getTrendingProducts } from "../services/affiliateProductService";
 import { AffiliateProduct } from "../types";
 import ProductCard from "../components/suggestions/ProductCard";
@@ -244,7 +246,16 @@ const HomeScreen: React.FC = () => {
   const handleMonthChange = (month: DateData) =>
     setCurrentMonth(month.dateString);
 
-  const [articles] = useState(() => getFeaturedArticles(DEFAULT_ARTICLES));
+  const [articles, setArticles] = useState<ReturnType<typeof getFeaturedArticles>>([]);
+
+  React.useEffect(() => {
+    Promise.all([getArticles(), databaseService.getReadArticleIds()])
+      .then(([all, readIds]) => {
+        const readSet = new Set(readIds);
+        setArticles(getFeaturedArticles(all).filter((a) => !readSet.has(a.id)));
+      })
+      .catch(() => {});
+  }, []);
 
   const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
 
@@ -329,14 +340,6 @@ const HomeScreen: React.FC = () => {
       onPress: () => navigation.navigate("MBTISurvey"),
     },
     {
-      id: "add",
-      icon: "calendar-outline" as const,
-      title: "Thêm\nsự kiện",
-      subtitle: "Lên lịch kỷ niệm quan trọng",
-      color: COLORS.info,
-      onPress: handleAddEvent,
-    },
-    {
       id: "activities",
       icon: "map-outline" as const,
       title: "Gợi ý\nhoạt động",
@@ -383,12 +386,12 @@ const HomeScreen: React.FC = () => {
         {/* Upcoming Events */}
         {upcomingEvents.length > 0 && (
           <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.sectionHeader}
-              onPress={() => setIsUpcomingExpanded(!isUpcomingExpanded)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.sectionHeaderLeft}>
+            <View style={styles.sectionHeader}>
+              <TouchableOpacity
+                style={styles.sectionHeaderLeft}
+                onPress={() => setIsUpcomingExpanded(!isUpcomingExpanded)}
+                activeOpacity={0.7}
+              >
                 <Ionicons
                   name="alarm-outline"
                   size={20}
@@ -400,13 +403,16 @@ const HomeScreen: React.FC = () => {
                     {upcomingEvents.length}
                   </Text>
                 </View>
-              </View>
-              <Ionicons
-                name={isUpcomingExpanded ? "chevron-up" : "chevron-down"}
-                size={20}
-                color={COLORS.textSecondary}
-              />
-            </TouchableOpacity>
+                <Ionicons
+                  name={isUpcomingExpanded ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate("EventsList")}>
+                <Text style={styles.viewAllText}>Xem tất cả</Text>
+              </TouchableOpacity>
+            </View>
             {isUpcomingExpanded &&
               upcomingEvents.map((event) => renderEventCard(event))}
           </View>
@@ -598,7 +604,10 @@ const HomeScreen: React.FC = () => {
           {articles.length > 0 && (
             <PressableCard
               style={[styles.featuredArticle, { backgroundColor: articles[0].color }]}
-              onPress={() => navigation.navigate("ArticleDetail", { article: articles[0] })}
+              onPress={() => {
+                databaseService.markArticleRead(articles[0].id).catch(console.error);
+                navigation.navigate("ArticleDetail", { article: articles[0] });
+              }}
             >
               {/* Background image */}
               {articles[0].imageUrl && (
@@ -654,7 +663,10 @@ const HomeScreen: React.FC = () => {
               <PressableCard
                 key={article.id}
                 style={styles.articleCard}
-                onPress={() => navigation.navigate("ArticleDetail", { article })}
+                onPress={() => {
+                  databaseService.markArticleRead(article.id).catch(console.error);
+                  navigation.navigate("ArticleDetail", { article });
+                }}
               >
                 <View style={[styles.articleCardTop, { backgroundColor: article.color }]}>
                   {article.imageUrl ? (
@@ -710,7 +722,7 @@ const HomeScreen: React.FC = () => {
 
       {/* FAB */}
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: 20 + TAB_BAR_HEIGHT + insets.bottom }]}
         onPress={handleAddEvent}
         activeOpacity={0.8}
       >
@@ -1173,7 +1185,6 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 20 + TAB_BAR_HEIGHT,
     width: 56,
     height: 56,
     borderRadius: 28,

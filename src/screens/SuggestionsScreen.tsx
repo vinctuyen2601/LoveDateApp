@@ -21,9 +21,9 @@ import {
   trackArticleView,
   refreshArticles,
 } from "../services/articleService";
+import { databaseService } from "../services/database.service";
 import {
   getTrendingProducts,
-  getExperienceProducts,
 } from "../services/affiliateProductService";
 import { AffiliateProduct } from "../types";
 import { useLazySection } from "../hooks/useLazySection";
@@ -31,10 +31,10 @@ import { LoadingState } from "@components/atoms/LoadingState";
 import HeroBanner from "../components/suggestions/HeroBanner";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
 import ProductCard from "../components/suggestions/ProductCard";
-import ExperienceCard from "../components/suggestions/ExperienceCard";
+// import ExperienceCard from "../components/suggestions/ExperienceCard"; // tạm ẩn
 import OccasionCards from "../components/suggestions/OccasionCard";
 import { useMasterData } from "../contexts/MasterDataContext";
-import BudgetFilter from "../components/suggestions/BudgetFilter";
+// import BudgetFilter from "../components/suggestions/BudgetFilter"; // tạm ẩn
 import SurveyModal from "../components/suggestions/SurveyModal";
 import { logGiftSurveyStart, logGiftSurveyComplete } from "../services/analyticsService";
 import ResultsModal from "../components/suggestions/ResultsModal";
@@ -49,7 +49,7 @@ const SuggestionsScreen: React.FC = () => {
   // Core state
   const [articles, setArticles] = useState<Article[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
-  const [experiences, setExperiences] = useState<AffiliateProduct[]>([]);
+  // const [experiences, setExperiences] = useState<AffiliateProduct[]>([]); // tạm ẩn
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedArticleCategory, setSelectedArticleCategory] = useState<string>("all");
@@ -65,14 +65,14 @@ const SuggestionsScreen: React.FC = () => {
   const showArticles = useLazySection(3);
   const showTrending = useLazySection(4);
   const showOccasions = useLazySection(5);
-  const showBudget = useLazySection(6);
-  const showExperiences = useLazySection(7);
+  // const showBudget = useLazySection(6); // hidden — budget filter tạm ẩn
+  // const showExperiences = useLazySection(7); // hidden — tạm ẩn
 
   // Load data
   useEffect(() => {
     loadArticles();
     loadTrending();
-    loadExperiences();
+    // loadExperiences(); // tạm ẩn
   }, []);
 
   useEffect(() => {
@@ -84,8 +84,12 @@ const SuggestionsScreen: React.FC = () => {
   const loadArticles = async () => {
     try {
       setLoading(true);
-      const fetchedArticles = await getArticles();
-      setArticles(fetchedArticles);
+      const [fetchedArticles, readIds] = await Promise.all([
+        getArticles(),
+        databaseService.getReadArticleIds(),
+      ]);
+      const readSet = new Set(readIds);
+      setArticles(fetchedArticles.filter((a) => !readSet.has(a.id)));
     } catch (error) {
       console.error("Error loading articles:", error);
     } finally {
@@ -104,32 +108,34 @@ const SuggestionsScreen: React.FC = () => {
     }
   };
 
-  const loadExperiences = async () => {
-    try {
-      const fetched = await getExperienceProducts();
-      setExperiences(fetched);
-    } catch (error) {
-      console.error("Error loading experiences:", error);
-    }
-  };
+  // const loadExperiences = async () => { // tạm ẩn
+  //   try {
+  //     const fetched = await getExperienceProducts();
+  //     setExperiences(fetched);
+  //   } catch (error) {
+  //     console.error("Error loading experiences:", error);
+  //   }
+  // };
 
   // Handlers with useCallback
   const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
       setProductsError(null);
-      const [articlesResult, trendingResult, experiencesResult] = await Promise.allSettled([
+      const [articlesResult, trendingResult, readIds] = await Promise.allSettled([
         refreshArticles(),
         getTrendingProducts(),
-        getExperienceProducts(),
+        databaseService.getReadArticleIds(),
       ]);
-      if (articlesResult.status === "fulfilled") setArticles(articlesResult.value);
+      if (articlesResult.status === "fulfilled") {
+        const readSet = new Set(readIds.status === "fulfilled" ? readIds.value : []);
+        setArticles(articlesResult.value.filter((a) => !readSet.has(a.id)));
+      }
       if (trendingResult.status === "fulfilled") {
         setTrendingProducts(trendingResult.value);
       } else {
         setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
       }
-      if (experiencesResult.status === "fulfilled") setExperiences(experiencesResult.value);
     } catch (error) {
       console.error("Error refreshing:", error);
     } finally {
@@ -141,6 +147,7 @@ const SuggestionsScreen: React.FC = () => {
     (article: Article) => {
       navigation.navigate("ArticleDetail", { article });
       trackArticleView(article.id);
+      databaseService.markArticleRead(article.id).catch(console.error);
     },
     [navigation]
   );
@@ -195,12 +202,14 @@ const SuggestionsScreen: React.FC = () => {
         {/* Section 1: Hero Banner */}
         <HeroBanner onStartSurvey={handleStartSurvey} />
 
-        {/* Section 2: Personalization Tools */}
+        {/* Section 2: Tools */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Công cụ cá nhân hóa</Text>
+            <Text style={styles.sectionTitle}>Trắc nghiệm & Khám phá</Text>
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionBadgeText}>3 công cụ</Text>
+            </View>
           </View>
-          {/* ✅ Fix: ScrollView horizontal thay vì View cố định */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -211,24 +220,28 @@ const SuggestionsScreen: React.FC = () => {
               style={[styles.toolCard, { backgroundColor: '#7C3AED' }]}
               onPress={() => navigation.navigate("PersonalitySurvey")}
             >
-              <View style={styles.toolIconWrap}>
-                <Ionicons name="person-circle-outline" size={36} color="rgba(255,255,255,0.9)" />
-              </View>
-              <Text style={styles.toolTitle}>Khảo sát{'\n'}tính cách</Text>
-              <Text style={styles.toolDesc}>Khám phá phong cách yêu thương của bạn</Text>
-              <View style={styles.toolPills}>
-                <View style={styles.toolPill}>
-                  <Ionicons name="help-circle-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>8 câu</Text>
+              <View style={styles.toolTop}>
+                <View style={styles.toolHeader}>
+                  <View style={styles.toolIconWrap}>
+                    <Ionicons name="person-circle-outline" size={32} color="rgba(255,255,255,0.9)" />
+                  </View>
+                  <View style={styles.toolPills}>
+                    <View style={styles.toolPill}>
+                      <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.toolPillText}>8 câu</Text>
+                    </View>
+                    <View style={styles.toolPill}>
+                      <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.toolPillText}>3 phút</Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.toolPill}>
-                  <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>3 phút</Text>
-                </View>
+                <Text style={styles.toolTitle}>Khảo sát tính cách</Text>
+                <Text style={styles.toolDesc}>Khám phá phong cách yêu thương của bạn</Text>
               </View>
               <View style={styles.toolCta}>
-                <Text style={[styles.toolCtaText, { color: '#7C3AED' }]}>Khám phá</Text>
-                <Ionicons name="arrow-forward" size={13} color="#7C3AED" />
+                <Text style={styles.toolCtaText}>Khám phá</Text>
+                <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
               </View>
             </PressableCard>
 
@@ -237,24 +250,28 @@ const SuggestionsScreen: React.FC = () => {
               style={[styles.toolCard, { backgroundColor: '#1A9E6E' }]}
               onPress={() => navigation.navigate("MBTISurvey")}
             >
-              <View style={styles.toolIconWrap}>
-                <Ionicons name="people" size={36} color="rgba(255,255,255,0.9)" />
-              </View>
-              <Text style={styles.toolTitle}>Trắc nghiệm{'\n'}MBTI</Text>
-              <Text style={styles.toolDesc}>Khám phá tính cách và sự tương hợp</Text>
-              <View style={styles.toolPills}>
-                <View style={styles.toolPill}>
-                  <Ionicons name="help-circle-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>40 câu</Text>
+              <View style={styles.toolTop}>
+                <View style={styles.toolHeader}>
+                  <View style={styles.toolIconWrap}>
+                    <Ionicons name="people" size={32} color="rgba(255,255,255,0.9)" />
+                  </View>
+                  <View style={styles.toolPills}>
+                    <View style={styles.toolPill}>
+                      <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.toolPillText}>40 câu</Text>
+                    </View>
+                    <View style={styles.toolPill}>
+                      <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.toolPillText}>10 phút</Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.toolPill}>
-                  <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>10 phút</Text>
-                </View>
+                <Text style={styles.toolTitle}>Trắc nghiệm MBTI</Text>
+                <Text style={styles.toolDesc}>Khám phá tính cách và sự tương hợp</Text>
               </View>
               <View style={styles.toolCta}>
-                <Text style={[styles.toolCtaText, { color: '#1A9E6E' }]}>Bắt đầu</Text>
-                <Ionicons name="arrow-forward" size={13} color="#1A9E6E" />
+                <Text style={styles.toolCtaText}>Bắt đầu</Text>
+                <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
               </View>
             </PressableCard>
 
@@ -263,24 +280,28 @@ const SuggestionsScreen: React.FC = () => {
               style={[styles.toolCard, { backgroundColor: COLORS.secondary }]}
               onPress={() => navigation.navigate("ActivitySuggestions", {})}
             >
-              <View style={styles.toolIconWrap}>
-                <Ionicons name="map-outline" size={36} color="rgba(255,255,255,0.9)" />
-              </View>
-              <Text style={styles.toolTitle}>Gợi ý{'\n'}hoạt động</Text>
-              <Text style={styles.toolDesc}>Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn</Text>
-              <View style={styles.toolPills}>
-                <View style={styles.toolPill}>
-                  <Ionicons name="restaurant-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>Ẩm thực</Text>
+              <View style={styles.toolTop}>
+                <View style={styles.toolHeader}>
+                  <View style={styles.toolIconWrap}>
+                    <Ionicons name="map-outline" size={32} color="rgba(255,255,255,0.9)" />
+                  </View>
+                  <View style={styles.toolPills}>
+                    <View style={styles.toolPill}>
+                      <Ionicons name="restaurant-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.toolPillText}>Ẩm thực</Text>
+                    </View>
+                    <View style={styles.toolPill}>
+                      <Ionicons name="leaf-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Text style={styles.toolPillText}>Spa</Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.toolPill}>
-                  <Ionicons name="leaf-outline" size={11} color="rgba(255,255,255,0.9)" />
-                  <Text style={styles.toolPillText}>Spa</Text>
-                </View>
+                <Text style={styles.toolTitle}>Gợi ý hoạt động</Text>
+                <Text style={styles.toolDesc}>Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn</Text>
               </View>
               <View style={styles.toolCta}>
-                <Text style={[styles.toolCtaText, { color: COLORS.secondary }]}>Khám phá</Text>
-                <Ionicons name="arrow-forward" size={13} color={COLORS.secondary} />
+                <Text style={styles.toolCtaText}>Khám phá</Text>
+                <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
               </View>
             </PressableCard>
           </ScrollView>
@@ -348,43 +369,9 @@ const SuggestionsScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Section 7: Gift by Budget */}
-        {showBudget ? (
-          <BudgetFilter />
-        ) : (
-          <View style={styles.section}>
-            <LoadingState variant="skeleton" skeletonType="list" skeletonCount={2} />
-          </View>
-        )}
+        {/* Section 7: Gift by Budget — tạm ẩn */}
 
-        {/* Section 8: Experience Packages */}
-        {showExperiences ? (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Trải nghiệm cho cặp đôi</Text>
-            </View>
-            {experiences.length === 0 ? (
-              <View style={styles.offlineBanner}>
-                <Ionicons name="compass-outline" size={20} color={COLORS.textSecondary} />
-                <Text style={styles.offlineBannerText}>Chưa có trải nghiệm nào</Text>
-              </View>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScroll}
-              >
-                {experiences.map((exp) => (
-                  <ExperienceCard key={exp.id} product={exp} />
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        ) : (
-          <View style={styles.section}>
-            <LoadingState variant="skeleton" skeletonType="card" skeletonCount={2} />
-          </View>
-        )}
+        {/* Section 8: Experience Packages — tạm ẩn */}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -451,9 +438,19 @@ const styles = StyleSheet.create({
     paddingRight: 24,
     gap: 12,
   },
+  sectionBadge: {
+    backgroundColor: COLORS.primary + '18',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  sectionBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
   toolCard: {
-    // ~46% screen width so 2 cards visible + peek of 3rd
-    width: Math.round((SCREEN_WIDTH - 32 - 12) * 0.52),
+    width: Math.round((SCREEN_WIDTH - 32 - 12) * 0.45),
     borderRadius: 18,
     padding: 16,
     elevation: 4,
@@ -462,34 +459,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
   },
+  toolTop: {
+    marginBottom: 14,
+  },
+  toolHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 14,
+  },
   toolIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
   },
   toolTitle: {
     fontSize: 15,
     fontWeight: "700",
     color: COLORS.white,
-    lineHeight: 20,
+    lineHeight: 21,
+    minHeight: 42,
     marginBottom: 6,
   },
   toolDesc: {
     fontSize: 11,
     color: "rgba(255,255,255,0.8)",
     lineHeight: 15,
-    marginBottom: 12,
     flexShrink: 1,
   },
   toolPills: {
-    flexDirection: "row",
-    gap: 6,
-    marginBottom: 14,
-    flexWrap: "wrap",
+    flexDirection: "column",
+    gap: 5,
+    alignItems: "flex-end",
   },
   toolPill: {
     flexDirection: "row",
@@ -498,7 +502,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 8,
     paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
   toolPillText: {
     fontSize: 10,
@@ -509,14 +513,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    backgroundColor: COLORS.white,
+    gap: 5,
+    backgroundColor: "rgba(255,255,255,0.22)",
     borderRadius: 10,
-    paddingVertical: 8,
+    paddingVertical: 9,
   },
   toolCtaText: {
     fontSize: 13,
     fontWeight: "700",
+    color: COLORS.white,
   },
 
   // Offline / empty state banner

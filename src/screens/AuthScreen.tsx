@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -21,7 +22,8 @@ import { logLogin, logSignUp } from '../services/analyticsService';
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { login, register } = useAuth();
+  const { login, register, isAnonymous } = useAuth();
+  const wasAnonymousRef = useRef(isAnonymous);
 
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -50,6 +52,14 @@ const AuthScreen: React.FC = () => {
       hide.remove();
     };
   }, []);
+
+  // Auto-dismiss khi user chuyển từ anonymous → real (sau khi register/login thành công)
+  useEffect(() => {
+    if (wasAnonymousRef.current && !isAnonymous) {
+      navigation.goBack();
+    }
+    wasAnonymousRef.current = isAnonymous;
+  }, [isAnonymous]);
 
   const markTouched = (field: string) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -135,8 +145,7 @@ const AuthScreen: React.FC = () => {
         await register(email, password, displayName);
         logSignUp('email');
       }
-
-      navigation.goBack();
+      // navigation handled by isAnonymous useEffect above
     } catch (error: any) {
       Alert.alert(
         'Lỗi',
@@ -364,6 +373,16 @@ const AuthScreen: React.FC = () => {
         {/* Padding cuối để scroll không bị khuất khi bàn phím hiện */}
         <View style={styles.bottomPadding} />
       </ScrollView>
+
+      {/* Loading overlay — hiện khi đang chờ API, che toàn bộ form */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>
+            {isLogin ? 'Đang đăng nhập...' : 'Đang tạo tài khoản...'}
+          </Text>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -482,6 +501,19 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 20,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    zIndex: 100,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.textPrimary,
   },
   fieldHint: {
     fontSize: 12,

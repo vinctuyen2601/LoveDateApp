@@ -15,6 +15,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [linkedProviders, setLinkedProviders] = useState<string[]>([]);
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session.user);
         setTokens(session.tokens);
         setIsAuthenticated(true);
+        setIsEmailVerified(session.user.emailVerified || false);
 
         // Check if anonymous
         const anon = await authService.isAnonymous();
@@ -79,6 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setTokens(tokens);
       setIsAuthenticated(true);
       setIsAnonymous(false);
+      setIsEmailVerified(user.emailVerified || false);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -111,6 +114,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(user);
       setTokens(tokens);
       setIsAuthenticated(true);
+      setIsAnonymous(false);
+      setIsEmailVerified(user.emailVerified || false);
     } catch (error) {
       console.error('Register failed:', error);
       throw error;
@@ -128,6 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setTokens(null);
       setIsAuthenticated(false);
       setIsAnonymous(false);
+      setIsEmailVerified(false);
       setLinkedProviders([]);
 
       // Create new anonymous account after deletion
@@ -149,6 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setTokens(null);
       setIsAuthenticated(false);
       setIsAnonymous(false);
+      setIsEmailVerified(false);
       setLinkedProviders([]);
 
       // Create new anonymous account after logout
@@ -236,6 +243,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resendVerificationEmail = async () => {
+    await authService.resendVerificationEmail();
+  };
+
   // 🆕 Update profile (displayName)
   const updateProfile = async (displayName: string) => {
     try {
@@ -285,7 +296,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     isAuthenticated,
     isAnonymous,
+    isEmailVerified,
     linkedProviders: linkedProviders || [], // Ensure it's always an array
+    resendVerificationEmail,
     login,
     loginWithGoogle,
     register,

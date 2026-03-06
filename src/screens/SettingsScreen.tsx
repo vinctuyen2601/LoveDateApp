@@ -12,6 +12,7 @@ import {
   Linking,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -63,17 +64,21 @@ const formatMemberSince = (dateStr: string): string => {
   }
 };
 const SettingsScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const {
     user,
     isAnonymous,
+    isEmailVerified,
     linkedProviders,
     logout,
     updateProfile,
     linkWithEmailPassword,
+    resendVerificationEmail,
   } = useAuth();
   const { showSuccess, showError } = useToast();
 
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [showLinkEmailModal, setShowLinkEmailModal] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
   const [linkPassword, setLinkPassword] = useState("");
@@ -172,6 +177,18 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    try {
+      setIsResendingVerification(true);
+      await resendVerificationEmail();
+      showSuccess('Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.');
+    } catch (error: any) {
+      showError(error.message || 'Không thể gửi email xác thực');
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert(
       "Đăng xuất",
@@ -232,6 +249,11 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Header */}
+      <View style={[styles.screenHeader, { paddingTop: insets.top + 8 }]}>
+        <Text style={styles.screenHeaderTitle}>Cài đặt</Text>
+      </View>
+
       {/* Profile Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
@@ -305,6 +327,28 @@ const SettingsScreen: React.FC = () => {
                 Dữ liệu của bạn chỉ lưu trên thiết bị này. Hãy liên kết với
                 email để không mất dữ liệu khi đổi máy.
               </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Email Verification Banner */}
+        {!isAnonymous && !isEmailVerified && (
+          <View style={styles.verifyCard}>
+            <Ionicons name="mail-unread" size={24} color={COLORS.primary} />
+            <View style={styles.verifyContent}>
+              <Text style={styles.verifyTitle}>Xác thực email của bạn</Text>
+              <Text style={styles.verifyText}>
+                Vui lòng kiểm tra hộp thư và nhấn vào link xác thực để bảo vệ tài khoản.
+              </Text>
+              <TouchableOpacity
+                style={styles.resendBtn}
+                onPress={handleResendVerification}
+                disabled={isResendingVerification}
+              >
+                <Text style={styles.resendBtnText}>
+                  {isResendingVerification ? 'Đang gửi...' : 'Gửi lại email'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -443,25 +487,25 @@ const SettingsScreen: React.FC = () => {
               <>
                 <Text style={styles.fieldLabel}>Màu avatar</Text>
                 <View style={styles.colorPalette}>
-                  {AVATAR_COLORS.map((color) => (
-                    <TouchableOpacity
-                      key={color}
-                      style={[
-                        styles.colorDot,
-                        { backgroundColor: color },
-                        selectedColor === color && styles.colorDotSelected,
-                      ]}
-                      onPress={() => setSelectedColor(color)}
-                    >
-                      {selectedColor === color && (
-                        <Ionicons
-                          name="checkmark"
-                          size={14}
-                          color={COLORS.white}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                  {AVATAR_COLORS.map((color) => {
+                    const isSelected = selectedColor === color;
+                    return (
+                      <TouchableOpacity
+                        key={color}
+                        style={[
+                          styles.colorDot,
+                          { backgroundColor: color },
+                          isSelected ? styles.colorDotSelected : styles.colorDotUnselected,
+                        ]}
+                        onPress={() => setSelectedColor(color)}
+                        activeOpacity={0.8}
+                      >
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={15} color={COLORS.white} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </>
             )}
@@ -638,6 +682,16 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 40,
+  },
+  screenHeader: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: COLORS.background,
+  },
+  screenHeaderTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
   },
   section: {
     marginTop: 20,
@@ -924,15 +978,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   colorDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: "center",
     alignItems: "center",
   },
   colorDotSelected: {
-    borderWidth: 3,
+    borderWidth: 2.5,
     borderColor: COLORS.textPrimary,
+    transform: [{ scale: 1.18 }],
+  },
+  colorDotUnselected: {
+    opacity: 0.5,
+    transform: [{ scale: 0.82 }],
   },
   // Photo avatar
   avatarImage: {
@@ -975,6 +1034,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.error,
     fontWeight: "500",
+  },
+  verifyCard: {
+    flexDirection: "row",
+    backgroundColor: COLORS.primary + "10",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.primary + "30",
+    marginTop: 12,
+  },
+  verifyContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  verifyTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  verifyText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  resendBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+  },
+  resendBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.white,
   },
 });
 

@@ -322,6 +322,13 @@ class AuthService {
   }
 
   /**
+   * Resend email verification
+   */
+  async resendVerificationEmail(): Promise<void> {
+    await apiService.post('/auth/resend-verification', {});
+  }
+
+  /**
    * Delete account permanently
    * Calls backend to delete account, then clears all local data.
    * Works even if backend is unreachable (local-only account).

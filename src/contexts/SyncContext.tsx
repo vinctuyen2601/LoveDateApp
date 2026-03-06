@@ -3,7 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { SyncStatus, SyncConflict, SyncContextValue } from '../types';
 import { syncService } from '../services/sync.service';
 import { contentSyncService } from '../services/contentSync.service';
-import { notificationEnhancedService } from '../services/notificationEnhanced.service';
+import { scheduleUpcomingNotifications } from '../services/notificationScheduler.service';
 import * as DB from '../services/database.service';
 import { useAuth } from './AuthContext';
 import { useEvents } from './EventsContext';
@@ -49,7 +49,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
             // Reschedule all notifications after sync to ensure they're up to date
             try {
               const events = await DB.getAllEvents(db);
-              await notificationEnhancedService.rescheduleAllNotifications(events);
+              await scheduleUpcomingNotifications(events);
               console.log('Notifications rescheduled after sync');
             } catch (error) {
               console.error('Error rescheduling notifications after sync:', error);
