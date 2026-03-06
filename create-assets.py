@@ -68,7 +68,7 @@ def create_splash(filename):
               text, fill='#ffffff', font=font)
 
     # Title
-    title = "Ngày Quan Trọng"
+    title = "Ngày Yêu Thương"
     bbox = draw.textbbox((0, 0), title, font=title_font)
     text_width = bbox[2] - bbox[0]
     draw.text((center_x - text_width // 2, center_y + radius + 100),
