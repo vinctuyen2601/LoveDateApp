@@ -5,17 +5,35 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "REACT_APP_API_DEV_URL": "https://api.ngayyeuthuong.com/api",
+        "REACT_APP_API_PROD_URL": "https://api.ngayyeuthuong.com/api",
+        "REACT_APP_API_TIMEOUT": "90000",
+        "REACT_APP_WEB_URL": "https://ngayyeuthuong.com"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "REACT_APP_API_DEV_URL": "https://api.ngayyeuthuong.com/api",
+        "REACT_APP_API_PROD_URL": "https://api.ngayyeuthuong.com/api",
+        "REACT_APP_API_TIMEOUT": "90000",
+        "REACT_APP_WEB_URL": "https://ngayyeuthuong.com"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "REACT_APP_API_DEV_URL": "https://api.ngayyeuthuong.com/api",
+        "REACT_APP_API_PROD_URL": "https://api.ngayyeuthuong.com/api",
+        "REACT_APP_API_TIMEOUT": "90000",
+        "REACT_APP_WEB_URL": "https://ngayyeuthuong.com"
       }
     }
   },
