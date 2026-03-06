@@ -124,6 +124,7 @@ export interface Event {
   isRecurring: boolean;
   recurrencePattern?: RecurrencePattern; // New: detailed recurrence info
   isDeleted: boolean;
+  isNotificationEnabled: boolean; // Toggle notification for this event
 
   // Sync fields
   localId?: string;
@@ -368,6 +369,7 @@ export interface DatabaseEvent {
   isRecurring: number; // SQLite boolean
   recurrencePattern: string | null; // JSON string
   isDeleted: number; // SQLite boolean
+  isNotificationEnabled: number; // SQLite boolean
   localId: string | null;
   serverId: string | null;
   version: number;
@@ -476,6 +478,7 @@ export interface EventsContextValue {
   getUpcomingEvents: (days?: number) => Event[];
   getEventsByTag: (tag: string) => Event[]; // Changed from getEventsByCategory
   searchEvents: (query: string) => Event[];
+  toggleEventNotification: (id: string) => Promise<void>;
 }
 
 export interface SyncContextValue {

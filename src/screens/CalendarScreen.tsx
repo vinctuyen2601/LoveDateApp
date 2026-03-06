@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,38 +11,78 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
-import { useEvents } from '@contexts/EventsContext';
-import { useSync } from '@contexts/SyncContext';
+import { useEvents } from "@contexts/EventsContext";
+import { useSync } from "@contexts/SyncContext";
 import { Event } from "../types";
-import { COLORS } from '@themes/colors';
-import { CALENDAR_THEME } from '@themes/calendarTheme';
+import { COLORS, getCategoryColor } from "@themes/colors";
+import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { STRINGS } from "../constants/strings";
-import { DateUtils } from '@lib/date.utils';
-import EventCard from "@components/molecules/EventCard";
+import { DateUtils } from "@lib/date.utils";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
-import { EmptyState } from "@components/atoms/EmptyState";
 
 const EVENT_EMOJIS: Record<string, string> = {
-  birthday: '🎂',
-  anniversary: '💑',
-  holiday: '🎉',
-  memorial: '✝️',
-  other: '⭐',
+  birthday: "🎂",
+  anniversary: "💑",
+  holiday: "🎉",
+  memorial: "✝️",
+  other: "⭐",
 };
 
 const SPECIAL_DATES = [
-  { month: 1,  day: 1,  name: 'Năm Mới Dương Lịch',    emoji: '🎉', color: '#F59E0B' },
-  { month: 2,  day: 14, name: 'Ngày Valentine',          emoji: '💝', color: '#E91E63' },
-  { month: 3,  day: 8,  name: 'Ngày Quốc tế Phụ nữ',   emoji: '🌷', color: '#9C27B0' },
-  { month: 3,  day: 14, name: 'Ngày Valentine Trắng',    emoji: '🤍', color: '#64748B' },
-  { month: 4,  day: 30, name: 'Ngày Giải phóng',         emoji: '🇻🇳', color: '#EF4444' },
-  { month: 5,  day: 1,  name: 'Ngày Quốc tế Lao động',  emoji: '🌟', color: '#F97316' },
-  { month: 6,  day: 1,  name: 'Ngày Quốc tế Thiếu nhi', emoji: '🎠', color: '#06B6D4' },
-  { month: 9,  day: 2,  name: 'Ngày Quốc khánh',         emoji: '🇻🇳', color: '#EF4444' },
-  { month: 10, day: 20, name: 'Ngày Phụ nữ Việt Nam',   emoji: '🌸', color: '#EC4899' },
-  { month: 11, day: 20, name: 'Ngày Nhà giáo VN',        emoji: '📚', color: '#10B981' },
-  { month: 12, day: 25, name: 'Giáng Sinh',              emoji: '🎄', color: '#16A34A' },
+  {
+    month: 1,
+    day: 1,
+    name: "Năm Mới Dương Lịch",
+    emoji: "🎉",
+    color: "#F59E0B",
+  },
+  { month: 2, day: 14, name: "Ngày Valentine", emoji: "💝", color: "#E91E63" },
+  {
+    month: 3,
+    day: 8,
+    name: "Ngày Quốc tế Phụ nữ",
+    emoji: "🌷",
+    color: "#9C27B0",
+  },
+  {
+    month: 3,
+    day: 14,
+    name: "Ngày Valentine Trắng",
+    emoji: "🤍",
+    color: "#64748B",
+  },
+  { month: 4, day: 30, name: "Ngày Giải phóng", emoji: "🇻🇳", color: "#EF4444" },
+  {
+    month: 5,
+    day: 1,
+    name: "Ngày Quốc tế Lao động",
+    emoji: "🌟",
+    color: "#F97316",
+  },
+  {
+    month: 6,
+    day: 1,
+    name: "Ngày Quốc tế Thiếu nhi",
+    emoji: "🎠",
+    color: "#06B6D4",
+  },
+  { month: 9, day: 2, name: "Ngày Quốc khánh", emoji: "🇻🇳", color: "#EF4444" },
+  {
+    month: 10,
+    day: 20,
+    name: "Ngày Phụ nữ Việt Nam",
+    emoji: "🌸",
+    color: "#EC4899",
+  },
+  {
+    month: 11,
+    day: 20,
+    name: "Ngày Nhà giáo VN",
+    emoji: "📚",
+    color: "#10B981",
+  },
+  { month: 12, day: 25, name: "Giáng Sinh", emoji: "🎄", color: "#16A34A" },
 ];
 
 const CalendarScreen: React.FC = () => {
@@ -58,7 +98,6 @@ const CalendarScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [currentMonth, setCurrentMonth] = useState<string>(initialDate);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   // Get featured articles
   const [articles] = useState(() => getFeaturedArticles(DEFAULT_ARTICLES));
 
@@ -85,8 +124,8 @@ const CalendarScreen: React.FC = () => {
 
       let markDate: string;
       if (event.isRecurring) {
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
         markDate = `${calYear}-${mm}-${dd}`;
       } else {
         markDate = DateUtils.toLocalDateString(date);
@@ -95,14 +134,14 @@ const CalendarScreen: React.FC = () => {
       if (!marked[markDate]) {
         marked[markDate] = { marked: true, emojis: [] };
       }
-      const primaryTag = event.tags[0] || 'other';
-      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? '⭐');
+      const primaryTag = event.tags[0] || "other";
+      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? "⭐");
     });
 
     // Merge special dates
     SPECIAL_DATES.forEach((sd) => {
-      const mm = String(sd.month).padStart(2, '0');
-      const dd = String(sd.day).padStart(2, '0');
+      const mm = String(sd.month).padStart(2, "0");
+      const dd = String(sd.day).padStart(2, "0");
       const dateKey = `${calYear}-${mm}-${dd}`;
       if (!marked[dateKey]) marked[dateKey] = { emojis: [] };
       if (!marked[dateKey].emojis) marked[dateKey].emojis = [];
@@ -120,59 +159,88 @@ const CalendarScreen: React.FC = () => {
     return marked;
   }, [events, selectedDate, currentMonth]);
 
-  // Get events for selected date
+  // Get events for selected date (recurring events match by month+day)
   const selectedDateEvents = useMemo(() => {
+    const selDate = new Date(selectedDate);
+    if (isNaN(selDate.getTime())) return [];
+    const selMonth = selDate.getMonth();
+    const selDay = selDate.getDate();
+
     return events
       .filter((event) => {
         if (!event.eventDate) return false;
+        const d = new Date(event.eventDate);
+        if (isNaN(d.getTime())) return false;
 
-        const date = new Date(event.eventDate);
-        if (isNaN(date.getTime())) return false;
-
-        const eventDate = DateUtils.toLocalDateString(date);
-        return eventDate === selectedDate;
+        if (event.isRecurring) {
+          // Recurring: match by month + day only
+          return d.getMonth() === selMonth && d.getDate() === selDay;
+        }
+        // One-time: exact date match
+        return DateUtils.toLocalDateString(d) === selectedDate;
       })
-      .sort((a, b) => {
-        const dateA = new Date(a.eventDate).getTime();
-        const dateB = new Date(b.eventDate).getTime();
-        return dateA - dateB;
-      });
+      .sort(
+        (a, b) =>
+          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+      );
   }, [events, selectedDate]);
 
   // Get month statistics
   const monthStats = useMemo(() => {
     const monthDate = new Date(currentMonth);
     const year = monthDate.getFullYear();
-    const month = monthDate.getMonth();
+    const month = monthDate.getMonth(); // 0-based
 
+    // User events: recurring matches by month only, one-time by year+month
     const monthEvents = events.filter((event) => {
       if (!event.eventDate) return false;
-
-      const eventDate = new Date(event.eventDate);
-      if (isNaN(eventDate.getTime())) return false;
-
-      return eventDate.getFullYear() === year && eventDate.getMonth() === month;
+      const d = new Date(event.eventDate);
+      if (isNaN(d.getTime())) return false;
+      if (event.isRecurring) return d.getMonth() === month;
+      return d.getFullYear() === year && d.getMonth() === month;
     });
+
+    // Special dates in this month
+    const specialInMonth = SPECIAL_DATES.filter((sd) => sd.month === month + 1);
+
+    const totalCount = monthEvents.length + specialInMonth.length;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayDay = today.getDate();
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear();
+    const isCurrentMonth = year === todayYear && month === todayMonth;
 
-    const upcoming = monthEvents.filter((event) => {
-      const eventDate = new Date(event.eventDate);
-      eventDate.setHours(0, 0, 0, 0);
-      return eventDate >= today;
+    // Upcoming/past for user events — compare using calendar day in month
+    const upcomingUserEvents = monthEvents.filter((event) => {
+      const d = new Date(event.eventDate);
+      if (!isCurrentMonth) return month > todayMonth || year > todayYear;
+      const eventDayInMonth = new Date(year, month, d.getDate());
+      eventDayInMonth.setHours(0, 0, 0, 0);
+      return eventDayInMonth >= today;
     });
 
-    const past = monthEvents.filter((event) => {
-      const eventDate = new Date(event.eventDate);
-      eventDate.setHours(0, 0, 0, 0);
-      return eventDate < today;
-    });
+    const pastUserEvents = monthEvents.length - upcomingUserEvents.length;
+
+    // Upcoming/past for special dates
+    let upcomingSpecial = 0;
+    let pastSpecial = 0;
+    if (isCurrentMonth) {
+      specialInMonth.forEach((sd) => {
+        if (sd.day >= todayDay) upcomingSpecial++;
+        else pastSpecial++;
+      });
+    } else if (month > todayMonth || year > todayYear) {
+      upcomingSpecial = specialInMonth.length;
+    } else {
+      pastSpecial = specialInMonth.length;
+    }
 
     return {
-      total: monthEvents.length,
-      upcoming: upcoming.length,
-      past: past.length,
+      total: totalCount,
+      upcoming: upcomingUserEvents.length + upcomingSpecial,
+      past: pastUserEvents + pastSpecial,
     };
   }, [events, currentMonth]);
 
@@ -234,196 +302,364 @@ const CalendarScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Header with Month Stats */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="calendar" size={28} color={COLORS.primary} />
-            <Text style={styles.headerTitle}>Lịch sự kiện</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.todayButton}
-            onPress={() =>
-              setSelectedDate(DateUtils.getTodayString())
-            }
-          >
-            <Ionicons name="today" size={20} color={COLORS.white} />
-            <Text style={styles.todayButtonText}>Hôm nay</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Month Statistics */}
-        <View style={styles.statsContainer}>
-          <TouchableOpacity
-            style={styles.statItem}
-            onPress={() =>
-              navigation.navigate('EventsList', {
-                filter: 'all',
-                title: 'Tất cả sự kiện',
-              })
-            }
-          >
-            <Text style={styles.statValue}>{events.length}</Text>
-            <Text style={styles.statLabel}>Tổng số</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.statItem, styles.statItemBorder]}
-            onPress={() =>
-              navigation.navigate('EventsList', {
-                filter: 'upcoming',
-                title: 'Sự kiện sắp tới',
-                month: currentMonth,
-              })
-            }
-          >
-            <Text style={[styles.statValue, { color: COLORS.success }]}>
-              {monthStats.upcoming}
-            </Text>
-            <Text style={styles.statLabel}>Sắp tới</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.statItem}
-            onPress={() =>
-              navigation.navigate('EventsList', {
-                filter: 'past',
-                title: 'Sự kiện đã qua',
-                month: currentMonth,
-              })
-            }
-          >
-            <Text style={[styles.statValue, { color: COLORS.textSecondary }]}>
-              {monthStats.past}
-            </Text>
-            <Text style={styles.statLabel}>Đã qua</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <ScrollView
-        style={styles.content}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        {/* Calendar */}
-        <View style={styles.calendarContainer}>
-          <Calendar
-            current={currentMonth}
-            onDayPress={handleDayPress}
-            onMonthChange={handleMonthChange}
-            markedDates={markedDates}
-            theme={CALENDAR_THEME}
-            enableSwipeMonths={true}
-            hideExtraDays={false}
-            firstDay={1}
-            renderArrow={(direction: string) => (
-              <Ionicons
-                name={direction === "left" ? "chevron-back" : "chevron-forward"}
-                size={20}
-                color={COLORS.primary}
-              />
-            )}
-            dayComponent={({ date, state, marking }: any) => {
-              const isSelected = !!marking?.selected;
-              const isToday = state === 'today';
-              const isDisabled = state === 'disabled';
-              const emojis: string[] = marking?.emojis ?? [];
-
-              return (
-                <TouchableOpacity
-                  onPress={() => date && handleDayPress(date)}
-                  activeOpacity={0.7}
-                  style={styles.dayCell}
-                >
-                  <View
-                    style={[
-                      styles.dayNumberWrap,
-                      isSelected && styles.dayNumberSelected,
-                      isToday && !isSelected && styles.dayNumberToday,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayNumberText,
-                        isToday && !isSelected && styles.dayTextToday,
-                        isSelected && styles.dayTextSelected,
-                        isDisabled && styles.dayTextDisabled,
-                      ]}
-                    >
-                      {date?.day}
-                    </Text>
-                  </View>
-
-                  {emojis.length > 0 ? (
-                    <View style={styles.dayEmojisRow}>
-                      {emojis.slice(0, 2).map((e, i) => (
-                        <Text key={i} style={styles.dayEmoji}>{e}</Text>
-                      ))}
-                    </View>
-                  ) : (
-                    <View style={styles.dayPlaceholder} />
-                  )}
-                </TouchableOpacity>
-              );
-            }}
-          />
-        </View>
-
-        {/* Selected Date Section */}
-        <View style={styles.selectedDateContainer}>
-          <View style={styles.selectedDateHeader}>
-            <View style={styles.selectedDateInfo}>
-              {isToday(selectedDate) && (
-                <View style={styles.todayBadge}>
-                  <Text style={styles.todayBadgeText}>HÔM NAY</Text>
-                </View>
-              )}
-              <Text style={styles.selectedDateText}>
-                {formatSelectedDate()}
-              </Text>
-            </View>
-            <View style={styles.eventCount}>
-              <Text style={styles.eventCountText}>
-                {selectedDateEvents.length}
-              </Text>
-              <Text style={styles.eventCountLabel}>sự kiện</Text>
-            </View>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <View style={styles.headerContent}>
+            {/* <View style={styles.headerLeft}>
+            <Ionicons name="calendar" size={28} color={COLORS.primary} />
+            <Text style={styles.headerTitle}>Quản lý các ngày quan trọng</Text>
           </View>
 
-          {/* Events List */}
-          {selectedDateEvents.length > 0 ? (
-            <View style={styles.eventsList}>
-              {selectedDateEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  onPress={() => handleEventPress(event)}
-                  onDelete={() => handleEventDelete(event)}
-                />
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              icon="calendar-outline"
-              title="Không có sự kiện nào"
-              subtitle="Chưa có sự kiện cho ngày này"
-              actionLabel="Thêm sự kiện cho ngày này"
-              onAction={() => navigation.navigate("AddEvent", { prefillDate: selectedDate })}
-              iconColor={COLORS.primary}
-            />
-          )}
+          <TouchableOpacity
+            style={styles.todayButton}
+            onPress={() => setSelectedDate(DateUtils.getTodayString())}
+          >
+            <Ionicons name="today" size={20} color={COLORS.white} />
+            <Text style={styles.todayButtonText}>Hôm nay</Text>
+          </TouchableOpacity> */}
+          </View>
+
+          {/* Section header: Sự kiện + Xem tất cả */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Sự kiện</Text>
+            <TouchableOpacity
+              style={styles.viewAllLink}
+              onPress={() =>
+                navigation.navigate("EventsList", {
+                  filter: "all",
+                  title: "Tất cả sự kiện",
+                })
+              }
+            >
+              <Text style={styles.viewAllLinkText}>
+                Tất cả ({events.length})
+              </Text>
+              <Ionicons
+                name="chevron-forward"
+                size={14}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Month stats chips */}
+          <View style={styles.statsChips}>
+            <TouchableOpacity
+              style={styles.statChip}
+              onPress={() =>
+                navigation.navigate("EventsList", {
+                  filter: "all",
+                  title: "Sự kiện trong tháng",
+                  month: currentMonth,
+                })
+              }
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color={COLORS.primary}
+              />
+              <Text style={styles.statChipValue}>{monthStats.total}</Text>
+              <Text style={styles.statChipLabel}>trong tháng</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statChip}
+              onPress={() =>
+                navigation.navigate("EventsList", {
+                  filter: "upcoming",
+                  title: "Sắp tới trong tháng",
+                  month: currentMonth,
+                })
+              }
+            >
+              <Ionicons
+                name="arrow-up-circle-outline"
+                size={14}
+                color={COLORS.success}
+              />
+              <Text style={[styles.statChipValue, { color: COLORS.success }]}>
+                {monthStats.upcoming}
+              </Text>
+              <Text style={styles.statChipLabel}>sắp tới</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statChip}
+              onPress={() =>
+                navigation.navigate("EventsList", {
+                  filter: "past",
+                  title: "Đã qua trong tháng",
+                  month: currentMonth,
+                })
+              }
+            >
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color={COLORS.textSecondary}
+              />
+              <Text
+                style={[styles.statChipValue, { color: COLORS.textSecondary }]}
+              >
+                {monthStats.past}
+              </Text>
+              <Text style={styles.statChipLabel}>đã qua</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Featured Articles */}
-        <View style={styles.articlesSection}>
+        <View style={styles.content}>
+          {/* Selected Date Section */}
+          <View style={styles.selectedDateContainer}>
+            <View style={styles.selectedDateHeader}>
+              <View style={styles.selectedDateLeft}>
+                {isToday(selectedDate) && (
+                  <View style={styles.todayBadge}>
+                    <Text style={styles.todayBadgeText}>Hôm nay</Text>
+                  </View>
+                )}
+                <Text style={styles.selectedDateText}>
+                  {formatSelectedDate()}
+                </Text>
+              </View>
+              {selectedDateEvents.length > 0 && (
+                <View style={styles.eventCountBadge}>
+                  <Text style={styles.eventCountBadgeText}>
+                    {selectedDateEvents.length} sự kiện
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Events List */}
+            {selectedDateEvents.length > 0 ? (
+              <View style={styles.eventsList}>
+                {selectedDateEvents.map((event) => {
+                  const primaryTag = event.tags?.[0] || "other";
+                  const tagColor = getCategoryColor(primaryTag);
+                  const tagLabel =
+                    primaryTag === "birthday"
+                      ? "Sinh nhật"
+                      : primaryTag === "anniversary"
+                      ? "Kỷ niệm"
+                      : primaryTag === "holiday"
+                      ? "Ngày lễ"
+                      : primaryTag === "memorial"
+                      ? "Tưởng niệm"
+                      : "Khác";
+                  const tagIcon: keyof typeof Ionicons.glyphMap =
+                    primaryTag === "birthday"
+                      ? "gift"
+                      : primaryTag === "anniversary"
+                      ? "heart"
+                      : primaryTag === "holiday"
+                      ? "star"
+                      : "calendar";
+
+                  return (
+                    <TouchableOpacity
+                      key={event.id}
+                      style={styles.calEventCard}
+                      activeOpacity={0.7}
+                      onPress={() => handleEventPress(event)}
+                    >
+                      <View
+                        style={[
+                          styles.calEventAccent,
+                          { backgroundColor: tagColor },
+                        ]}
+                      />
+                      <View style={styles.calEventBody}>
+                        <View style={styles.calEventRow}>
+                          <View
+                            style={[
+                              styles.calEventIcon,
+                              { backgroundColor: tagColor + "15" },
+                            ]}
+                          >
+                            <Ionicons
+                              name={tagIcon}
+                              size={22}
+                              color={tagColor}
+                            />
+                          </View>
+                          <View style={styles.calEventContent}>
+                            <Text
+                              style={styles.calEventTitle}
+                              numberOfLines={1}
+                            >
+                              {event.title}
+                            </Text>
+                            <View style={styles.calEventMeta}>
+                              <Text style={styles.calEventDate}>
+                                {DateUtils.getEventDateDisplay(event.eventDate)}
+                                {event.isLunarCalendar ? " (ÂL)" : ""}
+                              </Text>
+                              <View style={styles.calEventDot} />
+                              <View
+                                style={[
+                                  styles.calEventTag,
+                                  { backgroundColor: tagColor + "15" },
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.calEventTagText,
+                                    { color: tagColor },
+                                  ]}
+                                >
+                                  {tagLabel}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color={COLORS.textLight}
+                          />
+                        </View>
+                        {/* Bottom row: badges */}
+                        <View style={styles.calEventBadges}>
+                          {event.isRecurring && (
+                            <View style={styles.calEventBadge}>
+                              <Ionicons
+                                name="repeat"
+                                size={12}
+                                color={COLORS.textSecondary}
+                              />
+                              <Text style={styles.calEventBadgeText}>
+                                Hàng năm
+                              </Text>
+                            </View>
+                          )}
+                          {event.isNotificationEnabled === false && (
+                            <View style={styles.calEventBadge}>
+                              <Ionicons
+                                name="notifications-off-outline"
+                                size={12}
+                                color={COLORS.textLight}
+                              />
+                              <Text
+                                style={[
+                                  styles.calEventBadgeText,
+                                  { color: COLORS.textLight },
+                                ]}
+                              >
+                                Tắt TB
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={styles.emptyDateState}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={40}
+                  color={COLORS.textLight}
+                />
+                <Text style={styles.emptyDateText}>Chưa có sự kiện</Text>
+                <TouchableOpacity
+                  style={styles.emptyDateAction}
+                  onPress={() =>
+                    navigation.navigate("AddEvent", {
+                      prefillDate: selectedDate,
+                    })
+                  }
+                >
+                  <Ionicons name="add" size={16} color={COLORS.primary} />
+                  <Text style={styles.emptyDateActionText}>Thêm sự kiện</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Calendar */}
+          <View style={styles.calendarContainer}>
+            <Calendar
+              current={currentMonth}
+              onDayPress={handleDayPress}
+              onMonthChange={handleMonthChange}
+              markedDates={markedDates}
+              theme={CALENDAR_THEME}
+              enableSwipeMonths={true}
+              hideExtraDays={false}
+              firstDay={1}
+              renderArrow={(direction: string) => (
+                <Ionicons
+                  name={
+                    direction === "left" ? "chevron-back" : "chevron-forward"
+                  }
+                  size={20}
+                  color={COLORS.primary}
+                />
+              )}
+              dayComponent={({ date, state, marking }: any) => {
+                const isSelected = !!marking?.selected;
+                const isToday = state === "today";
+                const isDisabled = state === "disabled";
+                const emojis: string[] = marking?.emojis ?? [];
+
+                return (
+                  <TouchableOpacity
+                    onPress={() => date && handleDayPress(date)}
+                    activeOpacity={0.7}
+                    style={styles.dayCell}
+                  >
+                    <View
+                      style={[
+                        styles.dayNumberWrap,
+                        isSelected && styles.dayNumberSelected,
+                        isToday && !isSelected && styles.dayNumberToday,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayNumberText,
+                          isToday && !isSelected && styles.dayTextToday,
+                          isSelected && styles.dayTextSelected,
+                          isDisabled && styles.dayTextDisabled,
+                        ]}
+                      >
+                        {date?.day}
+                      </Text>
+                    </View>
+
+                    {emojis.length > 0 ? (
+                      <View style={styles.dayEmojisRow}>
+                        {emojis.slice(0, 2).map((e, i) => (
+                          <Text key={i} style={styles.dayEmoji}>
+                            {e}
+                          </Text>
+                        ))}
+                      </View>
+                    ) : (
+                      <View style={styles.dayPlaceholder} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+
+          {/* Featured Articles */}
+          {/* <View style={styles.articlesSection}>
           <View style={styles.articlesSectionHeader}>
-            <Text style={styles.sectionTitle}>✨ Bài viết nổi bật</Text>
+            <Text style={styles.articlesSectionTitle}>✨ Bài viết nổi bật</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate("Suggestions")}
             >
-              <Text style={styles.viewAllText}>Xem tất cả</Text>
+              <Text style={styles.articlesViewAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
 
@@ -472,16 +708,17 @@ const CalendarScreen: React.FC = () => {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
+        </View> */}
 
-        {/* Bottom Spacing */}
-        <View style={{ height: 40 }} />
+          {/* Bottom Spacing */}
+          <View style={{ height: 40 }} />
+        </View>
       </ScrollView>
 
       {/* Floating Action Button */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('AddEvent')}
+        onPress={() => navigation.navigate("AddEvent")}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color={COLORS.white} />
@@ -496,16 +733,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary + "10",
     paddingTop: 0,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    marginBottom: 5,
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: COLORS.primary + "50",
   },
   headerWithBanner: {
     paddingTop: 0,
@@ -515,7 +750,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   headerLeft: {
     flexDirection: "row",
@@ -541,29 +776,54 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 4,
   },
-  statsContainer: {
+  sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 8,
-  },
-  statItem: {
-    flex: 1,
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 10,
   },
-  statItemBorder: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: COLORS.border,
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "bold",
+  viewAllLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  viewAllLinkText: {
+    fontSize: 13,
+    fontWeight: "600",
     color: COLORS.primary,
   },
-  statLabel: {
-    fontSize: 12,
+  statsChips: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    gap: 8,
+    marginBottom: 8,
+  },
+  statChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  statChipValue: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+  statChipLabel: {
+    fontSize: 11,
     color: COLORS.textSecondary,
-    marginTop: 4,
   },
   content: {
     flex: 1,
@@ -582,8 +842,8 @@ const styles = StyleSheet.create({
   },
   // Custom day cell (mirrors HomeScreen)
   dayCell: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    alignItems: "center",
+    justifyContent: "flex-start",
     paddingBottom: 4,
     minHeight: 52,
     width: 36,
@@ -592,8 +852,8 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayNumberSelected: {
     backgroundColor: COLORS.primary,
@@ -605,21 +865,21 @@ const styles = StyleSheet.create({
   dayNumberText: {
     fontSize: 14,
     color: COLORS.textPrimary,
-    fontWeight: '400',
+    fontWeight: "400",
   },
   dayTextToday: {
     color: COLORS.primary,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   dayTextSelected: {
     color: COLORS.white,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   dayTextDisabled: {
     color: COLORS.textLight,
   },
   dayEmojisRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 1,
   },
   dayEmoji: {
@@ -634,63 +894,159 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     marginTop: 8,
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
     elevation: 2,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
   selectedDateHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: COLORS.primaryLight,
-    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: COLORS.border,
   },
-  selectedDateInfo: {
+  selectedDateLeft: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   todayBadge: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignSelf: "flex-start",
-    marginBottom: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   todayBadgeText: {
     color: COLORS.white,
-    fontSize: 10,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
+    fontSize: 11,
+    fontWeight: "700",
   },
   selectedDateText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: COLORS.textPrimary,
   },
-  eventCount: {
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  eventCountBadge: {
+    backgroundColor: COLORS.primary + "12",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
-  eventCountText: {
-    fontSize: 24,
-    fontWeight: "bold",
+  eventCountBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
     color: COLORS.primary,
-  },
-  eventCountLabel: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
   },
   eventsList: {
     padding: 8,
+    gap: 6,
+  },
+  calEventCard: {
+    flexDirection: "row",
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  calEventAccent: {
+    width: 4,
+    alignSelf: "stretch",
+  },
+  calEventBody: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingRight: 14,
+  },
+  calEventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  calEventIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 12,
+  },
+  calEventContent: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  calEventTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: 3,
+  },
+  calEventMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  calEventDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  calEventDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: COLORS.textLight,
+  },
+  calEventTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  calEventTagText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  calEventBadges: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 6,
+    marginLeft: 64,
+  },
+  calEventBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  calEventBadgeText: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+  },
+  emptyDateState: {
+    alignItems: "center",
+    paddingVertical: 28,
+    gap: 8,
+  },
+  emptyDateText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  emptyDateAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary + "12",
+  },
+  emptyDateActionText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.primary,
   },
   emptyContainer: {
     alignItems: "center",
@@ -736,12 +1092,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
   },
-  sectionTitle: {
+  articlesSectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: COLORS.textPrimary,
   },
-  viewAllText: {
+  articlesViewAllText: {
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: "600",
@@ -792,15 +1148,15 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 24,
     width: 60,
     height: 60,
     borderRadius: 30,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 6,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },

@@ -68,7 +68,7 @@ export const STRINGS = {
   countdown_seconds: "giây",
   countdown_remaining: "còn lại",
   countdown_passed: "đã qua",
-  countdown_today: "Hôm nay!",
+  countdown_today: "Hôm nay",
 
   // Reminders
   reminder_same_day: "Trong ngày",
@@ -169,7 +169,10 @@ export const STRINGS = {
 };
 
 // Helper function for string interpolation
-export const formatString = (template: string, values: Record<string, any>): string => {
+export const formatString = (
+  template: string,
+  values: Record<string, any>
+): string => {
   return template.replace(/\{(\w+)\}/g, (match, key) => {
     return values[key] !== undefined ? String(values[key]) : match;
   });

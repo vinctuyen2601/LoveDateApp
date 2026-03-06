@@ -105,7 +105,10 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister }) => {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
+  const dismissedRef = useRef(false);
   const dismiss = (callback?: () => void) => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 280,
@@ -114,6 +117,11 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister }) => {
       onComplete();
       callback?.();
     });
+    // Safety fallback if animation callback doesn't fire
+    setTimeout(() => {
+      onComplete();
+      callback?.();
+    }, 350);
   };
 
   const handleNext = () => {

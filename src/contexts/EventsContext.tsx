@@ -82,6 +82,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         isRecurring: formData.isRecurring,
         recurrencePattern: formData.recurrencePattern,
         isDeleted: false,
+        isNotificationEnabled: true,
         localId,
         serverId: undefined,
         version: Date.now(),
@@ -205,6 +206,30 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     );
   }, [events]);
 
+  const toggleEventNotification = async (id: string): Promise<void> => {
+    try {
+      const event = events.find(e => e.id === id);
+      if (!event) return;
+
+      const updates: Partial<Event> = {
+        isNotificationEnabled: !event.isNotificationEnabled,
+        needsSync: true,
+        version: Date.now(),
+      };
+
+      await DB.updateEvent(db, id, updates);
+      await refreshAndReschedule();
+
+      authService.isAnonymous().then(isAnon => {
+        if (!isAnon) syncService.sync().catch(err => console.warn('Toggle notification sync failed:', err));
+      });
+    } catch (err: any) {
+      console.error('Failed to toggle notification:', err);
+      setError(err.message || 'Failed to toggle notification');
+      throw err;
+    }
+  };
+
   const value: EventsContextValue = {
     events,
     isLoading,
@@ -217,6 +242,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     getUpcomingEvents,
     getEventsByTag,
     searchEvents,
+    toggleEventNotification,
   };
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;

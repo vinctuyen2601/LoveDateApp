@@ -11,6 +11,7 @@ import {
   Modal,
   Linking,
   Platform,
+  Switch,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,6 +23,13 @@ import { useToast } from "../contexts/ToastContext";
 import { syncService } from "../services/sync.service";
 import { COLORS } from "@themes/colors";
 import { APP_VERSION } from "../constants/config";
+import {
+  SYSTEM_SPECIAL_DATES,
+  getMutedSpecialDates,
+  toggleMutedSpecialDate,
+  scheduleUpcomingNotifications,
+} from "../services/notificationScheduler.service";
+import { useEvents } from "@contexts/EventsContext";
 
 const AVATAR_COLOR_KEY = "@user_avatar_color";
 const AVATAR_PHOTO_KEY = "@user_avatar_photo";
@@ -77,6 +85,27 @@ const SettingsScreen: React.FC = () => {
     resendVerificationEmail,
   } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { events } = useEvents();
+
+  // Special dates notification state
+  const [showSpecialDates, setShowSpecialDates] = useState(false);
+  const [mutedSpecialDates, setMutedSpecialDates] = useState<string[]>([]);
+
+  useEffect(() => {
+    getMutedSpecialDates().then(setMutedSpecialDates);
+  }, []);
+
+  const handleToggleSpecialDate = async (id: string) => {
+    const nowMuted = await toggleMutedSpecialDate(id);
+    setMutedSpecialDates(prev =>
+      nowMuted ? [...prev, id] : prev.filter(x => x !== id)
+    );
+    try {
+      await scheduleUpcomingNotifications(events);
+    } catch (e) {
+      console.warn('Failed to reschedule after toggle:', e);
+    }
+  };
 
   const [isResendingVerification, setIsResendingVerification] = useState(false);
   const [showLinkEmailModal, setShowLinkEmailModal] = useState(false);
@@ -389,6 +418,58 @@ const SettingsScreen: React.FC = () => {
         />
       </View>
       */}
+
+      {/* Notification Settings */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Thông báo</Text>
+
+        <TouchableOpacity
+          style={styles.settingItem}
+          onPress={() => setShowSpecialDates(!showSpecialDates)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.settingLeft}>
+            <View style={styles.iconContainer}>
+              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+            </View>
+            <View style={styles.settingText}>
+              <Text style={styles.settingTitle}>Ngày đặc biệt</Text>
+              <Text style={styles.settingSubtitle}>
+                {mutedSpecialDates.length > 0
+                  ? `${SYSTEM_SPECIAL_DATES.length - mutedSpecialDates.length}/${SYSTEM_SPECIAL_DATES.length} đang bật`
+                  : 'Tất cả đang bật'}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name={showSpecialDates ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={COLORS.textSecondary}
+          />
+        </TouchableOpacity>
+
+        {showSpecialDates && (
+          <View style={styles.specialDatesContainer}>
+            {SYSTEM_SPECIAL_DATES.map((sd) => {
+              const isMuted = mutedSpecialDates.includes(sd.id);
+              return (
+                <View key={sd.id} style={styles.specialDateRow}>
+                  <Text style={styles.specialDateIcon}>{sd.icon}</Text>
+                  <Text style={[styles.specialDateName, isMuted && styles.specialDateMuted]}>
+                    {sd.title}
+                  </Text>
+                  <Switch
+                    value={!isMuted}
+                    onValueChange={() => handleToggleSpecialDate(sd.id)}
+                    trackColor={{ false: COLORS.border, true: COLORS.primary + '60' }}
+                    thumbColor={!isMuted ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
 
       {/* App Info */}
       <View style={styles.section}>
@@ -813,6 +894,32 @@ const styles = StyleSheet.create({
   settingSubtitleLinked: {
     color: COLORS.success,
     fontWeight: "500",
+  },
+  specialDatesContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  specialDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border,
+  },
+  specialDateIcon: {
+    fontSize: 20,
+    marginRight: 10,
+    width: 28,
+    textAlign: "center",
+  },
+  specialDateName: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+  },
+  specialDateMuted: {
+    color: COLORS.textLight,
+    textDecorationLine: "line-through",
   },
   settingRight: {
     flexDirection: "row",

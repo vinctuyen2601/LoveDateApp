@@ -195,6 +195,12 @@ class NotificationEnhancedService {
       return { totalScheduled: 0, totalFailed: 0 };
     }
 
+    // Skip if notification is disabled for this event
+    if (event.isNotificationEnabled === false) {
+      await NotificationUtils.cancelEventNotifications(event.id);
+      return { totalScheduled: 0, totalFailed: 0 };
+    }
+
     try {
       // Cancel existing notifications for this event
       await NotificationUtils.cancelEventNotifications(event.id);

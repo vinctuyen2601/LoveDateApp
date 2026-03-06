@@ -14,12 +14,12 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar, DateData } from "react-native-calendars";
-import { useEvents } from '@contexts/EventsContext';
-import { useSync } from '@contexts/SyncContext';
-import { useNotification } from '@contexts/NotificationContext';
+import { useEvents } from "@contexts/EventsContext";
+import { useSync } from "@contexts/SyncContext";
+import { useNotification } from "@contexts/NotificationContext";
 import { Event } from "../types";
-import { COLORS } from '@themes/colors';
-import { CALENDAR_THEME } from '@themes/calendarTheme';
+import { COLORS } from "@themes/colors";
+import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles } from "../data/articles";
 import { getArticles } from "../services/articleService";
@@ -27,9 +27,9 @@ import { databaseService } from "../services/database.service";
 import { getTrendingProducts } from "../services/affiliateProductService";
 import { AffiliateProduct } from "../types";
 import ProductCard from "../components/suggestions/ProductCard";
-import { format, addDays } from "date-fns";
+import { format, addDays, differenceInCalendarDays } from "date-fns";
 import { vi } from "date-fns/locale";
-import { DateUtils } from '@lib/date.utils';
+import { DateUtils } from "@lib/date.utils";
 import {
   BirthdayIcon,
   AnniversaryIcon,
@@ -58,34 +58,111 @@ const getEventIcon = (primaryTag: string) => {
 };
 
 const CATEGORY_NAMES: Record<string, string> = {
-  gifts: 'Quà tặng',
-  dates: 'Hẹn hò',
-  communication: 'Giao tiếp',
-  zodiac: 'Cung hoàng đạo',
-  personality: 'Tính cách',
+  gifts: "Quà tặng",
+  dates: "Hẹn hò",
+  communication: "Giao tiếp",
+  zodiac: "Cung hoàng đạo",
+  personality: "Tính cách",
 };
 
 const EVENT_EMOJIS: Record<string, string> = {
-  birthday: '🎂',
-  anniversary: '💑',
-  holiday: '🎉',
-  memorial: '✝️',
-  other: '⭐',
+  birthday: "🎂",
+  anniversary: "💑",
+  holiday: "🎉",
+  memorial: "✝️",
+  other: "⭐",
 };
 
 // Ngày đặc biệt cố định hàng năm (Gregorian)
 const SPECIAL_DATES = [
-  { month: 1,  day: 1,  name: 'Năm Mới Dương Lịch',   emoji: '🎉', color: '#F59E0B', hint: 'Chúc mừng năm mới!' },
-  { month: 2,  day: 14, name: 'Ngày Valentine',        emoji: '💝', color: '#E91E63', hint: 'Ngày của tình yêu' },
-  { month: 3,  day: 8,  name: 'Ngày Quốc tế Phụ nữ',  emoji: '🌷', color: '#9C27B0', hint: 'Tôn vinh những người phụ nữ đặc biệt' },
-  { month: 3,  day: 14, name: 'Ngày Valentine Trắng',  emoji: '🤍', color: '#64748B', hint: 'Ngày đáp lại tình cảm Valentine' },
-  { month: 4,  day: 30, name: 'Ngày Giải phóng',       emoji: '🇻🇳', color: '#EF4444', hint: 'Ngày lễ quốc gia' },
-  { month: 5,  day: 1,  name: 'Ngày Quốc tế Lao động', emoji: '🌟', color: '#F97316', hint: 'Ngày lễ quốc gia' },
-  { month: 6,  day: 1,  name: 'Ngày Quốc tế Thiếu nhi',emoji: '🎠', color: '#06B6D4', hint: 'Ngày dành cho trẻ em' },
-  { month: 9,  day: 2,  name: 'Ngày Quốc khánh',       emoji: '🇻🇳', color: '#EF4444', hint: 'Ngày lễ quốc gia' },
-  { month: 10, day: 20, name: 'Ngày Phụ nữ Việt Nam',  emoji: '🌸', color: '#EC4899', hint: 'Tôn vinh phụ nữ Việt Nam' },
-  { month: 11, day: 20, name: 'Ngày Nhà giáo VN',      emoji: '📚', color: '#10B981', hint: 'Tri ân thầy cô' },
-  { month: 12, day: 25, name: 'Giáng Sinh',            emoji: '🎄', color: '#16A34A', hint: 'Merry Christmas!' },
+  {
+    month: 1,
+    day: 1,
+    name: "Năm Mới Dương Lịch",
+    emoji: "🎉",
+    color: "#F59E0B",
+    hint: "Chúc mừng năm mới!",
+  },
+  {
+    month: 2,
+    day: 14,
+    name: "Ngày Valentine",
+    emoji: "💝",
+    color: "#E91E63",
+    hint: "Ngày của tình yêu",
+  },
+  {
+    month: 3,
+    day: 8,
+    name: "Ngày Quốc tế Phụ nữ",
+    emoji: "🌷",
+    color: "#9C27B0",
+    hint: "Tôn vinh những người phụ nữ đặc biệt",
+  },
+  {
+    month: 3,
+    day: 14,
+    name: "Ngày Valentine Trắng",
+    emoji: "🤍",
+    color: "#64748B",
+    hint: "Ngày đáp lại tình cảm Valentine",
+  },
+  {
+    month: 4,
+    day: 30,
+    name: "Ngày Giải phóng",
+    emoji: "🇻🇳",
+    color: "#EF4444",
+    hint: "Ngày lễ quốc gia",
+  },
+  {
+    month: 5,
+    day: 1,
+    name: "Ngày Quốc tế Lao động",
+    emoji: "🌟",
+    color: "#F97316",
+    hint: "Ngày lễ quốc gia",
+  },
+  {
+    month: 6,
+    day: 1,
+    name: "Ngày Quốc tế Thiếu nhi",
+    emoji: "🎠",
+    color: "#06B6D4",
+    hint: "Ngày dành cho trẻ em",
+  },
+  {
+    month: 9,
+    day: 2,
+    name: "Ngày Quốc khánh",
+    emoji: "🇻🇳",
+    color: "#EF4444",
+    hint: "Ngày lễ quốc gia",
+  },
+  {
+    month: 10,
+    day: 20,
+    name: "Ngày Phụ nữ Việt Nam",
+    emoji: "🌸",
+    color: "#EC4899",
+    hint: "Tôn vinh phụ nữ Việt Nam",
+  },
+  {
+    month: 11,
+    day: 20,
+    name: "Ngày Nhà giáo VN",
+    emoji: "📚",
+    color: "#10B981",
+    hint: "Tri ân thầy cô",
+  },
+  {
+    month: 12,
+    day: 25,
+    name: "Giáng Sinh",
+    emoji: "🎄",
+    color: "#16A34A",
+    hint: "Merry Christmas!",
+  },
 ];
 
 const HomeScreen: React.FC = () => {
@@ -96,12 +173,8 @@ const HomeScreen: React.FC = () => {
   const { message, icon } = useNotification();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(
-    DateUtils.getTodayString()
-  );
-  const [currentMonth, setCurrentMonth] = useState(
-    DateUtils.getTodayString()
-  );
+  const [selectedDate, setSelectedDate] = useState(DateUtils.getTodayString());
+  const [currentMonth, setCurrentMonth] = useState(DateUtils.getTodayString());
   const [isUpcomingExpanded, setIsUpcomingExpanded] = useState(true);
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -179,8 +252,8 @@ const HomeScreen: React.FC = () => {
       if (event.isRecurring) {
         // Recurring (sinh nhật, kỷ niệm...): đánh dấu đúng ngày MM-DD
         // nhưng theo năm đang hiển thị trên calendar
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
         markDate = `${calYear}-${mm}-${dd}`;
       } else {
         markDate = DateUtils.toLocalDateString(date);
@@ -190,13 +263,13 @@ const HomeScreen: React.FC = () => {
         marked[markDate] = { marked: true, emojis: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? '⭐');
+      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? "⭐");
     });
 
     // Merge ngày đặc biệt cố định — dùng emoji
     SPECIAL_DATES.forEach((sd) => {
-      const mm = String(sd.month).padStart(2, '0');
-      const dd = String(sd.day).padStart(2, '0');
+      const mm = String(sd.month).padStart(2, "0");
+      const dd = String(sd.day).padStart(2, "0");
       const dateKey = `${calYear}-${mm}-${dd}`;
       if (!marked[dateKey]) {
         marked[dateKey] = { emojis: [] };
@@ -221,11 +294,11 @@ const HomeScreen: React.FC = () => {
 
   // Ngày đặc biệt trùng với ngày đang chọn
   const selectedDateSpecials = useMemo(() => {
-    const [, mm, dd] = selectedDate.split('-');
+    const [, mm, dd] = selectedDate.split("-");
     return SPECIAL_DATES.filter(
       (sd) =>
-        String(sd.month).padStart(2, '0') === mm &&
-        String(sd.day).padStart(2, '0') === dd
+        String(sd.month).padStart(2, "0") === mm &&
+        String(sd.day).padStart(2, "0") === dd
     );
   }, [selectedDate]);
 
@@ -237,8 +310,8 @@ const HomeScreen: React.FC = () => {
 
       if (event.isRecurring) {
         // Recurring: so khớp MM-DD, bỏ qua năm
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
         return selectedDate.slice(5) === `${mm}-${dd}`;
       }
       return DateUtils.toLocalDateString(date) === selectedDate;
@@ -249,7 +322,9 @@ const HomeScreen: React.FC = () => {
   const handleMonthChange = (month: DateData) =>
     setCurrentMonth(month.dateString);
 
-  const [articles, setArticles] = useState<ReturnType<typeof getFeaturedArticles>>([]);
+  const [articles, setArticles] = useState<
+    ReturnType<typeof getFeaturedArticles>
+  >([]);
 
   React.useEffect(() => {
     Promise.all([getArticles(), databaseService.getReadArticleIds()])
@@ -260,7 +335,9 @@ const HomeScreen: React.FC = () => {
       .catch(() => {});
   }, []);
 
-  const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>(
+    []
+  );
 
   React.useEffect(() => {
     getTrendingProducts()
@@ -339,7 +416,7 @@ const HomeScreen: React.FC = () => {
       icon: "people" as const,
       title: "Trắc nghiệm\nMBTI",
       subtitle: "Khám phá 16 loại tính cách",
-      color: '#1A9E6E',
+      color: "#1A9E6E",
       onPress: () => navigation.navigate("MBTISurvey"),
     },
     {
@@ -348,12 +425,12 @@ const HomeScreen: React.FC = () => {
       title: "Gợi ý\nhoạt động",
       subtitle: "Ý tưởng hẹn hò, nhà hàng, spa...",
       color: COLORS.secondary,
-      onPress: () => navigation.navigate("ActivitySuggestions", {
-        event: upcomingEvents[0] ?? events[0] ?? undefined,
-      }),
+      onPress: () =>
+        navigation.navigate("ActivitySuggestions", {
+          event: upcomingEvents[0] ?? events[0] ?? undefined,
+        }),
     },
   ];
-
 
   return (
     <View style={styles.container}>
@@ -361,7 +438,10 @@ const HomeScreen: React.FC = () => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 56 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 56 },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -387,7 +467,7 @@ const HomeScreen: React.FC = () => {
         )}
 
         {/* Upcoming Events */}
-        {upcomingEvents.length > 0 && (
+        {/* {upcomingEvents.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <TouchableOpacity
@@ -402,9 +482,7 @@ const HomeScreen: React.FC = () => {
                 />
                 <Text style={styles.sectionTitle}>Sự kiện sắp tới</Text>
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {upcomingEvents.length}
-                  </Text>
+                  <Text style={styles.badgeText}>{upcomingEvents.length}</Text>
                 </View>
                 <Ionicons
                   name={isUpcomingExpanded ? "chevron-up" : "chevron-down"}
@@ -412,13 +490,107 @@ const HomeScreen: React.FC = () => {
                   color={COLORS.textSecondary}
                 />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate("EventsList")}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("EventsList")}
+              >
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
             {isUpcomingExpanded &&
-              upcomingEvents.map((event) => renderEventCard(event))}
+              upcomingEvents.map((event) => {
+                const primaryTag = event.tags?.[0] || "other";
+                const categoryColor = getCategoryColor(primaryTag);
+                const EventIcon = getEventIcon(primaryTag);
+                const eventDate = new Date(event.eventDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const daysLeft = differenceInCalendarDays(eventDate, today);
+                const daysLabel =
+                  daysLeft === 0
+                    ? "Hôm nay"
+                    : daysLeft === 1
+                    ? "Ngày mai"
+                    : `${daysLeft} ngày`;
+
+                return (
+                  <PressableCard
+                    key={event.id}
+                    style={styles.upcomingCard}
+                    onPress={() => handleEventPress(event)}
+                  >
+                    <View
+                      style={[
+                        styles.upcomingAccent,
+                        { backgroundColor: categoryColor },
+                      ]}
+                    />
+                    <View style={styles.upcomingBody}>
+                      <View style={styles.upcomingTop}>
+                        <View
+                          style={[
+                            styles.upcomingIconWrap,
+                            { backgroundColor: categoryColor + "15" },
+                          ]}
+                        >
+                          <EventIcon size={26} color={categoryColor} />
+                        </View>
+                        <View style={styles.upcomingInfo}>
+                          <Text style={styles.upcomingTitle} numberOfLines={1}>
+                            {event.title}
+                          </Text>
+                          <View style={styles.upcomingDateRow}>
+                            <Ionicons
+                              name="calendar-outline"
+                              size={13}
+                              color={COLORS.textSecondary}
+                            />
+                            <Text style={styles.upcomingDateText}>
+                              {format(eventDate, "EEEE, d/MM", { locale: vi })}
+                            </Text>
+                          </View>
+                        </View>
+                        <View
+                          style={[
+                            styles.upcomingCountdown,
+                            daysLeft === 0 && styles.upcomingCountdownToday,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.upcomingCountdownText,
+                              daysLeft === 0 &&
+                                styles.upcomingCountdownTextToday,
+                            ]}
+                          >
+                            {daysLabel}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </PressableCard>
+                );
+              })}
           </View>
+        )} */}
+
+        {/* Local Shop Banner — hiện khi có sự kiện sắp tới */}
+        {upcomingEvents.length > 0 && (
+          <TouchableOpacity
+            style={styles.shopBanner}
+            onPress={() => navigation.navigate("LocalShop")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.shopBannerEmoji}>🌸</Text>
+            <View style={styles.shopBannerText}>
+              <Text style={styles.shopBannerTitle}>
+                Đặt hoa, bánh và quà giao tận nơi
+              </Text>
+              <Text style={styles.shopBannerSub}>
+                Gợi ý hoàn hảo cho ngày đặc biệt sắp tới
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
         )}
 
         {/* Calendar */}
@@ -449,7 +621,9 @@ const HomeScreen: React.FC = () => {
               firstDay={1}
               renderArrow={(direction: string) => (
                 <Ionicons
-                  name={direction === "left" ? "chevron-back" : "chevron-forward"}
+                  name={
+                    direction === "left" ? "chevron-back" : "chevron-forward"
+                  }
                   size={20}
                   color={COLORS.primary}
                 />
@@ -489,7 +663,9 @@ const HomeScreen: React.FC = () => {
                     {emojis.length > 0 ? (
                       <View style={styles.dayEmojisRow}>
                         {emojis.slice(0, 2).map((e, i) => (
-                          <Text key={i} style={styles.dayEmoji}>{e}</Text>
+                          <Text key={i} style={styles.dayEmoji}>
+                            {e}
+                          </Text>
                         ))}
                       </View>
                     ) : (
@@ -501,58 +677,6 @@ const HomeScreen: React.FC = () => {
             />
           </View>
         </View>
-
-        {/* Selected Date — Special Days + Events */}
-        {(selectedDateSpecials.length > 0 || selectedDateEvents.length > 0) && (
-          <View style={styles.selectedDateSection}>
-            <View style={styles.selectedDateHeader}>
-              <Ionicons name="today-outline" size={16} color={COLORS.primary} />
-              <Text style={styles.selectedDateTitle}>
-                Ngày{" "}
-                {format(new Date(selectedDate + "T00:00:00"), "d/M", { locale: vi })}
-              </Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {selectedDateSpecials.length + selectedDateEvents.length}
-                </Text>
-              </View>
-            </View>
-
-            {/* Ngày đặc biệt */}
-            {selectedDateSpecials.map((sd, i) => (
-              <View key={`special-${i}`} style={[styles.specialDateCard, { borderLeftColor: sd.color }]}>
-                <View style={[styles.specialDateIconBox, { backgroundColor: sd.color + '20' }]}>
-                  <Text style={styles.specialDateEmoji}>{sd.emoji}</Text>
-                </View>
-                <View style={styles.specialDateContent}>
-                  <Text style={[styles.specialDateName, { color: sd.color }]}>{sd.name}</Text>
-                  <Text style={styles.specialDateHint}>{sd.hint}</Text>
-                </View>
-              </View>
-            ))}
-
-            {/* Sự kiện của người dùng */}
-            {selectedDateEvents.map((event) =>
-              renderEventCard(event, { showDate: false })
-            )}
-          </View>
-        )}
-
-        {/* Local Shop Banner — hiện khi có sự kiện sắp tới */}
-        {upcomingEvents.length > 0 && (
-          <TouchableOpacity
-            style={styles.shopBanner}
-            onPress={() => navigation.navigate('LocalShop')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.shopBannerEmoji}>🌸</Text>
-            <View style={styles.shopBannerText}>
-              <Text style={styles.shopBannerTitle}>Đặt hoa & quà giao tận nơi</Text>
-              <Text style={styles.shopBannerSub}>Gợi ý hoàn hảo cho ngày đặc biệt sắp tới</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
-        )}
 
         {/* Quick Actions */}
         <View style={styles.section}>
@@ -570,16 +694,25 @@ const HomeScreen: React.FC = () => {
             {quickActions.map((action) => (
               <PressableCard
                 key={action.id}
-                style={[styles.quickActionCard, { backgroundColor: action.color }]}
+                style={[
+                  styles.quickActionCard,
+                  { backgroundColor: action.color },
+                ]}
                 onPress={action.onPress}
               >
                 {/* Decorative circle top-right */}
                 <View style={styles.qaDecorCircle} />
                 <View style={styles.qaIconBg}>
-                  <Ionicons name={action.icon} size={26} color="rgba(255,255,255,0.95)" />
+                  <Ionicons
+                    name={action.icon}
+                    size={26}
+                    color="rgba(255,255,255,0.95)"
+                  />
                 </View>
                 <Text style={styles.qaTitle}>{action.title}</Text>
-                <Text style={styles.qaSub} numberOfLines={2}>{action.subtitle}</Text>
+                <Text style={styles.qaSub} numberOfLines={2}>
+                  {action.subtitle}
+                </Text>
                 <Ionicons
                   name="arrow-forward-circle"
                   size={20}
@@ -598,7 +731,9 @@ const HomeScreen: React.FC = () => {
               <Ionicons name="book-outline" size={20} color={COLORS.primary} />
               <Text style={styles.sectionTitle}>Bài viết nổi bật</Text>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate("AllArticles")}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AllArticles")}
+            >
               <Text style={styles.viewAllText}>Xem tất cả</Text>
             </TouchableOpacity>
           </View>
@@ -606,9 +741,14 @@ const HomeScreen: React.FC = () => {
           {/* Featured hero card — first article */}
           {articles.length > 0 && (
             <PressableCard
-              style={[styles.featuredArticle, { backgroundColor: articles[0].color }]}
+              style={[
+                styles.featuredArticle,
+                { backgroundColor: articles[0].color },
+              ]}
               onPress={() => {
-                databaseService.markArticleRead(articles[0].id).catch(console.error);
+                databaseService
+                  .markArticleRead(articles[0].id)
+                  .catch(console.error);
                 navigation.navigate("ArticleDetail", { article: articles[0] });
               }}
             >
@@ -621,7 +761,14 @@ const HomeScreen: React.FC = () => {
                 />
               )}
               {/* Dark overlay for text readability */}
-              <View style={[styles.featuredOverlay, !articles[0].imageUrl && { backgroundColor: 'rgba(0,0,0,0.15)' }]} />
+              <View
+                style={[
+                  styles.featuredOverlay,
+                  !articles[0].imageUrl && {
+                    backgroundColor: "rgba(0,0,0,0.15)",
+                  },
+                ]}
+              />
               {/* Decorative large icon watermark (shown when no image) */}
               {!articles[0].imageUrl && (
                 <Ionicons
@@ -634,22 +781,35 @@ const HomeScreen: React.FC = () => {
               <View style={styles.featuredInner}>
                 <View style={styles.featuredCatBadge}>
                   <Text style={styles.featuredCatText}>
-                    {CATEGORY_NAMES[articles[0].category] ?? 'Bài viết'}
+                    {CATEGORY_NAMES[articles[0].category] ?? "Bài viết"}
                   </Text>
                 </View>
                 <Text style={styles.featuredTitle} numberOfLines={2}>
                   {articles[0].title}
                 </Text>
                 <View style={styles.featuredMeta}>
-                  <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.8)" />
+                  <Ionicons
+                    name="time-outline"
+                    size={12}
+                    color="rgba(255,255,255,0.8)"
+                  />
                   <Text style={styles.featuredMetaText}>
                     {articles[0].readTime ?? 5} phút đọc
                   </Text>
                   <View style={styles.featuredReadBtn}>
-                    <Text style={[styles.featuredReadBtnText, { color: articles[0].color }]}>
+                    <Text
+                      style={[
+                        styles.featuredReadBtnText,
+                        { color: articles[0].color },
+                      ]}
+                    >
                       Đọc ngay
                     </Text>
-                    <Ionicons name="arrow-forward" size={11} color={articles[0].color} />
+                    <Ionicons
+                      name="arrow-forward"
+                      size={11}
+                      color={articles[0].color}
+                    />
                   </View>
                 </View>
               </View>
@@ -667,11 +827,18 @@ const HomeScreen: React.FC = () => {
                 key={article.id}
                 style={styles.articleCard}
                 onPress={() => {
-                  databaseService.markArticleRead(article.id).catch(console.error);
+                  databaseService
+                    .markArticleRead(article.id)
+                    .catch(console.error);
                   navigation.navigate("ArticleDetail", { article });
                 }}
               >
-                <View style={[styles.articleCardTop, { backgroundColor: article.color }]}>
+                <View
+                  style={[
+                    styles.articleCardTop,
+                    { backgroundColor: article.color },
+                  ]}
+                >
                   {article.imageUrl ? (
                     <Image
                       source={{ uri: article.imageUrl }}
@@ -679,7 +846,11 @@ const HomeScreen: React.FC = () => {
                       resizeMode="cover"
                     />
                   ) : (
-                    <Ionicons name={article.icon} size={24} color="rgba(255,255,255,0.95)" />
+                    <Ionicons
+                      name={article.icon}
+                      size={24}
+                      color="rgba(255,255,255,0.95)"
+                    />
                   )}
                 </View>
                 <View style={styles.articleCardBody}>
@@ -687,8 +858,14 @@ const HomeScreen: React.FC = () => {
                     {article.title}
                   </Text>
                   <View style={styles.articleMeta}>
-                    <Ionicons name="time-outline" size={11} color={COLORS.textSecondary} />
-                    <Text style={styles.articleReadTime}>{article.readTime ?? 5} phút</Text>
+                    <Ionicons
+                      name="time-outline"
+                      size={11}
+                      color={COLORS.textSecondary}
+                    />
+                    <Text style={styles.articleReadTime}>
+                      {article.readTime ?? 5} phút
+                    </Text>
                   </View>
                 </View>
               </PressableCard>
@@ -704,7 +881,9 @@ const HomeScreen: React.FC = () => {
                 <Ionicons name="trending-up" size={20} color={COLORS.primary} />
                 <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
               </View>
-              <TouchableOpacity onPress={() => navigation.navigate("AllProducts")}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("AllProducts")}
+              >
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
@@ -743,8 +922,8 @@ const styles = StyleSheet.create({
   },
   // Empty hint
   shopBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.white,
     marginHorizontal: 12,
     marginTop: 8,
@@ -754,7 +933,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.primary + '25',
+    borderColor: COLORS.primary + "25",
     elevation: 1,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 1 },
@@ -769,7 +948,7 @@ const styles = StyleSheet.create({
   },
   shopBannerTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
   },
   shopBannerSub: {
@@ -883,6 +1062,77 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     textTransform: "capitalize",
+  },
+
+  // Upcoming Event Card
+  upcomingCard: {
+    flexDirection: "row",
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    marginBottom: 10,
+    overflow: "hidden",
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  upcomingAccent: {
+    width: 4,
+  },
+  upcomingBody: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  upcomingTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  upcomingIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  upcomingInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  upcomingTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: 3,
+  },
+  upcomingDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  upcomingDateText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textTransform: "capitalize",
+  },
+  upcomingCountdown: {
+    backgroundColor: COLORS.primary + "12",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  upcomingCountdownToday: {
+    backgroundColor: COLORS.primary,
+  },
+  upcomingCountdownText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+  upcomingCountdownTextToday: {
+    color: COLORS.white,
   },
 
   // Custom day cell
@@ -1009,18 +1259,18 @@ const styles = StyleSheet.create({
     padding: 16,
     minHeight: 148,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   qaDecorCircle: {
-    position: 'absolute',
+    position: "absolute",
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: "rgba(255,255,255,0.1)",
     top: -20,
     right: -20,
   },
@@ -1028,27 +1278,27 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
   },
   qaTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
     lineHeight: 20,
     marginBottom: 4,
   },
   qaSub: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
     lineHeight: 15,
     flex: 1,
   },
   qaArrow: {
     marginTop: 10,
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
 
   // Articles — featured hero + tile cards
@@ -1056,42 +1306,42 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderRadius: 18,
     height: 168,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 14,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
   },
   featuredBgImage: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   featuredOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.38)',
+    backgroundColor: "rgba(0,0,0,0.38)",
   },
   featuredDecorIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: -10,
     top: -10,
   },
   featuredInner: {
     flex: 1,
     padding: 18,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   featuredCatBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.25)",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1099,29 +1349,29 @@ const styles = StyleSheet.create({
   },
   featuredCatText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.white,
   },
   featuredTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
     lineHeight: 24,
     marginBottom: 12,
   },
   featuredMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   featuredMetaText: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+    color: "rgba(255,255,255,0.85)",
     flex: 1,
   },
   featuredReadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     backgroundColor: COLORS.white,
     borderRadius: 10,
@@ -1130,7 +1380,7 @@ const styles = StyleSheet.create({
   },
   featuredReadBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   productsScroll: {
     paddingHorizontal: 4,
@@ -1139,8 +1389,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   productsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     paddingHorizontal: 4,
     gap: 12,
   },
@@ -1154,7 +1404,7 @@ const styles = StyleSheet.create({
     width: 148,
     backgroundColor: COLORS.white,
     borderRadius: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.07,
@@ -1163,12 +1413,12 @@ const styles = StyleSheet.create({
   },
   articleCardTop: {
     height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   articleCardTopImage: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -1179,14 +1429,14 @@ const styles = StyleSheet.create({
   },
   articleTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
     lineHeight: 17,
     marginBottom: 7,
   },
   articleMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   articleReadTime: {

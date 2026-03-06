@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NotificationUtils } from '@lib/notification.utils';
+import { COLORS } from '@themes/colors';
 
 const PERMISSION_ASKED_KEY = '@notification_permission_asked';
 
@@ -50,24 +51,20 @@ export const PermissionModal: React.FC<PermissionModalProps> = ({
     }
   };
 
-  const handleRequestPermission = async () => {
-    try {
-      // Request notification permissions
-      const granted = await NotificationUtils.requestPermissions();
+  const handleRequestPermission = () => {
+    // Close custom modal first so it doesn't block the system permission dialog
+    setVisible(false);
 
-      // Mark that we've asked for permission
-      await AsyncStorage.setItem(PERMISSION_ASKED_KEY, 'true');
-
-      // Close modal
-      setVisible(false);
-
-      // Notify parent
-      onPermissionResult?.(granted);
-    } catch (error) {
-      console.error('Error requesting permissions:', error);
-      setVisible(false);
-      onPermissionResult?.(false);
-    }
+    setTimeout(async () => {
+      try {
+        const granted = await NotificationUtils.requestPermissions();
+        await AsyncStorage.setItem(PERMISSION_ASKED_KEY, 'true');
+        onPermissionResult?.(granted);
+      } catch (error) {
+        console.error('Error requesting permissions:', error);
+        onPermissionResult?.(false);
+      }
+    }, 400);
   };
 
   const handleSkip = async () => {
@@ -185,7 +182,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   allowButton: {
-    backgroundColor: '#FF69B4',
+    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 32,
@@ -193,7 +190,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     ...Platform.select({
       ios: {
-        shadowColor: '#FF69B4',
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,

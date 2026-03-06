@@ -1,7 +1,38 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Event } from "../types";
 import { lunarService } from "./lunar.service";
+
+// ─── Muted special dates (stored in AsyncStorage) ───
+const MUTED_SPECIAL_DATES_KEY = "muted_special_dates";
+
+export async function getMutedSpecialDates(): Promise<string[]> {
+  try {
+    const json = await AsyncStorage.getItem(MUTED_SPECIAL_DATES_KEY);
+    return json ? JSON.parse(json) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function setMutedSpecialDates(ids: string[]): Promise<void> {
+  await AsyncStorage.setItem(MUTED_SPECIAL_DATES_KEY, JSON.stringify(ids));
+}
+
+export async function toggleMutedSpecialDate(id: string): Promise<boolean> {
+  const muted = await getMutedSpecialDates();
+  const index = muted.indexOf(id);
+  if (index >= 0) {
+    muted.splice(index, 1);
+  } else {
+    muted.push(id);
+  }
+  await setMutedSpecialDates(muted);
+  return index < 0; // true = now muted, false = now unmuted
+}
+
+export { SYSTEM_SPECIAL_DATES };
 
 /**
  * Smart Notification Scheduler
@@ -259,8 +290,11 @@ async function scheduleSystemSpecialDates(
 ): Promise<number> {
   let scheduled = 0;
   const currentYear = now.getFullYear();
+  const mutedIds = await getMutedSpecialDates();
 
   for (const sd of SYSTEM_SPECIAL_DATES) {
+    // Skip muted special dates
+    if (mutedIds.includes(sd.id)) continue;
     // Tìm occurrence của ngày đặc biệt trong window (năm hiện tại và tiếp theo)
     for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
       const occurrenceDate = new Date(

@@ -28,7 +28,7 @@ const EventsListScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { events, deleteEvent } = useEvents();
+  const { events, deleteEvent, toggleEventNotification } = useEvents();
   const { showSuccess, showError } = useToast();
 
   const params: RouteParams = route.params || {};
@@ -123,6 +123,19 @@ const EventsListScreen: React.FC = () => {
 
   const handleEventPress = (event: Event) => {
     navigation.navigate('EventDetail', { eventId: event.id });
+  };
+
+  const handleToggleNotification = async (event: Event) => {
+    try {
+      await toggleEventNotification(event.id);
+      showSuccess(
+        event.isNotificationEnabled !== false
+          ? `Đã tắt thông báo "${event.title}"`
+          : `Đã bật thông báo "${event.title}"`
+      );
+    } catch {
+      showError('Không thể thay đổi thông báo');
+    }
   };
 
   const handleEventDelete = async (event: Event) => {
@@ -281,6 +294,7 @@ const EventsListScreen: React.FC = () => {
                 event={event}
                 onPress={() => handleEventPress(event)}
                 onDelete={() => handleEventDelete(event)}
+                onToggleNotification={() => handleToggleNotification(event)}
               />
             ))}
           </View>

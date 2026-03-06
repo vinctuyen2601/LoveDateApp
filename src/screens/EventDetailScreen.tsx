@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,20 +6,31 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { useSQLiteContext } from 'expo-sqlite';
-import { useEvents } from '@contexts/EventsContext';
-import { useToast } from '../contexts/ToastContext';
-import { Event, ChecklistItem } from '../types';
-import { DateUtils } from '@lib/date.utils';
-import { COLORS } from '@themes/colors';
-import { PREDEFINED_TAGS } from '../types';
-import CountdownTimer from '@components/molecules/CountdownTimer';
-import ChecklistSection from '@components/organisms/ChecklistSection';
-import * as ChecklistService from '../services/checklist.service';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { useSQLiteContext } from "expo-sqlite";
+import { useEvents } from "@contexts/EventsContext";
+import { useToast } from "../contexts/ToastContext";
+import { Event, ChecklistItem } from "../types";
+import { DateUtils } from "@lib/date.utils";
+import { COLORS } from "@themes/colors";
+import { PREDEFINED_TAGS } from "../types";
+import CountdownTimer from "@components/molecules/CountdownTimer";
+import ChecklistSection from "@components/organisms/ChecklistSection";
+import * as ChecklistService from "../services/checklist.service";
+
+const TAG_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  birthday: "gift",
+  anniversary: "heart",
+  memorial: "flower-outline",
+  holiday: "star",
+  wife: "woman-outline",
+  husband: "man-outline",
+  family: "people",
+  other: "calendar",
+};
 
 const EventDetailScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -73,7 +84,7 @@ const EventDetailScreen: React.FC = () => {
 
       setChecklistItems(items);
     } catch (error) {
-      console.error('Error loading checklist:', error);
+      console.error("Error loading checklist:", error);
     } finally {
       setIsLoadingChecklist(false);
     }
@@ -84,7 +95,7 @@ const EventDetailScreen: React.FC = () => {
       await ChecklistService.toggleChecklistItem(db, id);
       await loadChecklist(); // Reload to get updated data
     } catch (error) {
-      showError('Không thể cập nhật checklist');
+      showError("Không thể cập nhật checklist");
     }
   };
 
@@ -92,9 +103,9 @@ const EventDetailScreen: React.FC = () => {
     try {
       await ChecklistService.deleteChecklistItem(db, id);
       await loadChecklist();
-      showSuccess('Đã xóa mục');
+      showSuccess("Đã xóa mục");
     } catch (error) {
-      showError('Không thể xóa mục');
+      showError("Không thể xóa mục");
     }
   };
 
@@ -103,9 +114,9 @@ const EventDetailScreen: React.FC = () => {
     try {
       await ChecklistService.createChecklistItem(db, event.id, title);
       await loadChecklist();
-      showSuccess('Đã thêm mục mới');
+      showSuccess("Đã thêm mục mới");
     } catch (error) {
-      showError('Không thể thêm mục');
+      showError("Không thể thêm mục");
     }
   };
 
@@ -113,53 +124,54 @@ const EventDetailScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
+          <Ionicons
+            name="alert-circle-outline"
+            size={64}
+            color={COLORS.error}
+          />
           <Text style={styles.errorText}>Đang tải...</Text>
         </View>
       </View>
     );
   }
 
-  // Find tag details from PREDEFINED_TAGS
   const getTagDetails = (tagValue: string) => {
-    return PREDEFINED_TAGS.find(t => t.value === tagValue) || {
-      value: 'other',
-      label: 'Khác',
-      icon: 'calendar',
-      color: COLORS.textSecondary
-    };
+    return (
+      PREDEFINED_TAGS.find((t) => t.value === tagValue) || {
+        value: "other",
+        label: "Khác",
+        icon: "calendar",
+        color: COLORS.textSecondary,
+      }
+    );
   };
 
-  // Get primary tag (first tag) for color and icon
-  const primaryTag = event.tags[0] || 'other';
+  const primaryTag = event.tags[0] || "other";
   const primaryColor = getTagDetails(primaryTag).color;
+  const primaryIcon = TAG_ICONS[primaryTag] || "calendar";
 
   const handleEdit = () => {
-    navigation.navigate('AddEvent', { eventId: event.id });
+    navigation.navigate("AddEvent", { eventId: event.id });
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Xóa sự kiện',
-      `Bạn có chắc muốn xóa "${event.title}"?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const eventTitle = event.title; // Save title before delete
-              await deleteEvent(event.id);
-              showSuccess(`Đã xóa sự kiện "${eventTitle}"`);
-              // No need to manually navigate - useEffect will handle it when event becomes null
-            } catch (error) {
-              showError('Không thể xóa sự kiện');
-            }
-          },
+    Alert.alert("Xóa sự kiện", `Bạn có chắc muốn xóa "${event.title}"?`, [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const eventTitle = event.title; // Save title before delete
+            await deleteEvent(event.id);
+            showSuccess(`Đã xóa sự kiện "${eventTitle}"`);
+            // No need to manually navigate - useEffect will handle it when event becomes null
+          } catch (error) {
+            showError("Không thể xóa sự kiện");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -176,186 +188,246 @@ const EventDetailScreen: React.FC = () => {
         <Text style={styles.headerTitle}>Chi tiết sự kiện</Text>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleEdit}
-          >
+          <TouchableOpacity style={styles.headerButton} onPress={handleEdit}>
             <Ionicons name="create-outline" size={24} color={COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={handleDelete}
-          >
+          <TouchableOpacity style={styles.headerButton} onPress={handleDelete}>
             <Ionicons name="trash-outline" size={24} color={COLORS.error} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
-        <View style={[styles.heroSection, { backgroundColor: primaryColor + '15' }]}>
-          <View style={[styles.heroIcon, { backgroundColor: primaryColor + '30' }]}>
-            <Ionicons name={getTagDetails(primaryTag).icon as any} size={48} color={primaryColor} />
-          </View>
-          <Text style={styles.eventTitle}>{event.title}</Text>
-          <View style={[styles.categoryBadge, { backgroundColor: primaryColor }]}>
-            <Text style={styles.categoryBadgeText}>{getTagDetails(primaryTag).label}</Text>
-          </View>
-        </View>
-
-        {/* Countdown Section */}
-        <View style={styles.section}>
-          <View style={styles.countdownCard}>
-            <CountdownTimer targetDate={event.eventDate} compact={false} />
-          </View>
-        </View>
-
-        {/* Date Information */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="calendar" size={22} color={COLORS.primary} />
-            <Text style={styles.sectionTitle}>Thông tin ngày</Text>
-          </View>
-
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconWrapper}>
-                <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Ngày diễn ra</Text>
-                <Text style={styles.infoValue}>
-                  {DateUtils.getEventDateDisplay(event.eventDate)}
-                </Text>
+      <ScrollView
+        style={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Hero Section — compact */}
+        <View
+          style={[styles.heroSection, { backgroundColor: primaryColor + "10" }]}
+        >
+          <View style={styles.heroTopRow}>
+            <View
+              style={[
+                styles.heroIcon,
+                { backgroundColor: primaryColor + "20" },
+              ]}
+            >
+              <Ionicons name={primaryIcon} size={32} color={primaryColor} />
+            </View>
+            <View style={styles.heroInfo}>
+              <Text style={styles.eventTitle} numberOfLines={2}>
+                {event.title}
+              </Text>
+              <View style={styles.heroMeta}>
+                <View
+                  style={[
+                    styles.categoryBadge,
+                    { backgroundColor: primaryColor },
+                  ]}
+                >
+                  <Text style={styles.categoryBadgeText}>
+                    {getTagDetails(primaryTag).label}
+                  </Text>
+                </View>
+                {event.isRecurring && (
+                  <View style={styles.recurBadge}>
+                    <Ionicons
+                      name="repeat"
+                      size={12}
+                      color={COLORS.textSecondary}
+                    />
+                    <Text style={styles.recurBadgeText}>Hàng năm</Text>
+                  </View>
+                )}
+                {event.isLunarCalendar && (
+                  <View style={styles.recurBadge}>
+                    <Ionicons
+                      name="moon-outline"
+                      size={12}
+                      color={COLORS.warning}
+                    />
+                    <Text
+                      style={[styles.recurBadgeText, { color: COLORS.warning }]}
+                    >
+                      Âm lịch
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
+          </View>
 
-            {event.isLunarCalendar && (
-              <View style={styles.infoRow}>
-                <View style={styles.infoIconWrapper}>
-                  <Ionicons name="moon-outline" size={20} color={COLORS.warning} />
-                </View>
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Loại lịch</Text>
-                  <Text style={styles.infoValue}>Âm lịch</Text>
+          {/* Date + Countdown inline */}
+          <View style={styles.heroCountdown}>
+            <CountdownTimer targetDate={event.eventDate} compact={true} />
+          </View>
+
+          {/* Reminder info inline */}
+          {event.reminderSettings.remindDaysBefore.length > 0 && (
+            <>
+              <View style={styles.heroDivider} />
+              <View style={styles.reminderInline}>
+                {event.reminderSettings.reminderTime && (
+                  <View style={styles.reminderInlineItem}>
+                    <View
+                      style={[
+                        styles.reminderDot,
+                        { backgroundColor: COLORS.primary },
+                      ]}
+                    />
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color={COLORS.primary}
+                    />
+                    <Text style={styles.reminderInlineText}>
+                      Nhắc lúc{" "}
+                      <Text style={styles.reminderInlineBold}>
+                        {event.reminderSettings.reminderTime.hour
+                          .toString()
+                          .padStart(2, "0")}
+                        :
+                        {event.reminderSettings.reminderTime.minute
+                          .toString()
+                          .padStart(2, "0")}
+                      </Text>
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.reminderInlineItem}>
+                  <View
+                    style={[
+                      styles.reminderDot,
+                      { backgroundColor: COLORS.info },
+                    ]}
+                  />
+                  <Ionicons
+                    name="notifications-outline"
+                    size={16}
+                    color={COLORS.info}
+                  />
+                  <Text style={styles.reminderInlineText}>
+                    Nhắc trước{" "}
+                    {event.reminderSettings.remindDaysBefore.map((days, i) => (
+                      <Text key={i} style={styles.reminderInlineBold}>
+                        {days === 0 ? "hôm nay" : `${days} ngày`}
+                        {i < event.reminderSettings.remindDaysBefore.length - 1
+                          ? ", "
+                          : ""}
+                      </Text>
+                    ))}
+                  </Text>
                 </View>
               </View>
-            )}
+            </>
+          )}
+        </View>
 
-            {event.isRecurring && (
-              <View style={styles.infoRow}>
-                <View style={styles.infoIconWrapper}>
-                  <Ionicons name="repeat-outline" size={20} color={COLORS.success} />
-                </View>
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoLabel}>Lặp lại</Text>
-                  <Text style={styles.infoValue}>Hàng năm</Text>
-                </View>
+        {/* Quick Actions Grid */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Chuẩn bị cho ngày đặc biệt</Text>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              style={styles.actionCard}
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate("Suggestions", {
+                  screen: "GiftSuggestions",
+                })
+              }
+            >
+              <View
+                style={[styles.actionIcon, { backgroundColor: "#FF6B6B15" }]}
+              >
+                <Ionicons name="gift" size={22} color="#FF6B6B" />
               </View>
-            )}
+              <Text style={styles.actionTitle}>Gợi ý quà</Text>
+              <Text style={styles.actionSub}>AI tìm quà phù hợp</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate("ActivitySuggestions", {
+                  eventId: event.id,
+                  event,
+                })
+              }
+            >
+              <View
+                style={[styles.actionIcon, { backgroundColor: "#4ECDC415" }]}
+              >
+                <Ionicons name="restaurant" size={22} color="#4ECDC4" />
+              </View>
+              <Text style={styles.actionTitle}>Hoạt động</Text>
+              <Text style={styles.actionSub}>Nhà hàng, địa điểm</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Checklist Section */}
-        {!isLoadingChecklist && (
-          <View style={styles.section}>
-            <ChecklistSection
-              eventId={event.id}
-              items={checklistItems}
-              onToggle={handleToggleChecklistItem}
-              onDelete={handleDeleteChecklistItem}
-              onAdd={handleAddChecklistItem}
-              showProgress={true}
-              allowAdd={true}
-              allowDelete={true}
-            />
-          </View>
-        )}
-
-        {/* Suggestions Buttons */}
+        {/* Order banners — flower & cake */}
         <View style={styles.section}>
-          {/* Activity Suggestions Button */}
           <TouchableOpacity
-            style={styles.giftSuggestionsButton}
-            onPress={() => navigation.navigate('ActivitySuggestions', { eventId: event.id, event })}
+            style={styles.orderBanner}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("LocalShop")}
           >
-            <View style={styles.giftSuggestionsIcon}>
-              <Ionicons name="restaurant" size={24} color={COLORS.secondary} />
-            </View>
-            <View style={styles.giftSuggestionsContent}>
-              <Text style={styles.giftSuggestionsTitle}>Gợi ý hoạt động</Text>
-              <Text style={styles.giftSuggestionsSubtitle}>
-                Nhà hàng, địa điểm và hoạt động vui chơi
+            <Text style={styles.orderBannerEmoji}>💐</Text>
+            <View style={styles.orderBannerText}>
+              <Text style={styles.orderBannerTitle}>
+                Đặt hoa tươi giao tận nơi
+              </Text>
+              <Text style={styles.orderBannerSub}>
+                Bó hoa, giỏ hoa, hoa chúc mừng
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color="#EC4899" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.orderBanner, { borderColor: "#F59E0B25" }]}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("LocalShop")}
+          >
+            <Text style={styles.orderBannerEmoji}>🎂</Text>
+            <View style={styles.orderBannerText}>
+              <Text style={styles.orderBannerTitle}>
+                Đặt bánh kem, bánh ngọt
+              </Text>
+              <Text style={styles.orderBannerSub}>
+                Bánh sinh nhật, cupcake, bánh kem
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.orderBanner, { borderColor: COLORS.primary + "25" }]}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("AllProducts")}
+          >
+            <Text style={styles.orderBannerEmoji}>🎁</Text>
+            <View style={styles.orderBannerText}>
+              <Text style={styles.orderBannerTitle}>Sản phẩm quà tặng</Text>
+              <Text style={styles.orderBannerSub}>Xem tất cả sản phẩm gợi ý</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.orderBanner, { borderColor: "#8B5CF625" }]}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("AllArticles")}
+          >
+            <Text style={styles.orderBannerEmoji}>📖</Text>
+            <View style={styles.orderBannerText}>
+              <Text style={styles.orderBannerTitle}>Bài viết hay</Text>
+              <Text style={styles.orderBannerSub}>Mẹo tặng quà, hẹn hò & tình yêu</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
           </TouchableOpacity>
         </View>
-
-        {/* Tags Information */}
-        {event.tags.length > 1 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="pricetags" size={22} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Nhãn</Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              <View style={styles.tagsContainer}>
-                {event.tags.map((tag) => {
-                  const tagDetails = getTagDetails(tag);
-                  return (
-                    <View
-                      key={tag}
-                      style={[
-                        styles.tagPill,
-                        { backgroundColor: tagDetails.color + '20', borderColor: tagDetails.color + '40' }
-                      ]}
-                    >
-                      <Ionicons name={tagDetails.icon as any} size={18} color={tagDetails.color} />
-                      <Text style={[styles.tagText, { color: tagDetails.color }]}>
-                        {tagDetails.label}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          </View>
-        )}
-
-
-        {/* Reminder Settings */}
-        {event.reminderSettings.remindDaysBefore.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="notifications" size={22} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Nhắc nhở</Text>
-            </View>
-
-            <View style={styles.infoCard}>
-              {/* Reminder Time */}
-              {event.reminderSettings.reminderTime && (
-                <View style={styles.reminderItem}>
-                  <Ionicons name="time-outline" size={18} color={COLORS.primary} />
-                  <Text style={styles.reminderText}>
-                    Thời gian: {event.reminderSettings.reminderTime.hour.toString().padStart(2, '0')}:{event.reminderSettings.reminderTime.minute.toString().padStart(2, '0')}
-                  </Text>
-                </View>
-              )}
-
-              {/* Reminder Days */}
-              {event.reminderSettings.remindDaysBefore.map((days, index) => (
-                <View key={index} style={styles.reminderItem}>
-                  <Ionicons name="alarm-outline" size={18} color={COLORS.info} />
-                  <Text style={styles.reminderText}>
-                    {days === 0 ? 'Trong ngày' : `${days} ngày trước`}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -369,9 +441,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 0,
     paddingBottom: 12,
@@ -389,184 +461,241 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
   headerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
-  content: {
+  scrollContent: {
     flex: 1,
-  },
-  heroSection: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 20,
-  },
-  heroIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  eventTitle: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  categoryBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  categoryBadgeText: {
-    color: COLORS.white,
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  section: {
-    marginBottom: 20,
-    paddingHorizontal: 16,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    marginLeft: 8,
-  },
-  countdownCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  infoCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 1,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  infoIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  tagPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    gap: 8,
-  },
-  tagText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  reminderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
-  },
-  reminderText: {
-    fontSize: 15,
-    color: COLORS.textPrimary,
   },
   errorContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 40,
   },
   errorText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
     marginTop: 16,
     marginBottom: 24,
   },
-  giftSuggestionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+
+  // Hero
+  heroSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  giftSuggestionsIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: `${COLORS.primary}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 14,
   },
-  giftSuggestionsContent: {
+  heroInfo: {
     flex: 1,
   },
-  giftSuggestionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  eventTitle: {
+    fontSize: 20,
+    fontWeight: "700",
     color: COLORS.textPrimary,
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 26,
   },
-  giftSuggestionsSubtitle: {
-    fontSize: 13,
+  heroMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  categoryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  categoryBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  recurBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  recurBadgeText: {
+    fontSize: 11,
     color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  heroDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+    // backgroundColor: COLORS.white,
+    borderRadius: 12,
+  },
+  heroDateInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  heroDateText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+  heroCountdown: {
+    // CountdownTimer compact will render here
+  },
+
+  // Section
+  section: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  sectionTitle: {
+    paddingTop: 16,
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 16,
+  },
+
+  // Quick Actions Grid (2x2)
+  actionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  actionCard: {
+    width: "48%" as any,
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    padding: 14,
+    elevation: 1,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+  },
+  actionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  actionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  actionSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    lineHeight: 15,
+  },
+
+  // Order banners (flower & cake)
+  orderBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + "25",
+    marginBottom: 10,
+    elevation: 1,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  orderBannerEmoji: {
+    fontSize: 28,
+  },
+  orderBannerText: {
+    flex: 1,
+  },
+  orderBannerTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  orderBannerSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+
+  // Tags
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  tagPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 5,
+  },
+  tagPillText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  // Reminders (inline in hero)
+  heroDivider: {
+    height: 1,
+    marginTop: 0,
+    marginBottom: 12,
+  },
+  reminderInline: {
+    gap: 8,
+  },
+  reminderInlineItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  reminderDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  reminderInlineText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  reminderInlineBold: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
   },
 });
 

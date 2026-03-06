@@ -24,7 +24,6 @@ import {
 import { databaseService } from "../services/database.service";
 import { getTrendingProducts } from "../services/affiliateProductService";
 import { AffiliateProduct } from "../types";
-import { useLazySection } from "../hooks/useLazySection";
 import { LoadingState } from "@components/atoms/LoadingState";
 import HeroBanner from "../components/suggestions/HeroBanner";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
@@ -40,6 +39,110 @@ import {
 } from "../services/analyticsService";
 import ResultsModal from "../components/suggestions/ResultsModal";
 import PressableCard from "@components/atoms/PressableCard";
+
+const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation }) => (
+  <View style={styles.section}>
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>Trắc nghiệm & Khám phá</Text>
+      <View style={styles.sectionBadge}>
+        <Text style={styles.sectionBadgeText}>3 công cụ</Text>
+      </View>
+    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.toolCards}
+      removeClippedSubviews={false}
+    >
+      <PressableCard
+        style={[styles.toolCard, { backgroundColor: "#7C3AED" }]}
+        onPress={() => navigation.navigate("PersonalitySurvey")}
+      >
+        <View style={styles.toolTop}>
+          <View style={styles.toolHeader}>
+            <View style={styles.toolIconWrap}>
+              <Ionicons name="person-circle-outline" size={32} color="rgba(255,255,255,0.9)" />
+            </View>
+            <View style={styles.toolPills}>
+              <View style={styles.toolPill}>
+                <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.toolPillText}>8 câu</Text>
+              </View>
+              <View style={styles.toolPill}>
+                <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.toolPillText}>3 phút</Text>
+              </View>
+            </View>
+          </View>
+          <Text style={styles.toolTitle}>Khảo sát tính cách</Text>
+          <Text style={styles.toolDesc}>Khám phá phong cách yêu thương của bạn</Text>
+        </View>
+        <View style={styles.toolCta}>
+          <Text style={styles.toolCtaText}>Khám phá</Text>
+          <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
+        </View>
+      </PressableCard>
+
+      <PressableCard
+        style={[styles.toolCard, { backgroundColor: "#1A9E6E" }]}
+        onPress={() => navigation.navigate("MBTISurvey")}
+      >
+        <View style={styles.toolTop}>
+          <View style={styles.toolHeader}>
+            <View style={styles.toolIconWrap}>
+              <Ionicons name="people" size={32} color="rgba(255,255,255,0.9)" />
+            </View>
+            <View style={styles.toolPills}>
+              <View style={styles.toolPill}>
+                <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.toolPillText}>40 câu</Text>
+              </View>
+              <View style={styles.toolPill}>
+                <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.toolPillText}>10 phút</Text>
+              </View>
+            </View>
+          </View>
+          <Text style={styles.toolTitle}>Trắc nghiệm MBTI</Text>
+          <Text style={styles.toolDesc}>Khám phá tính cách và sự tương hợp</Text>
+        </View>
+        <View style={styles.toolCta}>
+          <Text style={styles.toolCtaText}>Bắt đầu</Text>
+          <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
+        </View>
+      </PressableCard>
+
+      <PressableCard
+        style={[styles.toolCard, { backgroundColor: COLORS.secondary }]}
+        onPress={() => navigation.navigate("ActivitySuggestions", {})}
+      >
+        <View style={styles.toolTop}>
+          <View style={styles.toolHeader}>
+            <View style={styles.toolIconWrap}>
+              <Ionicons name="map-outline" size={32} color="rgba(255,255,255,0.9)" />
+            </View>
+            <View style={styles.toolPills}>
+              <View style={styles.toolPill}>
+                <Ionicons name="restaurant-outline" size={10} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.toolPillText}>Ẩm thực</Text>
+              </View>
+              <View style={styles.toolPill}>
+                <Ionicons name="leaf-outline" size={10} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.toolPillText}>Spa</Text>
+              </View>
+            </View>
+          </View>
+          <Text style={styles.toolTitle}>Gợi ý hoạt động</Text>
+          <Text style={styles.toolDesc}>Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn</Text>
+        </View>
+        <View style={styles.toolCta}>
+          <Text style={styles.toolCtaText}>Khám phá</Text>
+          <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
+        </View>
+      </PressableCard>
+    </ScrollView>
+  </View>
+));
 
 const SuggestionsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -67,12 +170,7 @@ const SuggestionsScreen: React.FC = () => {
     Record<string, any>
   >({});
 
-  // Lazy loading sections
-  const showArticles = useLazySection(3);
-  const showTrending = useLazySection(4);
-  const showOccasions = useLazySection(5);
-  // const showBudget = useLazySection(6); // hidden — budget filter tạm ẩn
-  // const showExperiences = useLazySection(7); // hidden — tạm ẩn
+  // Removed useLazySection — cascading setTimeout re-renders caused jank
 
   // Load data — small delay to let initial render paint, then fetch
   useEffect(() => {
@@ -215,6 +313,7 @@ const SuggestionsScreen: React.FC = () => {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingTop: insets.top + 10 },
@@ -231,238 +330,69 @@ const SuggestionsScreen: React.FC = () => {
         <HeroBanner onStartSurvey={handleStartSurvey} />
 
         {/* Section 2: Tools */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trắc nghiệm & Khám phá</Text>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>3 công cụ</Text>
-            </View>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.toolCards}
-            removeClippedSubviews={false}
-          >
-            {/* Personality Survey card */}
-            <PressableCard
-              style={[styles.toolCard, { backgroundColor: "#7C3AED" }]}
-              onPress={() => navigation.navigate("PersonalitySurvey")}
-            >
-              <View style={styles.toolTop}>
-                <View style={styles.toolHeader}>
-                  <View style={styles.toolIconWrap}>
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={32}
-                      color="rgba(255,255,255,0.9)"
-                    />
-                  </View>
-                  <View style={styles.toolPills}>
-                    <View style={styles.toolPill}>
-                      <Ionicons
-                        name="help-circle-outline"
-                        size={10}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                      <Text style={styles.toolPillText}>8 câu</Text>
-                    </View>
-                    <View style={styles.toolPill}>
-                      <Ionicons
-                        name="time-outline"
-                        size={10}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                      <Text style={styles.toolPillText}>3 phút</Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={styles.toolTitle}>Khảo sát tính cách</Text>
-                <Text style={styles.toolDesc}>
-                  Khám phá phong cách yêu thương của bạn
-                </Text>
-              </View>
-              <View style={styles.toolCta}>
-                <Text style={styles.toolCtaText}>Khám phá</Text>
-                <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
-              </View>
-            </PressableCard>
-
-            {/* MBTI card */}
-            <PressableCard
-              style={[styles.toolCard, { backgroundColor: "#1A9E6E" }]}
-              onPress={() => navigation.navigate("MBTISurvey")}
-            >
-              <View style={styles.toolTop}>
-                <View style={styles.toolHeader}>
-                  <View style={styles.toolIconWrap}>
-                    <Ionicons
-                      name="people"
-                      size={32}
-                      color="rgba(255,255,255,0.9)"
-                    />
-                  </View>
-                  <View style={styles.toolPills}>
-                    <View style={styles.toolPill}>
-                      <Ionicons
-                        name="help-circle-outline"
-                        size={10}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                      <Text style={styles.toolPillText}>40 câu</Text>
-                    </View>
-                    <View style={styles.toolPill}>
-                      <Ionicons
-                        name="time-outline"
-                        size={10}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                      <Text style={styles.toolPillText}>10 phút</Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={styles.toolTitle}>Trắc nghiệm MBTI</Text>
-                <Text style={styles.toolDesc}>
-                  Khám phá tính cách và sự tương hợp
-                </Text>
-              </View>
-              <View style={styles.toolCta}>
-                <Text style={styles.toolCtaText}>Bắt đầu</Text>
-                <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
-              </View>
-            </PressableCard>
-
-            {/* AI Activity Suggestion card */}
-            <PressableCard
-              style={[styles.toolCard, { backgroundColor: COLORS.secondary }]}
-              onPress={() => navigation.navigate("ActivitySuggestions", {})}
-            >
-              <View style={styles.toolTop}>
-                <View style={styles.toolHeader}>
-                  <View style={styles.toolIconWrap}>
-                    <Ionicons
-                      name="map-outline"
-                      size={32}
-                      color="rgba(255,255,255,0.9)"
-                    />
-                  </View>
-                  <View style={styles.toolPills}>
-                    <View style={styles.toolPill}>
-                      <Ionicons
-                        name="restaurant-outline"
-                        size={10}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                      <Text style={styles.toolPillText}>Ẩm thực</Text>
-                    </View>
-                    <View style={styles.toolPill}>
-                      <Ionicons
-                        name="leaf-outline"
-                        size={10}
-                        color="rgba(255,255,255,0.9)"
-                      />
-                      <Text style={styles.toolPillText}>Spa</Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={styles.toolTitle}>Gợi ý hoạt động</Text>
-                <Text style={styles.toolDesc}>
-                  Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn
-                </Text>
-              </View>
-              <View style={styles.toolCta}>
-                <Text style={styles.toolCtaText}>Khám phá</Text>
-                <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
-              </View>
-            </PressableCard>
-          </ScrollView>
-        </View>
+        <ToolCardsSection navigation={navigation} />
 
         {/* Section 4: Articles */}
-        {showArticles ? (
-          <ArticlesSection
-            articles={articles}
-            loading={loading}
-            selectedCategory={selectedArticleCategory}
-            onCategoryChange={handleArticleCategoryChange}
-            onArticlePress={handleArticlePress}
-            onViewAll={() => navigation.navigate("AllArticles")}
-          />
-        ) : (
-          <View style={styles.section}>
-            <LoadingState
-              variant="skeleton"
-              skeletonType="card"
-              skeletonCount={2}
-            />
-          </View>
-        )}
+        <ArticlesSection
+          articles={articles}
+          loading={loading}
+          selectedCategory={selectedArticleCategory}
+          onCategoryChange={handleArticleCategoryChange}
+          onArticlePress={handleArticlePress}
+          onViewAll={() => navigation.navigate("AllArticles")}
+        />
 
         {/* Section 5: Gift by Occasion */}
-        {showOccasions ? (
-          <OccasionCards onOccasionPress={handleOccasionPress} />
-        ) : (
-          <View style={styles.section}>
-            <LoadingState
-              variant="skeleton"
-              skeletonType="list"
-              skeletonCount={2}
-            />
-          </View>
-        )}
+        <OccasionCards onOccasionPress={handleOccasionPress} />
 
         {/* Section 6: Trending Products */}
-        {showTrending ? (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Danh sách quà tặng</Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("AllProducts")}
-              >
-                <Text style={styles.viewAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
-            </View>
-            {productsError ? (
-              <View style={styles.offlineBanner}>
-                <Ionicons
-                  name="wifi-outline"
-                  size={20}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={styles.offlineBannerText}>{productsError}</Text>
-              </View>
-            ) : trendingProducts.length === 0 ? (
-              <View style={styles.offlineBanner}>
-                <Ionicons
-                  name="gift-outline"
-                  size={20}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={styles.offlineBannerText}>
-                  Chưa có sản phẩm nào
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.verticalProductList}>
-                {trendingProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    variant="vertical"
-                  />
-                ))}
-              </View>
-            )}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Danh sách quà tặng</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AllProducts")}
+            >
+              <Text style={styles.viewAllText}>Xem tất cả</Text>
+            </TouchableOpacity>
           </View>
-        ) : (
-          <View style={styles.section}>
+          {loading ? (
             <LoadingState
               variant="skeleton"
               skeletonType="card"
               skeletonCount={2}
             />
-          </View>
-        )}
+          ) : productsError ? (
+            <View style={styles.offlineBanner}>
+              <Ionicons
+                name="wifi-outline"
+                size={20}
+                color={COLORS.textSecondary}
+              />
+              <Text style={styles.offlineBannerText}>{productsError}</Text>
+            </View>
+          ) : trendingProducts.length === 0 ? (
+            <View style={styles.offlineBanner}>
+              <Ionicons
+                name="gift-outline"
+                size={20}
+                color={COLORS.textSecondary}
+              />
+              <Text style={styles.offlineBannerText}>
+                Chưa có sản phẩm nào
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.verticalProductList}>
+              {trendingProducts.slice(0, 6).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  variant="vertical"
+                />
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Section 7: Gift by Budget — tạm ẩn */}
 
@@ -471,21 +401,25 @@ const SuggestionsScreen: React.FC = () => {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Modals */}
-      <SurveyModal
-        visible={showSurveyModal}
-        onClose={() => setShowSurveyModal(false)}
-        onComplete={handleSurveyComplete}
-      />
+      {/* Modals — lazy-mounted to avoid heavy render when hidden */}
+      {showSurveyModal && (
+        <SurveyModal
+          visible={showSurveyModal}
+          onClose={() => setShowSurveyModal(false)}
+          onComplete={handleSurveyComplete}
+        />
+      )}
 
-      <ResultsModal
-        visible={showResultsModal}
-        suggestions={resultSuggestions}
-        products={trendingProducts}
-        surveyAnswers={resultSurveyAnswers}
-        onClose={() => setShowResultsModal(false)}
-        onRetake={handleRetakeSurvey}
-      />
+      {showResultsModal && (
+        <ResultsModal
+          visible={showResultsModal}
+          suggestions={resultSuggestions}
+          products={trendingProducts}
+          surveyAnswers={resultSurveyAnswers}
+          onClose={() => setShowResultsModal(false)}
+          onRetake={handleRetakeSurvey}
+        />
+      )}
     </View>
   );
 };

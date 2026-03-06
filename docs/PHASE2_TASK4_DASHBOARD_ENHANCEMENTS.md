@@ -46,7 +46,7 @@ const isToday = DateUtils.isToday(targetDate);
 
 #### C. Enhanced Labels
 - Normal: "Còn lại"
-- Today: "🎉 Hôm nay!"
+- Today: "🎉 Hôm nay"
 - Urgent: "⚠️ Còn lại"
 - Past: "Đã qua"
 
@@ -68,7 +68,7 @@ const isToday = DateUtils.isToday(targetDate);
 └─────────────────────────┘
 
 ┌─────────────────────────┐
-│   🎉 Hôm nay!           │  ← No background (today)
+│   🎉 Hôm nay            │  ← No background (today)
 │                         │
 │   [23]  [45]            │  ← Green numbers
 │   giờ   phút            │
@@ -283,7 +283,7 @@ OR when all complete:
 ### Manual Testing:
 
 #### Countdown Timer:
-- [ ] Create event today → Verify green styling + "🎉 Hôm nay!"
+- [ ] Create event today → Verify green styling + "🎉 Hôm nay"
 - [ ] Create event in 1 day → Verify red background + "⚠️ Còn lại"
 - [ ] Create event in 2 days → Verify red background
 - [ ] Create event in 3 days → Verify yellow background

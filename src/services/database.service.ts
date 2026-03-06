@@ -43,6 +43,7 @@ export async function initializeTables(
         isRecurring INTEGER DEFAULT 1,
         recurrencePattern TEXT,
         isDeleted INTEGER DEFAULT 0,
+        isNotificationEnabled INTEGER DEFAULT 1,
         localId TEXT,
         serverId TEXT,
         version INTEGER DEFAULT 0,
@@ -51,6 +52,17 @@ export async function initializeTables(
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Add isNotificationEnabled column if it doesn't exist (migration)
+    try {
+      await db.execAsync(
+        "ALTER TABLE events ADD COLUMN isNotificationEnabled INTEGER DEFAULT 1;"
+      );
+    } catch (error: any) {
+      if (!error.message?.includes("duplicate column")) {
+        console.warn("Error adding isNotificationEnabled column:", error);
+      }
+    }
 
     // Add recurrencePattern column if it doesn't exist (migration)
     try {
@@ -473,6 +485,7 @@ function dbEventToEvent(dbEvent: DatabaseEvent): Event {
       ? JSON.parse(dbEvent.recurrencePattern)
       : undefined,
     isDeleted: Boolean(dbEvent.isDeleted),
+    isNotificationEnabled: dbEvent.isNotificationEnabled !== undefined ? Boolean(dbEvent.isNotificationEnabled) : true,
     localId: dbEvent.localId || undefined,
     serverId: dbEvent.serverId || undefined,
     version: dbEvent.version,
@@ -504,6 +517,8 @@ function eventToDbFormat(event: Partial<Event>): Partial<DatabaseEvent> {
       : null;
   if (event.isDeleted !== undefined)
     dbEvent.isDeleted = event.isDeleted ? 1 : 0;
+  if (event.isNotificationEnabled !== undefined)
+    dbEvent.isNotificationEnabled = event.isNotificationEnabled ? 1 : 0;
   if (event.localId !== undefined) dbEvent.localId = event.localId || null;
   if (event.serverId !== undefined) dbEvent.serverId = event.serverId || null;
   if (event.version !== undefined) dbEvent.version = event.version;
@@ -762,6 +777,7 @@ export async function forceRecreateEventsTable(
         isRecurring INTEGER DEFAULT 1,
         recurrencePattern TEXT,
         isDeleted INTEGER DEFAULT 0,
+        isNotificationEnabled INTEGER DEFAULT 1,
         localId TEXT,
         serverId TEXT,
         version INTEGER DEFAULT 0,

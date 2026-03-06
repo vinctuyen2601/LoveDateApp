@@ -45,6 +45,12 @@ class NotificationService {
    * Schedule notifications for an event
    */
   async scheduleEventNotifications(event: Event): Promise<void> {
+    // Skip if notification is disabled for this event
+    if (event.isNotificationEnabled === false) {
+      await NotificationUtils.cancelEventNotifications(event.id);
+      return;
+    }
+
     try {
       // Cancel existing notifications for this event
       await NotificationUtils.cancelEventNotifications(event.id);

@@ -218,7 +218,7 @@ const ProductDetailScreen: React.FC = () => {
             )}
             {discountPercent > 0 && (
               <Text style={styles.originalPrice}>
-                {formatPrice(product.originalPrice)}
+                {formatPrice(product.originalPrice!)}
               </Text>
             )}
           </View>

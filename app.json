@@ -11,14 +11,20 @@
       "resizeMode": "contain",
       "backgroundColor": "#FF69B4"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lovedate.mobile",
       "buildNumber": "1",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification", "fetch", "processing"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch",
+          "processing"
+        ]
       }
     },
     "android": {
@@ -30,12 +36,14 @@
       "package": "com.lovedate.mobile",
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "USE_FULL_SCREEN_INTENT",
-        "POST_NOTIFICATIONS",
-        "SCHEDULE_EXACT_ALARM",
-        "USE_EXACT_ALARM"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.USE_FULL_SCREEN_INTENT",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WAKE_LOCK"
       ]
     },
     "web": {
@@ -64,8 +72,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "32f2824c-3d51-44e0-92e9-18c3eeee1fb1"
+        "projectId": "2a3a23a7-ec2f-4fba-931b-2adb02ad9c6c"
       }
-    }
+    },
+    "owner": "tuyen2601"
   }
 }

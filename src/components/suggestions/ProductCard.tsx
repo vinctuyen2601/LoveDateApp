@@ -106,7 +106,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatPrice(product.price)}</Text>
             {discount !== null && (
-              <Text style={styles.originalPrice}>{formatPrice(product.originalPrice)}</Text>
+              <Text style={styles.originalPrice}>{formatPrice(product.originalPrice!)}</Text>
             )}
           </View>
         )}

@@ -1,23 +1,42 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Image, Modal, ScrollView, TextInput, ActivityIndicator,
-  KeyboardAvoidingView, Platform, Dimensions, Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { format, addDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import * as Notifications from 'expo-notifications';
-import { COLORS } from '@themes/colors';
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  Modal,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions,
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { format, addDays } from "date-fns";
+import { vi } from "date-fns/locale";
+import * as Notifications from "expo-notifications";
+import { COLORS } from "@themes/colors";
 import {
-  ManualProduct, LocalOrder, SHOP_CATEGORIES, TIME_SLOTS,
-  getManualProducts, getCoverageAreas, createOrder,
-  saveOrderLocally, getLocalOrders, trackOrder, updateLocalOrderStatus,
-} from '../services/localShopService';
+  ManualProduct,
+  LocalOrder,
+  SHOP_CATEGORIES,
+  TIME_SLOTS,
+  getManualProducts,
+  getCoverageAreas,
+  createOrder,
+  saveOrderLocally,
+  getLocalOrders,
+  trackOrder,
+  updateLocalOrderStatus,
+} from "../services/localShopService";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 32 - 12) / 2;
 const DELIVERY_DATES_COUNT = 14;
 
@@ -27,16 +46,29 @@ const ShopProductCard: React.FC<{
   product: ManualProduct;
   onOrder: (p: ManualProduct) => void;
 }> = React.memo(({ product, onOrder }) => {
-  const discount = product.originalPrice && Number(product.originalPrice) > Number(product.price)
-    ? Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100)
-    : 0;
+  const discount =
+    product.originalPrice &&
+    Number(product.originalPrice) > Number(product.price)
+      ? Math.round(
+          (1 - Number(product.price) / Number(product.originalPrice)) * 100
+        )
+      : 0;
 
   return (
     <View style={[styles.card, { width: CARD_WIDTH }]}>
       {product.imageUrl ? (
-        <Image source={{ uri: product.imageUrl }} style={styles.cardImage} resizeMode="cover" />
+        <Image
+          source={{ uri: product.imageUrl }}
+          style={styles.cardImage}
+          resizeMode="cover"
+        />
       ) : (
-        <View style={[styles.cardIconBox, { backgroundColor: (product.color || COLORS.primary) + '20' }]}>
+        <View
+          style={[
+            styles.cardIconBox,
+            { backgroundColor: (product.color || COLORS.primary) + "20" },
+          ]}
+        >
           <Text style={styles.cardIconEmoji}>🌸</Text>
         </View>
       )}
@@ -53,16 +85,28 @@ const ShopProductCard: React.FC<{
       )}
 
       <View style={styles.cardBody}>
-        <Text style={styles.cardName} numberOfLines={2}>{product.name}</Text>
+        <Text style={styles.cardName} numberOfLines={2}>
+          {product.name}
+        </Text>
         <View style={styles.cardPriceRow}>
-          <Text style={styles.cardPrice}>{Number(product.price).toLocaleString('vi-VN')}₫</Text>
-          {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-            <Text style={styles.cardOriginal}>{Number(product.originalPrice).toLocaleString('vi-VN')}₫</Text>
-          )}
+          <Text style={styles.cardPrice}>
+            {Number(product.price).toLocaleString("vi-VN")}₫
+          </Text>
+          {product.originalPrice &&
+            Number(product.originalPrice) > Number(product.price) && (
+              <Text style={styles.cardOriginal}>
+                {Number(product.originalPrice).toLocaleString("vi-VN")}₫
+              </Text>
+            )}
         </View>
-        <Text style={styles.cardDelivery}>🕐 Giao trong {product.leadTimeHours}h</Text>
+        <Text style={styles.cardDelivery}>
+          🕐 Giao trong {product.leadTimeHours}h
+        </Text>
         <TouchableOpacity
-          style={[styles.orderBtn, { backgroundColor: product.color || COLORS.primary }]}
+          style={[
+            styles.orderBtn,
+            { backgroundColor: product.color || COLORS.primary },
+          ]}
           onPress={() => onOrder(product)}
           activeOpacity={0.85}
         >
@@ -88,15 +132,15 @@ interface OrderForm {
 }
 
 const EMPTY_FORM: OrderForm = {
-  customerName: '',
-  customerPhone: '',
-  customerEmail: '',
-  deliveryAddress: '',
-  deliveryDate: '',
-  deliveryTimeSlot: '10-12',
+  customerName: "",
+  customerPhone: "",
+  customerEmail: "",
+  deliveryAddress: "",
+  deliveryDate: "",
+  deliveryTimeSlot: "10-12",
   quantity: 1,
-  cardMessage: '',
-  specialNotes: '',
+  cardMessage: "",
+  specialNotes: "",
 };
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
@@ -106,41 +150,46 @@ const LocalShopScreen: React.FC = () => {
   const navigation = useNavigation<any>();
 
   // Data
-  const [category, setCategory] = useState('all');
-  const [products, setProducts]       = useState<ManualProduct[]>([]);
-  const [loading, setLoading]         = useState(true);
+  const [category, setCategory] = useState("all");
+  const [products, setProducts] = useState<ManualProduct[]>([]);
+  const [loading, setLoading] = useState(true);
   const [coverageAreas, setCoverageAreas] = useState<string[]>([]);
 
   // UI state
-  const [coverageModal, setCoverageModal]     = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ManualProduct | null>(null);
-  const [form, setForm]                       = useState<OrderForm>(EMPTY_FORM);
-  const [submitting, setSubmitting]           = useState(false);
-  const [successModal, setSuccessModal]       = useState(false);
-  const [orderId, setOrderId]                 = useState('');
+  const [coverageModal, setCoverageModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ManualProduct | null>(
+    null
+  );
+  const [form, setForm] = useState<OrderForm>(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [successModal, setSuccessModal] = useState(false);
+  const [orderId, setOrderId] = useState("");
 
   // My orders state
-  const [ordersModal, setOrdersModal]         = useState(false);
-  const [myOrders, setMyOrders]               = useState<LocalOrder[]>([]);
-  const [trackingId, setTrackingId]           = useState<string | null>(null);
+  const [ordersModal, setOrdersModal] = useState(false);
+  const [myOrders, setMyOrders] = useState<LocalOrder[]>([]);
+  const [trackingId, setTrackingId] = useState<string | null>(null);
 
   // Push notification token
-  const [expoPushToken, setExpoPushToken]     = useState<string | undefined>();
+  const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
   const notiListenerRef = useRef<Notifications.Subscription | null>(null);
 
   // Lấy expo push token và lắng nghe noti hủy đơn
   useEffect(() => {
     Notifications.getExpoPushTokenAsync()
-      .then(t => setExpoPushToken(t.data))
-      .catch(() => { /* permission chưa grant — bỏ qua */ });
+      .then((t) => setExpoPushToken(t.data))
+      .catch(() => {
+        /* permission chưa grant — bỏ qua */
+      });
 
     // Khi người dùng bấm vào notification hủy đơn → mở "Đơn hàng của tôi"
-    notiListenerRef.current = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data as any;
-      if (data?.type === 'order_cancelled') {
-        openMyOrders();
-      }
-    });
+    notiListenerRef.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as any;
+        if (data?.type === "order_cancelled") {
+          openMyOrders();
+        }
+      });
 
     return () => {
       notiListenerRef.current?.remove();
@@ -154,7 +203,10 @@ const LocalShopScreen: React.FC = () => {
       setLoading(true);
       try {
         const [res, areas] = await Promise.all([
-          getManualProducts({ category: category !== 'all' ? category : undefined, limit: 20 }),
+          getManualProducts({
+            category: category !== "all" ? category : undefined,
+            limit: 20,
+          }),
           getCoverageAreas(),
         ]);
         if (!cancelled) {
@@ -168,7 +220,9 @@ const LocalShopScreen: React.FC = () => {
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [category]);
 
   // Show coverage modal on mount
@@ -189,9 +243,11 @@ const LocalShopScreen: React.FC = () => {
       const updated = await trackOrder(order.id, order.customerPhone);
       const newStatus = updated.status ?? order.status;
       await updateLocalOrderStatus(order.id, newStatus);
-      setMyOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o));
+      setMyOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
+      );
     } catch {
-      Alert.alert('Không thể kiểm tra', 'Vui lòng thử lại sau.');
+      Alert.alert("Không thể kiểm tra", "Vui lòng thử lại sau.");
     } finally {
       setTrackingId(null);
     }
@@ -202,57 +258,60 @@ const LocalShopScreen: React.FC = () => {
     const firstDate = addDays(new Date(), minDays);
     setForm({
       ...EMPTY_FORM,
-      deliveryDate: format(firstDate, 'yyyy-MM-dd'),
+      deliveryDate: format(firstDate, "yyyy-MM-dd"),
     });
     setSelectedProduct(product);
   };
 
   const setField = (field: keyof OrderForm, value: string | number) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
     if (!selectedProduct) return;
 
     // Basic validation
     if (!form.customerName.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập họ và tên người nhận.');
+      Alert.alert("Thiếu thông tin", "Vui lòng nhập họ và tên người nhận.");
       return;
     }
-    const phone = form.customerPhone.trim().replace(/\s/g, '');
+    const phone = form.customerPhone.trim().replace(/\s/g, "");
     if (!/^\d{9,11}$/.test(phone)) {
-      Alert.alert('Số điện thoại không hợp lệ', 'Vui lòng nhập số điện thoại đúng định dạng.');
+      Alert.alert(
+        "Số điện thoại không hợp lệ",
+        "Vui lòng nhập số điện thoại đúng định dạng."
+      );
       return;
     }
     if (!form.deliveryAddress.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập địa chỉ giao hàng.');
+      Alert.alert("Thiếu thông tin", "Vui lòng nhập địa chỉ giao hàng.");
       return;
     }
     if (!form.deliveryDate) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng chọn ngày giao hàng.');
+      Alert.alert("Thiếu thông tin", "Vui lòng chọn ngày giao hàng.");
       return;
     }
 
     setSubmitting(true);
     try {
       const res = await createOrder({
-        productId:       selectedProduct.id,
-        productName:     selectedProduct.name,
-        productPrice:    Number(selectedProduct.price),
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
+        productPrice: Number(selectedProduct.price),
         productImageUrl: selectedProduct.imageUrl,
-        customerName:    form.customerName.trim(),
-        customerPhone:   phone,
-        customerEmail:   form.customerEmail.trim() || undefined,
+        customerName: form.customerName.trim(),
+        customerPhone: phone,
+        customerEmail: form.customerEmail.trim() || undefined,
         deliveryAddress: form.deliveryAddress.trim(),
-        deliveryDate:    form.deliveryDate,
+        deliveryDate: form.deliveryDate,
         deliveryTimeSlot: form.deliveryTimeSlot,
-        quantity:        form.quantity,
-        totalPrice:      Number(selectedProduct.price) * form.quantity,
-        cardMessage:     form.cardMessage.trim() || undefined,
-        specialNotes:    form.specialNotes.trim() || undefined,
-        paymentMethod:   'cod',
+        quantity: form.quantity,
+        totalPrice: Number(selectedProduct.price) * form.quantity,
+        cardMessage: form.cardMessage.trim() || undefined,
+        specialNotes: form.specialNotes.trim() || undefined,
+        paymentMethod: "cod",
         expoPushToken,
       });
-      const newOrderId = res?.id ?? '';
+      const newOrderId = res?.id ?? "";
       setOrderId(newOrderId);
       setSelectedProduct(null);
       setSuccessModal(true);
@@ -264,13 +323,13 @@ const LocalShopScreen: React.FC = () => {
           totalPrice: Number(selectedProduct.price) * form.quantity,
           deliveryDate: form.deliveryDate,
           deliveryTimeSlot: form.deliveryTimeSlot,
-          customerPhone: form.customerPhone.trim().replace(/\s/g, ''),
-          status: 'pending',
+          customerPhone: form.customerPhone.trim().replace(/\s/g, ""),
+          status: "pending",
           createdAt: new Date().toISOString(),
         });
       }
     } catch {
-      Alert.alert('Đặt hàng thất bại', 'Vui lòng kiểm tra kết nối và thử lại.');
+      Alert.alert("Đặt hàng thất bại", "Vui lòng kiểm tra kết nối và thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -279,7 +338,10 @@ const LocalShopScreen: React.FC = () => {
   // Available delivery dates based on product lead time
   const availableDates = selectedProduct
     ? Array.from({ length: DELIVERY_DATES_COUNT }, (_, i) =>
-        addDays(new Date(), Math.max(1, Math.ceil(selectedProduct.leadTimeHours / 24)) + i)
+        addDays(
+          new Date(),
+          Math.max(1, Math.ceil(selectedProduct.leadTimeHours / 24)) + i
+        )
       )
     : [];
 
@@ -287,29 +349,38 @@ const LocalShopScreen: React.FC = () => {
     ({ item }: { item: ManualProduct }) => (
       <ShopProductCard product={item} onOrder={handleOrderPress} />
     ),
-    [],
+    []
   );
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Đặt hoa & quà</Text>
+          <Text style={styles.headerTitle}>Đặt hoa, bánh và quà</Text>
           <Text style={styles.headerSub}>Giao tận nơi trong ngày</Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 4 }}>
+        <View style={{ flexDirection: "row", gap: 4 }}>
           <TouchableOpacity style={styles.iconBtn} onPress={openMyOrders}>
             <Ionicons name="receipt-outline" size={22} color={COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => setCoverageModal(true)}>
-            <Ionicons name="location-outline" size={22} color={COLORS.primary} />
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => setCoverageModal(true)}
+          >
+            <Ionicons
+              name="location-outline"
+              size={22}
+              color={COLORS.primary}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -321,7 +392,7 @@ const LocalShopScreen: React.FC = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsRow}
         >
-          {SHOP_CATEGORIES.map(cat => (
+          {SHOP_CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat.key}
               style={[styles.chip, category === cat.key && styles.chipActive]}
@@ -330,9 +401,16 @@ const LocalShopScreen: React.FC = () => {
               <Ionicons
                 name={cat.icon as any}
                 size={13}
-                color={category === cat.key ? COLORS.white : COLORS.textSecondary}
+                color={
+                  category === cat.key ? COLORS.white : COLORS.textSecondary
+                }
               />
-              <Text style={[styles.chipText, category === cat.key && styles.chipTextActive]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  category === cat.key && styles.chipTextActive,
+                ]}
+              >
                 {cat.label}
               </Text>
             </TouchableOpacity>
@@ -349,12 +427,14 @@ const LocalShopScreen: React.FC = () => {
       ) : products.length === 0 ? (
         <View style={styles.center}>
           <Text style={{ fontSize: 48 }}>🌸</Text>
-          <Text style={styles.stateText}>Chưa có sản phẩm trong danh mục này</Text>
+          <Text style={styles.stateText}>
+            Chưa có sản phẩm trong danh mục này
+          </Text>
         </View>
       ) : (
         <FlatList
           data={products}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={renderItem}
           numColumns={2}
           columnWrapperStyle={styles.row}
@@ -373,7 +453,12 @@ const LocalShopScreen: React.FC = () => {
         onRequestClose={() => setOrdersModal(false)}
       >
         <View style={styles.overlay}>
-          <View style={[styles.orderSheet, { paddingBottom: insets.bottom + 8, maxHeight: '80%' }]}>
+          <View
+            style={[
+              styles.orderSheet,
+              { paddingBottom: insets.bottom + 8, maxHeight: "80%" },
+            ]}
+          >
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Đơn hàng của tôi</Text>
@@ -387,48 +472,104 @@ const LocalShopScreen: React.FC = () => {
                 <Text style={styles.stateText}>Chưa có đơn hàng nào</Text>
               </View>
             ) : (
-              <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} showsVerticalScrollIndicator={false}>
-                {myOrders.map(order => {
-                  const STATUS_MAP: Record<string, { label: string; color: string }> = {
-                    pending:    { label: 'Chờ xác nhận', color: '#888' },
-                    confirmed:  { label: 'Đã xác nhận',  color: '#1677ff' },
-                    preparing:  { label: 'Đang chuẩn bị', color: '#fa8c16' },
-                    delivering: { label: 'Đang giao',     color: '#722ed1' },
-                    delivered:  { label: 'Đã giao',       color: COLORS.success },
-                    cancelled:  { label: 'Đã hủy',        color: COLORS.error },
+              <ScrollView
+                contentContainerStyle={{ padding: 16, gap: 12 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {myOrders.map((order) => {
+                  const STATUS_MAP: Record<
+                    string,
+                    { label: string; color: string }
+                  > = {
+                    pending: { label: "Chờ xác nhận", color: "#888" },
+                    confirmed: { label: "Đã xác nhận", color: "#1677ff" },
+                    preparing: { label: "Đang chuẩn bị", color: "#fa8c16" },
+                    delivering: { label: "Đang giao", color: "#722ed1" },
+                    delivered: { label: "Đã giao", color: COLORS.success },
+                    cancelled: { label: "Đã hủy", color: COLORS.error },
                   };
-                  const s = STATUS_MAP[order.status] ?? { label: order.status, color: '#888' };
+                  const s = STATUS_MAP[order.status] ?? {
+                    label: order.status,
+                    color: "#888",
+                  };
                   const isTracking = trackingId === order.id;
                   return (
                     <View key={order.id} style={styles.orderHistoryCard}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
                         {order.productImageUrl ? (
-                          <Image source={{ uri: order.productImageUrl }} style={styles.historyImg} resizeMode="cover" />
+                          <Image
+                            source={{ uri: order.productImageUrl }}
+                            style={styles.historyImg}
+                            resizeMode="cover"
+                          />
                         ) : (
-                          <View style={[styles.historyImg, { backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' }]}>
+                          <View
+                            style={[
+                              styles.historyImg,
+                              {
+                                backgroundColor: COLORS.background,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              },
+                            ]}
+                          >
                             <Text style={{ fontSize: 22 }}>🌸</Text>
                           </View>
                         )}
                         <View style={{ flex: 1, gap: 3 }}>
-                          <Text style={styles.historyName} numberOfLines={1}>{order.productName}</Text>
-                          <Text style={styles.historyPrice}>{Number(order.totalPrice).toLocaleString('vi-VN')}₫</Text>
-                          <Text style={styles.historyDate}>📅 {order.deliveryDate} · {order.deliveryTimeSlot}h</Text>
-                          <View style={[styles.statusBadge, { backgroundColor: s.color + '18' }]}>
-                            <Text style={[styles.statusText, { color: s.color }]}>{s.label}</Text>
+                          <Text style={styles.historyName} numberOfLines={1}>
+                            {order.productName}
+                          </Text>
+                          <Text style={styles.historyPrice}>
+                            {Number(order.totalPrice).toLocaleString("vi-VN")}₫
+                          </Text>
+                          <Text style={styles.historyDate}>
+                            📅 {order.deliveryDate} · {order.deliveryTimeSlot}h
+                          </Text>
+                          <View
+                            style={[
+                              styles.statusBadge,
+                              { backgroundColor: s.color + "18" },
+                            ]}
+                          >
+                            <Text
+                              style={[styles.statusText, { color: s.color }]}
+                            >
+                              {s.label}
+                            </Text>
                           </View>
                         </View>
                         <TouchableOpacity
-                          style={[styles.trackBtn, isTracking && { opacity: 0.5 }]}
+                          style={[
+                            styles.trackBtn,
+                            isTracking && { opacity: 0.5 },
+                          ]}
                           onPress={() => handleTrackOrder(order)}
                           disabled={isTracking}
                         >
-                          {isTracking
-                            ? <ActivityIndicator size="small" color={COLORS.primary} />
-                            : <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
-                          }
+                          {isTracking ? (
+                            <ActivityIndicator
+                              size="small"
+                              color={COLORS.primary}
+                            />
+                          ) : (
+                            <Ionicons
+                              name="refresh-outline"
+                              size={18}
+                              color={COLORS.primary}
+                            />
+                          )}
                         </TouchableOpacity>
                       </View>
-                      <Text style={styles.historyOrderId}>Mã: {order.id.slice(0, 8).toUpperCase()}</Text>
+                      <Text style={styles.historyOrderId}>
+                        Mã: {order.id.slice(0, 8).toUpperCase()}
+                      </Text>
                     </View>
                   );
                 })}
@@ -458,21 +599,28 @@ const LocalShopScreen: React.FC = () => {
             <View style={styles.areasList}>
               {coverageAreas.map((area, i) => (
                 <View key={i} style={styles.areaRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={COLORS.success}
+                  />
                   <Text style={styles.areaText}>{area}</Text>
                 </View>
               ))}
             </View>
 
             <Text style={styles.coverageNote}>
-              Chúng tôi đang mở rộng thêm nhiều thành phố. Cảm ơn bạn đã ủng hộ! 💚
+              Chúng tôi đang mở rộng thêm nhiều thành phố. Cảm ơn bạn đã ủng hộ!
+              💚
             </Text>
 
             <TouchableOpacity
               style={styles.coverageBtn}
               onPress={() => setCoverageModal(false)}
             >
-              <Text style={styles.coverageBtnText}>Đã hiểu, tiếp tục mua sắm</Text>
+              <Text style={styles.coverageBtnText}>
+                Đã hiểu, tiếp tục mua sắm
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -489,9 +637,11 @@ const LocalShopScreen: React.FC = () => {
       >
         <KeyboardAvoidingView
           style={styles.overlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View style={[styles.orderSheet, { paddingBottom: insets.bottom + 8 }]}>
+          <View
+            style={[styles.orderSheet, { paddingBottom: insets.bottom + 8 }]}
+          >
             <View style={styles.sheetHandle} />
 
             {/* Sheet header */}
@@ -511,16 +661,30 @@ const LocalShopScreen: React.FC = () => {
               {selectedProduct && (
                 <View style={styles.productSummary}>
                   {selectedProduct.imageUrl ? (
-                    <Image source={{ uri: selectedProduct.imageUrl }} style={styles.summaryImg} resizeMode="cover" />
+                    <Image
+                      source={{ uri: selectedProduct.imageUrl }}
+                      style={styles.summaryImg}
+                      resizeMode="cover"
+                    />
                   ) : (
-                    <View style={[styles.summaryImgPlaceholder, { backgroundColor: (selectedProduct.color || COLORS.primary) + '20' }]}>
+                    <View
+                      style={[
+                        styles.summaryImgPlaceholder,
+                        {
+                          backgroundColor:
+                            (selectedProduct.color || COLORS.primary) + "20",
+                        },
+                      ]}
+                    >
                       <Text style={{ fontSize: 24 }}>🌸</Text>
                     </View>
                   )}
                   <View style={styles.summaryInfo}>
-                    <Text style={styles.summaryName} numberOfLines={2}>{selectedProduct.name}</Text>
+                    <Text style={styles.summaryName} numberOfLines={2}>
+                      {selectedProduct.name}
+                    </Text>
                     <Text style={styles.summaryPrice}>
-                      {Number(selectedProduct.price).toLocaleString('vi-VN')}₫
+                      {Number(selectedProduct.price).toLocaleString("vi-VN")}₫
                     </Text>
                   </View>
                 </View>
@@ -532,14 +696,20 @@ const LocalShopScreen: React.FC = () => {
                 <View style={styles.qtyRow}>
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() => setField('quantity', Math.max(1, form.quantity - 1))}
+                    onPress={() =>
+                      setField("quantity", Math.max(1, form.quantity - 1))
+                    }
                   >
-                    <Ionicons name="remove" size={18} color={COLORS.textPrimary} />
+                    <Ionicons
+                      name="remove"
+                      size={18}
+                      color={COLORS.textPrimary}
+                    />
                   </TouchableOpacity>
                   <Text style={styles.qtyText}>{form.quantity}</Text>
                   <TouchableOpacity
                     style={styles.qtyBtn}
-                    onPress={() => setField('quantity', form.quantity + 1)}
+                    onPress={() => setField("quantity", form.quantity + 1)}
                   >
                     <Ionicons name="add" size={18} color={COLORS.textPrimary} />
                   </TouchableOpacity>
@@ -554,14 +724,14 @@ const LocalShopScreen: React.FC = () => {
                   placeholder="Họ và tên *"
                   placeholderTextColor={COLORS.textLight}
                   value={form.customerName}
-                  onChangeText={v => setField('customerName', v)}
+                  onChangeText={(v) => setField("customerName", v)}
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Số điện thoại *"
                   placeholderTextColor={COLORS.textLight}
                   value={form.customerPhone}
-                  onChangeText={v => setField('customerPhone', v)}
+                  onChangeText={(v) => setField("customerPhone", v)}
                   keyboardType="phone-pad"
                 />
                 <TextInput
@@ -569,7 +739,7 @@ const LocalShopScreen: React.FC = () => {
                   placeholder="Email (tuỳ chọn)"
                   placeholderTextColor={COLORS.textLight}
                   value={form.customerEmail}
-                  onChangeText={v => setField('customerEmail', v)}
+                  onChangeText={(v) => setField("customerEmail", v)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -578,7 +748,7 @@ const LocalShopScreen: React.FC = () => {
                   placeholder="Địa chỉ giao hàng *"
                   placeholderTextColor={COLORS.textLight}
                   value={form.deliveryAddress}
-                  onChangeText={v => setField('deliveryAddress', v)}
+                  onChangeText={(v) => setField("deliveryAddress", v)}
                   multiline
                   numberOfLines={2}
                   textAlignVertical="top"
@@ -592,20 +762,24 @@ const LocalShopScreen: React.FC = () => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.dateScroll}
               >
-                {availableDates.map(date => {
-                  const ds = format(date, 'yyyy-MM-dd');
+                {availableDates.map((date) => {
+                  const ds = format(date, "yyyy-MM-dd");
                   const active = form.deliveryDate === ds;
                   return (
                     <TouchableOpacity
                       key={ds}
                       style={[styles.dateChip, active && styles.dateChipActive]}
-                      onPress={() => setField('deliveryDate', ds)}
+                      onPress={() => setField("deliveryDate", ds)}
                     >
-                      <Text style={[styles.dateDow, active && styles.dateDowActive]}>
-                        {format(date, 'EEE', { locale: vi })}
+                      <Text
+                        style={[styles.dateDow, active && styles.dateDowActive]}
+                      >
+                        {format(date, "EEE", { locale: vi })}
                       </Text>
-                      <Text style={[styles.dateNum, active && styles.dateNumActive]}>
-                        {format(date, 'd/M')}
+                      <Text
+                        style={[styles.dateNum, active && styles.dateNumActive]}
+                      >
+                        {format(date, "d/M")}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -615,15 +789,20 @@ const LocalShopScreen: React.FC = () => {
               {/* Time slot */}
               <Text style={styles.sectionLabel}>Khung giờ giao</Text>
               <View style={styles.timeSlotsGrid}>
-                {TIME_SLOTS.map(slot => {
+                {TIME_SLOTS.map((slot) => {
                   const active = form.deliveryTimeSlot === slot.value;
                   return (
                     <TouchableOpacity
                       key={slot.value}
                       style={[styles.timeChip, active && styles.timeChipActive]}
-                      onPress={() => setField('deliveryTimeSlot', slot.value)}
+                      onPress={() => setField("deliveryTimeSlot", slot.value)}
                     >
-                      <Text style={[styles.timeChipText, active && styles.timeChipTextActive]}>
+                      <Text
+                        style={[
+                          styles.timeChipText,
+                          active && styles.timeChipTextActive,
+                        ]}
+                      >
                         {slot.label}
                       </Text>
                     </TouchableOpacity>
@@ -638,7 +817,7 @@ const LocalShopScreen: React.FC = () => {
                 placeholder="Lời nhắn muốn ghi trên thiệp..."
                 placeholderTextColor={COLORS.textLight}
                 value={form.cardMessage}
-                onChangeText={v => setField('cardMessage', v)}
+                onChangeText={(v) => setField("cardMessage", v)}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -651,7 +830,7 @@ const LocalShopScreen: React.FC = () => {
                 placeholder="Màu sắc, yêu cầu đặc biệt..."
                 placeholderTextColor={COLORS.textLight}
                 value={form.specialNotes}
-                onChangeText={v => setField('specialNotes', v)}
+                onChangeText={(v) => setField("specialNotes", v)}
                 multiline
                 numberOfLines={2}
                 textAlignVertical="top"
@@ -659,8 +838,14 @@ const LocalShopScreen: React.FC = () => {
 
               {/* Payment */}
               <View style={styles.paymentRow}>
-                <Ionicons name="cash-outline" size={18} color={COLORS.success} />
-                <Text style={styles.paymentText}>Thanh toán khi nhận hàng (COD)</Text>
+                <Ionicons
+                  name="cash-outline"
+                  size={18}
+                  color={COLORS.success}
+                />
+                <Text style={styles.paymentText}>
+                  Thanh toán khi nhận hàng (COD)
+                </Text>
               </View>
 
               {/* Total */}
@@ -668,14 +853,20 @@ const LocalShopScreen: React.FC = () => {
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Tổng thanh toán</Text>
                   <Text style={styles.totalValue}>
-                    {(Number(selectedProduct.price) * form.quantity).toLocaleString('vi-VN')}₫
+                    {(
+                      Number(selectedProduct.price) * form.quantity
+                    ).toLocaleString("vi-VN")}
+                    ₫
                   </Text>
                 </View>
               )}
 
               {/* Submit */}
               <TouchableOpacity
-                style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+                style={[
+                  styles.submitBtn,
+                  submitting && styles.submitBtnDisabled,
+                ]}
                 onPress={handleSubmit}
                 disabled={submitting}
                 activeOpacity={0.85}
@@ -684,7 +875,11 @@ const LocalShopScreen: React.FC = () => {
                   <ActivityIndicator color={COLORS.white} size="small" />
                 ) : (
                   <>
-                    <Ionicons name="checkmark-circle" size={20} color={COLORS.white} />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={COLORS.white}
+                    />
                     <Text style={styles.submitBtnText}>Xác nhận đặt hàng</Text>
                   </>
                 )}
@@ -715,12 +910,17 @@ const LocalShopScreen: React.FC = () => {
             {orderId ? (
               <View style={styles.orderIdRow}>
                 <Text style={styles.orderIdLabel}>Mã đơn:</Text>
-                <Text style={styles.orderIdValue}>{orderId.slice(0, 8).toUpperCase()}</Text>
+                <Text style={styles.orderIdValue}>
+                  {orderId.slice(0, 8).toUpperCase()}
+                </Text>
               </View>
             ) : null}
             <TouchableOpacity
               style={styles.successBtn}
-              onPress={() => { setSuccessModal(false); navigation.goBack(); }}
+              onPress={() => {
+                setSuccessModal(false);
+                navigation.goBack();
+              }}
             >
               <Text style={styles.successBtnText}>Về trang chủ</Text>
             </TouchableOpacity>
@@ -741,8 +941,8 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingBottom: 10,
     backgroundColor: COLORS.white,
@@ -751,11 +951,11 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
   },
   headerSub: {
@@ -766,8 +966,8 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Category
@@ -782,8 +982,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -798,12 +998,12 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
     color: COLORS.textSecondary,
   },
   chipTextActive: {
     color: COLORS.white,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   // Grid
@@ -812,7 +1012,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   row: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     marginBottom: 12,
   },
 
@@ -820,28 +1020,28 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,
     borderRadius: 14,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
   cardImage: {
-    width: '100%',
+    width: "100%",
     height: 120,
   },
   cardIconBox: {
-    width: '100%',
+    width: "100%",
     height: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardIconEmoji: {
     fontSize: 36,
   },
   discountBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 6,
     right: 6,
     backgroundColor: COLORS.error,
@@ -851,22 +1051,22 @@ const styles = StyleSheet.create({
   },
   discountText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
   popularBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 6,
     left: 6,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: "#FFF3E0",
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   popularText: {
     fontSize: 10,
-    fontWeight: '600',
-    color: '#E65100',
+    fontWeight: "600",
+    color: "#E65100",
   },
   cardBody: {
     padding: 10,
@@ -874,26 +1074,26 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
     lineHeight: 18,
     minHeight: 36,
   },
   cardPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   cardPrice: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.success,
   },
   cardOriginal: {
     fontSize: 11,
     color: COLORS.textLight,
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
   },
   cardDelivery: {
     fontSize: 11,
@@ -903,33 +1103,33 @@ const styles = StyleSheet.create({
     marginTop: 4,
     borderRadius: 8,
     paddingVertical: 7,
-    alignItems: 'center',
+    alignItems: "center",
   },
   orderBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
 
   // Center state
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 12,
   },
   stateText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Overlay
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
 
@@ -938,8 +1138,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 24,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   coverageEmoji: {
     fontSize: 40,
@@ -947,37 +1147,37 @@ const styles = StyleSheet.create({
   },
   coverageTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
     marginBottom: 6,
   },
   coverageSub: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
   },
   areasList: {
-    width: '100%',
+    width: "100%",
     gap: 8,
     marginBottom: 16,
   },
   areaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     paddingHorizontal: 12,
   },
   areaText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
   coverageNote: {
     fontSize: 13,
     color: COLORS.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
     marginBottom: 20,
     lineHeight: 19,
   },
@@ -986,39 +1186,39 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 32,
-    alignSelf: 'stretch',
-    alignItems: 'center',
+    alignSelf: "stretch",
+    alignItems: "center",
   },
   coverageBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
 
   // Order sheet
   orderSheet: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '92%',
+    maxHeight: "92%",
   },
   sheetHandle: {
     width: 36,
     height: 4,
     borderRadius: 2,
     backgroundColor: COLORS.border,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: 12,
     marginBottom: 4,
   },
   sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -1026,7 +1226,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
   },
   sheetContent: {
@@ -1036,8 +1236,8 @@ const styles = StyleSheet.create({
 
   // Product summary
   productSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     backgroundColor: COLORS.background,
     borderRadius: 12,
@@ -1053,8 +1253,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   summaryInfo: {
     flex: 1,
@@ -1062,32 +1262,32 @@ const styles = StyleSheet.create({
   },
   summaryName: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
   summaryPrice: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.success,
   },
 
   // Field row
   fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
 
   // Quantity
   qtyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   qtyBtn: {
@@ -1096,21 +1296,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   qtyText: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
     minWidth: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Section label
   sectionLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
     marginTop: 12,
     marginBottom: 8,
@@ -1126,7 +1326,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    paddingVertical: Platform.OS === "ios" ? 12 : 8,
     fontSize: 15,
     color: COLORS.textPrimary,
   },
@@ -1141,7 +1341,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   dateChip: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
@@ -1156,16 +1356,16 @@ const styles = StyleSheet.create({
   },
   dateDow: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: "500",
     color: COLORS.textSecondary,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
   dateDowActive: {
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
   },
   dateNum: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
     marginTop: 2,
   },
@@ -1175,8 +1375,8 @@ const styles = StyleSheet.create({
 
   // Time slots
   timeSlotsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   timeChip: {
@@ -1193,35 +1393,35 @@ const styles = StyleSheet.create({
   },
   timeChipText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: "500",
     color: COLORS.textSecondary,
   },
   timeChipTextActive: {
     color: COLORS.white,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   // Payment row
   paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    backgroundColor: COLORS.success + '10',
+    backgroundColor: COLORS.success + "10",
     borderRadius: 10,
     padding: 12,
     marginTop: 12,
   },
   paymentText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     color: COLORS.textPrimary,
   },
 
   // Total row
   totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
@@ -1229,20 +1429,20 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
   totalValue: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.primary,
   },
 
   // Submit button
   submitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     backgroundColor: COLORS.primary,
     borderRadius: 14,
@@ -1254,7 +1454,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
 
@@ -1263,8 +1463,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 20,
     padding: 28,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   successEmoji: {
     fontSize: 52,
@@ -1272,21 +1472,21 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   successSub: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
     marginBottom: 16,
   },
   orderIdRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     backgroundColor: COLORS.background,
     borderRadius: 10,
@@ -1300,7 +1500,7 @@ const styles = StyleSheet.create({
   },
   orderIdValue: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.primary,
     letterSpacing: 1,
   },
@@ -1312,7 +1512,7 @@ const styles = StyleSheet.create({
   },
   successBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
 
@@ -1323,7 +1523,7 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 8,
     elevation: 1,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1335,12 +1535,12 @@ const styles = StyleSheet.create({
   },
   historyName: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
   historyPrice: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.success,
   },
   historyDate: {
@@ -1352,14 +1552,14 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
   },
   statusBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   trackBtn: {
     width: 36,
@@ -1367,8 +1567,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
