@@ -10,8 +10,12 @@
     "clear": "expo start --clear",
     "tunnel": "expo start --tunnel",
     "build:preview": "eas build --platform android --profile preview",
+    "build:preview:ios": "eas build --platform ios --profile preview",
     "build:dev": "eas build --platform android --profile development",
+    "build:dev:ios": "eas build --platform ios --profile development",
     "build:prod": "eas build --platform android --profile production",
+    "build:prod:ios": "eas build --platform ios --profile production",
+    "build:prod:all": "eas build --platform all --profile production",
     "build:local": "eas build --platform android --profile preview --local"
   },
   "dependencies": {
