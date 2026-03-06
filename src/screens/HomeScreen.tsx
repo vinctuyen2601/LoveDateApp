@@ -7,7 +7,10 @@ import {
   RefreshControl,
   TouchableOpacity,
   Image,
+  Dimensions,
 } from "react-native";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Calendar, DateData } from "react-native-calendars";
@@ -705,15 +708,13 @@ const HomeScreen: React.FC = () => {
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.productsScroll}
-            >
+            <View style={styles.productsGrid}>
               {trendingProducts.slice(0, 6).map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <View key={product.id} style={styles.productsGridItem}>
+                  <ProductCard product={product} variant="grid" />
+                </View>
               ))}
-            </ScrollView>
+            </View>
           </View>
         )}
 
@@ -1133,6 +1134,18 @@ const styles = StyleSheet.create({
   },
   productsScroll: {
     paddingHorizontal: 4,
+  },
+  productsVertical: {
+    paddingHorizontal: 4,
+  },
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 4,
+    gap: 12,
+  },
+  productsGridItem: {
+    width: Math.floor((SCREEN_WIDTH - 24 - 8 - 12) / 2),
   },
   articlesScroll: {
     gap: 12,

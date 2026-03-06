@@ -13,7 +13,7 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { COLORS } from '@themes/colors';
+import { COLORS } from "@themes/colors";
 import { Suggestion } from "../data/suggestions";
 import { Article } from "../data/articles";
 import {
@@ -22,9 +22,7 @@ import {
   refreshArticles,
 } from "../services/articleService";
 import { databaseService } from "../services/database.service";
-import {
-  getTrendingProducts,
-} from "../services/affiliateProductService";
+import { getTrendingProducts } from "../services/affiliateProductService";
 import { AffiliateProduct } from "../types";
 import { useLazySection } from "../hooks/useLazySection";
 import { LoadingState } from "@components/atoms/LoadingState";
@@ -36,7 +34,10 @@ import OccasionCards from "../components/suggestions/OccasionCard";
 import { useMasterData } from "../contexts/MasterDataContext";
 // import BudgetFilter from "../components/suggestions/BudgetFilter"; // tạm ẩn
 import SurveyModal from "../components/suggestions/SurveyModal";
-import { logGiftSurveyStart, logGiftSurveyComplete } from "../services/analyticsService";
+import {
+  logGiftSurveyStart,
+  logGiftSurveyComplete,
+} from "../services/analyticsService";
 import ResultsModal from "../components/suggestions/ResultsModal";
 import PressableCard from "@components/atoms/PressableCard";
 
@@ -48,18 +49,23 @@ const SuggestionsScreen: React.FC = () => {
 
   // Core state
   const [articles, setArticles] = useState<Article[]>([]);
-  const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>(
+    []
+  );
   // const [experiences, setExperiences] = useState<AffiliateProduct[]>([]); // tạm ẩn
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedArticleCategory, setSelectedArticleCategory] = useState<string>("all");
+  const [selectedArticleCategory, setSelectedArticleCategory] =
+    useState<string>("all");
   const [productsError, setProductsError] = useState<string | null>(null);
 
   // Modal state
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [resultSuggestions, setResultSuggestions] = useState<Suggestion[]>([]);
-  const [resultSurveyAnswers, setResultSurveyAnswers] = useState<Record<string, any>>({});
+  const [resultSurveyAnswers, setResultSurveyAnswers] = useState<
+    Record<string, any>
+  >({});
 
   // Lazy loading sections
   const showArticles = useLazySection(3);
@@ -68,11 +74,16 @@ const SuggestionsScreen: React.FC = () => {
   // const showBudget = useLazySection(6); // hidden — budget filter tạm ẩn
   // const showExperiences = useLazySection(7); // hidden — tạm ẩn
 
-  // Load data
+  // Load data — small delay to let initial render paint, then fetch
   useEffect(() => {
-    loadArticles();
-    loadTrending();
-    // loadExperiences(); // tạm ẩn
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) loadData();
+    }, 100);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -81,30 +92,33 @@ const SuggestionsScreen: React.FC = () => {
     }
   }, [route.params?.openSurvey]);
 
-  const loadArticles = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const [fetchedArticles, readIds] = await Promise.all([
-        getArticles(),
-        databaseService.getReadArticleIds(),
-      ]);
-      const readSet = new Set(readIds);
-      setArticles(fetchedArticles.filter((a) => !readSet.has(a.id)));
+      // Fetch all in parallel — single batch of state updates at the end
+      const [articlesResult, trendingResult, readIdsResult] =
+        await Promise.allSettled([
+          getArticles(),
+          getTrendingProducts(),
+          databaseService.getReadArticleIds(),
+        ]);
+
+      if (articlesResult.status === "fulfilled") {
+        const readSet = new Set(
+          readIdsResult.status === "fulfilled" ? readIdsResult.value : []
+        );
+        setArticles(articlesResult.value.filter((a) => !readSet.has(a.id)));
+      }
+
+      if (trendingResult.status === "fulfilled") {
+        setTrendingProducts(trendingResult.value);
+      } else {
+        setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
+      }
     } catch (error) {
-      console.error("Error loading articles:", error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadTrending = async () => {
-    try {
-      setProductsError(null);
-      const fetched = await getTrendingProducts();
-      setTrendingProducts(fetched);
-    } catch (error) {
-      console.error("Error loading trending products:", error);
-      setProductsError("Không thể tải sản phẩm. Kiểm tra kết nối mạng.");
     }
   };
 
@@ -122,13 +136,16 @@ const SuggestionsScreen: React.FC = () => {
     try {
       setRefreshing(true);
       setProductsError(null);
-      const [articlesResult, trendingResult, readIds] = await Promise.allSettled([
-        refreshArticles(),
-        getTrendingProducts(),
-        databaseService.getReadArticleIds(),
-      ]);
+      const [articlesResult, trendingResult, readIds] =
+        await Promise.allSettled([
+          refreshArticles(),
+          getTrendingProducts(),
+          databaseService.getReadArticleIds(),
+        ]);
       if (articlesResult.status === "fulfilled") {
-        const readSet = new Set(readIds.status === "fulfilled" ? readIds.value : []);
+        const readSet = new Set(
+          readIds.status === "fulfilled" ? readIds.value : []
+        );
         setArticles(articlesResult.value.filter((a) => !readSet.has(a.id)));
       }
       if (trendingResult.status === "fulfilled") {
@@ -152,30 +169,38 @@ const SuggestionsScreen: React.FC = () => {
     [navigation]
   );
 
-  const handleOccasionPress = useCallback((occasionId: string) => {
-    const occasion = occasions.find((o) => o.id === occasionId);
-    navigation.navigate('OccasionProducts', {
-      occasionId,
-      occasionName: occasion?.name ?? occasionId,
-      occasionColor: occasion?.color,
-    });
-  }, [occasions, navigation]);
-
+  const handleOccasionPress = useCallback(
+    (occasionId: string) => {
+      const occasion = occasions.find((o) => o.id === occasionId);
+      navigation.navigate("OccasionProducts", {
+        occasionId,
+        occasionName: occasion?.name ?? occasionId,
+        occasionColor: occasion?.color,
+      });
+    },
+    [occasions, navigation]
+  );
 
   const handleStartSurvey = useCallback(() => {
     logGiftSurveyStart();
     setShowSurveyModal(true);
   }, []);
 
-  const handleSurveyComplete = useCallback((suggestions: Suggestion[], answers: Record<string, any>) => {
-    logGiftSurveyComplete({ occasion: answers.occasion, budget: answers.budget });
-    setResultSuggestions(suggestions);
-    setResultSurveyAnswers(answers);
-    setShowSurveyModal(false);
-    setTimeout(() => {
-      setShowResultsModal(true);
-    }, 300);
-  }, []);
+  const handleSurveyComplete = useCallback(
+    (suggestions: Suggestion[], answers: Record<string, any>) => {
+      logGiftSurveyComplete({
+        occasion: answers.occasion,
+        budget: answers.budget,
+      });
+      setResultSuggestions(suggestions);
+      setResultSurveyAnswers(answers);
+      setShowSurveyModal(false);
+      setTimeout(() => {
+        setShowResultsModal(true);
+      }, 300);
+    },
+    []
+  );
 
   const handleRetakeSurvey = useCallback(() => {
     setShowResultsModal(false);
@@ -190,7 +215,10 @@ const SuggestionsScreen: React.FC = () => {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 10 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 10 },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -214,30 +242,45 @@ const SuggestionsScreen: React.FC = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.toolCards}
+            removeClippedSubviews={false}
           >
             {/* Personality Survey card */}
             <PressableCard
-              style={[styles.toolCard, { backgroundColor: '#7C3AED' }]}
+              style={[styles.toolCard, { backgroundColor: "#7C3AED" }]}
               onPress={() => navigation.navigate("PersonalitySurvey")}
             >
               <View style={styles.toolTop}>
                 <View style={styles.toolHeader}>
                   <View style={styles.toolIconWrap}>
-                    <Ionicons name="person-circle-outline" size={32} color="rgba(255,255,255,0.9)" />
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={32}
+                      color="rgba(255,255,255,0.9)"
+                    />
                   </View>
                   <View style={styles.toolPills}>
                     <View style={styles.toolPill}>
-                      <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Ionicons
+                        name="help-circle-outline"
+                        size={10}
+                        color="rgba(255,255,255,0.9)"
+                      />
                       <Text style={styles.toolPillText}>8 câu</Text>
                     </View>
                     <View style={styles.toolPill}>
-                      <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Ionicons
+                        name="time-outline"
+                        size={10}
+                        color="rgba(255,255,255,0.9)"
+                      />
                       <Text style={styles.toolPillText}>3 phút</Text>
                     </View>
                   </View>
                 </View>
                 <Text style={styles.toolTitle}>Khảo sát tính cách</Text>
-                <Text style={styles.toolDesc}>Khám phá phong cách yêu thương của bạn</Text>
+                <Text style={styles.toolDesc}>
+                  Khám phá phong cách yêu thương của bạn
+                </Text>
               </View>
               <View style={styles.toolCta}>
                 <Text style={styles.toolCtaText}>Khám phá</Text>
@@ -247,27 +290,41 @@ const SuggestionsScreen: React.FC = () => {
 
             {/* MBTI card */}
             <PressableCard
-              style={[styles.toolCard, { backgroundColor: '#1A9E6E' }]}
+              style={[styles.toolCard, { backgroundColor: "#1A9E6E" }]}
               onPress={() => navigation.navigate("MBTISurvey")}
             >
               <View style={styles.toolTop}>
                 <View style={styles.toolHeader}>
                   <View style={styles.toolIconWrap}>
-                    <Ionicons name="people" size={32} color="rgba(255,255,255,0.9)" />
+                    <Ionicons
+                      name="people"
+                      size={32}
+                      color="rgba(255,255,255,0.9)"
+                    />
                   </View>
                   <View style={styles.toolPills}>
                     <View style={styles.toolPill}>
-                      <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Ionicons
+                        name="help-circle-outline"
+                        size={10}
+                        color="rgba(255,255,255,0.9)"
+                      />
                       <Text style={styles.toolPillText}>40 câu</Text>
                     </View>
                     <View style={styles.toolPill}>
-                      <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Ionicons
+                        name="time-outline"
+                        size={10}
+                        color="rgba(255,255,255,0.9)"
+                      />
                       <Text style={styles.toolPillText}>10 phút</Text>
                     </View>
                   </View>
                 </View>
                 <Text style={styles.toolTitle}>Trắc nghiệm MBTI</Text>
-                <Text style={styles.toolDesc}>Khám phá tính cách và sự tương hợp</Text>
+                <Text style={styles.toolDesc}>
+                  Khám phá tính cách và sự tương hợp
+                </Text>
               </View>
               <View style={styles.toolCta}>
                 <Text style={styles.toolCtaText}>Bắt đầu</Text>
@@ -283,21 +340,35 @@ const SuggestionsScreen: React.FC = () => {
               <View style={styles.toolTop}>
                 <View style={styles.toolHeader}>
                   <View style={styles.toolIconWrap}>
-                    <Ionicons name="map-outline" size={32} color="rgba(255,255,255,0.9)" />
+                    <Ionicons
+                      name="map-outline"
+                      size={32}
+                      color="rgba(255,255,255,0.9)"
+                    />
                   </View>
                   <View style={styles.toolPills}>
                     <View style={styles.toolPill}>
-                      <Ionicons name="restaurant-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Ionicons
+                        name="restaurant-outline"
+                        size={10}
+                        color="rgba(255,255,255,0.9)"
+                      />
                       <Text style={styles.toolPillText}>Ẩm thực</Text>
                     </View>
                     <View style={styles.toolPill}>
-                      <Ionicons name="leaf-outline" size={10} color="rgba(255,255,255,0.9)" />
+                      <Ionicons
+                        name="leaf-outline"
+                        size={10}
+                        color="rgba(255,255,255,0.9)"
+                      />
                       <Text style={styles.toolPillText}>Spa</Text>
                     </View>
                   </View>
                 </View>
                 <Text style={styles.toolTitle}>Gợi ý hoạt động</Text>
-                <Text style={styles.toolDesc}>Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn</Text>
+                <Text style={styles.toolDesc}>
+                  Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn
+                </Text>
               </View>
               <View style={styles.toolCta}>
                 <Text style={styles.toolCtaText}>Khám phá</Text>
@@ -315,57 +386,81 @@ const SuggestionsScreen: React.FC = () => {
             selectedCategory={selectedArticleCategory}
             onCategoryChange={handleArticleCategoryChange}
             onArticlePress={handleArticlePress}
-            onViewAll={() => navigation.navigate('AllArticles')}
+            onViewAll={() => navigation.navigate("AllArticles")}
           />
         ) : (
           <View style={styles.section}>
-            <LoadingState variant="skeleton" skeletonType="card" skeletonCount={2} />
+            <LoadingState
+              variant="skeleton"
+              skeletonType="card"
+              skeletonCount={2}
+            />
           </View>
         )}
 
-        {/* Section 5: Trending Products */}
+        {/* Section 5: Gift by Occasion */}
+        {showOccasions ? (
+          <OccasionCards onOccasionPress={handleOccasionPress} />
+        ) : (
+          <View style={styles.section}>
+            <LoadingState
+              variant="skeleton"
+              skeletonType="list"
+              skeletonCount={2}
+            />
+          </View>
+        )}
+
+        {/* Section 6: Trending Products */}
         {showTrending ? (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('AllProducts')}>
+              <Text style={styles.sectionTitle}>Danh sách quà tặng</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("AllProducts")}
+              >
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
             {productsError ? (
               <View style={styles.offlineBanner}>
-                <Ionicons name="wifi-outline" size={20} color={COLORS.textSecondary} />
+                <Ionicons
+                  name="wifi-outline"
+                  size={20}
+                  color={COLORS.textSecondary}
+                />
                 <Text style={styles.offlineBannerText}>{productsError}</Text>
               </View>
             ) : trendingProducts.length === 0 ? (
               <View style={styles.offlineBanner}>
-                <Ionicons name="gift-outline" size={20} color={COLORS.textSecondary} />
-                <Text style={styles.offlineBannerText}>Chưa có sản phẩm nào</Text>
+                <Ionicons
+                  name="gift-outline"
+                  size={20}
+                  color={COLORS.textSecondary}
+                />
+                <Text style={styles.offlineBannerText}>
+                  Chưa có sản phẩm nào
+                </Text>
               </View>
             ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScroll}
-              >
+              <View style={styles.verticalProductList}>
                 {trendingProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    variant="vertical"
+                  />
                 ))}
-              </ScrollView>
+              </View>
             )}
           </View>
         ) : (
           <View style={styles.section}>
-            <LoadingState variant="skeleton" skeletonType="card" skeletonCount={2} />
-          </View>
-        )}
-
-        {/* Section 6: Gift by Occasion */}
-        {showOccasions ? (
-          <OccasionCards onOccasionPress={handleOccasionPress} />
-        ) : (
-          <View style={styles.section}>
-            <LoadingState variant="skeleton" skeletonType="list" skeletonCount={2} />
+            <LoadingState
+              variant="skeleton"
+              skeletonType="card"
+              skeletonCount={2}
+            />
           </View>
         )}
 
@@ -439,14 +534,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionBadge: {
-    backgroundColor: COLORS.primary + '18',
+    backgroundColor: COLORS.primary + "18",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   sectionBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.primary,
   },
   toolCard: {
@@ -541,6 +636,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     flex: 1,
+  },
+  verticalProductList: {
+    paddingHorizontal: 16,
   },
 });
 

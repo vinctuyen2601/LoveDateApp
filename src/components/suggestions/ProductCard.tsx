@@ -10,11 +10,22 @@ import { trackAffiliateClick } from '../../services/affiliateProductService';
 
 interface ProductCardProps {
   product: AffiliateProduct;
-  variant?: 'horizontal' | 'vertical';
+  variant?: 'horizontal' | 'vertical' | 'grid';
 }
+
+const stripHtml = (html: string): string =>
+  html?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
+
+const getDiscountPercent = (price: number | string | undefined, originalPrice: number | string | undefined): number | null => {
+  const p = Number(price);
+  const op = Number(originalPrice);
+  if (!op || !p || op <= 0 || p >= op) return null;
+  return Math.round((1 - p / op) * 100);
+};
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal' }) => {
   const navigation = useNavigation<any>();
+  const discount = getDiscountPercent(product.price, product.originalPrice);
 
   const handlePress = () => {
     navigation.navigate('ProductDetail', { product });
@@ -43,7 +54,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
         )}
         <View style={styles.verticalContent}>
           <Text style={styles.verticalName} numberOfLines={2}>{product.name}</Text>
-          <Text style={styles.verticalDesc} numberOfLines={1}>{product.description}</Text>
+          <Text style={styles.verticalDesc} numberOfLines={1}>{stripHtml(product.description)}</Text>
         </View>
         <View style={styles.verticalRight}>
           {product.price && (
@@ -58,8 +69,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
     );
   }
 
+  const cardStyle = variant === 'grid'
+    ? [styles.card, styles.gridCard]
+    : styles.card;
+
   return (
-    <PressableCard style={styles.card} onPress={handlePress}>
+    <PressableCard style={cardStyle} onPress={handlePress}>
       {product.imageUrl ? (
         <View style={styles.imageHeader}>
           <Image
@@ -67,22 +82,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
             style={styles.productImage}
             resizeMode="cover"
           />
-          {product.originalPrice && product.price && (
+          {discount !== null && (
             <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>
-                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-              </Text>
+              <Text style={styles.discountText}>-{discount}%</Text>
             </View>
           )}
         </View>
       ) : (
         <View style={[styles.gradientHeader, { backgroundColor: product.color }]}>
           <Ionicons name={product.icon as any} size={28} color={COLORS.white} />
-          {product.originalPrice && product.price && (
+          {discount !== null && (
             <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>
-                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-              </Text>
+              <Text style={styles.discountText}>-{discount}%</Text>
             </View>
           )}
         </View>
@@ -94,7 +105,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
         {product.price && (
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatPrice(product.price)}</Text>
-            {product.originalPrice && (
+            {discount !== null && (
               <Text style={styles.originalPrice}>{formatPrice(product.originalPrice)}</Text>
             )}
           </View>
@@ -124,11 +135,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 3,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     marginRight: 12,
+  },
+  gridCard: {
+    width: '100%' as any,
+    marginRight: 0,
   },
   imageHeader: {
     height: 120,

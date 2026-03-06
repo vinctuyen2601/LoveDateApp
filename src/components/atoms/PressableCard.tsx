@@ -51,4 +51,4 @@ const PressableCard: React.FC<PressableCardProps> = ({
   );
 };
 
-export default PressableCard;
+export default React.memo(PressableCard);

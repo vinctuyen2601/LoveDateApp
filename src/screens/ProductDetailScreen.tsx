@@ -42,14 +42,17 @@ const ProductDetailScreen: React.FC = () => {
 
   const categoryInfo = SERVICE_CATEGORIES.find((c) => c.id === product.category);
 
+  const numPrice = Number(product.price) || 0;
+  const numOriginal = Number(product.originalPrice) || 0;
+
   const discountPercent =
-    product.originalPrice && product.price
-      ? Math.round((1 - product.price / product.originalPrice) * 100)
+    numOriginal > 0 && numPrice > 0 && numPrice < numOriginal
+      ? Math.round((1 - numPrice / numOriginal) * 100)
       : 0;
 
   const savings =
-    product.originalPrice && product.price
-      ? product.originalPrice - product.price
+    numOriginal > 0 && numPrice > 0 && numPrice < numOriginal
+      ? numOriginal - numPrice
       : 0;
 
   useEffect(() => {
@@ -213,7 +216,7 @@ const ProductDetailScreen: React.FC = () => {
             ) : (
               <Text style={styles.currentPrice}>{product.priceRange}</Text>
             )}
-            {product.originalPrice && (
+            {discountPercent > 0 && (
               <Text style={styles.originalPrice}>
                 {formatPrice(product.originalPrice)}
               </Text>

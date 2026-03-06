@@ -39,8 +39,10 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
   onArticlePress,
   onViewAll,
 }) => {
+  const MAX_DISPLAY = 12;
+
   const filteredArticles = useMemo(
-    () => filterArticlesByCategory(articles, selectedCategory as any),
+    () => filterArticlesByCategory(articles, selectedCategory as any).slice(0, MAX_DISPLAY),
     [articles, selectedCategory]
   );
 
