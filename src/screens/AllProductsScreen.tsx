@@ -129,10 +129,10 @@ const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(({ product 
       )}
 
       {/* Discount badge */}
-      {product.originalPrice && product.price && product.originalPrice > product.price && (
+      {Number(product.originalPrice) > 0 && Number(product.price) > 0 && Number(product.originalPrice) > Number(product.price) && (
         <View style={styles.discountBadge}>
           <Text style={styles.discountText}>
-            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+            -{Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100)}%
           </Text>
         </View>
       )}
@@ -152,8 +152,8 @@ const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(({ product 
         {product.price ? (
           <View style={styles.gridPriceRow}>
             <Text style={styles.gridPrice}>{formatPrice(product.price)}</Text>
-            {product.originalPrice && (
-              <Text style={styles.gridOriginal}>{formatPrice(product.originalPrice)}</Text>
+            {Number(product.originalPrice) > Number(product.price) && (
+              <Text style={styles.gridOriginal}>{formatPrice(product.originalPrice!)}</Text>
             )}
           </View>
         ) : (

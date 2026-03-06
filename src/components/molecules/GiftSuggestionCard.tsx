@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { AffiliateProduct } from "../../types";
 import { COLORS } from "@themes/colors";
 import { logProductClick } from "../../services/analyticsService";
@@ -30,6 +31,9 @@ const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
   hotel: ["#4FACFE", "#00F2FE"],
   travel: ["#43E97B", "#38F9D7"],
 };
+
+const stripHtml = (html: string): string =>
+  html?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
 
 function formatPrice(price?: number): string | null {
   if (price == null) return null;
@@ -52,7 +56,12 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   onSave,
   showSaveButton = true,
 }) => {
+  const navigation = useNavigation<any>();
   const [imageError, setImageError] = useState(false);
+
+  const handleCardPress = () => {
+    navigation.navigate('ProductDetail', { product });
+  };
 
   const handleOpenLink = () => {
     logProductClick({ id: product.id, name: product.name, affiliateUrl: product.affiliateUrl });
@@ -68,11 +77,11 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   };
 
   const priceFormatted = formatPrice(product.price);
+  const numPrice = Number(product.price) || 0;
+  const numOriginal = Number(product.originalPrice) || 0;
   const discount =
-    product.originalPrice &&
-    product.price &&
-    product.originalPrice > product.price
-      ? Math.round((1 - product.price / product.originalPrice) * 100)
+    numOriginal > 0 && numPrice > 0 && numOriginal > numPrice
+      ? Math.round((1 - numPrice / numOriginal) * 100)
       : 0;
 
   const showImage = product.imageUrl && !imageError;
@@ -82,7 +91,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   ];
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity style={styles.container} activeOpacity={0.85} onPress={handleCardPress}>
       {/* Image / Fallback */}
       <View style={styles.imageWrapper}>
         {showImage ? (
@@ -182,7 +191,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
         {/* Description */}
         {product.description ? (
           <Text style={styles.description} numberOfLines={2}>
-            {product.description}
+            {stripHtml(product.description)}
           </Text>
         ) : null}
 
@@ -216,7 +225,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
           )}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

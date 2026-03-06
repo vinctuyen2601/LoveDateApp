@@ -263,7 +263,7 @@ const CalendarScreen: React.FC = () => {
               })
             }
           >
-            <Text style={styles.statValue}>{monthStats.total}</Text>
+            <Text style={styles.statValue}>{events.length}</Text>
             <Text style={styles.statLabel}>Tổng số</Text>
           </TouchableOpacity>
 
@@ -273,6 +273,7 @@ const CalendarScreen: React.FC = () => {
               navigation.navigate('EventsList', {
                 filter: 'upcoming',
                 title: 'Sự kiện sắp tới',
+                month: currentMonth,
               })
             }
           >
@@ -288,6 +289,7 @@ const CalendarScreen: React.FC = () => {
               navigation.navigate('EventsList', {
                 filter: 'past',
                 title: 'Sự kiện đã qua',
+                month: currentMonth,
               })
             }
           >

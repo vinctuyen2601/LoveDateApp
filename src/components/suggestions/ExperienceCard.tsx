@@ -7,6 +7,9 @@ import { COLORS } from '@themes/colors';
 import { SERVICE_CATEGORIES } from '../../data/affiliateProducts';
 import PressableCard from '@components/atoms/PressableCard';
 
+const stripHtml = (html: string): string =>
+  html?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
+
 interface ExperienceCardProps {
   product: AffiliateProduct;
 }
@@ -46,7 +49,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ product }) => {
       {/* Content */}
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
-        <Text style={styles.description} numberOfLines={2}>{product.description}</Text>
+        <Text style={styles.description} numberOfLines={2}>{stripHtml(product.description)}</Text>
 
         <View style={styles.footer}>
           <Text style={styles.price}>{product.priceRange || 'Liên hệ'}</Text>

@@ -21,6 +21,7 @@ type FilterType = 'all' | 'upcoming' | 'past' | 'birthday' | 'anniversary' | 'ho
 interface RouteParams {
   filter?: FilterType;
   title?: string;
+  month?: string; // e.g. '2026-03-01' — filter events to this month only
 }
 
 const EventsListScreen: React.FC = () => {
@@ -33,6 +34,7 @@ const EventsListScreen: React.FC = () => {
   const params: RouteParams = route.params || {};
   const initialFilter = params.filter || 'all';
   const screenTitle = params.title || 'Tất cả sự kiện';
+  const filterMonth = params.month; // optional month scope from CalendarScreen
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>(initialFilter);
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
@@ -40,6 +42,17 @@ const EventsListScreen: React.FC = () => {
   // Filter events based on selected filter
   const filteredEvents = useMemo(() => {
     let filtered = [...events];
+
+    // Scope to a specific month if passed from CalendarScreen
+    if (filterMonth) {
+      const monthDate = new Date(filterMonth);
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      filtered = filtered.filter((event) => {
+        const d = new Date(event.eventDate);
+        return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month;
+      });
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -106,7 +119,7 @@ const EventsListScreen: React.FC = () => {
     }
 
     return filtered;
-  }, [events, selectedFilter, sortBy]);
+  }, [events, selectedFilter, sortBy, filterMonth]);
 
   const handleEventPress = (event: Event) => {
     navigation.navigate('EventDetail', { eventId: event.id });
@@ -249,12 +262,12 @@ const EventsListScreen: React.FC = () => {
           <Ionicons
             name={sortBy === 'date' ? 'calendar' : 'text'}
             size={16}
-            color={COLORS.primary}
+            color={COLORS.white}
           />
           <Text style={styles.sortButtonText}>
             {sortBy === 'date' ? 'Ngày' : 'Tên'}
           </Text>
-          <Ionicons name="swap-vertical" size={16} color={COLORS.primary} />
+          <Ionicons name="swap-vertical" size={16} color={COLORS.white} />
         </TouchableOpacity>
       </View>
 
@@ -389,12 +402,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.primary,
     gap: 4,
   },
   sortButtonText: {
     fontSize: 13,
-    color: COLORS.primary,
+    color: COLORS.white,
     fontWeight: '600',
   },
   content: {
