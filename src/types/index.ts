@@ -547,6 +547,7 @@ export const API_ERROR_MESSAGES: Record<number, string> = {
   401: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
   403: "Bạn không có quyền truy cập tài nguyên này.",
   404: "Không tìm thấy tài nguyên yêu cầu.",
+  429: "Bạn đã dùng hết lượt AI hôm nay. Vui lòng thử lại vào ngày mai.",
   500: "Lỗi hệ thống. Vui lòng thử lại sau.",
   502: "Lỗi kết nối máy chủ. Vui lòng thử lại sau.",
   503: "Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.",

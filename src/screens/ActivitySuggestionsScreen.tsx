@@ -18,6 +18,7 @@ import { COLORS } from '@themes/colors';
 import { AffiliateProduct, Article, Event } from '../types';
 import { apiService } from '../services/api.service';
 import { useToast } from '../contexts/ToastContext';
+import { useAiRateLimit } from '../hooks/useAiRateLimit';
 
 type ActivitySuggestionsRouteProp = RouteProp<
   { ActivitySuggestions: { event?: Event } },
@@ -429,6 +430,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
   const route      = useRoute<ActivitySuggestionsRouteProp>();
   const insets     = useSafeAreaInsets();
   const { showError } = useToast();
+  const { handleAiError } = useAiRateLimit();
 
   const event = route.params?.event;
 
@@ -468,8 +470,8 @@ const ActivitySuggestionsScreen: React.FC = () => {
       }
       setSuggestions(list);
       setTimeout(() => scrollRef.current?.scrollTo({ y: 340, animated: true }), 300);
-    } catch {
-      showError('Không thể kết nối AI. Vui lòng thử lại.');
+    } catch (err) {
+      handleAiError(err, 'Không thể kết nối AI. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -29,10 +30,26 @@ const AuthScreen: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // Real-time validation state
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+
+  // Refs for field chaining
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const markTouched = (field: string) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -65,7 +82,14 @@ const AuthScreen: React.FC = () => {
 
   const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
     setter(value);
-    if (touched[field]) {
+    // Real-time: email validate ngay khi có dấu '@', password validate ngay khi bắt đầu gõ
+    const shouldValidateNow =
+      touched[field] ||
+      (field === 'email' && value.includes('@')) ||
+      (field === 'password' && value.length > 0) ||
+      (field === 'confirmPassword' && value.length > 0);
+    if (shouldValidateNow) {
+      if (!touched[field]) setTouched(prev => ({ ...prev, [field]: true }));
       validateField(field, value);
     }
   };
@@ -76,19 +100,18 @@ const AuthScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate email
+    Keyboard.dismiss();
+
     if (!ValidationUtils.isValidEmail(email)) {
       Alert.alert('Lỗi', STRINGS.error_invalid_email);
       return;
     }
 
-    // Validate password
     if (!ValidationUtils.isValidPassword(password)) {
       Alert.alert('Lỗi', STRINGS.error_invalid_password);
       return;
     }
 
-    // Validate confirm password for register
     if (!isLogin) {
       if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
         Alert.alert('Lỗi', STRINGS.error_password_mismatch);
@@ -113,7 +136,6 @@ const AuthScreen: React.FC = () => {
         logSignUp('email');
       }
 
-      // Đóng modal sau khi thành công
       navigation.goBack();
     } catch (error: any) {
       Alert.alert(
@@ -125,26 +147,48 @@ const AuthScreen: React.FC = () => {
     }
   };
 
+  const handleFocusScroll = () => {
+    // Scroll xuống cuối để đảm bảo field đang focus luôn hiển thị
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
+  const showHeader = !keyboardVisible;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Logo/Title */}
-        <View style={styles.header}>
-          <Ionicons name="calendar-outline" size={80} color={COLORS.primary} />
-          <Text style={styles.appName}>{STRINGS.app_name}</Text>
-          <Text style={styles.subtitle}>
-            Không bao giờ quên những ngày quan trọng
-          </Text>
-        </View>
+        {/* Logo/Title — ẩn khi bàn phím hiện để form có không gian */}
+        {showHeader && (
+          <View style={styles.header}>
+            <Ionicons name="calendar-outline" size={72} color={COLORS.primary} />
+            <Text style={styles.appName}>{STRINGS.app_name}</Text>
+            <Text style={styles.subtitle}>
+              Không bao giờ quên những ngày quan trọng
+            </Text>
+          </View>
+        )}
 
         {/* Form */}
         <View style={styles.form}>
+          {/* Mini logo khi bàn phím hiện */}
+          {!showHeader && (
+            <View style={styles.miniHeader}>
+              <Ionicons name="calendar-outline" size={28} color={COLORS.primary} />
+              <Text style={styles.miniAppName}>{STRINGS.app_name}</Text>
+            </View>
+          )}
+
           <Text style={styles.formTitle}>
             {isLogin ? STRINGS.auth_login : STRINGS.auth_register}
           </Text>
@@ -156,19 +200,25 @@ const AuthScreen: React.FC = () => {
                 <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
                 <TextInput
                   style={styles.input}
-                  placeholder={STRINGS.auth_display_name}
+                  placeholder="Nhập tên hiển thị của bạn"
                   placeholderTextColor={COLORS.textSecondary}
                   value={displayName}
                   onChangeText={(v) => handleFieldChange('displayName', v, setDisplayName)}
                   onBlur={() => { markTouched('displayName'); validateField('displayName', displayName); }}
+                  onFocus={handleFocusScroll}
                   autoCapitalize="words"
+                  returnKeyType="next"
+                  onSubmitEditing={() => emailRef.current?.focus()}
+                  blurOnSubmit={false}
                 />
                 {isFieldValid('displayName', displayName) && (
                   <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
                 )}
               </View>
-              {touched.displayName && fieldErrors.displayName && (
+              {touched.displayName && fieldErrors.displayName ? (
                 <Text style={styles.fieldError}>{fieldErrors.displayName}</Text>
+              ) : (
+                <Text style={styles.fieldHint}>Tên sẽ hiển thị trong ứng dụng</Text>
               )}
             </View>
           )}
@@ -178,22 +228,29 @@ const AuthScreen: React.FC = () => {
             <View style={[styles.inputContainer, fieldErrors.email && touched.email ? styles.inputContainerError : null]}>
               <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
               <TextInput
+                ref={emailRef}
                 style={styles.input}
-                placeholder={STRINGS.auth_email}
+                placeholder="Ví dụ: ten@email.com"
                 placeholderTextColor={COLORS.textSecondary}
                 value={email}
                 onChangeText={(v) => handleFieldChange('email', v, setEmail)}
                 onBlur={() => { markTouched('email'); validateField('email', email); }}
+                onFocus={handleFocusScroll}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
               />
               {isFieldValid('email', email) && (
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
               )}
             </View>
-            {touched.email && fieldErrors.email && (
+            {touched.email && fieldErrors.email ? (
               <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+            ) : (
+              <Text style={styles.fieldHint}>Nhập địa chỉ email hợp lệ</Text>
             )}
           </View>
 
@@ -202,14 +259,19 @@ const AuthScreen: React.FC = () => {
             <View style={[styles.inputContainer, fieldErrors.password && touched.password ? styles.inputContainerError : null]}>
               <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
               <TextInput
+                ref={passwordRef}
                 style={styles.input}
-                placeholder={STRINGS.auth_password}
+                placeholder="Tối thiểu 6 ký tự"
                 placeholderTextColor={COLORS.textSecondary}
                 value={password}
                 onChangeText={(v) => handleFieldChange('password', v, setPassword)}
                 onBlur={() => { markTouched('password'); validateField('password', password); }}
+                onFocus={handleFocusScroll}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                returnKeyType={isLogin ? 'done' : 'next'}
+                onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
+                blurOnSubmit={isLogin}
               />
               {isFieldValid('password', password) && (
                 <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
@@ -222,8 +284,19 @@ const AuthScreen: React.FC = () => {
                 />
               </TouchableOpacity>
             </View>
-            {touched.password && fieldErrors.password && (
+            {touched.password && fieldErrors.password ? (
               <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+            ) : (
+              <Text style={[
+                styles.fieldHint,
+                password.length > 0 && (password.length >= 6 ? styles.fieldHintValid : styles.fieldHintWarn),
+              ]}>
+                {password.length > 0
+                  ? password.length >= 6
+                    ? `✓ Mật khẩu hợp lệ (${password.length} ký tự)`
+                    : `Cần thêm ${6 - password.length} ký tự nữa`
+                  : 'Mật khẩu tối thiểu 6 ký tự'}
+              </Text>
             )}
           </View>
 
@@ -233,22 +306,30 @@ const AuthScreen: React.FC = () => {
               <View style={[styles.inputContainer, fieldErrors.confirmPassword && touched.confirmPassword ? styles.inputContainerError : null]}>
                 <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
                 <TextInput
+                  ref={confirmPasswordRef}
                   style={styles.input}
-                  placeholder={STRINGS.auth_confirm_password}
+                  placeholder="Nhập lại mật khẩu vừa tạo"
                   placeholderTextColor={COLORS.textSecondary}
                   value={confirmPassword}
                   onChangeText={(v) => handleFieldChange('confirmPassword', v, setConfirmPassword)}
                   onBlur={() => { markTouched('confirmPassword'); validateField('confirmPassword', confirmPassword); }}
+                  onFocus={handleFocusScroll}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
                 />
                 {isFieldValid('confirmPassword', confirmPassword) && (
                   <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
                 )}
               </View>
-              {touched.confirmPassword && fieldErrors.confirmPassword && (
+              {touched.confirmPassword && fieldErrors.confirmPassword ? (
                 <Text style={styles.fieldError}>{fieldErrors.confirmPassword}</Text>
-              )}
+              ) : confirmPassword.length > 0 ? (
+                <Text style={[styles.fieldHint, confirmPassword === password ? styles.fieldHintValid : styles.fieldHintWarn]}>
+                  {confirmPassword === password ? '✓ Mật khẩu khớp' : 'Mật khẩu chưa khớp'}
+                </Text>
+              ) : null}
             </View>
           )}
 
@@ -272,13 +353,16 @@ const AuthScreen: React.FC = () => {
             <Text style={styles.toggleText}>
               {isLogin ? STRINGS.auth_no_account : STRINGS.auth_have_account}
             </Text>
-            <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
+            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setTouched({}); setFieldErrors({}); }}>
               <Text style={styles.toggleLink}>
                 {isLogin ? STRINGS.auth_register : STRINGS.auth_login}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Padding cuối để scroll không bị khuất khi bàn phím hiện */}
+        <View style={styles.bottomPadding} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -296,19 +380,31 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
   appName: {
     fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.primary,
-    marginTop: 16,
+    marginTop: 12,
   },
   subtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginTop: 8,
+    marginTop: 6,
     textAlign: 'center',
+  },
+  miniHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  miniAppName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
   },
   form: {
     backgroundColor: COLORS.surface,
@@ -321,10 +417,10 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   formTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: COLORS.textPrimary,
-    marginBottom: 24,
+    marginBottom: 20,
     textAlign: 'center',
   },
   inputContainer: {
@@ -369,41 +465,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: COLORS.textSecondary,
-    fontSize: 14,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  googleButtonText: {
-    color: COLORS.textPrimary,
-    fontSize: 16,
-    fontWeight: '500',
-  },
   toggleContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 20,
     gap: 4,
   },
   toggleText: {
@@ -414,6 +479,22 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  bottomPadding: {
+    height: 20,
+  },
+  fieldHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 10,
+    marginLeft: 16,
+    marginTop: 2,
+  },
+  fieldHintValid: {
+    color: COLORS.success,
+  },
+  fieldHintWarn: {
+    color: '#F59E0B',
   },
 });
 

@@ -27,6 +27,7 @@ import PressableCard from '@components/atoms/PressableCard';
 import { apiService } from '../services/api.service';
 import GiftSuggestionCard from '@components/molecules/GiftSuggestionCard';
 import { useToast } from '../contexts/ToastContext';
+import { useAiRateLimit } from '../hooks/useAiRateLimit';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
@@ -179,6 +180,7 @@ const AllProductsScreen: React.FC = () => {
   const { productCategories } = useMasterData();
 
   const { showError } = useToast();
+  const { handleAiError } = useAiRateLimit();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -216,8 +218,8 @@ const AllProductsScreen: React.FC = () => {
       setAiResults(products);
       setAiReasoning(data.reasoning || '');
       if (products.length === 0) showError('Không tìm thấy sản phẩm phù hợp. Thử mô tả khác.');
-    } catch {
-      showError('Không thể kết nối AI. Vui lòng thử lại.');
+    } catch (err) {
+      handleAiError(err, 'Không thể kết nối AI. Vui lòng thử lại.');
     } finally {
       setAiLoading(false);
     }
