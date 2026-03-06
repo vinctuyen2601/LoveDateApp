@@ -1,4 +1,4 @@
-# Love Date App - Ứng dụng Nhắc Nhở Ngày Quan Trọng
+# Love Date App - Ứng dụng Nhắc Nhở Ngày Yêu Thương
 
 Mobile App React Native Expo - Offline-First Architecture với tính năng Premium và Gamification
 

@@ -84,7 +84,7 @@ export const MAX_TITLE_LENGTH = 100;
 
 // App Info
 export const APP_VERSION = "1.0.0";
-export const APP_NAME = "Ngày Quan Trọng";
+export const APP_NAME = "LoveDate";
 
 // Web URL (for sharing links)
 export const WEB_BASE_URL = REACT_APP_WEB_URL || "https://ngayyeuthuong.com";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,27 +11,33 @@ import {
   Modal,
   Linking,
   Platform,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '@contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
-import { syncService } from '../services/sync.service';
-import { COLORS } from '@themes/colors';
-import { APP_VERSION } from '../constants/config';
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "@contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
+import { syncService } from "../services/sync.service";
+import { COLORS } from "@themes/colors";
+import { APP_VERSION } from "../constants/config";
 
-const AVATAR_COLOR_KEY = '@user_avatar_color';
-const AVATAR_PHOTO_KEY = '@user_avatar_photo';
+const AVATAR_COLOR_KEY = "@user_avatar_color";
+const AVATAR_PHOTO_KEY = "@user_avatar_photo";
 
 const AVATAR_COLORS = [
-  '#FF6B6B', '#FF8E53', '#FFC048', '#51CF66',
-  '#339AF0', '#845EF7', '#F06595', '#20C997',
+  "#FF6B6B",
+  "#FF8E53",
+  "#FFC048",
+  "#51CF66",
+  "#339AF0",
+  "#845EF7",
+  "#F06595",
+  "#20C997",
 ];
 
 const getInitials = (name: string): string => {
-  if (!name?.trim()) return '?';
+  if (!name?.trim()) return "?";
   const words = name.trim().split(/\s+/);
   if (words.length === 1) return words[0][0].toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
@@ -48,25 +54,35 @@ const getDefaultColor = (name: string): string => {
 
 const formatMemberSince = (dateStr: string): string => {
   try {
-    return new Date(dateStr).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+    return new Date(dateStr).toLocaleDateString("vi-VN", {
+      month: "long",
+      year: "numeric",
+    });
   } catch {
-    return '';
+    return "";
   }
 };
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { user, isAnonymous, linkedProviders, logout, updateProfile, linkWithEmailPassword } = useAuth();
+  const {
+    user,
+    isAnonymous,
+    linkedProviders,
+    logout,
+    updateProfile,
+    linkWithEmailPassword,
+  } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [showLinkEmailModal, setShowLinkEmailModal] = useState(false);
-  const [linkEmail, setLinkEmail] = useState('');
-  const [linkPassword, setLinkPassword] = useState('');
-  const [linkDisplayName, setLinkDisplayName] = useState('');
+  const [linkEmail, setLinkEmail] = useState("");
+  const [linkPassword, setLinkPassword] = useState("");
+  const [linkDisplayName, setLinkDisplayName] = useState("");
   const [isLinking, setIsLinking] = useState(false);
 
   // Edit profile state
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editName, setEditName] = useState('');
+  const [editName, setEditName] = useState("");
   const [avatarBgColor, setAvatarBgColor] = useState(AVATAR_COLORS[0]);
   const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[0]);
   const [avatarPhotoUri, setAvatarPhotoUri] = useState<string | null>(null);
@@ -79,16 +95,18 @@ const SettingsScreen: React.FC = () => {
     Promise.all([
       AsyncStorage.getItem(AVATAR_COLOR_KEY),
       AsyncStorage.getItem(AVATAR_PHOTO_KEY),
-    ]).then(([savedColor, savedPhoto]) => {
-      const color = savedColor || getDefaultColor(user.displayName || '');
-      setAvatarBgColor(color);
-      setSelectedColor(color);
-      if (savedPhoto) setAvatarPhotoUri(savedPhoto);
-    }).catch(() => {});
+    ])
+      .then(([savedColor, savedPhoto]) => {
+        const color = savedColor || getDefaultColor(user.displayName || "");
+        setAvatarBgColor(color);
+        setSelectedColor(color);
+        if (savedPhoto) setAvatarPhotoUri(savedPhoto);
+      })
+      .catch(() => {});
   }, [user?.id]);
 
   const handleOpenEditModal = () => {
-    setEditName(user?.displayName || '');
+    setEditName(user?.displayName || "");
     setSelectedColor(avatarBgColor);
     setSelectedPhotoUri(avatarPhotoUri);
     setShowEditModal(true);
@@ -96,22 +114,25 @@ const SettingsScreen: React.FC = () => {
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
+    if (status !== "granted") {
       Alert.alert(
-        'Cần quyền truy cập',
-        'Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện.',
+        "Cần quyền truy cập",
+        "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện.",
         [
-          { text: 'Hủy', style: 'cancel' },
+          { text: "Hủy", style: "cancel" },
           {
-            text: 'Mở cài đặt',
-            onPress: () => Platform.OS === 'ios' ? Linking.openURL('app-settings:') : Linking.openSettings(),
+            text: "Mở cài đặt",
+            onPress: () =>
+              Platform.OS === "ios"
+                ? Linking.openURL("app-settings:")
+                : Linking.openSettings(),
           },
         ]
       );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -127,7 +148,7 @@ const SettingsScreen: React.FC = () => {
 
   const handleSaveProfile = async () => {
     if (!editName.trim()) {
-      showError('Vui lòng nhập tên hiển thị');
+      showError("Vui lòng nhập tên hiển thị");
       return;
     }
     try {
@@ -143,9 +164,9 @@ const SettingsScreen: React.FC = () => {
         setAvatarPhotoUri(null);
       }
       setShowEditModal(false);
-      showSuccess('✅ Đã cập nhật hồ sơ thành công!');
+      showSuccess("✅ Đã cập nhật hồ sơ thành công!");
     } catch (error: any) {
-      showError(error.message || 'Không thể cập nhật hồ sơ');
+      showError(error.message || "Không thể cập nhật hồ sơ");
     } finally {
       setIsSaving(false);
     }
@@ -153,26 +174,26 @@ const SettingsScreen: React.FC = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Đăng xuất',
+      "Đăng xuất",
       isAnonymous
-        ? 'Bạn đang dùng tài khoản ẩn danh. Nếu đăng xuất, dữ liệu có thể bị mất. Bạn có muốn liên kết tài khoản trước?'
-        : 'Bạn có chắc muốn đăng xuất?',
+        ? "Bạn đang dùng tài khoản ẩn danh. Nếu đăng xuất, dữ liệu có thể bị mất. Bạn có muốn liên kết tài khoản trước?"
+        : "Bạn có chắc muốn đăng xuất?",
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: "Hủy", style: "cancel" },
         isAnonymous
           ? {
-              text: 'Liên kết trước',
+              text: "Liên kết trước",
               onPress: () => setShowLinkEmailModal(true),
             }
           : null,
         {
-          text: 'Đăng xuất',
-          style: 'destructive',
+          text: "Đăng xuất",
+          style: "destructive",
           onPress: async () => {
             try {
               await logout();
             } catch (error: any) {
-              Alert.alert('Lỗi', error.message);
+              Alert.alert("Lỗi", error.message);
             }
           },
         },
@@ -182,7 +203,7 @@ const SettingsScreen: React.FC = () => {
 
   const handleLinkEmail = async () => {
     if (!linkEmail || !linkPassword || !linkDisplayName) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
       return;
     }
 
@@ -190,14 +211,16 @@ const SettingsScreen: React.FC = () => {
       setIsLinking(true);
       await linkWithEmailPassword(linkEmail, linkPassword, linkDisplayName);
       setShowLinkEmailModal(false);
-      setLinkEmail('');
-      setLinkPassword('');
-      setLinkDisplayName('');
-      showSuccess('🎉 Tài khoản đã được liên kết với email thành công!');
+      setLinkEmail("");
+      setLinkPassword("");
+      setLinkDisplayName("");
+      showSuccess("🎉 Tài khoản đã được liên kết với email thành công!");
       // Sync local events lên server (background, không block UI)
-      syncService.sync().catch(err => console.warn('Post-link sync failed:', err));
+      syncService
+        .sync()
+        .catch((err) => console.warn("Post-link sync failed:", err));
     } catch (error: any) {
-      showError(error.message || 'Không thể liên kết tài khoản');
+      showError(error.message || "Không thể liên kết tài khoản");
     } finally {
       setIsLinking(false);
     }
@@ -208,19 +231,37 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Profile Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
 
         {/* User Info */}
-        <TouchableOpacity style={styles.profileCard} onPress={handleOpenEditModal} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.profileCard}
+          onPress={handleOpenEditModal}
+          activeOpacity={0.8}
+        >
           <View style={styles.avatarWrap}>
-            <View style={[styles.avatar, { backgroundColor: avatarPhotoUri ? 'transparent' : avatarBgColor }]}>
+            <View
+              style={[
+                styles.avatar,
+                {
+                  backgroundColor: avatarPhotoUri
+                    ? "transparent"
+                    : avatarBgColor,
+                },
+              ]}
+            >
               {avatarPhotoUri ? (
-                <Image source={{ uri: avatarPhotoUri }} style={styles.avatarImage} />
+                <Image
+                  source={{ uri: avatarPhotoUri }}
+                  style={styles.avatarImage}
+                />
               ) : (
-                <Text style={styles.initialsText}>{getInitials(user?.displayName || 'ND')}</Text>
+                <Text style={styles.initialsText}>
+                  {getInitials(user?.displayName || "ND")}
+                </Text>
               )}
             </View>
             <View style={styles.editAvatarBtn}>
@@ -228,7 +269,9 @@ const SettingsScreen: React.FC = () => {
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user?.displayName || 'Người dùng'}</Text>
+            <Text style={styles.userName}>
+              {user?.displayName || "Người dùng"}
+            </Text>
             {isAnonymous ? (
               <View style={styles.anonymousBadge}>
                 <Ionicons name="eye-off" size={12} color={COLORS.warning} />
@@ -238,10 +281,16 @@ const SettingsScreen: React.FC = () => {
               <Text style={styles.userEmail}>{user?.email}</Text>
             )}
             {user?.createdAt ? (
-              <Text style={styles.memberSince}>Thành viên từ {formatMemberSince(user.createdAt)}</Text>
+              <Text style={styles.memberSince}>
+                Thành viên từ {formatMemberSince(user.createdAt)}
+              </Text>
             ) : null}
           </View>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={COLORS.textSecondary}
+          />
         </TouchableOpacity>
 
         {/* Anonymous Warning */}
@@ -249,9 +298,12 @@ const SettingsScreen: React.FC = () => {
           <View style={styles.warningCard}>
             <Ionicons name="warning" size={24} color={COLORS.warning} />
             <View style={styles.warningContent}>
-              <Text style={styles.warningTitle}>Liên kết tài khoản để backup!</Text>
+              <Text style={styles.warningTitle}>
+                Liên kết tài khoản để backup!
+              </Text>
               <Text style={styles.warningText}>
-                Dữ liệu của bạn chỉ lưu trên thiết bị này. Hãy liên kết với email để không mất dữ liệu khi đổi máy.
+                Dữ liệu của bạn chỉ lưu trên thiết bị này. Hãy liên kết với
+                email để không mất dữ liệu khi đổi máy.
               </Text>
             </View>
           </View>
@@ -266,19 +318,18 @@ const SettingsScreen: React.FC = () => {
           <SettingItem
             icon="mail"
             title="Email & Mật khẩu"
-            subtitle={isLinked('password') ? 'Đã liên kết' : 'Chưa liên kết'}
-            onPress={() => !isLinked('password') && setShowLinkEmailModal(true)}
-            linked={isLinked('password')}
-            disabled={isLinked('password')}
+            subtitle={isLinked("password") ? "Đã liên kết" : "Chưa liên kết"}
+            onPress={() => !isLinked("password") && setShowLinkEmailModal(true)}
+            linked={isLinked("password")}
+            disabled={isLinked("password")}
           />
 
           <SettingItem
             icon="log-in-outline"
             title="Đã có tài khoản?"
             subtitle="Đăng nhập để khôi phục dữ liệu"
-            onPress={() => navigation.navigate('Auth')}
+            onPress={() => navigation.navigate("Auth")}
           />
-
         </View>
       )}
 
@@ -302,17 +353,23 @@ const SettingsScreen: React.FC = () => {
         <SettingItem
           icon="information-circle"
           title="Về ứng dụng"
-          subtitle={`Phiên bản ${APP_VERSION || '1.0.0'}`}
-          onPress={() => Alert.alert('Ngày Quan Trọng', `Version: ${APP_VERSION || '1.0.0'}\n\nỨng dụng nhắc nhở những ngày quan trọng trong cuộc sống.`)}
+          subtitle={`Phiên bản ${APP_VERSION || "1.0.0"}`}
+          onPress={() =>
+            Alert.alert(
+              "LoveDate",
+              `Version: ${
+                APP_VERSION || "1.0.0"
+              }\n\nỨng dụng nhắc nhở những ngày quan trọng trong cuộc sống.`
+            )
+          }
         />
 
         <SettingItem
           icon="shield-checkmark"
           title="Chính sách bảo mật"
           subtitle="Quyền riêng tư & affiliate"
-          onPress={() => navigation.navigate('PrivacyPolicy')}
+          onPress={() => navigation.navigate("PrivacyPolicy")}
         />
-
       </View>
 
       {/* Logout */}
@@ -339,13 +396,25 @@ const SettingsScreen: React.FC = () => {
 
             {/* Avatar preview — tap to pick image */}
             <View style={styles.editAvatarPreview}>
-              <TouchableOpacity style={styles.editAvatarTouchable} onPress={handlePickImage} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.editAvatarTouchable}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+              >
                 {selectedPhotoUri ? (
-                  <Image source={{ uri: selectedPhotoUri }} style={styles.editAvatarLarge} />
+                  <Image
+                    source={{ uri: selectedPhotoUri }}
+                    style={styles.editAvatarLarge}
+                  />
                 ) : (
-                  <View style={[styles.editAvatarLarge, { backgroundColor: selectedColor }]}>
+                  <View
+                    style={[
+                      styles.editAvatarLarge,
+                      { backgroundColor: selectedColor },
+                    ]}
+                  >
                     <Text style={styles.initialsTextLarge}>
-                      {getInitials(editName || user?.displayName || 'ND')}
+                      {getInitials(editName || user?.displayName || "ND")}
                     </Text>
                   </View>
                 )}
@@ -355,8 +424,15 @@ const SettingsScreen: React.FC = () => {
               </TouchableOpacity>
               <Text style={styles.pickImageHint}>Nhấn để chọn ảnh</Text>
               {selectedPhotoUri && (
-                <TouchableOpacity style={styles.removePhotoBtn} onPress={handleRemovePhoto}>
-                  <Ionicons name="trash-outline" size={13} color={COLORS.error} />
+                <TouchableOpacity
+                  style={styles.removePhotoBtn}
+                  onPress={handleRemovePhoto}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={13}
+                    color={COLORS.error}
+                  />
                   <Text style={styles.removePhotoBtnText}>Xóa ảnh</Text>
                 </TouchableOpacity>
               )}
@@ -367,14 +443,22 @@ const SettingsScreen: React.FC = () => {
               <>
                 <Text style={styles.fieldLabel}>Màu avatar</Text>
                 <View style={styles.colorPalette}>
-                  {AVATAR_COLORS.map(color => (
+                  {AVATAR_COLORS.map((color) => (
                     <TouchableOpacity
                       key={color}
-                      style={[styles.colorDot, { backgroundColor: color }, selectedColor === color && styles.colorDotSelected]}
+                      style={[
+                        styles.colorDot,
+                        { backgroundColor: color },
+                        selectedColor === color && styles.colorDotSelected,
+                      ]}
                       onPress={() => setSelectedColor(color)}
                     >
                       {selectedColor === color && (
-                        <Ionicons name="checkmark" size={14} color={COLORS.white} />
+                        <Ionicons
+                          name="checkmark"
+                          size={14}
+                          color={COLORS.white}
+                        />
                       )}
                     </TouchableOpacity>
                   ))}
@@ -399,7 +483,7 @@ const SettingsScreen: React.FC = () => {
               disabled={isSaving}
             >
               <Text style={styles.linkButtonText}>
-                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -423,8 +507,8 @@ const SettingsScreen: React.FC = () => {
             </View>
 
             <Text style={styles.modalDescription}>
-              Liên kết tài khoản với email để có thể đăng nhập trên nhiều thiết bị và backup dữ
-              liệu của bạn.
+              Liên kết tài khoản với email để có thể đăng nhập trên nhiều thiết
+              bị và backup dữ liệu của bạn.
             </Text>
 
             <TextInput
@@ -453,12 +537,15 @@ const SettingsScreen: React.FC = () => {
             />
 
             <TouchableOpacity
-              style={[styles.linkButton, isLinking && styles.linkButtonDisabled]}
+              style={[
+                styles.linkButton,
+                isLinking && styles.linkButtonDisabled,
+              ]}
               onPress={handleLinkEmail}
               disabled={isLinking}
             >
               <Text style={styles.linkButtonText}>
-                {isLinking ? 'Đang liên kết...' : 'Liên kết ngay'}
+                {isLinking ? "Đang liên kết..." : "Liên kết ngay"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -500,7 +587,9 @@ const SettingItem: React.FC<SettingItemProps> = ({
       activeOpacity={0.7}
     >
       <View style={styles.settingLeft}>
-        <View style={[styles.iconContainer, linked && styles.iconContainerLinked]}>
+        <View
+          style={[styles.iconContainer, linked && styles.iconContainerLinked]}
+        >
           <Ionicons
             name={icon}
             size={22}
@@ -527,9 +616,15 @@ const SettingItem: React.FC<SettingItemProps> = ({
             <Text style={styles.badgeText}>{badgeText}</Text>
           </View>
         )}
-        {linked && <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />}
+        {linked && (
+          <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+        )}
         {!disabled && !linked && (
-          <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={COLORS.textSecondary}
+          />
         )}
       </View>
     </TouchableOpacity>
@@ -550,15 +645,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 12,
     letterSpacing: 0.5,
   },
   profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
@@ -568,9 +663,9 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: COLORS.primary + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: COLORS.primary + "20",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 16,
   },
   profileInfo: {
@@ -578,7 +673,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
     marginBottom: 4,
   },
@@ -587,22 +682,22 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   anonymousBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   anonymousText: {
     fontSize: 12,
     color: COLORS.warning,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   warningCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.warning + '10',
+    flexDirection: "row",
+    backgroundColor: COLORS.warning + "10",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.warning + '30',
+    borderColor: COLORS.warning + "30",
   },
   warningContent: {
     flex: 1,
@@ -610,7 +705,7 @@ const styles = StyleSheet.create({
   },
   warningTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.warning,
     marginBottom: 4,
   },
@@ -620,9 +715,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
@@ -632,8 +727,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   iconContainer: {
@@ -641,19 +736,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   iconContainerLinked: {
-    backgroundColor: COLORS.success + '20',
+    backgroundColor: COLORS.success + "20",
   },
   settingText: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: COLORS.textPrimary,
     marginBottom: 2,
   },
@@ -663,11 +758,11 @@ const styles = StyleSheet.create({
   },
   settingSubtitleLinked: {
     color: COLORS.success,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   settingRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   badge: {
@@ -676,33 +771,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     minWidth: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   badgeText: {
     color: COLORS.white,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.error + '30',
+    borderColor: COLORS.error + "30",
   },
   deleteText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.error,
   },
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: 16,
@@ -710,17 +805,17 @@ const styles = StyleSheet.create({
     marginTop: 20,
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.error + '30',
+    borderColor: COLORS.error + "30",
   },
   logoutText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.error,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: COLORS.overlay,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: COLORS.surface,
@@ -730,14 +825,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
   modalDescription: {
@@ -760,7 +855,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: 10,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   linkButtonDisabled: {
@@ -769,28 +864,28 @@ const styles = StyleSheet.create({
   linkButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Avatar & Edit Profile
   avatarWrap: {
-    position: 'relative',
+    position: "relative",
     marginRight: 16,
   },
   initialsText: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
   editAvatarBtn: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     width: 22,
     height: 22,
     borderRadius: 11,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: COLORS.surface,
   },
@@ -801,30 +896,30 @@ const styles = StyleSheet.create({
   },
   // Edit Profile Modal
   editAvatarPreview: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 16,
   },
   editAvatarLarge: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   initialsTextLarge: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.white,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textSecondary,
     marginBottom: 10,
     marginTop: 4,
   },
   colorPalette: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginBottom: 16,
   },
@@ -832,8 +927,8 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   colorDotSelected: {
     borderWidth: 3,
@@ -846,18 +941,18 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   editAvatarTouchable: {
-    position: 'relative',
+    position: "relative",
   },
   cameraOverlay: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
     width: 26,
     height: 26,
     borderRadius: 13,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: COLORS.surface,
   },
@@ -867,19 +962,19 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   removePhotoBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     marginTop: 6,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: COLORS.error + '12',
+    backgroundColor: COLORS.error + "12",
   },
   removePhotoBtnText: {
     fontSize: 12,
     color: COLORS.error,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
 
