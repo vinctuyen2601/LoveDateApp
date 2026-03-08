@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppState, AppStateStatus } from 'react-native';
@@ -19,7 +19,6 @@ import { NotificationUtils } from './src/lib/notification.utils';
 import * as DB from './src/services/database.service';
 import { dataSeedService } from './src/services/dataSeed.service';
 import { backgroundTaskService } from './src/services/backgroundTask.service';
-import OnboardingOverlay, { checkOnboardingComplete } from './src/components/organisms/OnboardingOverlay';
 
 // Configure how notifications are presented when app is in foreground
 Notifications.setNotificationHandler({
@@ -36,14 +35,7 @@ Notifications.setNotificationHandler({
 function AppContent() {
   const db = useSQLiteContext();
   const appState = useRef(AppState.currentState);
-  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
-
   useEffect(() => {
-    // Check onboarding status
-    checkOnboardingComplete().then((completed) => {
-      setShowOnboarding(!completed);
-    });
-
     // Initialize app
     initializeApp();
 
@@ -160,9 +152,6 @@ function AppContent() {
                   <AppNavigator />
                   <StatusBar style="auto" />
                   <PermissionModal onPermissionResult={handlePermissionResult} />
-                  {showOnboarding && (
-                    <OnboardingOverlay onComplete={() => setShowOnboarding(false)} />
-                  )}
                 </SyncProvider>
               </NotificationProvider>
             </EventsProvider>

@@ -106,22 +106,23 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister }) => {
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const dismissedRef = useRef(false);
+  const completedRef = useRef(false);
   const dismiss = (callback?: () => void) => {
     if (dismissedRef.current) return;
     dismissedRef.current = true;
+    const finish = () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      onComplete();
+      callback?.();
+    };
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 280,
       useNativeDriver: true,
-    }).start(() => {
-      onComplete();
-      callback?.();
-    });
+    }).start(finish);
     // Safety fallback if animation callback doesn't fire
-    setTimeout(() => {
-      onComplete();
-      callback?.();
-    }, 350);
+    setTimeout(finish, 350);
   };
 
   const handleNext = () => {
