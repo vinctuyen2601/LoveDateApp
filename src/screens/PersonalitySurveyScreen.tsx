@@ -8,6 +8,7 @@ import {
   Animated,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,6 +16,9 @@ import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "@themes/colors";
 import { Article } from '../data/articles';
 import { suggestArticlesForSurvey } from '../services/articleService';
+import { apiService } from '../services/api.service';
+import { useAiRateLimit } from '../hooks/useAiRateLimit';
+import AiRateLimitModal from '../components/molecules/AiRateLimitModal';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -25,15 +29,52 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const QUESTIONS = [
   {
-    id: "style",
-    question: "Phong cách của bạn trong tình yêu là gì?",
-    hint: "Chọn câu mô tả đúng nhất về bạn",
+    id: "avoidance",
+    question: "Khi người yêu muốn gần gũi cảm xúc hơn, bạn thường cảm thấy thế nào?",
+    hint: "Phản ứng tự nhiên nhất khi họ muốn thêm sự gần gũi",
     icon: "heart" as const,
     options: [
-      { id: "a", text: "Tôi thường là người chủ động cho đi nhiều hơn" },
-      { id: "b", text: "Tôi cần không gian riêng để nạp lại năng lượng" },
-      { id: "c", text: "Tôi muốn được gắn bó và ở gần nhau thật nhiều" },
-      { id: "d", text: "Tôi cân bằng — vừa gắn kết vừa có không gian riêng" },
+      { id: "a", text: "Tôi thấy thoải mái và hạnh phúc — gần gũi là điều tôi mong muốn" },
+      { id: "b", text: "Tôi cần không gian riêng — gần quá khiến tôi cảm thấy ngột ngạt" },
+      { id: "c", text: "Tôi muốn gần hơn nhưng lo họ không muốn như vậy" },
+      { id: "d", text: "Tùy lúc — đôi khi thích gần, đôi khi cần không gian" },
+    ],
+  },
+  {
+    id: "anxiety",
+    question: "Khi người yêu ít nhắn tin hoặc im lặng 1-2 ngày, bạn thường làm gì?",
+    hint: "Phản ứng thực tế của bạn — không phải điều bạn nghĩ nên làm",
+    icon: "phone-portrait-outline" as const,
+    options: [
+      { id: "a", text: "Tôi hiểu họ bận và chờ đợi bình thản, không lo nhiều" },
+      { id: "b", text: "Tôi lo lắng, kiểm tra điện thoại và muốn nhắn tin hỏi liên tục" },
+      { id: "c", text: "Tôi nhắn hỏi thăm một lần cho yên tâm rồi thôi" },
+      { id: "d", text: "Tôi lo nhưng cố không nhắn — sợ bị xem là nhõng nhẽo" },
+    ],
+  },
+  {
+    id: "neuroticism",
+    question: "Khi mối quan hệ có vấn đề nhỏ, cảm xúc của bạn thường như thế nào?",
+    hint: "Mô tả trung thực nhất — không có câu trả lời đúng hay sai",
+    icon: "pulse-outline" as const,
+    options: [
+      { id: "a", text: "Tôi bình tĩnh xử lý và không bị ảnh hưởng lâu" },
+      { id: "b", text: "Tôi khá căng thẳng và cần thời gian để hồi phục hoàn toàn" },
+      { id: "c", text: "Cảm xúc tôi bùng phát nhưng qua nhanh, rồi bình thường lại" },
+      { id: "d", text: "Tôi lo âu và suy nghĩ mãi, rất khó buông bỏ" },
+    ],
+  },
+  {
+    id: "conflict",
+    question: "Khi có xung đột với người yêu, bạn thường xử lý như thế nào?",
+    hint: "Cách phản ứng tự nhiên của bạn",
+    icon: "chatbubbles-outline" as const,
+    options: [
+      { id: "a", text: "Nói thẳng ngay — không thích để mâu thuẫn kéo dài" },
+      { id: "b", text: "Thảo luận cởi mở để cả hai cùng tìm giải pháp tốt nhất" },
+      { id: "c", text: "Ai cũng nhường một chút — thỏa hiệp là ổn" },
+      { id: "d", text: "Né tránh tạm thời — chờ cho qua rồi nói chuyện sau" },
+      { id: "e", text: "Nhường nhịn — hạnh phúc của họ quan trọng hơn tôi đúng" },
     ],
   },
   {
@@ -63,15 +104,16 @@ const QUESTIONS = [
     ],
   },
   {
-    id: "conflict",
-    question: "Khi có mâu thuẫn, bạn thường xử lý như thế nào?",
-    hint: "Phản ứng tự nhiên của bạn",
-    icon: "chatbubbles-outline" as const,
+    id: "orientation",
+    question: "Trong tình yêu, điều quan trọng nhất với bạn là gì?",
+    hint: "Nền tảng không thể thiếu trong một mối quan hệ lý tưởng",
+    icon: "shield-checkmark-outline" as const,
     options: [
-      { id: "a", text: "Nói thẳng ngay để giải quyết, không để lâu" },
-      { id: "b", text: "Cần thời gian để bình tĩnh rồi mới nói chuyện" },
-      { id: "c", text: "Thường nhường nhịn để tránh ảnh hưởng đến đôi bên" },
-      { id: "d", text: "Nhẹ nhàng trao đổi, cố hiểu cảm xúc của nhau" },
+      { id: "a", text: "Sự gắn kết sâu — tin tưởng, chia sẻ và thấu hiểu nhau hoàn toàn" },
+      { id: "b", text: "Cùng nhau phát triển và hỗ trợ ước mơ của nhau" },
+      { id: "c", text: "Đam mê, sức hút lãng mạn và những khoảnh khắc đặc biệt" },
+      { id: "d", text: "Sự ổn định, có thể dựa vào nhau mỗi ngày" },
+      { id: "e", text: "Niềm vui, sự hài hước và những kỷ niệm vui vẻ" },
     ],
   },
   {
@@ -87,19 +129,6 @@ const QUESTIONS = [
     ],
   },
   {
-    id: "value",
-    question: "Điều bạn coi trọng nhất trong tình yêu là gì?",
-    hint: "Nền tảng của một mối quan hệ lành mạnh với bạn",
-    icon: "shield-checkmark-outline" as const,
-    options: [
-      { id: "a", text: "Sự tin tưởng và trung thực tuyệt đối" },
-      { id: "b", text: "Cùng nhau phát triển và hỗ trợ ước mơ" },
-      { id: "c", text: "Niềm vui, sự hài hước và những khoảnh khắc vui vẻ" },
-      { id: "d", text: "Sự ổn định, an toàn và có thể dựa vào nhau" },
-      { id: "e", text: "Đam mê, lãng mạn và sức hút không phai" },
-    ],
-  },
-  {
     id: "stress",
     question: "Khi căng thẳng, bạn muốn người yêu làm gì?",
     hint: "Điều giúp bạn cảm thấy được chữa lành",
@@ -109,18 +138,6 @@ const QUESTIONS = [
       { id: "b", text: "Lắng nghe và chia sẻ cùng tôi" },
       { id: "c", text: "Rủ tôi làm gì đó vui để quên đi chuyện buồn" },
       { id: "d", text: "Chỉ cần ngồi bên cạnh, yên lặng ôm nhau" },
-    ],
-  },
-  {
-    id: "planning",
-    question: "Về phong cách lập kế hoạch hẹn hò, bạn là...?",
-    hint: "Cách bạn thích chuẩn bị cho những buổi hẹn",
-    icon: "map-outline" as const,
-    options: [
-      { id: "a", text: "Người lên kế hoạch chi tiết — tôi thích chuẩn bị kỹ" },
-      { id: "b", text: "Người ngẫu hứng — bất ngờ mới thú vị" },
-      { id: "c", text: "Có ý tưởng chung nhưng không cần cứng nhắc" },
-      { id: "d", text: "Người linh hoạt — người kia quyết định là được" },
     ],
   },
 ];
@@ -135,11 +152,23 @@ const LOVE_LANGUAGE_MAP: Record<string, { label: string; icon: string; desc: str
   e: { label: "Đụng chạm thể chất", icon: "heart-circle", desc: "Sự gần gũi thể chất — ôm ấp, nắm tay, những cử chỉ ân cần — là cách bạn cảm nhận tình yêu sâu sắc nhất." },
 };
 
+// ECR 2-axis: Q1 avoidance score + Q2 anxiety score → quadrant
+const AV_SCORE: Record<string, number> = { a: 10, b: 90, c: 20, d: 35 };
+const AX_SCORE: Record<string, number> = { a: 10, b: 90, c: 40, d: 70 };
+function deriveQuadrant(avoidance: string, anxiety: string): string {
+  const av = AV_SCORE[avoidance] ?? 35;
+  const ax = AX_SCORE[anxiety]   ?? 35;
+  if (av < 45 && ax < 45) return 'a'; // Gắn bó an toàn
+  if (av >= 45 && ax < 45) return 'b'; // Né tránh — lạnh lùng
+  if (av < 45 && ax >= 45) return 'c'; // Lo lắng — bám víu
+  return 'd';                           // Né tránh — lo âu (phức tạp)
+}
+
 const PERSONALITY_MAP: Record<string, { label: string; color: string; emoji: string }> = {
-  a: { label: "Người cho đi", color: "#E11D48", emoji: "🌸" },
-  b: { label: "Người độc lập", color: "#7C3AED", emoji: "🌿" },
-  c: { label: "Người gắn kết", color: "#D97706", emoji: "🔥" },
-  d: { label: "Người cân bằng", color: "#059669", emoji: "⚖️" },
+  a: { label: "Gắn bó an toàn",     color: "#059669", emoji: "💞" },
+  b: { label: "Né tránh gắn bó",    color: "#7C3AED", emoji: "🦋" },
+  c: { label: "Lo lắng gắn bó",     color: "#D97706", emoji: "💖" },
+  d: { label: "Né tránh — lo âu",   color: "#DC2626", emoji: "🌀" },
 };
 
 const DATE_SUGGESTIONS: Record<string, string[]> = {
@@ -150,20 +179,37 @@ const DATE_SUGGESTIONS: Record<string, string[]> = {
 };
 
 const STRENGTHS_MAP: Record<string, string[]> = {
-  a: ["Hết lòng, quan tâm người yêu sâu sắc", "Luôn đặt cảm xúc đối phương lên đầu", "Giỏi nhận biết và đáp ứng nhu cầu tình cảm"],
-  b: ["Tự chủ, không phụ thuộc về mặt cảm xúc", "Mang lại không gian lành mạnh cho nhau", "Biết ranh giới cá nhân trong tình yêu"],
-  c: ["Trung thành và gắn bó sâu sắc", "Luôn sẵn sàng ưu tiên người yêu", "Cảm xúc phong phú, lãng mạn"],
-  d: ["Dễ thích nghi, không cứng nhắc", "Biết điều chỉnh theo nhu cầu của nhau", "Mang lại sự ổn định trong mối quan hệ"],
+  a: ["Giao tiếp cảm xúc cởi mở và chân thành", "Tạo không gian an toàn cho người yêu chia sẻ", "Cân bằng lành mạnh giữa gắn kết và không gian riêng"],
+  b: ["Tự chủ cảm xúc, không phụ thuộc vào đối phương", "Mang lại không gian lành mạnh cho mối quan hệ", "Có chiều sâu nội tâm và quan điểm độc lập"],
+  c: ["Trung thành và gắn bó sâu sắc với người mình yêu", "Luôn hiện diện đầy đủ khi người yêu cần", "Cảm xúc phong phú, chân thành và dễ đồng cảm"],
+  d: ["Nhạy cảm và đồng cảm sâu sắc — hiểu được cảm xúc phức tạp của người khác", "Tự nhận thức cao về bản thân và sẵn sàng trưởng thành trong tình yêu", "Khi cảm thấy an toàn, có khả năng yêu thương sâu sắc và trung thành"],
 };
 
 function calculateResult(answers: Record<string, string>) {
+  const quadrant = deriveQuadrant(answers.avoidance ?? "a", answers.anxiety ?? "a");
   const ll = LOVE_LANGUAGE_MAP[answers.receiving ?? "c"] ?? LOVE_LANGUAGE_MAP.c;
   const giving = LOVE_LANGUAGE_MAP[answers.giving ?? "c"] ?? LOVE_LANGUAGE_MAP.c;
-  const personality = PERSONALITY_MAP[answers.style ?? "d"] ?? PERSONALITY_MAP.d;
+  const personality = PERSONALITY_MAP[quadrant] ?? PERSONALITY_MAP.a;
   const dateSuggs = DATE_SUGGESTIONS[answers.date ?? "d"] ?? DATE_SUGGESTIONS.d;
-  const strengths = STRENGTHS_MAP[answers.style ?? "d"] ?? STRENGTHS_MAP.d;
+  const strengths = STRENGTHS_MAP[quadrant] ?? STRENGTHS_MAP.a;
 
   return { ll, giving, personality, dateSuggs, strengths };
+}
+
+// ─── AI Result Type ───────────────────────────────────────────────────────────
+
+interface AIPersonalityResult {
+  personalityType: string;
+  emoji: string;
+  summary: string;
+  loveLanguageReceiving: { label: string; description: string };
+  loveLanguageGiving: { label: string; description: string };
+  strengths: string[];
+  growthAreas: string[];
+  idealPartner: string;
+  dateSuggestions: string[];
+  adviceForPartner: string;
+  isAI: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -174,10 +220,35 @@ const PersonalitySurveyScreen: React.FC = () => {
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
+  const [aiResult, setAiResult] = useState<AIPersonalityResult | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const { handleAiError, rateLimitModal } = useAiRateLimit();
 
   useEffect(() => {
     if (phase !== 'result') return;
+
+    // Build readable answers: { "Phong cách yêu?": "Tôi cần không gian riêng..." }
+    setAiLoading(true);
+    setAiResult(null);
+    const readableAnswers: Record<string, string> = {};
+    for (const q of QUESTIONS) {
+      const optId = answers[q.id];
+      if (!optId) continue;
+      const opt = q.options.find(o => o.id === optId);
+      if (opt) readableAnswers[q.question] = opt.text;
+    }
+    // rawAnswers giữ nguyên format { style: "a", receiving: "b", ... }
+    // để BE dùng cho matrix scoring và fallback chính xác
+    apiService.post<AIPersonalityResult>('/surveys/personality-analysis', {
+      answers: readableAnswers,
+      rawAnswers: answers,
+    })
+      .then(setAiResult)
+      .catch((err) => handleAiError(err))
+      .finally(() => setAiLoading(false));
+
+    // Suggest articles
     const res = calculateResult(answers);
     suggestArticlesForSurvey('personality', {
       loveLanguage: res.ll.label,
@@ -249,12 +320,12 @@ const PersonalitySurveyScreen: React.FC = () => {
 
             <Text style={styles.introTitle}>Khám phá phong cách{"\n"}yêu thương của bạn</Text>
             <Text style={styles.introSub}>
-              8 câu hỏi để hiểu sâu hơn về ngôn ngữ tình yêu, phong cách quan hệ và cách bạn kết nối với người thương.
+              9 câu hỏi khoa học để hiểu sâu hơn về phong cách gắn bó, ngôn ngữ tình yêu và cách bạn kết nối với người thương.
             </Text>
 
             <View style={styles.introStats}>
               {[
-                { icon: "help-circle-outline", text: "8 câu hỏi" },
+                { icon: "help-circle-outline", text: "9 câu hỏi" },
                 { icon: "time-outline", text: "3 phút" },
                 { icon: "sparkles-outline", text: "Kết quả riêng" },
               ].map(s => (
@@ -278,6 +349,25 @@ const PersonalitySurveyScreen: React.FC = () => {
   // ── Result ──
   if (phase === "result") {
     const result = calculateResult(answers);
+    const ai = aiResult;
+
+    // Derive display data: prefer AI, fallback to local
+    const displayEmoji = ai?.emoji || result.personality.emoji;
+    const displayLabel = ai?.personalityType || result.personality.label;
+    const displaySummary = ai?.summary;
+    const displayLLReceiving = ai
+      ? { label: ai.loveLanguageReceiving.label, desc: ai.loveLanguageReceiving.description }
+      : { label: result.ll.label, desc: result.ll.desc };
+    const displayLLGiving = ai
+      ? { label: ai.loveLanguageGiving.label, desc: ai.loveLanguageGiving.description }
+      : { label: result.giving.label, desc: "Cách bạn tự nhiên thể hiện tình cảm thường khác với cách bạn muốn nhận — đây là điều giúp cả hai hiểu nhau hơn." };
+    const displayStrengths = ai?.strengths || result.strengths;
+    const displayDateSuggs = ai?.dateSuggestions || result.dateSuggs;
+    const displayGrowthAreas = ai?.growthAreas;
+    const displayIdealPartner = ai?.idealPartner;
+    const displayAdvice = ai?.adviceForPartner;
+    const isAI = ai?.isAI === true;
+
     return (
       <View style={styles.flex}>
         <StatusBar barStyle="light-content" />
@@ -289,52 +379,72 @@ const PersonalitySurveyScreen: React.FC = () => {
                 <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
               <View style={styles.resultBadgeWrap}>
-                <Text style={styles.resultEmoji}>{result.personality.emoji}</Text>
+                <Text style={styles.resultEmoji}>{displayEmoji}</Text>
                 <View style={styles.resultPersonalityBadge}>
-                  <Text style={styles.resultPersonalityLabel}>{result.personality.label}</Text>
+                  <Text style={styles.resultPersonalityLabel}>{displayLabel}</Text>
                 </View>
+                {isAI && (
+                  <View style={styles.aiBadge}>
+                    <Ionicons name="sparkles" size={12} color="#7C3AED" />
+                    <Text style={styles.aiBadgeText}>AI phân tích</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.resultTitle}>Hồ sơ tính cách{"\n"}của bạn</Text>
             </SafeAreaView>
           </LinearGradient>
 
           <View style={styles.resultBody}>
+            {/* AI Loading */}
+            {aiLoading && (
+              <View style={styles.aiLoadingCard}>
+                <ActivityIndicator size="small" color="#7C3AED" />
+                <Text style={styles.aiLoadingText}>AI đang phân tích tính cách của bạn...</Text>
+              </View>
+            )}
+
+            {/* AI Summary */}
+            {displaySummary && (
+              <View style={[styles.resultCard, styles.summaryCard]}>
+                <Text style={styles.resultSectionTitle}>✨ Tổng quan</Text>
+                <Text style={styles.resultCardDesc}>{displaySummary}</Text>
+              </View>
+            )}
+
             {/* Love language receiving */}
             <View style={styles.resultCard}>
               <View style={styles.resultCardHeader}>
                 <View style={[styles.resultCardIcon, { backgroundColor: "#FEF3C7" }]}>
-                  <Ionicons name={result.ll.icon as any} size={22} color="#D97706" />
+                  <Ionicons name={ai ? "heart" : result.ll.icon as any} size={22} color="#D97706" />
                 </View>
                 <View style={styles.resultCardInfo}>
                   <Text style={styles.resultCardLabel}>Ngôn ngữ tình yêu (nhận)</Text>
-                  <Text style={styles.resultCardTitle}>{result.ll.label}</Text>
+                  <Text style={styles.resultCardTitle}>{displayLLReceiving.label}</Text>
                 </View>
               </View>
-              <Text style={styles.resultCardDesc}>{result.ll.desc}</Text>
+              <Text style={styles.resultCardDesc}>{displayLLReceiving.desc}</Text>
             </View>
 
             {/* Love language giving */}
-            {result.giving.label !== result.ll.label && (
+            {displayLLGiving.label !== displayLLReceiving.label && (
               <View style={styles.resultCard}>
                 <View style={styles.resultCardHeader}>
                   <View style={[styles.resultCardIcon, { backgroundColor: "#FCE7F3" }]}>
-                    <Ionicons name={result.giving.icon as any} size={22} color="#DB2777" />
+                    <Ionicons name={ai ? "gift" : result.giving.icon as any} size={22} color="#DB2777" />
                   </View>
                   <View style={styles.resultCardInfo}>
                     <Text style={styles.resultCardLabel}>Ngôn ngữ tình yêu (cho đi)</Text>
-                    <Text style={styles.resultCardTitle}>{result.giving.label}</Text>
+                    <Text style={styles.resultCardTitle}>{displayLLGiving.label}</Text>
                   </View>
                 </View>
-                <Text style={styles.resultCardDesc}>
-                  Cách bạn tự nhiên thể hiện tình cảm thường khác với cách bạn muốn nhận — đây là điều giúp cả hai hiểu nhau hơn.
-                </Text>
+                <Text style={styles.resultCardDesc}>{displayLLGiving.desc}</Text>
               </View>
             )}
 
             {/* Strengths */}
             <View style={styles.resultCard}>
               <Text style={styles.resultSectionTitle}>💪 Điểm mạnh trong tình yêu</Text>
-              {result.strengths.map((s, i) => (
+              {displayStrengths.map((s, i) => (
                 <View style={styles.strengthRow} key={i}>
                   <View style={styles.strengthDot} />
                   <Text style={styles.strengthText}>{s}</Text>
@@ -342,16 +452,45 @@ const PersonalitySurveyScreen: React.FC = () => {
               ))}
             </View>
 
+            {/* Growth areas (AI only) */}
+            {displayGrowthAreas && displayGrowthAreas.length > 0 && (
+              <View style={styles.resultCard}>
+                <Text style={styles.resultSectionTitle}>🌱 Điều cần phát triển</Text>
+                {displayGrowthAreas.map((s, i) => (
+                  <View style={styles.strengthRow} key={i}>
+                    <View style={[styles.strengthDot, { backgroundColor: "#D97706" }]} />
+                    <Text style={styles.strengthText}>{s}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Ideal partner (AI only) */}
+            {displayIdealPartner && (
+              <View style={styles.resultCard}>
+                <Text style={styles.resultSectionTitle}>💕 Người phù hợp với bạn</Text>
+                <Text style={styles.resultCardDesc}>{displayIdealPartner}</Text>
+              </View>
+            )}
+
             {/* Date suggestions */}
             <View style={styles.resultCard}>
               <Text style={styles.resultSectionTitle}>🗓 Gợi ý hẹn hò cho bạn</Text>
-              {result.dateSuggs.map((s, i) => (
+              {displayDateSuggs.map((s, i) => (
                 <View style={styles.dateRow} key={i}>
                   <Ionicons name="checkmark-circle" size={16} color={COLORS.primary} />
                   <Text style={styles.dateText}>{s}</Text>
                 </View>
               ))}
             </View>
+
+            {/* Advice for partner (AI only) */}
+            {displayAdvice && (
+              <View style={[styles.resultCard, styles.adviceCard]}>
+                <Text style={styles.resultSectionTitle}>💌 Lời nhắn cho người yêu bạn</Text>
+                <Text style={styles.resultCardDesc}>{displayAdvice}</Text>
+              </View>
+            )}
 
             {/* Actions */}
             <TouchableOpacity
@@ -397,6 +536,8 @@ const PersonalitySurveyScreen: React.FC = () => {
             <View style={{ height: 40 }} />
           </View>
         </ScrollView>
+
+        <AiRateLimitModal {...rateLimitModal} />
       </View>
     );
   }
@@ -642,6 +783,21 @@ const styles = StyleSheet.create({
   articleInfo: { flex: 1 },
   articleTitle: { fontSize: 14, fontWeight: "600", color: COLORS.textPrimary, lineHeight: 20, marginBottom: 3 },
   articleMeta: { fontSize: 12, color: COLORS.textSecondary },
+
+  // AI result
+  aiBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "#F3E8FF", borderRadius: 12,
+    paddingHorizontal: 10, paddingVertical: 4, marginTop: 8,
+  },
+  aiBadgeText: { fontSize: 11, fontWeight: "600", color: "#7C3AED" },
+  aiLoadingCard: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: "#F3E8FF", borderRadius: 14, padding: 14,
+  },
+  aiLoadingText: { fontSize: 13, color: "#7C3AED", fontWeight: "500" },
+  summaryCard: { borderColor: "#7C3AED30", backgroundColor: "#FAF5FF" },
+  adviceCard: { borderColor: "#EC489930", backgroundColor: "#FFF1F2" },
 });
 
 export default PersonalitySurveyScreen;
