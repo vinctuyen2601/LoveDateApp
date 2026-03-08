@@ -112,16 +112,52 @@ class LunarService {
   }
 
   /**
-   * Convert event date based on calendar type
+   * Convert event date based on calendar type.
+   * eventDate stores lunar coordinates as ISO numbers when isLunarCalendar=true.
+   * E.g., lunar 15/1 stored as "2026-01-15T..." — extract directly, do NOT solar→lunar convert.
    */
   convertEventDate(date: Date, isLunarCalendar: boolean): Date {
     if (!isLunarCalendar) {
       return date;
     }
 
-    // If it's lunar calendar, get the next occurrence
-    const lunar = this.jsDateToLunar(date);
+    // Extract lunar coordinates directly from stored date numbers
+    const lunar: LunarDate = {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+      isLeapMonth: false,
+    };
     return this.getNextLunarOccurrence(lunar);
+  }
+
+  /**
+   * Convert lunar month/day to solar date for a specific year.
+   * Used by notification scheduler for yearly recurring lunar events.
+   */
+  lunarToSolarForYear(lunarMonth: number, lunarDay: number, year: number): Date | null {
+    try {
+      const solar = this.lunarToSolar({
+        year,
+        month: lunarMonth,
+        day: lunarDay,
+        isLeapMonth: false,
+      });
+      return new Date(solar.year, solar.month - 1, solar.day);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Extract stored lunar coordinates from eventDate.
+   * eventDate stores lunar month/day as ISO numbers when isLunarCalendar=true.
+   */
+  extractLunarCoordinates(date: Date): { month: number; day: number } {
+    return {
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+    };
   }
 }
 

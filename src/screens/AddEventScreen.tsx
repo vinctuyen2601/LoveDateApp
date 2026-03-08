@@ -13,13 +13,13 @@ import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 // TODO(monetization): import { useSQLiteContext } from "expo-sqlite"; // cần lại khi re-enable premium check
-import { useEvents } from '@contexts/EventsContext';
+import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
 import { EventFormData, RecurrenceType, PREDEFINED_TAGS } from "../types";
-import { COLORS } from '@themes/colors';
+import { COLORS } from "@themes/colors";
 import { STRINGS } from "../constants/strings";
-import { DateUtils } from '@lib/date.utils';
-import { ValidationUtils } from '@lib/validation.utils';
+import { DateUtils } from "@lib/date.utils";
+import { ValidationUtils } from "@lib/validation.utils";
 import ReminderSettings from "@components/molecules/ReminderSettings";
 import TimePicker from "@components/molecules/TimePicker";
 import RecurrenceTypePicker from "@components/molecules/RecurrenceTypePicker";
@@ -225,10 +225,10 @@ const AddEventScreen: React.FC = () => {
 
   // Form steps for progress indicator
   const formSteps = [
-    { label: 'Tên', icon: 'text-outline' as const },
-    { label: 'Thời gian', icon: 'calendar-outline' as const },
-    { label: 'Nhắc nhở', icon: 'notifications-outline' as const },
-    { label: 'Nhãn', icon: 'pricetag-outline' as const },
+    { label: "Tên", icon: "text-outline" as const },
+    { label: "Thời gian", icon: "calendar-outline" as const },
+    { label: "Nhắc nhở", icon: "notifications-outline" as const },
+    { label: "Nhãn", icon: "pricetag-outline" as const },
   ];
 
   return (
@@ -237,16 +237,23 @@ const AddEventScreen: React.FC = () => {
       <View style={styles.stepIndicator}>
         {formSteps.map((step, index) => (
           <View key={step.label} style={styles.stepItem}>
-            <View style={[
-              styles.stepDot,
-              { backgroundColor: COLORS.primary + (index === 0 ? 'FF' : '40') }
-            ]}>
-              <Ionicons name={step.icon} size={14} color={index === 0 ? COLORS.white : COLORS.primary} />
+            <View
+              style={[
+                styles.stepDot,
+                {
+                  backgroundColor: COLORS.primary + (index === 0 ? "FF" : "40"),
+                },
+              ]}
+            >
+              <Ionicons
+                name={step.icon}
+                size={14}
+                color={index === 0 ? COLORS.white : COLORS.primary}
+              />
             </View>
-            <Text style={[
-              styles.stepLabel,
-              index === 0 && styles.stepLabelActive
-            ]}>
+            <Text
+              style={[styles.stepLabel, index === 0 && styles.stepLabelActive]}
+            >
               {step.label}
             </Text>
             {index < formSteps.length - 1 && <View style={styles.stepLine} />}
@@ -287,10 +294,13 @@ const AddEventScreen: React.FC = () => {
             ) : (
               <View />
             )}
-            <Text style={[
-              styles.charCount,
-              formData.title.length >= MAX_TITLE_LENGTH && styles.charCountLimit
-            ]}>
+            <Text
+              style={[
+                styles.charCount,
+                formData.title.length >= MAX_TITLE_LENGTH &&
+                  styles.charCountLimit,
+              ]}
+            >
               {formData.title.length}/{MAX_TITLE_LENGTH}
             </Text>
           </View>
@@ -547,8 +557,18 @@ const AddEventScreen: React.FC = () => {
                   current={DateUtils.toLocalDateString(formData.eventDate)}
                   onDayPress={(day: DateData) => {
                     // Use dateString to avoid timezone issues
-                    const [year, month, date] = day.dateString.split('-').map(Number);
-                    const selectedDate = new Date(year, month - 1, date, 12, 0, 0, 0);
+                    const [year, month, date] = day.dateString
+                      .split("-")
+                      .map(Number);
+                    const selectedDate = new Date(
+                      year,
+                      month - 1,
+                      date,
+                      12,
+                      0,
+                      0,
+                      0
+                    );
                     setFormData({ ...formData, eventDate: selectedDate });
                   }}
                   markedDates={{
@@ -631,7 +651,11 @@ const AddEventScreen: React.FC = () => {
 
         {/* Section: Nhắc nhở */}
         <View style={styles.sectionDivider}>
-          <Ionicons name="notifications-outline" size={16} color={COLORS.primary} />
+          <Ionicons
+            name="notifications-outline"
+            size={16}
+            color={COLORS.primary}
+          />
           <Text style={styles.sectionDividerText}>Nhắc nhở</Text>
         </View>
 
@@ -660,7 +684,6 @@ const AddEventScreen: React.FC = () => {
 
         {/* Tags Picker */}
         <View style={styles.section}>
-          <Text style={styles.label}>Nhãn sự kiện</Text>
           <View style={styles.tagsContainer}>
             {PREDEFINED_TAGS.map((tag) => {
               const isSelected = formData.tags.includes(tag.value);
@@ -669,26 +692,19 @@ const AddEventScreen: React.FC = () => {
                   key={tag.value}
                   style={[
                     styles.tagChip,
-                    isSelected && styles.tagChipSelected,
-                    { borderColor: tag.color },
+                    isSelected && { backgroundColor: tag.color, borderColor: tag.color },
+                    !isSelected && { borderColor: COLORS.border },
                   ]}
                   onPress={() => {
-                    const newTags = isSelected
-                      ? formData.tags.filter((t) => t !== tag.value)
-                      : [...formData.tags, tag.value];
+                    const newTags = isSelected ? [] : [tag.value];
                     setFormData({ ...formData, tags: newTags });
                   }}
                 >
-                  <Ionicons
-                    name={tag.icon as any}
-                    size={16}
-                    color={isSelected ? COLORS.white : tag.color}
-                  />
+                  <Text style={styles.tagEmoji}>{tag.emoji}</Text>
                   <Text
                     style={[
                       styles.tagText,
-                      isSelected && styles.tagTextSelected,
-                      { color: isSelected ? COLORS.white : tag.color },
+                      { color: isSelected ? COLORS.white : COLORS.textPrimary },
                     ]}
                   >
                     {tag.label}
@@ -698,7 +714,7 @@ const AddEventScreen: React.FC = () => {
             })}
           </View>
           <Text style={styles.helperText}>
-            Chọn một hoặc nhiều nhãn để phân loại sự kiện
+            Chọn một nhãn để phân loại sự kiện
           </Text>
         </View>
       </ScrollView>
@@ -944,17 +960,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     gap: 6,
   },
-  tagChipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+  tagEmoji: {
+    fontSize: 18,
   },
   tagText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  tagTextSelected: {
-    color: COLORS.white,
-    fontWeight: "700",
   },
   helperText: {
     fontSize: 13,

@@ -13,6 +13,7 @@ import { NotificationProvider } from './src/contexts/NotificationContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator, { navigate } from './src/navigation/AppNavigator';
 import { PermissionModal } from './src/components/organisms/PermissionModal';
+import TodayEventPopup from './src/components/organisms/TodayEventPopup';
 import { notificationEnhancedService } from './src/services/notificationEnhanced.service';
 import { scheduleUpcomingNotifications } from './src/services/notificationScheduler.service';
 import { NotificationUtils } from './src/lib/notification.utils';
@@ -151,6 +152,7 @@ function AppContent() {
                 <SyncProvider>
                   <AppNavigator />
                   <StatusBar style="auto" />
+                  <TodayEventPopup />
                   <PermissionModal onPermissionResult={handlePermissionResult} />
                 </SyncProvider>
               </NotificationProvider>

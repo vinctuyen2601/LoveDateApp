@@ -13,24 +13,12 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
-import { Event, ChecklistItem } from "../types";
+import { Event, ChecklistItem, getTagInfo } from "../types";
 import { DateUtils } from "@lib/date.utils";
 import { COLORS } from "@themes/colors";
-import { PREDEFINED_TAGS } from "../types";
 import CountdownTimer from "@components/molecules/CountdownTimer";
 import ChecklistSection from "@components/organisms/ChecklistSection";
 import * as ChecklistService from "../services/checklist.service";
-
-const TAG_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  birthday: "gift",
-  anniversary: "heart",
-  memorial: "flower-outline",
-  holiday: "star",
-  wife: "woman-outline",
-  husband: "man-outline",
-  family: "people",
-  other: "calendar",
-};
 
 const EventDetailScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -135,20 +123,10 @@ const EventDetailScreen: React.FC = () => {
     );
   }
 
-  const getTagDetails = (tagValue: string) => {
-    return (
-      PREDEFINED_TAGS.find((t) => t.value === tagValue) || {
-        value: "other",
-        label: "Khác",
-        icon: "calendar",
-        color: COLORS.textSecondary,
-      }
-    );
-  };
-
   const primaryTag = event.tags[0] || "other";
-  const primaryColor = getTagDetails(primaryTag).color;
-  const primaryIcon = TAG_ICONS[primaryTag] || "calendar";
+  const tagDetails = getTagInfo(primaryTag);
+  const primaryColor = tagDetails.color;
+  const primaryEmoji = tagDetails.emoji;
 
   const handleEdit = () => {
     navigation.navigate("AddEvent", { eventId: event.id });
@@ -212,7 +190,7 @@ const EventDetailScreen: React.FC = () => {
                 { backgroundColor: primaryColor + "20" },
               ]}
             >
-              <Ionicons name={primaryIcon} size={32} color={primaryColor} />
+              <Text style={{ fontSize: 32 }}>{primaryEmoji}</Text>
             </View>
             <View style={styles.heroInfo}>
               <Text style={styles.eventTitle} numberOfLines={2}>
@@ -226,7 +204,7 @@ const EventDetailScreen: React.FC = () => {
                   ]}
                 >
                   <Text style={styles.categoryBadgeText}>
-                    {getTagDetails(primaryTag).label}
+                    {tagDetails.label}
                   </Text>
                 </View>
                 {event.isRecurring && (

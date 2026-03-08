@@ -17,7 +17,7 @@ import { Calendar, DateData } from "react-native-calendars";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
 import { useNotification } from "@contexts/NotificationContext";
-import { Event } from "../types";
+import { Event, getTagEmoji, getTagColor } from "../types";
 import { COLORS } from "@themes/colors";
 import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { useNavigation } from "@react-navigation/native";
@@ -25,37 +25,16 @@ import { getFeaturedArticles } from "../data/articles";
 import { getArticles } from "../services/articleService";
 import { databaseService } from "../services/database.service";
 import { getTrendingProducts } from "../services/affiliateProductService";
+import { getSpecialDatesForMonth } from "../constants/specialDates";
 import { AffiliateProduct } from "../types";
 import ProductCard from "../components/suggestions/ProductCard";
 import { format, addDays, differenceInCalendarDays } from "date-fns";
 import { vi } from "date-fns/locale";
 import { DateUtils } from "@lib/date.utils";
-import {
-  BirthdayIcon,
-  AnniversaryIcon,
-  HolidayIcon,
-  MemorialIcon,
-  OtherIcon,
-} from "@components/atoms/EventIcons";
 import NotificationBanner from "@components/molecules/NotificationBanner";
 import PressableCard from "@components/atoms/PressableCard";
 
 const TAB_BAR_HEIGHT = 60;
-
-const getEventIcon = (primaryTag: string) => {
-  switch (primaryTag) {
-    case "birthday":
-      return BirthdayIcon;
-    case "anniversary":
-      return AnniversaryIcon;
-    case "holiday":
-      return HolidayIcon;
-    case "memorial":
-      return MemorialIcon;
-    default:
-      return OtherIcon;
-  }
-};
 
 const CATEGORY_NAMES: Record<string, string> = {
   gifts: "Quà tặng",
@@ -65,105 +44,7 @@ const CATEGORY_NAMES: Record<string, string> = {
   personality: "Tính cách",
 };
 
-const EVENT_EMOJIS: Record<string, string> = {
-  birthday: "🎂",
-  anniversary: "💑",
-  holiday: "🎉",
-  memorial: "✝️",
-  other: "⭐",
-};
 
-// Ngày đặc biệt cố định hàng năm (Gregorian)
-const SPECIAL_DATES = [
-  {
-    month: 1,
-    day: 1,
-    name: "Năm Mới Dương Lịch",
-    emoji: "🎉",
-    color: "#F59E0B",
-    hint: "Chúc mừng năm mới!",
-  },
-  {
-    month: 2,
-    day: 14,
-    name: "Ngày Valentine",
-    emoji: "💝",
-    color: "#E91E63",
-    hint: "Ngày của tình yêu",
-  },
-  {
-    month: 3,
-    day: 8,
-    name: "Ngày Quốc tế Phụ nữ",
-    emoji: "🌷",
-    color: "#9C27B0",
-    hint: "Tôn vinh những người phụ nữ đặc biệt",
-  },
-  {
-    month: 3,
-    day: 14,
-    name: "Ngày Valentine Trắng",
-    emoji: "🤍",
-    color: "#64748B",
-    hint: "Ngày đáp lại tình cảm Valentine",
-  },
-  {
-    month: 4,
-    day: 30,
-    name: "Ngày Giải phóng",
-    emoji: "🇻🇳",
-    color: "#EF4444",
-    hint: "Ngày lễ quốc gia",
-  },
-  {
-    month: 5,
-    day: 1,
-    name: "Ngày Quốc tế Lao động",
-    emoji: "🌟",
-    color: "#F97316",
-    hint: "Ngày lễ quốc gia",
-  },
-  {
-    month: 6,
-    day: 1,
-    name: "Ngày Quốc tế Thiếu nhi",
-    emoji: "🎠",
-    color: "#06B6D4",
-    hint: "Ngày dành cho trẻ em",
-  },
-  {
-    month: 9,
-    day: 2,
-    name: "Ngày Quốc khánh",
-    emoji: "🇻🇳",
-    color: "#EF4444",
-    hint: "Ngày lễ quốc gia",
-  },
-  {
-    month: 10,
-    day: 20,
-    name: "Ngày Phụ nữ Việt Nam",
-    emoji: "🌸",
-    color: "#EC4899",
-    hint: "Tôn vinh phụ nữ Việt Nam",
-  },
-  {
-    month: 11,
-    day: 20,
-    name: "Ngày Nhà giáo VN",
-    emoji: "📚",
-    color: "#10B981",
-    hint: "Tri ân thầy cô",
-  },
-  {
-    month: 12,
-    day: 25,
-    name: "Giáng Sinh",
-    emoji: "🎄",
-    color: "#16A34A",
-    hint: "Merry Christmas!",
-  },
-];
 
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -223,20 +104,6 @@ const HomeScreen: React.FC = () => {
       .slice(0, 3);
   }, [events]);
 
-  const getCategoryColor = (tag: string): string => {
-    switch (tag) {
-      case "birthday":
-        return COLORS.categoryBirthday;
-      case "anniversary":
-        return COLORS.categoryAnniversary;
-      case "holiday":
-        return COLORS.categoryHoliday;
-      case "memorial":
-        return "#7C3AED";
-      default:
-        return COLORS.categoryOther;
-    }
-  };
 
   const markedDates = useMemo(() => {
     const marked: any = {};
@@ -263,13 +130,15 @@ const HomeScreen: React.FC = () => {
         marked[markDate] = { marked: true, emojis: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? "⭐");
+      marked[markDate].emojis.push(getTagEmoji(primaryTag));
     });
 
-    // Merge ngày đặc biệt cố định — dùng emoji
-    SPECIAL_DATES.forEach((sd) => {
-      const mm = String(sd.month).padStart(2, "0");
-      const dd = String(sd.day).padStart(2, "0");
+    // Merge ngày đặc biệt (bao gồm âm lịch, nth-weekday) — dùng emoji
+    const calMonth = parseInt(currentMonth.slice(5, 7), 10);
+    const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
+    resolvedSpecials.forEach((sd) => {
+      const mm = String(sd.solarMonth).padStart(2, "0");
+      const dd = String(sd.solarDay).padStart(2, "0");
       const dateKey = `${calYear}-${mm}-${dd}`;
       if (!marked[dateKey]) {
         marked[dateKey] = { emojis: [] };
@@ -277,7 +146,7 @@ const HomeScreen: React.FC = () => {
       if (!marked[dateKey].emojis) {
         marked[dateKey].emojis = [];
       }
-      marked[dateKey].emojis.unshift(sd.emoji); // special date emoji first
+      marked[dateKey].emojis.unshift(sd.emoji);
     });
 
     if (marked[selectedDate]) {
@@ -294,12 +163,11 @@ const HomeScreen: React.FC = () => {
 
   // Ngày đặc biệt trùng với ngày đang chọn
   const selectedDateSpecials = useMemo(() => {
-    const [, mm, dd] = selectedDate.split("-");
-    return SPECIAL_DATES.filter(
-      (sd) =>
-        String(sd.month).padStart(2, "0") === mm &&
-        String(sd.day).padStart(2, "0") === dd
-    );
+    const [yearStr, monthStr, dayStr] = selectedDate.split("-");
+    const y = parseInt(yearStr, 10);
+    const m = parseInt(monthStr, 10);
+    const d = parseInt(dayStr, 10);
+    return getSpecialDatesForMonth(y, m).filter((sd) => sd.solarDay === d);
   }, [selectedDate]);
 
   const selectedDateEvents = useMemo(() => {
@@ -360,8 +228,8 @@ const HomeScreen: React.FC = () => {
     const { showDate = true } = options;
     const primaryTag =
       event.tags && event.tags.length > 0 ? event.tags[0] : "other";
-    const categoryColor = getCategoryColor(primaryTag);
-    const EventIcon = getEventIcon(primaryTag);
+    const categoryColor = getTagColor(primaryTag);
+    const emoji = getTagEmoji(primaryTag);
 
     return (
       <PressableCard
@@ -375,7 +243,7 @@ const HomeScreen: React.FC = () => {
             { backgroundColor: categoryColor + "15" },
           ]}
         >
-          <EventIcon size={32} color={categoryColor} />
+          <Text style={{ fontSize: 28 }}>{emoji}</Text>
         </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventCardTitle} numberOfLines={2}>
@@ -499,8 +367,8 @@ const HomeScreen: React.FC = () => {
             {isUpcomingExpanded &&
               upcomingEvents.map((event) => {
                 const primaryTag = event.tags?.[0] || "other";
-                const categoryColor = getCategoryColor(primaryTag);
-                const EventIcon = getEventIcon(primaryTag);
+                const categoryColor = getTagColor(primaryTag);
+                const emoji = getTagEmoji(primaryTag);
                 const eventDate = new Date(event.eventDate);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -532,7 +400,7 @@ const HomeScreen: React.FC = () => {
                             { backgroundColor: categoryColor + "15" },
                           ]}
                         >
-                          <EventIcon size={26} color={categoryColor} />
+                          <Text style={{ fontSize: 22 }}>{emoji}</Text>
                         </View>
                         <View style={styles.upcomingInfo}>
                           <Text style={styles.upcomingTitle} numberOfLines={1}>

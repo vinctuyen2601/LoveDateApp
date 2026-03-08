@@ -13,77 +13,15 @@ import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
-import { Event } from "../types";
-import { COLORS, getCategoryColor } from "@themes/colors";
+import { Event, getTagEmoji, getTagColor, getTagLabel } from "../types";
+import { COLORS } from "@themes/colors";
 import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { STRINGS } from "../constants/strings";
 import { DateUtils } from "@lib/date.utils";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
+import { getSpecialDatesForMonth } from "../constants/specialDates";
 
-const EVENT_EMOJIS: Record<string, string> = {
-  birthday: "🎂",
-  anniversary: "💑",
-  holiday: "🎉",
-  memorial: "✝️",
-  other: "⭐",
-};
-
-const SPECIAL_DATES = [
-  {
-    month: 1,
-    day: 1,
-    name: "Năm Mới Dương Lịch",
-    emoji: "🎉",
-    color: "#F59E0B",
-  },
-  { month: 2, day: 14, name: "Ngày Valentine", emoji: "💝", color: "#E91E63" },
-  {
-    month: 3,
-    day: 8,
-    name: "Ngày Quốc tế Phụ nữ",
-    emoji: "🌷",
-    color: "#9C27B0",
-  },
-  {
-    month: 3,
-    day: 14,
-    name: "Ngày Valentine Trắng",
-    emoji: "🤍",
-    color: "#64748B",
-  },
-  { month: 4, day: 30, name: "Ngày Giải phóng", emoji: "🇻🇳", color: "#EF4444" },
-  {
-    month: 5,
-    day: 1,
-    name: "Ngày Quốc tế Lao động",
-    emoji: "🌟",
-    color: "#F97316",
-  },
-  {
-    month: 6,
-    day: 1,
-    name: "Ngày Quốc tế Thiếu nhi",
-    emoji: "🎠",
-    color: "#06B6D4",
-  },
-  { month: 9, day: 2, name: "Ngày Quốc khánh", emoji: "🇻🇳", color: "#EF4444" },
-  {
-    month: 10,
-    day: 20,
-    name: "Ngày Phụ nữ Việt Nam",
-    emoji: "🌸",
-    color: "#EC4899",
-  },
-  {
-    month: 11,
-    day: 20,
-    name: "Ngày Nhà giáo VN",
-    emoji: "📚",
-    color: "#10B981",
-  },
-  { month: 12, day: 25, name: "Giáng Sinh", emoji: "🎄", color: "#16A34A" },
-];
 
 const CalendarScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -135,13 +73,15 @@ const CalendarScreen: React.FC = () => {
         marked[markDate] = { marked: true, emojis: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].emojis.push(EVENT_EMOJIS[primaryTag] ?? "⭐");
+      marked[markDate].emojis.push(getTagEmoji(primaryTag));
     });
 
-    // Merge special dates
-    SPECIAL_DATES.forEach((sd) => {
-      const mm = String(sd.month).padStart(2, "0");
-      const dd = String(sd.day).padStart(2, "0");
+    // Merge special dates (bao gồm âm lịch, nth-weekday)
+    const calMonth = parseInt(currentMonth.slice(5, 7), 10);
+    const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
+    resolvedSpecials.forEach((sd) => {
+      const mm = String(sd.solarMonth).padStart(2, "0");
+      const dd = String(sd.solarDay).padStart(2, "0");
       const dateKey = `${calYear}-${mm}-${dd}`;
       if (!marked[dateKey]) marked[dateKey] = { emojis: [] };
       if (!marked[dateKey].emojis) marked[dateKey].emojis = [];
@@ -185,6 +125,15 @@ const CalendarScreen: React.FC = () => {
       );
   }, [events, selectedDate]);
 
+  // System special dates matching selected date
+  const selectedDateSpecials = useMemo(() => {
+    const [yearStr, monthStr, dayStr] = selectedDate.split("-");
+    const y = parseInt(yearStr, 10);
+    const m = parseInt(monthStr, 10);
+    const d = parseInt(dayStr, 10);
+    return getSpecialDatesForMonth(y, m).filter((sd) => sd.solarDay === d);
+  }, [selectedDate]);
+
   // Get month statistics
   const monthStats = useMemo(() => {
     const monthDate = new Date(currentMonth);
@@ -200,8 +149,8 @@ const CalendarScreen: React.FC = () => {
       return d.getFullYear() === year && d.getMonth() === month;
     });
 
-    // Special dates in this month
-    const specialInMonth = SPECIAL_DATES.filter((sd) => sd.month === month + 1);
+    // Special dates in this month (resolved from shared data)
+    const specialInMonth = getSpecialDatesForMonth(year, month + 1);
 
     const totalCount = monthEvents.length + specialInMonth.length;
 
@@ -228,7 +177,7 @@ const CalendarScreen: React.FC = () => {
     let pastSpecial = 0;
     if (isCurrentMonth) {
       specialInMonth.forEach((sd) => {
-        if (sd.day >= todayDay) upcomingSpecial++;
+        if (sd.solarDay >= todayDay) upcomingSpecial++;
         else pastSpecial++;
       });
     } else if (month > todayMonth || year > todayYear) {
@@ -286,9 +235,11 @@ const CalendarScreen: React.FC = () => {
         "Thứ 6",
         "Thứ 7",
       ];
-      return `${dayOfWeek[date.getDay()]}, ${date.getDate()} tháng ${
+      let text = `${dayOfWeek[date.getDay()]}, ${date.getDate()} tháng ${
         date.getMonth() + 1
       }, ${date.getFullYear()}`;
+
+      return text;
     } catch (error) {
       console.error("Error formatting date:", error);
       return selectedDate;
@@ -427,39 +378,70 @@ const CalendarScreen: React.FC = () => {
                   {formatSelectedDate()}
                 </Text>
               </View>
-              {selectedDateEvents.length > 0 && (
+              {(selectedDateEvents.length + selectedDateSpecials.length) > 0 && (
                 <View style={styles.eventCountBadge}>
                   <Text style={styles.eventCountBadgeText}>
-                    {selectedDateEvents.length} sự kiện
+                    {selectedDateEvents.length + selectedDateSpecials.length} sự kiện
                   </Text>
                 </View>
               )}
             </View>
 
             {/* Events List */}
-            {selectedDateEvents.length > 0 ? (
+            {(selectedDateEvents.length + selectedDateSpecials.length) > 0 ? (
               <View style={styles.eventsList}>
+                {/* System special dates */}
+                {selectedDateSpecials.map((sd) => (
+                  <View key={sd.id} style={styles.calEventCard}>
+                    <View
+                      style={[
+                        styles.calEventAccent,
+                        { backgroundColor: sd.color },
+                      ]}
+                    />
+                    <View style={styles.calEventBody}>
+                      <View style={styles.calEventRow}>
+                        <View
+                          style={[
+                            styles.calEventIcon,
+                            { backgroundColor: sd.color + "15" },
+                          ]}
+                        >
+                          <Text style={{ fontSize: 22 }}>{sd.emoji}</Text>
+                        </View>
+                        <View style={styles.calEventContent}>
+                          <Text style={styles.calEventTitle} numberOfLines={1}>
+                            {sd.name}
+                          </Text>
+                          <View style={styles.calEventMeta}>
+                            <View
+                              style={[
+                                styles.calEventTag,
+                                { backgroundColor: sd.color + "15" },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.calEventTagText,
+                                  { color: sd.color },
+                                ]}
+                              >
+                                Ngày đặc biệt
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+
+                {/* User events */}
                 {selectedDateEvents.map((event) => {
                   const primaryTag = event.tags?.[0] || "other";
-                  const tagColor = getCategoryColor(primaryTag);
-                  const tagLabel =
-                    primaryTag === "birthday"
-                      ? "Sinh nhật"
-                      : primaryTag === "anniversary"
-                      ? "Kỷ niệm"
-                      : primaryTag === "holiday"
-                      ? "Ngày lễ"
-                      : primaryTag === "memorial"
-                      ? "Tưởng niệm"
-                      : "Khác";
-                  const tagIcon: keyof typeof Ionicons.glyphMap =
-                    primaryTag === "birthday"
-                      ? "gift"
-                      : primaryTag === "anniversary"
-                      ? "heart"
-                      : primaryTag === "holiday"
-                      ? "star"
-                      : "calendar";
+                  const tagColor = getTagColor(primaryTag);
+                  const tagLabel = getTagLabel(primaryTag);
+                  const tagEmoji = getTagEmoji(primaryTag);
 
                   return (
                     <TouchableOpacity
@@ -482,11 +464,7 @@ const CalendarScreen: React.FC = () => {
                               { backgroundColor: tagColor + "15" },
                             ]}
                           >
-                            <Ionicons
-                              name={tagIcon}
-                              size={22}
-                              color={tagColor}
-                            />
+                            <Text style={{ fontSize: 22 }}>{tagEmoji}</Text>
                           </View>
                           <View style={styles.calEventContent}>
                             <Text

@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useEvents } from '@contexts/EventsContext';
 import { useToast } from '../contexts/ToastContext';
-import { Event } from '../types';
+import { Event, getTagLabel } from '../types';
 import { COLORS } from '@themes/colors';
 import EventCard from '@components/molecules/EventCard';
 
@@ -189,16 +189,8 @@ const EventsListScreen: React.FC = () => {
         return 'Sắp tới';
       case 'past':
         return 'Đã qua';
-      case 'birthday':
-        return 'Sinh nhật';
-      case 'anniversary':
-        return 'Kỷ niệm';
-      case 'holiday':
-        return 'Ngày lễ';
-      case 'other':
-        return 'Khác';
       default:
-        return 'Tất cả';
+        return getTagLabel(filter);
     }
   };
 

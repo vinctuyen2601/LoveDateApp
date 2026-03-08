@@ -454,9 +454,9 @@ const SettingsScreen: React.FC = () => {
               const isMuted = mutedSpecialDates.includes(sd.id);
               return (
                 <View key={sd.id} style={styles.specialDateRow}>
-                  <Text style={styles.specialDateIcon}>{sd.icon}</Text>
+                  <Text style={styles.specialDateIcon}>{sd.emoji}</Text>
                   <Text style={[styles.specialDateName, isMuted && styles.specialDateMuted]}>
-                    {sd.title}
+                    {sd.name}
                   </Text>
                   <Switch
                     value={!isMuted}

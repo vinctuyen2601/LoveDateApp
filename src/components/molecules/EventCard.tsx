@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Event } from '../../types';
+import { Event, getTagLabel, getTagEmoji, getTagColor } from '../../types';
 import { DateUtils } from '@lib/date.utils';
-import { COLORS, getCategoryColor } from '@themes/colors';
+import { COLORS } from '@themes/colors';
 import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import CountdownTimer from '@components/molecules/CountdownTimer';
 
-const TAG_LABELS: Record<string, string> = {
-  birthday: 'Sinh nhật',
-  anniversary: 'Kỷ niệm',
-  holiday: 'Ngày lễ',
-  memorial: 'Tưởng niệm',
-  other: 'Khác',
-};
 
 interface EventCardProps {
   event: Event;
@@ -36,22 +29,14 @@ const EventCard: React.FC<EventCardProps> = ({
   showCountdown = false
 }) => {
   const primaryTag = event.tags[0] || 'other';
-  const tagColor = getCategoryColor(primaryTag);
-  const tagLabel = TAG_LABELS[primaryTag] || 'Khác';
+  const tagColor = getTagColor(primaryTag);
+  const tagLabel = getTagLabel(primaryTag);
+  const tagEmoji = getTagEmoji(primaryTag);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleConfirmDelete = () => {
     setShowDeleteDialog(false);
     onDelete?.(event);
-  };
-
-  const getTagIcon = (tags: string[]): keyof typeof Ionicons.glyphMap => {
-    if (tags.includes('birthday')) return 'gift';
-    if (tags.includes('anniversary')) return 'heart';
-    if (tags.includes('holiday')) return 'star';
-    if (tags.includes('wife') || tags.includes('husband')) return 'heart-circle';
-    if (tags.includes('family')) return 'people';
-    return 'calendar';
   };
 
   return (
@@ -66,7 +51,7 @@ const EventCard: React.FC<EventCardProps> = ({
           {/* Main row */}
           <View style={styles.mainRow}>
             <View style={[styles.iconWrap, { backgroundColor: tagColor + '15' }]}>
-              <Ionicons name={getTagIcon(event.tags)} size={24} color={tagColor} />
+              <Text style={{ fontSize: 24 }}>{tagEmoji}</Text>
             </View>
             <View style={styles.content}>
               <Text style={styles.title} numberOfLines={1}>{event.title}</Text>

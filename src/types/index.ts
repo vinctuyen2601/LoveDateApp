@@ -579,15 +579,33 @@ export const REMIND_OPTIONS = [
 ];
 
 // ==================== PREDEFINED TAGS ====================
-// Tags managed on server, synced to local DB
+// Single source of truth for event tag definitions (hardcoded on mobile)
 export const PREDEFINED_TAGS = [
-  { value: "birthday", label: "Sinh nhật", icon: "happy-outline", color: "#FF6B6B" },
-  { value: "anniversary", label: "Kỷ niệm", icon: "heart", color: "#FF69B4" },
-  { value: "memorial", label: "Ngày giỗ", icon: "flower-outline", color: "#7C3AED" },
-  { value: "wife", label: "Vợ", icon: "woman-outline", color: "#E74C3C" },
-  { value: "husband", label: "Chồng", icon: "man-outline", color: "#3498DB" },
-  { value: "family", label: "Gia đình", icon: "people", color: "#9B59B6" },
+  { value: "birthday", label: "Sinh nhật", emoji: "🎂", color: "#FF6B6B" },
+  { value: "anniversary", label: "Kỷ niệm", emoji: "💑", color: "#FF69B4" },
+  { value: "holiday", label: "Ngày lễ", emoji: "🎉", color: "#F59E0B" },
+  { value: "memorial", label: "Ngày giỗ", emoji: "🕯️", color: "#7C3AED" },
+  { value: "wife", label: "Vợ", emoji: "👩", color: "#E74C3C" },
+  { value: "husband", label: "Chồng", emoji: "👨", color: "#3498DB" },
+  { value: "family", label: "Gia đình", emoji: "👨‍👩‍👧", color: "#9B59B6" },
+  { value: "other", label: "Khác", emoji: "⭐", color: "#64748B" },
 ];
+
+// ── Tag lookup helpers (single source of truth) ──
+const TAG_MAP = new Map(PREDEFINED_TAGS.map((t) => [t.value, t]));
+const DEFAULT_TAG = { value: "other", label: "Khác", emoji: "⭐", color: "#64748B" };
+
+export const getTagLabel = (value: string): string =>
+  TAG_MAP.get(value)?.label ?? DEFAULT_TAG.label;
+
+export const getTagEmoji = (value: string): string =>
+  TAG_MAP.get(value)?.emoji ?? DEFAULT_TAG.emoji;
+
+export const getTagColor = (value: string): string =>
+  TAG_MAP.get(value)?.color ?? DEFAULT_TAG.color;
+
+export const getTagInfo = (value: string) =>
+  TAG_MAP.get(value) ?? DEFAULT_TAG;
 
 // ==================== ARTICLE TYPES ====================
 

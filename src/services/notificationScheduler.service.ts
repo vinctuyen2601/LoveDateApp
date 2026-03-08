@@ -1,8 +1,9 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Event } from "../types";
+import { Event, getTagEmoji } from "../types";
 import { lunarService } from "./lunar.service";
+import { SPECIAL_DATES, resolveSpecialDateForYear } from "../constants/specialDates";
 
 // ─── Muted special dates (stored in AsyncStorage) ───
 const MUTED_SPECIAL_DATES_KEY = "muted_special_dates";
@@ -32,137 +33,40 @@ export async function toggleMutedSpecialDate(id: string): Promise<boolean> {
   return index < 0; // true = now muted, false = now unmuted
 }
 
-export { SYSTEM_SPECIAL_DATES };
+// Re-export for consumers (e.g. SettingsScreen mute list)
+export { SPECIAL_DATES as SYSTEM_SPECIAL_DATES };
 
 /**
- * Smart Notification Scheduler
+ * Priority-based Notification Scheduler
  *
  * Strategy:
- * - Dùng DATE trigger (one-shot) thay vì CALENDAR trigger (permanent)
- * - Chỉ schedule cho cửa sổ thời gian tới, window size tùy số lượng event
- * - Gọi mỗi lần: app start, app resume, sau mỗi thao tác CRUD event
- *
- * Budget iOS (max 64 notifications):
- *   System special dates: tối đa 2-3 ngày/window × 4 reminders = ~8-12 slots
- *   User events: ~52 slots còn lại
- *   Worst case 30-day window: 8 events × 6 options = 48 + 12 system = 60 ✅
- *
- * Window logic (user events):
- *   ≤ 5  events → 60 ngày
- *   ≤ 10 events → 30 ngày
- *   ≤ 20 events → 15 ngày
- *   > 20 events →  7 ngày
+ * - Collect TẤT CẢ notifications (user + system) trong 90 ngày tới
+ * - Sort theo thời gian gần nhất → ưu tiên cao nhất
+ * - Chỉ schedule top 60 (iOS max 64, dư 4 slot margin)
+ * - Background task + app resume sẽ tự refill khi notifications cũ fire
  */
-
-// ─────────────────────────────────────────────
-// SYSTEM SPECIAL DATES
-// Tự động nhắc người dùng về các ngày đặc biệt trong năm.
-// Không cần tạo event thủ công — luôn được schedule song song với user events.
-// ─────────────────────────────────────────────
-
-interface SystemSpecialDate {
-  id: string;
-  title: string;
-  month: number; // 1-12
-  day: number; // 1-31
-  remindDaysBefore: number[];
-  icon: string;
-  hint: string; // Phần cuối của body notification
-}
 
 // 4 thông báo cố định cho mỗi ngày đặc biệt: 7 ngày, 3 ngày, 1 ngày, và trong ngày lúc 8:00
 const SYSTEM_REMIND_DAYS = [7, 3, 1, 0];
-
-const SYSTEM_SPECIAL_DATES: SystemSpecialDate[] = [
-  {
-    id: "sys_tet_duong",
-    title: "Năm mới dương lịch",
-    month: 1,
-    day: 1,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "🎆",
-    hint: "Chúc mừng năm mới! Đừng quên lời chúc đến người thân.",
-  },
-  {
-    id: "sys_valentine",
-    title: "Valentine - Ngày tình nhân",
-    month: 2,
-    day: 14,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "❤️",
-    hint: "Đừng quên chuẩn bị bất ngờ cho người ấy 💝",
-  },
-  {
-    id: "sys_quocte_phunu",
-    title: "Ngày Quốc tế Phụ nữ 8/3",
-    month: 3,
-    day: 8,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "🌸",
-    hint: "Dành điều đặc biệt cho người phụ nữ của bạn 🌷",
-  },
-  {
-    id: "sys_white_day",
-    title: "White Day 14/3",
-    month: 3,
-    day: 14,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "🤍",
-    hint: "Đáp lại tình cảm Valentine bằng điều ngọt ngào 🍬",
-  },
-  {
-    id: "sys_thieu_nhi",
-    title: "Ngày Quốc tế Thiếu nhi 1/6",
-    month: 6,
-    day: 1,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "🎠",
-    hint: "Ngày đặc biệt dành cho những đứa trẻ yêu thương 🧒",
-  },
-  {
-    id: "sys_phunu_vn",
-    title: "Ngày Phụ nữ Việt Nam 20/10",
-    month: 10,
-    day: 20,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "🌺",
-    hint: "Bày tỏ yêu thương và biết ơn đến người phụ nữ bạn trân trọng 💐",
-  },
-  {
-    id: "sys_nha_giao",
-    title: "Ngày Nhà giáo Việt Nam 20/11",
-    month: 11,
-    day: 20,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "📚",
-    hint: "Tri ân thầy cô đã dạy dỗ bạn 🙏",
-  },
-  {
-    id: "sys_giang_sinh",
-    title: "Giáng sinh 25/12",
-    month: 12,
-    day: 25,
-    remindDaysBefore: SYSTEM_REMIND_DAYS,
-    icon: "🎄",
-    hint: "Mùa lễ hội yêu thương đang đến! Chuẩn bị quà và kế hoạch 🎁",
-  },
-];
 
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
 
-export function getSchedulingWindowDays(eventCount: number): number {
-  if (eventCount <= 5) return 60;
-  if (eventCount <= 10) return 30;
-  if (eventCount <= 20) return 15;
-  return 7;
-}
+// iOS cho phép tối đa 64 scheduled notifications, giữ margin 4 slot
+const MAX_SCHEDULED_NOTIFICATIONS = 60;
+// Window cố định 90 ngày — collect hết rồi cắt theo priority
+const SCHEDULING_WINDOW_DAYS = 90;
 
 function resolveBaseDate(event: Event): Date {
   const date = new Date(event.eventDate);
   if (event.isLunarCalendar) {
-    return lunarService.convertEventDate(date, true);
+    try {
+      return lunarService.convertEventDate(date, true);
+    } catch (err) {
+      console.error(`Lunar conversion failed for "${event.title}", using solar date:`, err);
+      return date;
+    }
   }
   return date;
 }
@@ -200,12 +104,25 @@ function getOccurrencesInWindow(
     }
 
     case "yearly": {
-      // Dùng năm hiện tại làm gốc — đúng dù event được tạo từ năm nào
       const currentYear = windowStart.getFullYear();
-      for (let offset = 0; offset <= 2; offset++) {
-        const d = new Date(base);
-        d.setFullYear(currentYear + offset);
-        addIfInWindow(d);
+      if (event.isLunarCalendar) {
+        // Lunar yearly: phải convert âm → dương cho TỪNG năm
+        // vì cùng ngày âm nhưng mỗi năm rơi vào ngày dương khác nhau
+        const { month: lunarMonth, day: lunarDay } =
+          lunarService.extractLunarCoordinates(new Date(event.eventDate));
+        for (let offset = 0; offset <= 2; offset++) {
+          const solarDate = lunarService.lunarToSolarForYear(
+            lunarMonth, lunarDay, currentYear + offset
+          );
+          if (solarDate) addIfInWindow(solarDate);
+        }
+      } else {
+        // Solar yearly: chỉ cần đổi year
+        for (let offset = 0; offset <= 2; offset++) {
+          const d = new Date(base);
+          d.setFullYear(currentYear + offset);
+          addIfInWindow(d);
+        }
       }
       break;
     }
@@ -250,11 +167,8 @@ function getOccurrencesInWindow(
 }
 
 function getIcon(tags: string[]): string {
-  if (tags.includes("birthday")) return "🎂";
-  if (tags.includes("anniversary")) return "❤️";
-  if (tags.includes("holiday")) return "🎉";
-  if (tags.includes("wife") || tags.includes("husband")) return "💑";
-  if (tags.includes("family")) return "👨‍👩‍👧‍👦";
+  const primaryTag = tags[0];
+  if (primaryTag) return getTagEmoji(primaryTag);
   return "📅";
 }
 
@@ -281,76 +195,102 @@ function buildSystemBody(
 }
 
 // ─────────────────────────────────────────────
-// SYSTEM SPECIAL DATES SCHEDULER
+// PENDING NOTIFICATION — collect trước, schedule sau
 // ─────────────────────────────────────────────
 
-async function scheduleSystemSpecialDates(
+interface PendingNotification {
+  date: Date;
+  content: Notifications.NotificationContentInput;
+  source: "user" | "system";
+}
+
+/**
+ * Collect tất cả system special date notifications trong window
+ */
+async function collectSystemNotifications(
   now: Date,
   windowEnd: Date
-): Promise<number> {
-  let scheduled = 0;
+): Promise<PendingNotification[]> {
+  const pending: PendingNotification[] = [];
   const currentYear = now.getFullYear();
   const mutedIds = await getMutedSpecialDates();
 
-  for (const sd of SYSTEM_SPECIAL_DATES) {
-    // Skip muted special dates
+  for (const sd of SPECIAL_DATES) {
     if (mutedIds.includes(sd.id)) continue;
-    // Tìm occurrence của ngày đặc biệt trong window (năm hiện tại và tiếp theo)
-    for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
-      const occurrenceDate = new Date(
-        currentYear + yearOffset,
-        sd.month - 1,
-        sd.day,
-        12,
-        0,
-        0,
-        0
-      );
 
-      // Bỏ qua nếu occurrence nằm ngoài window
+    for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
+      const occurrenceDate = resolveSpecialDateForYear(sd, currentYear + yearOffset);
+      if (!occurrenceDate) continue;
+      occurrenceDate.setHours(12, 0, 0, 0);
       if (occurrenceDate <= now || occurrenceDate > windowEnd) continue;
 
-      for (const daysBefore of sd.remindDaysBefore) {
+      for (const daysBefore of SYSTEM_REMIND_DAYS) {
         const notifDate = new Date(occurrenceDate);
         notifDate.setDate(notifDate.getDate() - daysBefore);
-        notifDate.setHours(8, 0, 0, 0); // System dates nhắc lúc 8:00 sáng
+        notifDate.setHours(8, 0, 0, 0);
 
         if (notifDate <= now) continue;
-        if (notifDate > windowEnd) continue;
 
-        try {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: `${sd.icon} Ngày đặc biệt`,
-              body: buildSystemBody(sd.title, daysBefore, sd.hint),
-              data: {
-                systemDateId: sd.id,
-                eventTitle: sd.title,
-                daysBefore,
-              },
-              sound: "default",
-              priority: daysBefore === 0 ? "high" : "default",
-              ...(Platform.OS === "android" && {
-                channelId: getChannelId(daysBefore),
-              }),
-            },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: notifDate,
-            },
-          });
-          scheduled++;
-        } catch (err) {
-          console.error(
-            `Failed to schedule system notification for "${sd.title}" (${daysBefore}d before):`,
-            err
-          );
-        }
+        pending.push({
+          date: notifDate,
+          source: "system",
+          content: {
+            title: `${sd.emoji} Ngày đặc biệt`,
+            body: buildSystemBody(sd.name, daysBefore, sd.hint),
+            data: { systemDateId: sd.id, eventTitle: sd.name, daysBefore },
+            sound: "default",
+            priority: daysBefore === 0 ? "high" : "default",
+            ...(Platform.OS === "android" && { channelId: getChannelId(daysBefore) }),
+          },
+        });
       }
     }
   }
 
-  return scheduled;
+  return pending;
+}
+
+/**
+ * Collect tất cả user event notifications trong window
+ */
+function collectUserNotifications(
+  events: Event[],
+  now: Date,
+  windowEnd: Date
+): PendingNotification[] {
+  const pending: PendingNotification[] = [];
+
+  for (const event of events) {
+    if (!event.reminderSettings?.remindDaysBefore?.length) continue;
+
+    const occurrences = getOccurrencesInWindow(event, now, windowEnd);
+    const reminderTime = event.reminderSettings?.reminderTime ?? { hour: 9, minute: 0 };
+
+    for (const occurrenceDate of occurrences) {
+      for (const daysBefore of event.reminderSettings.remindDaysBefore) {
+        const notifDate = new Date(occurrenceDate);
+        notifDate.setDate(notifDate.getDate() - daysBefore);
+        notifDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
+
+        if (notifDate <= now) continue;
+
+        pending.push({
+          date: notifDate,
+          source: "user",
+          content: {
+            title: `${getIcon(event.tags)} Nhắc nhở`,
+            body: buildUserEventBody(event.title, daysBefore),
+            data: { eventId: event.id, eventTitle: event.title, daysBefore },
+            sound: "default",
+            priority: daysBefore === 0 ? "high" : "default",
+            ...(Platform.OS === "android" && { channelId: getChannelId(daysBefore) }),
+          },
+        });
+      }
+    }
+  }
+
+  return pending;
 }
 
 // ─────────────────────────────────────────────
@@ -358,9 +298,10 @@ async function scheduleSystemSpecialDates(
 // ─────────────────────────────────────────────
 
 /**
- * Hủy tất cả notifications cũ và schedule lại:
- * 1. User events — trong window tùy số lượng event
- * 2. System special dates — tự động, không cần tạo event
+ * Priority-based notification scheduler:
+ * 1. Collect TẤT CẢ notifications (user + system) trong 90 ngày tới
+ * 2. Sort theo thời gian gần nhất
+ * 3. Chỉ schedule top 60 (iOS max 64, dư 4 slot margin)
  *
  * Gọi khi:
  * - App khởi động
@@ -371,73 +312,55 @@ export async function scheduleUpcomingNotifications(
   events: Event[]
 ): Promise<{ scheduled: number; systemScheduled: number; windowDays: number }> {
   const activeEvents = events.filter((e) => !e.isDeleted);
-  const windowDays = getSchedulingWindowDays(activeEvents.length);
 
   const now = new Date();
   const windowEnd = new Date(now);
-  windowEnd.setDate(windowEnd.getDate() + windowDays);
+  windowEnd.setDate(windowEnd.getDate() + SCHEDULING_WINDOW_DAYS);
 
   // Hủy tất cả notifications hiện có
   await Notifications.cancelAllScheduledNotificationsAsync();
 
+  // Collect tất cả notifications trong window
+  const userPending = collectUserNotifications(activeEvents, now, windowEnd);
+  const systemPending = await collectSystemNotifications(now, windowEnd);
+  const allPending = [...userPending, ...systemPending];
+
+  // Sort theo thời gian gần nhất → ưu tiên cao nhất
+  allPending.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  // Cắt theo limit iOS
+  const toSchedule = allPending.slice(0, MAX_SCHEDULED_NOTIFICATIONS);
+
+  // Schedule
   let userScheduled = 0;
+  let systemScheduled = 0;
 
-  // Schedule user events
-  for (const event of activeEvents) {
-    const occurrences = getOccurrencesInWindow(event, now, windowEnd);
-    const reminderTime = event.reminderSettings?.reminderTime ?? {
-      hour: 9,
-      minute: 0,
-    };
-
-    for (const occurrenceDate of occurrences) {
-      for (const daysBefore of event.reminderSettings.remindDaysBefore) {
-        const notifDate = new Date(occurrenceDate);
-        notifDate.setDate(notifDate.getDate() - daysBefore);
-        notifDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
-
-        if (notifDate <= now) continue;
-        if (notifDate > windowEnd) continue;
-
-        try {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: `${getIcon(event.tags)} Nhắc nhở`,
-              body: buildUserEventBody(event.title, daysBefore),
-              data: {
-                eventId: event.id,
-                eventTitle: event.title,
-                daysBefore,
-              },
-              sound: "default",
-              priority: daysBefore === 0 ? "high" : "default",
-              ...(Platform.OS === "android" && {
-                channelId: getChannelId(daysBefore),
-              }),
-            },
-            trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: notifDate,
-            },
-          });
-          userScheduled++;
-        } catch (err) {
-          console.error(
-            `Failed to schedule notification for "${event.title}" (${daysBefore}d before):`,
-            err
-          );
-        }
-      }
+  for (const item of toSchedule) {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: item.content,
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: item.date,
+        },
+      });
+      if (item.source === "user") userScheduled++;
+      else systemScheduled++;
+    } catch (err) {
+      console.error(
+        `Failed to schedule notification "${item.content.title}" at ${item.date}:`,
+        err
+      );
     }
   }
 
-  // Schedule system special dates
-  const systemScheduled = await scheduleSystemSpecialDates(now, windowEnd);
-
+  const dropped = allPending.length - toSchedule.length;
   console.log(
     `📅 Scheduled ${userScheduled} user + ${systemScheduled} system notifications` +
-      ` | window: ${windowDays} days | events: ${activeEvents.length}`
+      ` | total candidates: ${allPending.length}` +
+      (dropped > 0 ? ` | ⚠️ dropped ${dropped} (over ${MAX_SCHEDULED_NOTIFICATIONS} limit)` : "") +
+      ` | window: ${SCHEDULING_WINDOW_DAYS} days | events: ${activeEvents.length}`
   );
 
-  return { scheduled: userScheduled, systemScheduled, windowDays };
+  return { scheduled: userScheduled, systemScheduled, windowDays: SCHEDULING_WINDOW_DAYS };
 }

@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Event, EventFormData, EventsContextValue } from '../types';
 import * as DB from '../services/database.service';
 import { scheduleUpcomingNotifications } from '../services/notificationScheduler.service';
+
+const RESCHEDULE_DEBOUNCE_MS = 2000;
 import * as ChecklistService from '../services/checklist.service';
 import * as StreakService from '../services/streak.service';
 import { useAchievement } from './AchievementContext';
@@ -52,17 +54,33 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     }
   };
 
+  // Debounce timer để tránh schedule notifications nhiều lần liên tiếp
+  const rescheduleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /**
    * Lấy danh sách events mới nhất từ DB và schedule lại tất cả notifications.
-   * Gọi sau mỗi thao tác CRUD để đảm bảo notifications luôn nhất quán.
+   * Debounce 2s: nếu gọi liên tiếp (vd: tạo nhiều events nhanh),
+   * chỉ schedule 1 lần sau thao tác cuối cùng.
    */
   const refreshAndReschedule = async () => {
     const freshEvents = await DB.getAllEvents(db);
     setEvents(freshEvents);
     setError(null);
-    await scheduleUpcomingNotifications(freshEvents).catch((err) => {
-      console.error('⚠️ Error rescheduling notifications:', err);
-    });
+
+    // Clear timer cũ nếu có
+    if (rescheduleTimerRef.current) {
+      clearTimeout(rescheduleTimerRef.current);
+    }
+
+    // Debounce: chờ 2s sau thao tác cuối mới schedule
+    rescheduleTimerRef.current = setTimeout(async () => {
+      try {
+        const latestEvents = await DB.getAllEvents(db);
+        await scheduleUpcomingNotifications(latestEvents);
+      } catch (err) {
+        console.error('⚠️ Error rescheduling notifications:', err);
+      }
+    }, RESCHEDULE_DEBOUNCE_MS);
   };
 
   const addEvent = async (formData: EventFormData): Promise<Event> => {

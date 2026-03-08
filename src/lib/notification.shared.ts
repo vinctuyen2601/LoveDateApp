@@ -5,7 +5,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { Event, NotificationPriority } from '../types';
+import { Event, NotificationPriority, getTagEmoji } from '../types';
 import { DateUtils } from './date.utils';
 import { STRINGS } from '../constants/strings';
 import { lunarService } from '../services/lunar.service';
@@ -25,11 +25,8 @@ export function getChannelId(priority: NotificationPriority): string {
 // ─── Icon ────────────────────────────────────────────────────────────────────
 
 export function getNotificationIcon(tags: string[]): string {
-  if (tags.includes('birthday')) return '🎂';
-  if (tags.includes('anniversary')) return '❤️';
-  if (tags.includes('holiday')) return '🎉';
-  if (tags.includes('wife') || tags.includes('husband')) return '💑';
-  if (tags.includes('family')) return '👨‍👩‍👧‍👦';
+  const primaryTag = tags[0];
+  if (primaryTag) return getTagEmoji(primaryTag);
   return '📅';
 }
 
