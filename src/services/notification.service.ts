@@ -1,6 +1,9 @@
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Event } from '../types';
 import { NotificationUtils } from '@lib/notification.utils';
+import { apiService } from './api.service';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -145,6 +148,31 @@ class NotificationService {
    */
   async testNotification(event: Event): Promise<void> {
     await NotificationUtils.presentNotificationNow(event, 1);
+  }
+
+  /**
+   * Đăng ký Expo push token với server (fire-and-forget, non-blocking)
+   * Gọi sau khi user đã authenticated (token đã set trong apiService)
+   */
+  async registerPushToken(): Promise<void> {
+    try {
+      // Push tokens chỉ hoạt động trên physical device
+      if (!Device.isDevice) return;
+
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') return;
+
+      const projectId =
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        (Constants as any).easConfig?.projectId;
+      if (!projectId) return;
+
+      const { data: pushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
+      await apiService.patch('/users/me/push-token', { expoPushToken: pushToken });
+    } catch (err) {
+      // Non-critical — không throw, chỉ log
+      console.warn('Push token registration failed (non-critical):', err);
+    }
   }
 
   /**

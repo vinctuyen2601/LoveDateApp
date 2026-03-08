@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import { STORAGE_KEYS } from '../constants/config';
 import { User, AuthTokens, AuthError } from '../types';
 import { apiService } from './api.service';
+import { notificationService } from './notification.service';
 
 class AuthService {
   /**
@@ -46,6 +47,9 @@ class AuthService {
 
         // Set token in API service
         apiService.setAuthToken(access_token);
+
+        // Đăng ký push token (fire-and-forget)
+        notificationService.registerPushToken();
 
         console.log('✅ Anonymous account created (online):', user.displayName);
         return { user, tokens };
@@ -264,6 +268,9 @@ class AuthService {
       // Set token in API service
       apiService.setAuthToken(access_token);
 
+      // Đăng ký push token (fire-and-forget)
+      notificationService.registerPushToken();
+
       return { user, tokens };
     } catch (error: any) {
       console.error('Login error:', error);
@@ -313,6 +320,9 @@ class AuthService {
 
       // Set token in API service
       apiService.setAuthToken(access_token);
+
+      // Đăng ký push token (fire-and-forget)
+      notificationService.registerPushToken();
 
       return { user, tokens };
     } catch (error: any) {
@@ -493,6 +503,9 @@ class AuthService {
 
       // Set token in API service
       apiService.setAuthToken(tokens.accessToken);
+
+      // Đăng ký push token (fire-and-forget)
+      notificationService.registerPushToken();
 
       return { user, tokens };
     } catch (error) {
