@@ -28,6 +28,7 @@ import { apiService } from '../services/api.service';
 import GiftSuggestionCard from '@components/molecules/GiftSuggestionCard';
 import { useToast } from '../contexts/ToastContext';
 import { useAiRateLimit } from '../hooks/useAiRateLimit';
+import AiRateLimitModal from '@components/molecules/AiRateLimitModal';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
@@ -180,7 +181,7 @@ const AllProductsScreen: React.FC = () => {
   const { productCategories } = useMasterData();
 
   const { showError } = useToast();
-  const { handleAiError } = useAiRateLimit();
+  const { handleAiError, rateLimitModal } = useAiRateLimit();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -585,6 +586,7 @@ const AllProductsScreen: React.FC = () => {
           </TouchableOpacity>
         </TouchableOpacity>
       )}
+      <AiRateLimitModal {...rateLimitModal} />
     </View>
   );
 };

@@ -8,9 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
   Keyboard,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -19,6 +19,8 @@ import { COLORS } from '@themes/colors';
 import { STRINGS } from '../constants/strings';
 import { ValidationUtils } from '@lib/validation.utils';
 import { logLogin, logSignUp } from '../services/analyticsService';
+
+const APP_LOGO = require('../../assets/icon.png');
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -37,6 +39,7 @@ const AuthScreen: React.FC = () => {
   // Real-time validation state
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Refs for field chaining
   const emailRef = useRef<TextInput>(null);
@@ -53,7 +56,6 @@ const AuthScreen: React.FC = () => {
     };
   }, []);
 
-  // Auto-dismiss khi user chuyển từ anonymous → real (sau khi register/login thành công)
   useEffect(() => {
     if (wasAnonymousRef.current && !isAnonymous) {
       navigation.goBack();
@@ -92,7 +94,6 @@ const AuthScreen: React.FC = () => {
 
   const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
     setter(value);
-    // Real-time: email validate ngay khi có dấu '@', password validate ngay khi bắt đầu gõ
     const shouldValidateNow =
       touched[field] ||
       (field === 'email' && value.includes('@')) ||
@@ -111,28 +112,46 @@ const AuthScreen: React.FC = () => {
 
   const handleSubmit = async () => {
     Keyboard.dismiss();
+    setFormError(null);
+
+    // Validate all fields inline — mark touched + set errors
+    let hasError = false;
+    const newTouched: Record<string, boolean> = { email: true, password: true };
+    const newErrors: Record<string, string | undefined> = {};
 
     if (!ValidationUtils.isValidEmail(email)) {
-      Alert.alert('Lỗi', STRINGS.error_invalid_email);
-      return;
+      newErrors.email = email.length === 0 ? 'Vui lòng nhập email' : STRINGS.error_invalid_email;
+      hasError = true;
     }
 
     if (!ValidationUtils.isValidPassword(password)) {
-      Alert.alert('Lỗi', STRINGS.error_invalid_password);
-      return;
+      newErrors.password = password.length === 0 ? 'Vui lòng nhập mật khẩu' : STRINGS.error_invalid_password;
+      hasError = true;
     }
 
     if (!isLogin) {
-      if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
-        Alert.alert('Lỗi', STRINGS.error_password_mismatch);
-        return;
-      }
+      newTouched.displayName = true;
+      newTouched.confirmPassword = true;
 
       const nameValidation = ValidationUtils.isValidDisplayName(displayName);
       if (!nameValidation.valid) {
-        Alert.alert('Lỗi', nameValidation.error || 'Tên không hợp lệ');
-        return;
+        newErrors.displayName = displayName.length === 0 ? 'Vui lòng nhập tên hiển thị' : nameValidation.error;
+        hasError = true;
       }
+
+      if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
+        newErrors.confirmPassword = confirmPassword.length === 0 ? 'Vui lòng xác nhận mật khẩu' : STRINGS.error_password_mismatch;
+        hasError = true;
+      }
+    }
+
+    setTouched(prev => ({ ...prev, ...newTouched }));
+    setFieldErrors(prev => ({ ...prev, ...newErrors }));
+
+    if (hasError) {
+      // Scroll lên field lỗi đầu tiên
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      return;
     }
 
     try {
@@ -145,25 +164,83 @@ const AuthScreen: React.FC = () => {
         await register(email, password, displayName);
         logSignUp('email');
       }
-      // navigation handled by isAnonymous useEffect above
     } catch (error: any) {
-      Alert.alert(
-        'Lỗi',
-        error.message || (isLogin ? 'Đăng nhập thất bại' : 'Đăng ký thất bại')
-      );
+      const msg = error.message || (isLogin ? 'Đăng nhập thất bại' : 'Đăng ký thất bại');
+      setFormError(msg);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleFocusScroll = () => {
-    // Scroll xuống cuối để đảm bảo field đang focus luôn hiển thị
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
   const showHeader = !keyboardVisible;
+
+  const renderInput = (
+    label: string,
+    icon: string,
+    field: string,
+    value: string,
+    setter: (v: string) => void,
+    options?: {
+      ref?: React.RefObject<TextInput | null>;
+      placeholder?: string;
+      secure?: boolean;
+      keyboardType?: any;
+      autoCapitalize?: any;
+      returnKeyType?: any;
+      onSubmitEditing?: () => void;
+      blurOnSubmit?: boolean;
+      hint?: string;
+      renderRight?: React.ReactNode;
+      renderHint?: React.ReactNode;
+    },
+  ) => {
+    const hasError = touched[field] && !!fieldErrors[field];
+    const valid = isFieldValid(field, value);
+
+    return (
+      <View style={styles.fieldWrap}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <View style={[styles.inputContainer, hasError && styles.inputError, valid && styles.inputValid]}>
+          <Ionicons name={icon as any} size={20} color={hasError ? COLORS.error : valid ? COLORS.success : COLORS.textSecondary} />
+          <TextInput
+            ref={options?.ref}
+            style={styles.input}
+            placeholder={options?.placeholder}
+            placeholderTextColor={`${COLORS.textSecondary}99`}
+            value={value}
+            onChangeText={(v) => handleFieldChange(field, v, setter)}
+            onBlur={() => { markTouched(field); validateField(field, value); }}
+            onFocus={handleFocusScroll}
+            secureTextEntry={options?.secure}
+            keyboardType={options?.keyboardType}
+            autoCapitalize={options?.autoCapitalize ?? 'none'}
+            autoCorrect={false}
+            returnKeyType={options?.returnKeyType ?? 'next'}
+            onSubmitEditing={options?.onSubmitEditing}
+            blurOnSubmit={options?.blurOnSubmit ?? false}
+          />
+          {valid && !options?.renderRight && (
+            <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+          )}
+          {options?.renderRight}
+        </View>
+        {hasError ? (
+          <Text style={styles.fieldError}>{fieldErrors[field]}</Text>
+        ) : options?.renderHint ? (
+          options.renderHint
+        ) : options?.hint ? (
+          <Text style={styles.fieldHint}>{options.hint}</Text>
+        ) : null}
+      </View>
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -177,10 +254,10 @@ const AuthScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo/Title — ẩn khi bàn phím hiện để form có không gian */}
+        {/* Logo */}
         {showHeader && (
           <View style={styles.header}>
-            <Ionicons name="calendar-outline" size={72} color={COLORS.primary} />
+            <Image source={APP_LOGO} style={styles.logo} />
             <Text style={styles.appName}>{STRINGS.app_name}</Text>
             <Text style={styles.subtitle}>
               Không bao giờ quên những ngày quan trọng
@@ -193,168 +270,129 @@ const AuthScreen: React.FC = () => {
           {/* Mini logo khi bàn phím hiện */}
           {!showHeader && (
             <View style={styles.miniHeader}>
-              <Ionicons name="calendar-outline" size={28} color={COLORS.primary} />
+              <Image source={APP_LOGO} style={styles.miniLogo} />
               <Text style={styles.miniAppName}>{STRINGS.app_name}</Text>
             </View>
           )}
 
-          <Text style={styles.formTitle}>
-            {isLogin ? STRINGS.auth_login : STRINGS.auth_register}
-          </Text>
+          {/* Tab Login / Register */}
+          <View style={styles.tabRow}>
+            <TouchableOpacity
+              style={[styles.tab, isLogin && styles.tabActive]}
+              onPress={() => { setIsLogin(true); setTouched({}); setFieldErrors({}); setFormError(null); }}
+            >
+              <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>
+                {STRINGS.auth_login}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, !isLogin && styles.tabActive]}
+              onPress={() => { setIsLogin(false); setTouched({}); setFieldErrors({}); setFormError(null); }}
+            >
+              <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>
+                {STRINGS.auth_register}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Display Name (Register only) */}
-          {!isLogin && (
-            <View>
-              <View style={[styles.inputContainer, fieldErrors.displayName && touched.displayName ? styles.inputContainerError : null]}>
-                <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nhập tên hiển thị của bạn"
-                  placeholderTextColor={COLORS.textSecondary}
-                  value={displayName}
-                  onChangeText={(v) => handleFieldChange('displayName', v, setDisplayName)}
-                  onBlur={() => { markTouched('displayName'); validateField('displayName', displayName); }}
-                  onFocus={handleFocusScroll}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                  onSubmitEditing={() => emailRef.current?.focus()}
-                  blurOnSubmit={false}
-                />
-                {isFieldValid('displayName', displayName) && (
-                  <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-                )}
-              </View>
-              {touched.displayName && fieldErrors.displayName ? (
-                <Text style={styles.fieldError}>{fieldErrors.displayName}</Text>
-              ) : (
-                <Text style={styles.fieldHint}>Tên sẽ hiển thị trong ứng dụng</Text>
-              )}
+          {/* Error banner */}
+          {formError && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={20} color={COLORS.error} />
+              <Text style={styles.errorBannerText}>{formError}</Text>
+              <TouchableOpacity onPress={() => setFormError(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={18} color={COLORS.error} />
+              </TouchableOpacity>
             </View>
           )}
 
+          {/* Display Name (Register only) */}
+          {!isLogin &&
+            renderInput('Tên hiển thị', 'person-outline', 'displayName', displayName, setDisplayName, {
+              placeholder: 'Nhập tên của bạn',
+              autoCapitalize: 'words',
+              onSubmitEditing: () => emailRef.current?.focus(),
+              hint: 'Tên sẽ hiển thị trong ứng dụng',
+            })
+          }
+
           {/* Email */}
-          <View>
-            <View style={[styles.inputContainer, fieldErrors.email && touched.email ? styles.inputContainerError : null]}>
-              <Ionicons name="mail-outline" size={20} color={COLORS.textSecondary} />
-              <TextInput
-                ref={emailRef}
-                style={styles.input}
-                placeholder="Ví dụ: ten@email.com"
-                placeholderTextColor={COLORS.textSecondary}
-                value={email}
-                onChangeText={(v) => handleFieldChange('email', v, setEmail)}
-                onBlur={() => { markTouched('email'); validateField('email', email); }}
-                onFocus={handleFocusScroll}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="next"
-                onSubmitEditing={() => passwordRef.current?.focus()}
-                blurOnSubmit={false}
-              />
-              {isFieldValid('email', email) && (
-                <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-              )}
-            </View>
-            {touched.email && fieldErrors.email ? (
-              <Text style={styles.fieldError}>{fieldErrors.email}</Text>
-            ) : (
-              <Text style={styles.fieldHint}>Nhập địa chỉ email hợp lệ</Text>
-            )}
-          </View>
+          {renderInput('Email', 'mail-outline', 'email', email, setEmail, {
+            ref: emailRef,
+            placeholder: 'ten@email.com',
+            keyboardType: 'email-address',
+            onSubmitEditing: () => passwordRef.current?.focus(),
+          })}
 
           {/* Password */}
-          <View>
-            <View style={[styles.inputContainer, fieldErrors.password && touched.password ? styles.inputContainerError : null]}>
-              <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
-              <TextInput
-                ref={passwordRef}
-                style={styles.input}
-                placeholder="Tối thiểu 6 ký tự"
-                placeholderTextColor={COLORS.textSecondary}
-                value={password}
-                onChangeText={(v) => handleFieldChange('password', v, setPassword)}
-                onBlur={() => { markTouched('password'); validateField('password', password); }}
-                onFocus={handleFocusScroll}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                returnKeyType={isLogin ? 'done' : 'next'}
-                onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
-                blurOnSubmit={isLogin}
-              />
-              {isFieldValid('password', password) && (
-                <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-              )}
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          {renderInput('Mật khẩu', 'lock-closed-outline', 'password', password, setPassword, {
+            ref: passwordRef,
+            placeholder: 'Tối thiểu 6 ký tự',
+            secure: !showPassword,
+            returnKeyType: isLogin ? 'done' : 'next',
+            onSubmitEditing: isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus(),
+            blurOnSubmit: isLogin,
+            renderRight: (
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
                   color={COLORS.textSecondary}
                 />
               </TouchableOpacity>
-            </View>
-            {touched.password && fieldErrors.password ? (
-              <Text style={styles.fieldError}>{fieldErrors.password}</Text>
-            ) : (
+            ),
+            renderHint: (
               <Text style={[
                 styles.fieldHint,
                 password.length > 0 && (password.length >= 6 ? styles.fieldHintValid : styles.fieldHintWarn),
               ]}>
                 {password.length > 0
                   ? password.length >= 6
-                    ? `✓ Mật khẩu hợp lệ (${password.length} ký tự)`
+                    ? `Mật khẩu hợp lệ (${password.length} ký tự)`
                     : `Cần thêm ${6 - password.length} ký tự nữa`
                   : 'Mật khẩu tối thiểu 6 ký tự'}
               </Text>
-            )}
-          </View>
+            ),
+          })}
 
           {/* Confirm Password (Register only) */}
-          {!isLogin && (
-            <View>
-              <View style={[styles.inputContainer, fieldErrors.confirmPassword && touched.confirmPassword ? styles.inputContainerError : null]}>
-                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textSecondary} />
-                <TextInput
-                  ref={confirmPasswordRef}
-                  style={styles.input}
-                  placeholder="Nhập lại mật khẩu vừa tạo"
-                  placeholderTextColor={COLORS.textSecondary}
-                  value={confirmPassword}
-                  onChangeText={(v) => handleFieldChange('confirmPassword', v, setConfirmPassword)}
-                  onBlur={() => { markTouched('confirmPassword'); validateField('confirmPassword', confirmPassword); }}
-                  onFocus={handleFocusScroll}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmit}
-                />
-                {isFieldValid('confirmPassword', confirmPassword) && (
-                  <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-                )}
-              </View>
-              {touched.confirmPassword && fieldErrors.confirmPassword ? (
-                <Text style={styles.fieldError}>{fieldErrors.confirmPassword}</Text>
-              ) : confirmPassword.length > 0 ? (
+          {!isLogin &&
+            renderInput('Xác nhận mật khẩu', 'lock-closed-outline', 'confirmPassword', confirmPassword, setConfirmPassword, {
+              ref: confirmPasswordRef,
+              placeholder: 'Nhập lại mật khẩu',
+              secure: !showPassword,
+              returnKeyType: 'done',
+              onSubmitEditing: handleSubmit,
+              blurOnSubmit: true,
+              renderHint: confirmPassword.length > 0 ? (
                 <Text style={[styles.fieldHint, confirmPassword === password ? styles.fieldHintValid : styles.fieldHintWarn]}>
-                  {confirmPassword === password ? '✓ Mật khẩu khớp' : 'Mật khẩu chưa khớp'}
+                  {confirmPassword === password ? 'Mật khẩu khớp' : 'Mật khẩu chưa khớp'}
                 </Text>
-              ) : null}
-            </View>
-          )}
+              ) : undefined,
+            })
+          }
 
           {/* Submit Button */}
           <TouchableOpacity
             style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isLoading}
+            activeOpacity={0.8}
           >
-            <Text style={styles.submitButtonText}>
-              {isLoading
-                ? 'Đang xử lý...'
-                : isLogin
-                ? STRINGS.auth_login
-                : STRINGS.auth_register}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color={COLORS.white} />
+            ) : (
+              <>
+                <Ionicons
+                  name={isLogin ? 'log-in-outline' : 'person-add-outline'}
+                  size={20}
+                  color={COLORS.white}
+                />
+                <Text style={styles.submitButtonText}>
+                  {isLogin ? STRINGS.auth_login : STRINGS.auth_register}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* Toggle Login/Register */}
@@ -362,7 +400,7 @@ const AuthScreen: React.FC = () => {
             <Text style={styles.toggleText}>
               {isLogin ? STRINGS.auth_no_account : STRINGS.auth_have_account}
             </Text>
-            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setTouched({}); setFieldErrors({}); }}>
+            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setTouched({}); setFieldErrors({}); setFormError(null); }}>
               <Text style={styles.toggleLink}>
                 {isLogin ? STRINGS.auth_register : STRINGS.auth_login}
               </Text>
@@ -370,17 +408,18 @@ const AuthScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Padding cuối để scroll không bị khuất khi bàn phím hiện */}
         <View style={styles.bottomPadding} />
       </ScrollView>
 
-      {/* Loading overlay — hiện khi đang chờ API, che toàn bộ form */}
+      {/* Loading overlay */}
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>
-            {isLogin ? 'Đang đăng nhập...' : 'Đang tạo tài khoản...'}
-          </Text>
+          <View style={styles.loadingCard}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>
+              {isLogin ? 'Đang đăng nhập...' : 'Đang tạo tài khoản...'}
+            </Text>
+          </View>
         </View>
       )}
     </KeyboardAvoidingView>
@@ -397,15 +436,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
+
+  // ── Header ──
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
   },
   appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '800',
     color: COLORS.primary,
     marginTop: 12,
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
@@ -417,64 +464,150 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 16,
+  },
+  miniLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
   },
   miniAppName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.primary,
   },
+
+  // ── Tab ──
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  tabActive: {
+    backgroundColor: COLORS.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  tabTextActive: {
+    color: COLORS.primary,
+  },
+
+  // ── Error banner ──
+  errorBanner: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: `${COLORS.error}10`,
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: `${COLORS.error}25`,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.error,
+    lineHeight: 19,
+    fontWeight: '500' as const,
+  },
+
+  // ── Form ──
   form: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 4,
   },
-  formTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  fieldWrap: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
     color: COLORS.textPrimary,
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 6,
+    marginLeft: 4,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.background,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 4,
-    gap: 12,
-    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    gap: 10,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  inputContainerError: {
+  inputError: {
     borderColor: COLORS.error,
+    backgroundColor: `${COLORS.error}08`,
+  },
+  inputValid: {
+    borderColor: `${COLORS.success}40`,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    padding: 0,
   },
   fieldError: {
     color: COLORS.error,
     fontSize: 12,
-    marginBottom: 12,
-    marginLeft: 16,
-    marginTop: 2,
+    marginTop: 4,
+    marginLeft: 4,
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.textPrimary,
+  fieldHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    marginLeft: 4,
   },
+  fieldHintValid: {
+    color: COLORS.success,
+  },
+  fieldHintWarn: {
+    color: '#F59E0B',
+  },
+
+  // ── Submit ──
   submitButton: {
+    flexDirection: 'row',
     backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 16,
+    borderRadius: 14,
+    paddingVertical: 15,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginTop: 8,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitButtonDisabled: {
     opacity: 0.6,
@@ -482,8 +615,10 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
+
+  // ── Toggle ──
   toggleContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -499,34 +634,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // ── Other ──
   bottomPadding: {
     height: 20,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 16,
     zIndex: 100,
   },
+  loadingCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   loadingText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textPrimary,
-  },
-  fieldHint: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginBottom: 10,
-    marginLeft: 16,
-    marginTop: 2,
-  },
-  fieldHintValid: {
-    color: COLORS.success,
-  },
-  fieldHintWarn: {
-    color: '#F59E0B',
   },
 });
 

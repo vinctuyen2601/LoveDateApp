@@ -19,6 +19,7 @@ import { AffiliateProduct, Article, Event } from '../types';
 import { apiService } from '../services/api.service';
 import { useToast } from '../contexts/ToastContext';
 import { useAiRateLimit } from '../hooks/useAiRateLimit';
+import AiRateLimitModal from '@components/molecules/AiRateLimitModal';
 
 type ActivitySuggestionsRouteProp = RouteProp<
   { ActivitySuggestions: { event?: Event } },
@@ -430,7 +431,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
   const route      = useRoute<ActivitySuggestionsRouteProp>();
   const insets     = useSafeAreaInsets();
   const { showError } = useToast();
-  const { handleAiError } = useAiRateLimit();
+  const { handleAiError, rateLimitModal } = useAiRateLimit();
 
   const event = route.params?.event;
 
@@ -645,6 +646,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      <AiRateLimitModal {...rateLimitModal} />
     </View>
   );
 };

@@ -21,6 +21,8 @@ import AllProductsScreen from '../screens/AllProductsScreen';
 import AllArticlesScreen from '../screens/AllArticlesScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import LocalShopScreen from '../screens/LocalShopScreen';
+import MBTIGuideScreen from '../screens/MBTIGuideScreen';
+import MBTITypeDetailScreen from '../screens/MBTITypeDetailScreen';
 import OnboardingOverlay, { checkOnboardingComplete } from '../components/organisms/OnboardingOverlay';
 
 const Stack = createStackNavigator();
@@ -131,6 +133,20 @@ const AppNavigator: React.FC = () => {
           options={{
             title: 'Khảo sát MBTI',
             presentation: 'modal',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="MBTIGuide"
+          component={MBTIGuideScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="MBTITypeDetail"
+          component={MBTITypeDetailScreen}
+          options={{
             headerShown: false,
           }}
         />
