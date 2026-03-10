@@ -164,11 +164,14 @@ class NotificationService {
 
       const projectId =
         Constants.expoConfig?.extra?.eas?.projectId ??
-        (Constants as any).easConfig?.projectId;
-      if (!projectId) return;
+        (Constants as any).easConfig?.projectId ??
+        '2a3a23a7-ec2f-4fba-931b-2adb02ad9c6c'; // fallback hardcode từ app.json
+      console.log('[Push] projectId:', projectId);
 
       const { data: pushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
+      console.log('[Push] token:', pushToken);
       await apiService.patch('/users/me/push-token', { expoPushToken: pushToken });
+      console.log('[Push] token registered successfully');
     } catch (err) {
       // Non-critical — không throw, chỉ log
       console.warn('Push token registration failed (non-critical):', err);

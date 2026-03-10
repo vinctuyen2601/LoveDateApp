@@ -1,3 +1,8 @@
+# Credentials (NEVER commit)
+credentials.json
+credentials/
+upload_cert.pem
+
 # Dependencies
 node_modules/
 npm-debug.*

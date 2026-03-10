@@ -1,3 +1,5 @@
+import '@react-native-firebase/app'; // Must be first — initializes Firebase before anything else
+import 'react-native-gesture-handler'; // Must be before any navigation imports
 import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

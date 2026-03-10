@@ -15,6 +15,7 @@
       }
     },
     "preview": {
+      "credentialsSource": "local",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -27,8 +28,12 @@
       }
     },
     "production": {
+      "credentialsSource": "remote",
       "android": {
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
       },
       "env": {
         "REACT_APP_API_DEV_URL": "https://api.ngayyeuthuong.com/api",
