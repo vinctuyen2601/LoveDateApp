@@ -16,7 +16,10 @@
     "build:prod": "eas build --platform android --profile production",
     "build:prod:ios": "eas build --platform ios --profile production",
     "build:prod:all": "eas build --platform all --profile production",
-    "build:local": "eas build --platform android --profile preview --local"
+    "build:local": "eas build --platform android --profile preview --local",
+    "build:aab": "cd android && ./gradlew bundleRelease",
+    "build:aab:clean": "cd android && ./gradlew clean && ./gradlew bundleRelease",
+    "build:apk": "cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
