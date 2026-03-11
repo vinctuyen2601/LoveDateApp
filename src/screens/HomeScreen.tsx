@@ -16,7 +16,7 @@ import { Calendar, DateData } from "react-native-calendars";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
 import { useNotification } from "@contexts/NotificationContext";
-import { Event, getTagEmoji, getTagColor } from "../types";
+import { Event, getTagEmoji, getTagIcon, getTagColor } from "../types";
 import { COLORS } from "@themes/colors";
 import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { useNavigation } from "@react-navigation/native";
@@ -228,7 +228,6 @@ const HomeScreen: React.FC = () => {
     const primaryTag =
       event.tags && event.tags.length > 0 ? event.tags[0] : "other";
     const categoryColor = getTagColor(primaryTag);
-    const emoji = getTagEmoji(primaryTag);
 
     return (
       <PressableCard
@@ -242,7 +241,7 @@ const HomeScreen: React.FC = () => {
             { backgroundColor: categoryColor + "15" },
           ]}
         >
-          <Text style={{ fontSize: 28 }}>{emoji}</Text>
+          <Ionicons name={getTagIcon(primaryTag) as any} size={28} color={categoryColor} />
         </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventCardTitle} numberOfLines={2}>
@@ -367,7 +366,6 @@ const HomeScreen: React.FC = () => {
               upcomingEvents.map((event) => {
                 const primaryTag = event.tags?.[0] || "other";
                 const categoryColor = getTagColor(primaryTag);
-                const emoji = getTagEmoji(primaryTag);
                 const eventDate = new Date(event.eventDate);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -399,7 +397,7 @@ const HomeScreen: React.FC = () => {
                             { backgroundColor: categoryColor + "15" },
                           ]}
                         >
-                          <Text style={{ fontSize: 22 }}>{emoji}</Text>
+                          <Ionicons name={getTagIcon(primaryTag) as any} size={22} color={categoryColor} />
                         </View>
                         <View style={styles.upcomingInfo}>
                           <Text style={styles.upcomingTitle} numberOfLines={1}>

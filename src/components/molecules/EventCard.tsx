@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Event, getTagLabel, getTagEmoji, getTagColor } from '../../types';
+import { Event, getTagLabel, getTagIcon, getTagColor } from '../../types';
 import { DateUtils } from '@lib/date.utils';
 import { COLORS } from '@themes/colors';
 import ConfirmDialog from '@components/organisms/ConfirmDialog';
@@ -31,7 +31,7 @@ const EventCard: React.FC<EventCardProps> = ({
   const primaryTag = event.tags[0] || 'other';
   const tagColor = getTagColor(primaryTag);
   const tagLabel = getTagLabel(primaryTag);
-  const tagEmoji = getTagEmoji(primaryTag);
+  const tagIcon = getTagIcon(primaryTag);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleConfirmDelete = () => {
@@ -51,7 +51,7 @@ const EventCard: React.FC<EventCardProps> = ({
           {/* Main row */}
           <View style={styles.mainRow}>
             <View style={[styles.iconWrap, { backgroundColor: tagColor + '15' }]}>
-              <Text style={{ fontSize: 24 }}>{tagEmoji}</Text>
+              <Ionicons name={tagIcon as any} size={24} color={tagColor} />
             </View>
             <View style={styles.content}>
               <Text style={styles.title} numberOfLines={1}>{event.title}</Text>

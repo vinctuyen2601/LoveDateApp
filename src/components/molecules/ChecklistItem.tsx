@@ -71,9 +71,10 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({
         </Text>
 
         {showDueDays && item.dueDaysBefore > 0 && (
-          <Text style={styles.dueText}>
-            📅 {item.dueDaysBefore} ngày trước sự kiện
-          </Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+            <Ionicons name="calendar-outline" size={12} color={COLORS.textSecondary} />
+            <Text style={styles.dueText}>{item.dueDaysBefore} ngày trước sự kiện</Text>
+          </View>
         )}
       </View>
 

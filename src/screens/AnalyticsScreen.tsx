@@ -220,7 +220,7 @@ const AnalyticsScreen: React.FC = () => {
         {analytics.gifts.averageRating > 0 && (
           <StatCard
             title="Đánh giá trung bình"
-            value={`⭐ ${analytics.gifts.averageRating.toFixed(1)}/5.0`}
+            value={`${analytics.gifts.averageRating.toFixed(1)}/5.0`}
             subtitle="Mức độ hài lòng với quà tặng"
             icon="star-outline"
             iconColor={COLORS.warning}

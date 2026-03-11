@@ -700,7 +700,7 @@ const AddEventScreen: React.FC = () => {
                     setFormData({ ...formData, tags: newTags });
                   }}
                 >
-                  <Text style={styles.tagEmoji}>{tag.emoji}</Text>
+                  <Ionicons name={tag.icon as any} size={18} color={isSelected ? COLORS.white : tag.color} />
                   <Text
                     style={[
                       styles.tagText,

@@ -32,14 +32,15 @@ const MBTITypeDetailScreen: React.FC = () => {
 
   const renderCompatCard = (
     label: string,
-    emoji: string,
+    icon: keyof typeof Ionicons.glyphMap,
     types: string[],
     bgColor: string
   ) => (
     <View style={[styles.compatCard, { backgroundColor: bgColor }]}>
-      <Text style={styles.compatLabel}>
-        {emoji} {label}
-      </Text>
+      <View style={{flexDirection:'row',alignItems:'center',gap:5,marginBottom:8}}>
+        <Ionicons name={icon} size={14} color={COLORS.textSecondary} />
+        <Text style={[styles.compatLabel,{marginBottom:0}]}>{label}</Text>
+      </View>
       <View style={styles.compatTypes}>
         {types.map((t) => {
           const info = MBTI_TYPES[t];
@@ -49,7 +50,6 @@ const MBTITypeDetailScreen: React.FC = () => {
               style={styles.compatChip}
               onPress={() => navigation.push("MBTITypeDetail", { type: t })}
             >
-              <Text style={styles.compatChipEmoji}>{info?.emoji || "❓"}</Text>
               <Text style={styles.compatChipText}>{t} — {info?.name || ""}</Text>
             </TouchableOpacity>
           );
@@ -115,7 +115,10 @@ const MBTITypeDetailScreen: React.FC = () => {
 
         {/* Weaknesses */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⚡ Điểm cần cải thiện</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+            <Ionicons name="flash-outline" size={17} color="#F59E0B" />
+            <Text style={[styles.sectionTitle,{marginBottom:0}]}>Điểm cần cải thiện</Text>
+          </View>
           {typeInfo.weaknesses.map((w, i) => (
             <View key={i} style={styles.listItem}>
               <Ionicons
@@ -189,19 +192,19 @@ const MBTITypeDetailScreen: React.FC = () => {
           </View>
           {renderCompatCard(
             "Rất hợp",
-            "✨",
+            "sparkles",
             typeInfo.compatibility.best,
             "#ECFDF5"
           )}
           {renderCompatCard(
             "Khá hợp",
-            "👍",
+            "thumbs-up-outline",
             typeInfo.compatibility.good,
             "#EFF6FF"
           )}
           {renderCompatCard(
             "Thử thách",
-            "💪",
+            "barbell-outline",
             typeInfo.compatibility.challenging,
             "#FEF3C7"
           )}

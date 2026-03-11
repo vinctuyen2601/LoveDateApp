@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { DateUtils } from "@lib/date.utils";
 import { COLORS } from "@themes/colors";
 import { CountdownInfo } from "../../types";
@@ -61,15 +62,13 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
         isWarning && styles.warningContainer,
       ]}
     >
-      <Text style={[styles.label, isUrgent && !isToday && styles.urgentLabel]}>
-        {countdown.isPast
-          ? "Đã qua"
-          : isToday
-          ? "🎉 Hôm nay"
-          : isUrgent
-          ? "⚠️ Còn lại"
-          : "Còn lại"}
-      </Text>
+      <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+        {isToday && <Ionicons name="ribbon" size={13} color={COLORS.primary} />}
+        {isUrgent && !isToday && <Ionicons name="alert-circle-outline" size={13} color={COLORS.error} />}
+        <Text style={[styles.label, isUrgent && !isToday && styles.urgentLabel]}>
+          {countdown.isPast ? "Đã qua" : isToday ? "Hôm nay" : "Còn lại"}
+        </Text>
+      </View>
 
       <View style={styles.timeContainer}>
         {countdown.days > 0 && (

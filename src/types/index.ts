@@ -581,25 +581,28 @@ export const REMIND_OPTIONS = [
 // ==================== PREDEFINED TAGS ====================
 // Single source of truth for event tag definitions (hardcoded on mobile)
 export const PREDEFINED_TAGS = [
-  { value: "birthday", label: "Sinh nhật", emoji: "🎂", color: "#FF6B6B" },
-  { value: "anniversary", label: "Kỷ niệm", emoji: "💑", color: "#FF69B4" },
-  { value: "holiday", label: "Ngày lễ", emoji: "🎉", color: "#F59E0B" },
-  { value: "memorial", label: "Ngày giỗ", emoji: "🕯️", color: "#7C3AED" },
-  { value: "wife", label: "Vợ", emoji: "👩", color: "#E74C3C" },
-  { value: "husband", label: "Chồng", emoji: "👨", color: "#3498DB" },
-  { value: "family", label: "Gia đình", emoji: "👨‍👩‍👧", color: "#9B59B6" },
-  { value: "other", label: "Khác", emoji: "⭐", color: "#64748B" },
-];
+  { value: "birthday",    label: "Sinh nhật", emoji: "🎂", icon: "gift-outline",         color: "#FF6B6B" },
+  { value: "anniversary", label: "Kỷ niệm",   emoji: "💑", icon: "heart-circle-outline", color: "#FF69B4" },
+  { value: "holiday",     label: "Ngày lễ",   emoji: "🎉", icon: "ribbon-outline",        color: "#F59E0B" },
+  { value: "memorial",    label: "Ngày giỗ",  emoji: "🕯️", icon: "flame-outline",         color: "#7C3AED" },
+  { value: "wife",        label: "Vợ",        emoji: "👩", icon: "woman-outline",         color: "#E74C3C" },
+  { value: "husband",     label: "Chồng",     emoji: "👨", icon: "man-outline",           color: "#3498DB" },
+  { value: "family",      label: "Gia đình",  emoji: "👨‍👩‍👧", icon: "people-outline",      color: "#9B59B6" },
+  { value: "other",       label: "Khác",      emoji: "⭐", icon: "star-outline",          color: "#64748B" },
+] as const;
 
 // ── Tag lookup helpers (single source of truth) ──
-const TAG_MAP = new Map(PREDEFINED_TAGS.map((t) => [t.value, t]));
-const DEFAULT_TAG = { value: "other", label: "Khác", emoji: "⭐", color: "#64748B" };
+const TAG_MAP = new Map(PREDEFINED_TAGS.map((t) => [t.value as string, t]));
+const DEFAULT_TAG = { value: "other", label: "Khác", emoji: "⭐", icon: "star-outline", color: "#64748B" };
 
 export const getTagLabel = (value: string): string =>
   TAG_MAP.get(value)?.label ?? DEFAULT_TAG.label;
 
 export const getTagEmoji = (value: string): string =>
   TAG_MAP.get(value)?.emoji ?? DEFAULT_TAG.emoji;
+
+export const getTagIcon = (value: string): string =>
+  TAG_MAP.get(value)?.icon ?? DEFAULT_TAG.icon;
 
 export const getTagColor = (value: string): string =>
   TAG_MAP.get(value)?.color ?? DEFAULT_TAG.color;

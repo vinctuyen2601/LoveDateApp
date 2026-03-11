@@ -9,9 +9,10 @@ import {
   Animated,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEvents } from "@contexts/EventsContext";
-import { Event, getTagEmoji, getTagColor, getTagLabel } from "../../types";
+import { getTagIcon, getTagColor, getTagLabel } from "../../types";
 import {
   SPECIAL_DATES,
   resolveSpecialDateForYear,
@@ -132,7 +133,7 @@ const TodayEventPopup: React.FC = () => {
         result.push({
           type: "event",
           tag: primaryTag,
-          emoji: getTagEmoji(primaryTag),
+          emoji: getTagIcon(primaryTag),
           title: event.title,
           subtitle: getTagLabel(primaryTag),
           color: getTagColor(primaryTag),
@@ -179,7 +180,7 @@ const TodayEventPopup: React.FC = () => {
 
   const theme: PopupTheme = hasMemorial
     ? {
-        emoji: "🕯️",
+        emoji: "flame-outline",
         title: "Nhắc nhở hôm nay",
         headerBg: "#F3E8FF",
         headerTitleColor: "#6B21A8",
@@ -189,7 +190,7 @@ const TodayEventPopup: React.FC = () => {
       }
     : allBirthday
     ? {
-        emoji: "🎂",
+        emoji: "gift-outline",
         title: "Chúc mừng sinh nhật!",
         headerBg: "#FFF1F2",
         headerTitleColor: "#E11D48",
@@ -198,7 +199,7 @@ const TodayEventPopup: React.FC = () => {
         buttonShadow: "#E11D48",
       }
     : {
-        emoji: "🎊",
+        emoji: "ribbon-outline",
         title: "Hôm nay có gì?",
         headerBg: "#FFF7ED",
         headerTitleColor: COLORS.textPrimary,
@@ -226,7 +227,7 @@ const TodayEventPopup: React.FC = () => {
         >
           {/* Header */}
           <View style={[styles.header, { backgroundColor: theme.headerBg }]}>
-            <Text style={styles.headerEmoji}>{theme.emoji}</Text>
+            <Ionicons name={theme.emoji as any} size={36} color={theme.headerTitleColor} style={styles.headerEmoji} />
             <Text style={[styles.headerTitle, { color: theme.headerTitleColor }]}>
               {theme.title}
             </Text>
@@ -249,7 +250,7 @@ const TodayEventPopup: React.FC = () => {
                     { backgroundColor: item.color + "15" },
                   ]}
                 >
-                  <Text style={styles.itemEmoji}>{item.emoji}</Text>
+                  <Ionicons name={item.emoji as any} size={22} color={item.color} />
                 </View>
                 <View style={styles.itemContent}>
                   <Text style={styles.itemTitle} numberOfLines={2}>

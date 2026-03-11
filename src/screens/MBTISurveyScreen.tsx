@@ -927,7 +927,7 @@ const MBTISurveyScreen: React.FC = () => {
 
               <Text style={styles.modalTitle}>Chia sẻ kết quả MBTI</Text>
               <Text style={styles.modalSubtitle}>
-                Bạn bè sẽ thấy loại tính cách của bạn 🎉
+                Bạn bè sẽ thấy loại tính cách của bạn
               </Text>
 
               {/* Card preview */}
@@ -998,12 +998,12 @@ const MBTISurveyScreen: React.FC = () => {
         contentContainerStyle={styles.questionContainer}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.categoryBadge}>
-          {currentQuestion.category === "EI" && "💬 Năng lượng"}
-          {currentQuestion.category === "SN" && "🧠 Thu nhận thông tin"}
-          {currentQuestion.category === "TF" && "❤️ Ra quyết định"}
-          {currentQuestion.category === "JP" && "📅 Lối sống"}
-        </Text>
+        <View style={[styles.categoryBadge,{flexDirection:'row',alignItems:'center',gap:5}]}>
+          {currentQuestion.category === "EI" && <><Ionicons name="chatbubble-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Năng lượng</Text></>}
+          {currentQuestion.category === "SN" && <><Ionicons name="bulb-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Thu nhận thông tin</Text></>}
+          {currentQuestion.category === "TF" && <><Ionicons name="heart-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Ra quyết định</Text></>}
+          {currentQuestion.category === "JP" && <><Ionicons name="calendar-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Lối sống</Text></>}
+        </View>
 
         <Text style={styles.question}>{currentQuestion.question}</Text>
 

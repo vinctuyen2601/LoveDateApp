@@ -13,7 +13,7 @@ import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
-import { Event, getTagEmoji, getTagColor, getTagLabel } from "../types";
+import { Event, getTagEmoji, getTagIcon, getTagColor, getTagLabel } from "../types";
 import { COLORS } from "@themes/colors";
 import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { STRINGS } from "../constants/strings";
@@ -441,7 +441,6 @@ const CalendarScreen: React.FC = () => {
                   const primaryTag = event.tags?.[0] || "other";
                   const tagColor = getTagColor(primaryTag);
                   const tagLabel = getTagLabel(primaryTag);
-                  const tagEmoji = getTagEmoji(primaryTag);
 
                   return (
                     <TouchableOpacity
@@ -464,7 +463,7 @@ const CalendarScreen: React.FC = () => {
                               { backgroundColor: tagColor + "15" },
                             ]}
                           >
-                            <Text style={{ fontSize: 22 }}>{tagEmoji}</Text>
+                            <Ionicons name={getTagIcon(primaryTag) as any} size={22} color={tagColor} />
                           </View>
                           <View style={styles.calEventContent}>
                             <Text
