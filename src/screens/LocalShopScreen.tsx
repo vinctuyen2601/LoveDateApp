@@ -69,7 +69,7 @@ const ShopProductCard: React.FC<{
             { backgroundColor: (product.color || COLORS.primary) + "20" },
           ]}
         >
-          <Text style={styles.cardIconEmoji}>🌸</Text>
+          <Ionicons name="flower-outline" size={28} color={product.color || COLORS.primary} />
         </View>
       )}
 
@@ -80,7 +80,7 @@ const ShopProductCard: React.FC<{
       )}
       {product.isPopular && (
         <View style={styles.popularBadge}>
-          <Text style={styles.popularText}>🔥 Hot</Text>
+          <Ionicons name="flame" size={10} color="#fff" /><Text style={styles.popularText}> Hot</Text>
         </View>
       )}
 
@@ -426,7 +426,7 @@ const LocalShopScreen: React.FC = () => {
         </View>
       ) : products.length === 0 ? (
         <View style={styles.center}>
-          <Text style={{ fontSize: 48 }}>🌸</Text>
+          <Ionicons name="flower-outline" size={48} color={COLORS.border} />
           <Text style={styles.stateText}>
             Chưa có sản phẩm trong danh mục này
           </Text>
@@ -519,7 +519,7 @@ const LocalShopScreen: React.FC = () => {
                               },
                             ]}
                           >
-                            <Text style={{ fontSize: 22 }}>🌸</Text>
+                            <Ionicons name="flower-outline" size={22} color={COLORS.primary} />
                           </View>
                         )}
                         <View style={{ flex: 1, gap: 3 }}>
@@ -529,9 +529,10 @@ const LocalShopScreen: React.FC = () => {
                           <Text style={styles.historyPrice}>
                             {Number(order.totalPrice).toLocaleString("vi-VN")}₫
                           </Text>
-                          <Text style={styles.historyDate}>
-                            📅 {order.deliveryDate} · {order.deliveryTimeSlot}h
-                          </Text>
+                          <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+                            <Ionicons name="calendar-outline" size={12} color={COLORS.textSecondary} />
+                            <Text style={styles.historyDate}>{order.deliveryDate} · {order.deliveryTimeSlot}h</Text>
+                          </View>
                           <View
                             style={[
                               styles.statusBadge,
@@ -676,7 +677,7 @@ const LocalShopScreen: React.FC = () => {
                         },
                       ]}
                     >
-                      <Text style={{ fontSize: 24 }}>🌸</Text>
+                      <Ionicons name="flower-outline" size={24} color={selectedProduct.color || COLORS.primary} />
                     </View>
                   )}
                   <View style={styles.summaryInfo}>
@@ -902,7 +903,7 @@ const LocalShopScreen: React.FC = () => {
       >
         <View style={styles.overlay}>
           <View style={styles.successCard}>
-            <Text style={styles.successEmoji}>🎉</Text>
+            <Ionicons name="checkmark-circle" size={64} color={COLORS.success} />
             <Text style={styles.successTitle}>Đặt hàng thành công!</Text>
             <Text style={styles.successSub}>
               Chúng tôi sẽ liên hệ xác nhận đơn hàng trong vòng 30 phút.

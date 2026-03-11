@@ -131,7 +131,10 @@ const MBTITypeDetailScreen: React.FC = () => {
 
         {/* Love Style */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💕 Phong cách yêu</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+            <Ionicons name="heart" size={17} color={COLORS.primary} />
+            <Text style={[styles.sectionTitle,{marginBottom:0}]}>Phong cách yêu</Text>
+          </View>
           <View style={styles.loveCard}>
             <Text style={styles.loveText}>{typeInfo.loveStyle}</Text>
           </View>
@@ -152,7 +155,10 @@ const MBTITypeDetailScreen: React.FC = () => {
 
         {/* Gift Ideas */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎁 Gợi ý quà tặng</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+            <Ionicons name="gift-outline" size={17} color={COLORS.textPrimary} />
+            <Text style={[styles.sectionTitle,{marginBottom:0}]}>Gợi ý quà tặng</Text>
+          </View>
           <View style={styles.giftGrid}>
             {typeInfo.giftIdeas.map((gift, i) => (
               <View
@@ -177,7 +183,10 @@ const MBTITypeDetailScreen: React.FC = () => {
 
         {/* Compatibility */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💑 Độ tương thích</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+            <Ionicons name="people-outline" size={17} color={COLORS.textPrimary} />
+            <Text style={[styles.sectionTitle,{marginBottom:0}]}>Độ tương thích</Text>
+          </View>
           {renderCompatCard(
             "Rất hợp",
             "✨",
@@ -201,7 +210,10 @@ const MBTITypeDetailScreen: React.FC = () => {
         {/* Famous People */}
         {typeInfo.famousPeople.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⭐ Người nổi tiếng</Text>
+            <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+              <Ionicons name="star" size={17} color="#F59E0B" />
+              <Text style={[styles.sectionTitle,{marginBottom:0}]}>Người nổi tiếng</Text>
+            </View>
             <View style={styles.famousRow}>
               {typeInfo.famousPeople.map((person, i) => (
                 <View key={i} style={styles.famousChip}>

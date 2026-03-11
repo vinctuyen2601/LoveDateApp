@@ -102,10 +102,10 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
           >
             {/* Confetti effect */}
             <View style={styles.confettiContainer}>
-              <Text style={styles.confetti}>🎉</Text>
-              <Text style={styles.confetti}>🎊</Text>
-              <Text style={styles.confetti}>✨</Text>
-              <Text style={styles.confetti}>⭐</Text>
+              <Ionicons name="ribbon" size={22} color="#FF6B6B" style={styles.confetti} />
+              <Ionicons name="sparkles" size={22} color="#FFD700" style={styles.confetti} />
+              <Ionicons name="sparkles" size={18} color="#FF69B4" style={styles.confetti} />
+              <Ionicons name="star" size={18} color="#FFA500" style={styles.confetti} />
             </View>
 
             {/* Badge Icon */}

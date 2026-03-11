@@ -398,7 +398,7 @@ const AllProductsScreen: React.FC = () => {
             onPress={() => navigation.navigate('LocalShop')}
             activeOpacity={0.85}
           >
-            <Text style={styles.shopPromoEmoji}>🌸🎂</Text>
+            <Ionicons name="flower-outline" size={28} color={COLORS.primary} style={styles.shopPromoEmoji} />
             <View style={styles.shopPromoText}>
               <Text style={styles.shopPromoTitle}>Đặt hoa & bánh giao tận nơi</Text>
               <Text style={styles.shopPromoSub}>Hàng nội địa · Giao trong ngày · COD</Text>
@@ -470,7 +470,7 @@ const AllProductsScreen: React.FC = () => {
           {/* AI input card */}
           <View style={styles.aiCard}>
             <View style={styles.aiCardTitle}>
-              <Text style={styles.aiSparkle}>🎁</Text>
+              <Ionicons name="gift-outline" size={20} color={COLORS.primary} />
               <Text style={styles.aiCardLabel}>Bạn muốn tìm quà gì?</Text>
             </View>
             <View style={styles.inputWrap}>

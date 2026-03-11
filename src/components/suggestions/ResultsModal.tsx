@@ -173,7 +173,8 @@ const CategoryProducts: React.FC<CategoryProductsProps> = ({ categoryKey, shopee
     const shopeeUrl = `https://shopee.vn/search?keyword=${encodeURIComponent(shopeeKeyword)}`;
     return (
       <TouchableOpacity style={styles.shopeeBtn} onPress={() => Linking.openURL(shopeeUrl)}>
-        <Text style={styles.shopeeBtnText}>🛍️ Tìm trên Shopee</Text>
+        <Ionicons name="bag-handle-outline" size={16} color="#fff" />
+        <Text style={styles.shopeeBtnText}> Tìm trên Shopee</Text>
       </TouchableOpacity>
     );
   }
@@ -186,7 +187,7 @@ const CategoryProducts: React.FC<CategoryProductsProps> = ({ categoryKey, shopee
             <ProductCard product={p} />
             {p.isTrending && (
               <View style={styles.trendingBadge}>
-                <Text style={styles.trendingBadgeText}>🔥 Đang hot</Text>
+                <Ionicons name="flame" size={11} color="#fff" /><Text style={styles.trendingBadgeText}> Đang hot</Text>
               </View>
             )}
           </View>
@@ -221,7 +222,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ item, defaultExpanded = fal
             <Text style={styles.categoryName}>{item.name}</Text>
             {item.isTrending && (
               <View style={styles.hotBadge}>
-                <Text style={styles.hotBadgeText}>🔥 Hot</Text>
+                <Ionicons name="flame" size={10} color="#D97706" /><Text style={styles.hotBadgeText}> Hot</Text>
               </View>
             )}
           </View>
@@ -242,7 +243,10 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ item, defaultExpanded = fal
       {/* Expanded: show products */}
       {expanded && (
         <View style={styles.productsSection}>
-          <Text style={styles.productsSectionTitle}>🛍️ Sản phẩm gợi ý</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
+            <Ionicons name="bag-handle-outline" size={14} color={COLORS.textSecondary} />
+            <Text style={[styles.productsSectionTitle,{marginBottom:0}]}>Sản phẩm gợi ý</Text>
+          </View>
           <CategoryProducts
             categoryKey={item.categoryKey}
             shopeeKeyword={item.shopeeKeyword}
@@ -336,7 +340,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Gợi ý dành cho bạn</Text>
             <Text style={styles.headerSub}>
-              {isLoading ? "⚡ Đang phân tích..." : `✨ ${categories.length} danh mục phù hợp nhất`}
+              {isLoading ? "Đang phân tích..." : `${categories.length} danh mục phù hợp nhất`}
             </Text>
           </View>
           <View style={styles.aiBadge}>
@@ -352,7 +356,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
             <View style={styles.aiCard}>
               <View style={styles.aiCardHeader}>
                 <LinearGradient colors={["#FF6B6B", "#FF8E53"]} style={styles.aiAvatar}>
-                  <Text style={{ fontSize: 17 }}>✨</Text>
+                  <Ionicons name="sparkles" size={17} color="#fff" />
                 </LinearGradient>
                 <View>
                   <Text style={styles.aiName}>Trợ lý quà tặng AI</Text>
@@ -370,7 +374,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
                     Mình đã chấm điểm <Text style={{ fontWeight: "700" }}>16 danh mục quà</Text> và
                     tìm ra <Text style={{ fontWeight: "700" }}>{categories.length} lựa chọn</Text> phù hợp
                     nhất cho{" "}
-                    <Text style={{ fontWeight: "700" }}>{aiSummary}</Text> nhé! 🎉
+                    <Text style={{ fontWeight: "700" }}>{aiSummary}</Text> nhé!
                   </Text>
                 )}
               </View>
@@ -402,7 +406,10 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
           {/* ── Category cards ── */}
           {!isLoading && categories.length > 0 && (
             <View>
-              <Text style={styles.sectionTitle}>🎁 Top danh mục quà phù hợp</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+                <Ionicons name="gift-outline" size={16} color={COLORS.textPrimary} />
+                <Text style={[styles.sectionTitle,{marginBottom:0}]}>Top danh mục quà phù hợp</Text>
+              </View>
               {categories.map((cat, idx) => (
                 <CategoryCard
                   key={cat.categoryKey}

@@ -311,7 +311,8 @@ const PersonalitySurveyScreen: React.FC = () => {
             </TouchableOpacity>
 
             <View style={styles.introBadge}>
-              <Text style={styles.introBadgeText}>✨ Khảo sát tính cách</Text>
+              <Ionicons name="sparkles" size={12} color="rgba(255,255,255,0.9)" />
+              <Text style={styles.introBadgeText}>Khảo sát tính cách</Text>
             </View>
 
             <View style={styles.introIconWrap}>
@@ -406,7 +407,10 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* AI Summary */}
             {displaySummary && (
               <View style={[styles.resultCard, styles.summaryCard]}>
-                <Text style={styles.resultSectionTitle}>✨ Tổng quan</Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                  <Ionicons name="sparkles" size={15} color={COLORS.primary} />
+                  <Text style={styles.resultSectionTitle}>Tổng quan</Text>
+                </View>
                 <Text style={styles.resultCardDesc}>{displaySummary}</Text>
               </View>
             )}
@@ -468,14 +472,20 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* Ideal partner (AI only) */}
             {displayIdealPartner && (
               <View style={styles.resultCard}>
-                <Text style={styles.resultSectionTitle}>💕 Người phù hợp với bạn</Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                  <Ionicons name="heart" size={15} color={COLORS.primary} />
+                  <Text style={styles.resultSectionTitle}>Người phù hợp với bạn</Text>
+                </View>
                 <Text style={styles.resultCardDesc}>{displayIdealPartner}</Text>
               </View>
             )}
 
             {/* Date suggestions */}
             <View style={styles.resultCard}>
-              <Text style={styles.resultSectionTitle}>🗓 Gợi ý hẹn hò cho bạn</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                <Ionicons name="calendar-outline" size={15} color={COLORS.primary} />
+                <Text style={styles.resultSectionTitle}>Gợi ý hẹn hò cho bạn</Text>
+              </View>
               {displayDateSuggs.map((s, i) => (
                 <View style={styles.dateRow} key={i}>
                   <Ionicons name="checkmark-circle" size={16} color={COLORS.primary} />
@@ -487,7 +497,10 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* Advice for partner (AI only) */}
             {displayAdvice && (
               <View style={[styles.resultCard, styles.adviceCard]}>
-                <Text style={styles.resultSectionTitle}>💌 Lời nhắn cho người yêu bạn</Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                  <Ionicons name="mail-outline" size={15} color={COLORS.primary} />
+                  <Text style={styles.resultSectionTitle}>Lời nhắn cho người yêu bạn</Text>
+                </View>
                 <Text style={styles.resultCardDesc}>{displayAdvice}</Text>
               </View>
             )}

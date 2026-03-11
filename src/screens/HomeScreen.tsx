@@ -9,7 +9,6 @@ import {
   Image,
   Dimensions,
 } from "react-native";
-
 const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -448,7 +447,7 @@ const HomeScreen: React.FC = () => {
             onPress={() => navigation.navigate("LocalShop")}
             activeOpacity={0.85}
           >
-            <Text style={styles.shopBannerEmoji}>🌸</Text>
+            <Ionicons name="flower-outline" size={32} color={COLORS.primary} style={styles.shopBannerEmoji} />
             <View style={styles.shopBannerText}>
               <Text style={styles.shopBannerTitle}>
                 Đặt hoa, bánh và quà giao tận nơi

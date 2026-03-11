@@ -50,10 +50,10 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey }) => {
 
         {/* Floating gift icon */}
         <Animated.View style={[styles.iconWrap, { transform: [{ translateY: floatAnim }] }]}>
-          <Text style={styles.iconEmoji}>🎁</Text>
+          <Ionicons name="gift" size={40} color="rgba(255,255,255,0.95)" />
           {/* Sparkle accents */}
-          <Text style={[styles.sparkle, styles.sparkleTopRight]}>✨</Text>
-          <Text style={[styles.sparkle, styles.sparkleBottomLeft]}>⭐</Text>
+          <Ionicons name="sparkles" size={14} color="rgba(255,255,255,0.9)" style={styles.sparkleTopRight} />
+          <Ionicons name="star" size={11} color="rgba(255,255,255,0.9)" style={styles.sparkleBottomLeft} />
         </Animated.View>
 
         {/* Text */}
@@ -135,13 +135,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 18,
   },
-  iconEmoji: { fontSize: 40 },
-  sparkle: {
-    position: 'absolute',
-    fontSize: 14,
-  },
-  sparkleTopRight: { top: -4, right: -6 },
-  sparkleBottomLeft: { bottom: -4, left: -6, fontSize: 11 },
+  sparkleTopRight: { position: 'absolute', top: -4, right: -6 },
+  sparkleBottomLeft: { position: 'absolute', bottom: -4, left: -6 },
 
   // Text
   headline: {

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NotificationUtils } from '@lib/notification.utils';
 import { COLORS } from '@themes/colors';
@@ -89,7 +90,7 @@ export const PermissionModal: React.FC<PermissionModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>🔔</Text>
+            <Ionicons name="notifications" size={40} color={COLORS.primary} />
           </View>
 
           <Text style={styles.title}>Cho phép thông báo</Text>

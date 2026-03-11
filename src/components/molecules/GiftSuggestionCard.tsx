@@ -108,7 +108,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
             end={{ x: 1, y: 1 }}
             style={styles.imageFallback}
           >
-            <Text style={styles.fallbackIcon}>{product.icon || "🎁"}</Text>
+            <Ionicons name="gift-outline" size={40} color="rgba(255,255,255,0.9)" />
           </LinearGradient>
         )}
 
@@ -129,14 +129,14 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
                   { backgroundColor: COLORS.primary },
                 ]}
               >
-                <Text style={styles.overlayBadgeText}>⭐ Nổi bật</Text>
+                <Ionicons name="star" size={11} color="#fff" /><Text style={styles.overlayBadgeText}> Nổi bật</Text>
               </View>
             )}
             {product.isPopular && (
               <View
                 style={[styles.overlayBadge, { backgroundColor: "#D97706" }]}
               >
-                <Text style={styles.overlayBadgeText}>🔥 Phổ biến</Text>
+                <Ionicons name="flame" size={11} color="#fff" /><Text style={styles.overlayBadgeText}> Phổ biến</Text>
               </View>
             )}
           </View>

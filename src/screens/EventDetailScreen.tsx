@@ -368,7 +368,7 @@ const EventDetailScreen: React.FC = () => {
             activeOpacity={0.85}
             onPress={() => navigation.navigate("LocalShop")}
           >
-            <Text style={styles.orderBannerEmoji}>🎂</Text>
+            <Ionicons name="restaurant-outline" size={28} color="#F59E0B" style={styles.orderBannerEmoji} />
             <View style={styles.orderBannerText}>
               <Text style={styles.orderBannerTitle}>
                 Đặt bánh kem, bánh ngọt
@@ -385,7 +385,7 @@ const EventDetailScreen: React.FC = () => {
             activeOpacity={0.85}
             onPress={() => navigation.navigate("AllProducts")}
           >
-            <Text style={styles.orderBannerEmoji}>🎁</Text>
+            <Ionicons name="gift-outline" size={28} color={COLORS.primary} style={styles.orderBannerEmoji} />
             <View style={styles.orderBannerText}>
               <Text style={styles.orderBannerTitle}>Sản phẩm quà tặng</Text>
               <Text style={styles.orderBannerSub}>Xem tất cả sản phẩm gợi ý</Text>

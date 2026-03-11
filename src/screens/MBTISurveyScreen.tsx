@@ -702,7 +702,7 @@ const MBTISurveyScreen: React.FC = () => {
                 <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
               <View style={styles.resultHeaderInner}>
-                <Text style={styles.resultEmoji}>🎉</Text>
+                <Ionicons name="trophy" size={48} color="#FFD700" />
                 <View style={styles.resultTypeBadge}>
                   <Text style={styles.resultType}>{result.type}</Text>
                 </View>
@@ -715,7 +715,10 @@ const MBTISurveyScreen: React.FC = () => {
 
           <View style={styles.resultBody}>
             <View style={styles.resultSection}>
-              <Text style={styles.sectionTitle}>💪 Điểm mạnh</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
+                <Ionicons name="barbell-outline" size={18} color={COLORS.textPrimary} />
+                <Text style={[styles.sectionTitle,{marginBottom:0}]}>Điểm mạnh</Text>
+              </View>
               {result.strengths.map((strength, index) => (
                 <View key={index} style={styles.listItem}>
                   <Ionicons
@@ -729,7 +732,10 @@ const MBTISurveyScreen: React.FC = () => {
             </View>
 
             <View style={styles.resultSection}>
-              <Text style={styles.sectionTitle}>🎯 Điểm cần phát triển</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
+                <Ionicons name="flag-outline" size={18} color={COLORS.textPrimary} />
+                <Text style={[styles.sectionTitle,{marginBottom:0}]}>Điểm cần phát triển</Text>
+              </View>
               {result.weaknesses.map((weakness, index) => (
                 <View key={index} style={styles.listItem}>
                   <Ionicons
@@ -743,12 +749,18 @@ const MBTISurveyScreen: React.FC = () => {
             </View>
 
             <View style={styles.resultSection}>
-              <Text style={styles.sectionTitle}>❤️ Phong cách yêu</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
+                <Ionicons name="heart" size={18} color={COLORS.primary} />
+                <Text style={[styles.sectionTitle,{marginBottom:0}]}>Phong cách yêu</Text>
+              </View>
               <Text style={styles.loveStyleText}>{result.loveStyle}</Text>
             </View>
 
             <View style={styles.resultSection}>
-              <Text style={styles.sectionTitle}>🎁 Gợi ý quà tặng</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
+                <Ionicons name="gift-outline" size={18} color={COLORS.textPrimary} />
+                <Text style={[styles.sectionTitle,{marginBottom:0}]}>Gợi ý quà tặng</Text>
+              </View>
               {result.giftIdeas.map((gift, index) => (
                 <View key={index} style={styles.giftItem}>
                   <Ionicons name="gift" size={18} color={COLORS.primary} />
@@ -758,10 +770,13 @@ const MBTISurveyScreen: React.FC = () => {
             </View>
 
             <View style={styles.resultSection}>
-              <Text style={styles.sectionTitle}>💑 Độ tương thích</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
+                <Ionicons name="people-outline" size={18} color={COLORS.textPrimary} />
+                <Text style={[styles.sectionTitle,{marginBottom:0}]}>Độ tương thích</Text>
+              </View>
 
               <View style={styles.compatibilityCard}>
-                <Text style={styles.compatibilityTitle}>Tuyệt vời ✨</Text>
+                <Text style={styles.compatibilityTitle}>Tuyệt vời</Text>
                 {result.compatibility.best.map((t) => {
                   const info = MBTI_TYPES[t];
                   return (

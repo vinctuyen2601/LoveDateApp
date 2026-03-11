@@ -142,7 +142,7 @@ const ProductMiniCard: React.FC<{ product: AffiliateProduct }> = ({ product }) =
         <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
       ) : (
         <View style={[styles.productImage, { backgroundColor: product.color || COLORS.border, alignItems: 'center', justifyContent: 'center' }]}>
-          <Text style={{ fontSize: 20 }}>{product.icon || '🛍️'}</Text>
+          <Ionicons name="bag-handle-outline" size={20} color={COLORS.textSecondary} />
         </View>
       )}
       <View style={styles.productInfo}>
@@ -205,7 +205,7 @@ const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ prepar
 
       {preparation.bookingNote && (
         <View style={styles.prepInfoRow}>
-          <Text style={styles.prepInfoIcon}>📅</Text>
+          <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} style={styles.prepInfoIcon} />
           <View style={{ flex: 1 }}>
             <Text style={styles.prepGroupLabel}>Lưu ý đặt chỗ</Text>
             <Text style={styles.prepText}>{preparation.bookingNote}</Text>
@@ -410,7 +410,7 @@ const DateSuggestionCard: React.FC<{
           {!loadingInner && products.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionLabelRow}>
-                <Text style={styles.sectionIcon}>🛍️</Text>
+                <Ionicons name="bag-handle-outline" size={16} color={COLORS.textSecondary} style={styles.sectionIcon} />
                 <Text style={styles.sectionLabel}>Có thể bạn cần</Text>
               </View>
               {products.map((product) => (
@@ -509,7 +509,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
         {/* ── Input Card ───────────────────────────────────────────────────── */}
         <View style={styles.inputCard}>
           <View style={styles.inputCardTitle}>
-            <Text style={{ fontSize: 18 }}>🗺️</Text>
+            <Ionicons name="map-outline" size={18} color={COLORS.primary} />
             <Text style={styles.inputCardLabel}>Bạn muốn làm gì?</Text>
           </View>
 
@@ -633,7 +633,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
         {/* ── Empty state ───────────────────────────────────────────────────── */}
         {!isLoading && suggestions.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🗺️</Text>
+            <Ionicons name="map-outline" size={48} color={COLORS.border} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Lên kế hoạch cùng AI</Text>
             <Text style={styles.emptyText}>
               Chọn loại hoạt động, ngân sách{'\n'}rồi nhấn{' '}
