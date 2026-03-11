@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "722189963162",
+    "project_id": "lovedate-27b47",
+    "storage_bucket": "lovedate-27b47.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:722189963162:android:17a786ffec898a43113423",
+        "android_client_info": {
+          "package_name": "com.lovedate.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRmG463DUpxs34s3DsT1AUeXgsahSdXnY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

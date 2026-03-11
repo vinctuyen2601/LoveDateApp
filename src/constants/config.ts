@@ -9,7 +9,7 @@ import {
 // API Configuration
 export const API_BASE_URL = __DEV__
   ? REACT_APP_API_DEV_URL || "http://localhost:3000/api"
-  : REACT_APP_API_PROD_URL;
+  : REACT_APP_API_PROD_URL || "https://api.ngayyeuthuong.com/api";
 
 export const API_TIMEOUT = parseInt(REACT_APP_API_TIMEOUT || "30000", 10);
 
