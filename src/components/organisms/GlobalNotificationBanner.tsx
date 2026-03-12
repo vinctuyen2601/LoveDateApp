@@ -7,13 +7,13 @@ import NotificationBanner from '@components/molecules/NotificationBanner';
  * Shows upcoming events notification or daily quote
  */
 const GlobalNotificationBanner: React.FC = () => {
-  const { message, icon, hasUpcomingEvents } = useNotification();
+  const { message, image } = useNotification();
 
   // Always show the banner - either with upcoming events or daily quote
   return (
     <NotificationBanner
       message={message}
-      icon={icon}
+      image={image}
     />
   );
 };

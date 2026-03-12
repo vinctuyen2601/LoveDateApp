@@ -3,22 +3,24 @@ import {
   StyleSheet,
   Animated,
   Text,
+  Image,
   TouchableOpacity,
+  ImageSourcePropType,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from '@themes/colors';
+import { COLORS } from "@themes/colors";
 
 interface NotificationBannerProps {
   message: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  image?: ImageSourcePropType;
   dismissible?: boolean;
   onDismiss?: () => void;
 }
 
 const NotificationBanner: React.FC<NotificationBannerProps> = ({
   message,
-  icon = "notifications",
+  image,
   dismissible = true,
   onDismiss,
 }) => {
@@ -57,8 +59,11 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
         { paddingTop: insets.top + 10, transform: [{ translateY: slideAnim }] },
       ]}
     >
-      <Ionicons name={icon} size={18} color={COLORS.white} style={styles.icon} />
-      <Text style={styles.text}>{message}</Text>
+      <Text style={styles.text}>
+        {message}
+        {image ? " " : ""}
+        {image && <Image source={image} style={styles.inlineIcon} />}
+      </Text>
       {dismissible && (
         <TouchableOpacity
           onPress={handleDismiss}
@@ -91,8 +96,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  icon: {
-    marginTop: 1,
+  content: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   text: {
     flex: 1,
@@ -100,6 +108,10 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: "500",
     lineHeight: 18,
+  },
+  inlineIcon: {
+    width: 18,
+    height: 18,
   },
   dismissButton: {
     padding: 4,

@@ -52,7 +52,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { events, isLoading, refreshEvents } = useEvents();
   const { sync } = useSync();
-  const { message, icon } = useNotification();
+  const { message, image } = useNotification();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(DateUtils.getTodayString());
@@ -302,7 +302,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <NotificationBanner message={message} icon={icon} />
+      <NotificationBanner message={message} image={image} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
