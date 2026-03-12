@@ -25,6 +25,9 @@
           "fetch",
           "processing"
         ],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "BACKGROUND_NOTIFICATION_TASK"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
