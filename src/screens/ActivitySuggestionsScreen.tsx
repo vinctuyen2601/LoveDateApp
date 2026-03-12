@@ -11,6 +11,8 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import IconImage from '@components/atoms/IconImage';
+import { getActivityImage } from '@lib/iconImages';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -58,17 +60,17 @@ interface DateSuggestion {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const QUICK_IDEAS = [
-  '🍽️ Ăn tối lãng mạn',
-  '☕ Cà phê hẹn hò',
-  '🎬 Xem phim cùng nhau',
-  '💆 Spa thư giãn',
-  '🌳 Dạo phố ngắm cảnh',
-  '🏕️ Picnic dã ngoại',
-  '🎮 Vui chơi giải trí',
-  '🏃 Hoạt động thể thao',
-  '🛍️ Đi mua sắm',
-  '✈️ Du lịch ngắn ngày',
+const QUICK_IDEAS: { activity: string; text: string }[] = [
+  { activity: 'restaurant', text: 'Ăn tối lãng mạn' },
+  { activity: 'cafe',       text: 'Cà phê hẹn hò' },
+  { activity: 'cinema',     text: 'Xem phim cùng nhau' },
+  { activity: 'spa',        text: 'Spa thư giãn' },
+  { activity: 'park',       text: 'Dạo phố ngắm cảnh' },
+  { activity: 'picnic',     text: 'Picnic dã ngoại' },
+  { activity: 'gaming',     text: 'Vui chơi giải trí' },
+  { activity: 'sports',     text: 'Hoạt động thể thao' },
+  { activity: 'shopping',   text: 'Đi mua sắm' },
+  { activity: 'travel',     text: 'Du lịch ngắn ngày' },
 ];
 
 const BUDGET_PRESETS = [
@@ -322,7 +324,7 @@ const DateSuggestionCard: React.FC<{
         activeOpacity={0.8}
       >
         <View style={styles.suggestionEmojiWrap}>
-          <Text style={styles.suggestionEmoji}>{suggestion.emoji}</Text>
+          <IconImage source={getActivityImage(suggestion.activityType)} size={26} />
         </View>
         <View style={styles.suggestionHeaderText}>
           <Text style={styles.suggestionTitle}>{suggestion.title}</Text>
@@ -445,8 +447,8 @@ const ActivitySuggestionsScreen: React.FC = () => {
   const [suggestions, setSuggestions] = useState<DateSuggestion[]>([]);
   const scrollRef = useRef<ScrollView>(null);
 
-  const appendIdea = (idea: string) => {
-    const clean = idea.replace(/^[\p{Emoji}\s]+/u, '').trim();
+  const appendIdea = (idea: { activity: string; text: string }) => {
+    const clean = idea.text.trim();
     setAiPrompt((prev) => {
       if (prev.endsWith(clean)) return prev;
       return prev ? `${prev}, ${clean.toLowerCase()}` : clean;
@@ -543,11 +545,12 @@ const ActivitySuggestionsScreen: React.FC = () => {
           >
             {QUICK_IDEAS.map((idea) => (
               <TouchableOpacity
-                key={idea}
+                key={idea.text}
                 style={styles.ideaChip}
                 onPress={() => appendIdea(idea)}
               >
-                <Text style={styles.ideaChipText}>{idea}</Text>
+                <IconImage source={getActivityImage(idea.activity)} size={16} />
+                <Text style={styles.ideaChipText}>{idea.text}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -698,6 +701,7 @@ const styles = StyleSheet.create({
   // Ideas chips — horizontal scroll
   ideasRow: { gap: 8, paddingBottom: 4, marginBottom: 14 },
   ideaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
     backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border,
   },

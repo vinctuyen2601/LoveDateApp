@@ -34,8 +34,30 @@ export const SPECIAL_DATE_IMAGES: Record<string, ImageSourcePropType> = {
   sys_ong_tao:         require('../../assets/icons/special/kitchen-god.png'),
 };
 
+// Activity icons — assets/icons/activities/
+export const ACTIVITY_IMAGES: Record<string, ImageSourcePropType> = {
+  restaurant: require('../../assets/icons/activities/restaurant.png'),
+  cafe:       require('../../assets/icons/activities/cafe.png'),
+  cinema:     require('../../assets/icons/activities/cinema.png'),
+  spa:        require('../../assets/icons/activities/spa.png'),
+  park:       require('../../assets/icons/activities/park.png'),
+  picnic:     require('../../assets/icons/activities/picnic.png'),
+  gaming:     require('../../assets/icons/activities/gaming.png'),
+  sports:     require('../../assets/icons/activities/sports.png'),
+  shopping:   require('../../assets/icons/activities/shopping.png'),
+  travel:     require('../../assets/icons/activities/travel.png'),
+  cooking:    require('../../assets/icons/activities/cooking.png'),
+  sunset:     require('../../assets/icons/activities/sunset.png'),
+  karaoke:    require('../../assets/icons/activities/karaoke.png'),
+  hiking:     require('../../assets/icons/activities/hiking.png'),
+  art:        require('../../assets/icons/activities/art.png'),
+};
+
 export const getTagImage = (tagValue: string): ImageSourcePropType =>
   TAG_IMAGES[tagValue] ?? TAG_IMAGES.other;
 
 export const getSpecialDateImage = (id: string): ImageSourcePropType =>
   SPECIAL_DATE_IMAGES[id] ?? TAG_IMAGES.other;
+
+export const getActivityImage = (activityType: string): ImageSourcePropType =>
+  ACTIVITY_IMAGES[activityType] ?? TAG_IMAGES.other;

@@ -10,6 +10,7 @@ Tải từ **[icons8.com](https://icons8.com)** — format **PNG**, size **80px*
 |---|---|---|
 | Tags (birthday, family...) | **Color** hoặc **Fluent** | Full-color đẹp hơn monochrome nhiều |
 | Special dates (Tết, Valentine...) | **Color** hoặc **Fluent** | Mỗi ngày có visual đặc trưng |
+| Activities (restaurant, travel...) | **Color** hoặc **Fluent** | Dùng cho màn hình gợi ý kế hoạch hẹn hò |
 
 > **Lưu ý UI:** Tag color (`#FF6B6B`, `#FF69B4`...) vẫn dùng cho **background bubble** quanh icon.
 > Icon giữ nguyên màu sắc gốc từ Icons8 — không dùng `tintColor`.
@@ -77,6 +78,31 @@ Tải từ **[icons8.com](https://icons8.com)** — format **PNG**, size **80px*
 
 ---
 
+## 📁 `assets/icons/activities/`
+
+> Dùng cho màn hình **Lên kế hoạch hẹn hò** (ActivitySuggestionsScreen) — icon loại hoạt động từ AI trả về.
+> Style gợi ý: **Color** — icons8.com/icons/set/color
+
+| Loại hoạt động | File name | Emoji | Từ khoá tìm kiếm | Ghi chú |
+|---|---|---|---|---|
+| Ăn tối lãng mạn | `restaurant.png` | 🍽️ | `restaurant` hoặc `fine dining` | Nhà hàng / bàn ăn |
+| Cà phê hẹn hò | `cafe.png` | ☕ | `coffee cup` hoặc `cafe` | Ly cà phê |
+| Xem phim | `cinema.png` | 🎬 | `cinema` hoặc `movie clapper` | Máy quay phim / clapper |
+| Spa thư giãn | `spa.png` | 💆 | `spa` hoặc `massage` | Liệu pháp spa |
+| Dạo phố / công viên | `park.png` | 🌳 | `park` hoặc `tree nature` | Cây xanh / công viên |
+| Picnic dã ngoại | `picnic.png` | 🧺 | `picnic` hoặc `picnic basket` | Giỏ picnic |
+| Vui chơi giải trí | `gaming.png` | 🎮 | `game controller` hoặc `joystick` | Tay cầm game |
+| Hoạt động thể thao | `sports.png` | 🏃 | `running` hoặc `sport activity` | Chạy bộ / thể thao |
+| Đi mua sắm | `shopping.png` | 🛍️ | `shopping bag` hoặc `shopping` | Túi mua sắm |
+| Du lịch ngắn ngày | `travel.png` | ✈️ | `airplane` hoặc `travel` | Máy bay |
+| Nấu ăn cùng nhau | `cooking.png` | 👨‍🍳 | `cooking` hoặc `chef hat` | Mũ đầu bếp |
+| Xem hoàng hôn | `sunset.png` | 🌅 | `sunset` hoặc `sunrise` | Hoàng hôn |
+| Karaoke | `karaoke.png` | 🎤 | `microphone` hoặc `karaoke` | Micro |
+| Leo núi / trekking | `hiking.png` | 🥾 | `hiking` hoặc `mountain boot` | Giày leo núi |
+| Xem nghệ thuật | `art.png` | 🎨 | `art palette` hoặc `painting` | Bảng màu |
+
+---
+
 ## Checklist
 
 ### Tags — `assets/icons/tags/` (8 file)
@@ -109,6 +135,23 @@ Tải từ **[icons8.com](https://icons8.com)** — format **PNG**, size **80px*
 - [ ] `mid-autumn.png`
 - [ ] `kitchen-god.png`
 
+### Activities — `assets/icons/activities/` (15 file)
+- [ ] `restaurant.png`
+- [ ] `cafe.png`
+- [ ] `cinema.png`
+- [ ] `spa.png`
+- [ ] `park.png`
+- [ ] `picnic.png`
+- [ ] `gaming.png`
+- [ ] `sports.png`
+- [ ] `shopping.png`
+- [ ] `travel.png`
+- [ ] `cooking.png`
+- [ ] `sunset.png`
+- [ ] `karaoke.png`
+- [ ] `hiking.png`
+- [ ] `art.png`
+
 ---
 
-> Tổng cộng: **26 file PNG** | Dung lượng ước tính: ~300–500KB
+> Tổng cộng: **41 file PNG** | Dung lượng ước tính: ~500KB–1MB
