@@ -399,7 +399,7 @@ const HomeScreen: React.FC = () => {
                             { backgroundColor: categoryColor + "15" },
                           ]}
                         >
-                          <Ionicons name={getTagIcon(primaryTag) as any} size={22} color={categoryColor} />
+                          <IconImage source={getTagImage(primaryTag)} size={22} />
                         </View>
                         <View style={styles.upcomingInfo}>
                           <Text style={styles.upcomingTitle} numberOfLines={1}>

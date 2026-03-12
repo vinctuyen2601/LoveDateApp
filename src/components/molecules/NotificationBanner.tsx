@@ -59,10 +59,10 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
         { paddingTop: insets.top + 10, transform: [{ translateY: slideAnim }] },
       ]}
     >
+      {image && <Image source={image} style={styles.inlineIcon} />}
       <Text style={styles.text}>
         {message}
         {image ? " " : ""}
-        {image && <Image source={image} style={styles.inlineIcon} />}
       </Text>
       {dismissible && (
         <TouchableOpacity
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
     paddingBottom: 10,
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: "500",
     lineHeight: 18,
+    display: "flex",
   },
   inlineIcon: {
     width: 18,
