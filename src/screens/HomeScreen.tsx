@@ -12,11 +12,13 @@ import {
 const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import IconImage from "@components/atoms/IconImage";
+import { getTagImage, getSpecialDateImage } from "@lib/iconImages";
 import { Calendar, DateData } from "react-native-calendars";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
 import { useNotification } from "@contexts/NotificationContext";
-import { Event, getTagEmoji, getTagIcon, getTagColor } from "../types";
+import { Event, getTagColor } from "../types";
 import { COLORS } from "@themes/colors";
 import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { useNavigation } from "@react-navigation/native";
@@ -126,10 +128,10 @@ const HomeScreen: React.FC = () => {
       }
 
       if (!marked[markDate]) {
-        marked[markDate] = { marked: true, emojis: [] };
+        marked[markDate] = { marked: true, dots: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].emojis.push(getTagEmoji(primaryTag));
+      marked[markDate].dots.push({ color: getTagColor(primaryTag), image: getTagImage(primaryTag) });
     });
 
     // Merge ngày đặc biệt (bao gồm âm lịch, nth-weekday) — dùng emoji
@@ -140,12 +142,12 @@ const HomeScreen: React.FC = () => {
       const dd = String(sd.solarDay).padStart(2, "0");
       const dateKey = `${calYear}-${mm}-${dd}`;
       if (!marked[dateKey]) {
-        marked[dateKey] = { emojis: [] };
+        marked[dateKey] = { dots: [] };
       }
-      if (!marked[dateKey].emojis) {
-        marked[dateKey].emojis = [];
+      if (!marked[dateKey].dots) {
+        marked[dateKey].dots = [];
       }
-      marked[dateKey].emojis.unshift(sd.emoji);
+      marked[dateKey].dots.unshift({ color: sd.color, image: getSpecialDateImage(sd.id) });
     });
 
     if (marked[selectedDate]) {
@@ -241,7 +243,7 @@ const HomeScreen: React.FC = () => {
             { backgroundColor: categoryColor + "15" },
           ]}
         >
-          <Ionicons name={getTagIcon(primaryTag) as any} size={28} color={categoryColor} />
+          <IconImage source={getTagImage(primaryTag)} size={28} />
         </View>
         <View style={styles.eventCardContent}>
           <Text style={styles.eventCardTitle} numberOfLines={2}>
@@ -497,7 +499,7 @@ const HomeScreen: React.FC = () => {
                 const isSelected = !!marking?.selected;
                 const isToday = state === "today";
                 const isDisabled = state === "disabled";
-                const emojis: string[] = marking?.emojis ?? [];
+                const dots: { color: string; image: any }[] = marking?.dots ?? [];
 
                 return (
                   <TouchableOpacity
@@ -524,13 +526,10 @@ const HomeScreen: React.FC = () => {
                       </Text>
                     </View>
 
-                    {/* Emoji: ngày đặc biệt + sự kiện user */}
-                    {emojis.length > 0 ? (
-                      <View style={styles.dayEmojisRow}>
-                        {emojis.slice(0, 2).map((e, i) => (
-                          <Text key={i} style={styles.dayEmoji}>
-                            {e}
-                          </Text>
+                    {dots.length > 0 ? (
+                      <View style={styles.dayDotsRow}>
+                        {dots.slice(0, 2).map((dot, i) => (
+                          <IconImage key={i} source={dot.image} size={12} />
                         ))}
                       </View>
                     ) : (
@@ -1038,16 +1037,14 @@ const styles = StyleSheet.create({
   dayTextDisabled: {
     color: COLORS.textLight,
   },
-  dayEmojisRow: {
+  dayDotsRow: {
     flexDirection: "row",
-    marginTop: 1,
-  },
-  dayEmoji: {
-    fontSize: 11,
-    lineHeight: 14,
+    marginTop: 2,
+    gap: 1,
+    justifyContent: "center",
   },
   dayPlaceholder: {
-    height: 15,
+    height: 12,
   },
 
   // Calendar

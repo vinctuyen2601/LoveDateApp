@@ -10,9 +10,12 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import IconImage from "@components/atoms/IconImage";
+import { getTagImage, getSpecialDateImage } from "@lib/iconImages";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEvents } from "@contexts/EventsContext";
-import { getTagIcon, getTagColor, getTagLabel } from "../../types";
+import { getTagColor, getTagLabel } from "../../types";
+import { ImageSourcePropType } from "react-native";
 import {
   SPECIAL_DATES,
   resolveSpecialDateForYear,
@@ -26,7 +29,7 @@ const TODAY_POPUP_KEY = "@today_event_popup_date";
 interface TodayItem {
   type: "event" | "special";
   tag?: string; // event tag value (birthday, memorial, etc.)
-  emoji: string;
+  image: ImageSourcePropType;
   title: string;
   subtitle?: string;
   color: string;
@@ -100,7 +103,7 @@ const TodayEventPopup: React.FC = () => {
       if (resolvedDay.getTime() === todayStart.getTime()) {
         result.push({
           type: "special",
-          emoji: sd.emoji,
+          image: getSpecialDateImage(sd.id),
           title: sd.name,
           subtitle: sd.hint,
           color: sd.color,
@@ -133,7 +136,7 @@ const TodayEventPopup: React.FC = () => {
         result.push({
           type: "event",
           tag: primaryTag,
-          emoji: getTagIcon(primaryTag),
+          image: getTagImage(primaryTag),
           title: event.title,
           subtitle: getTagLabel(primaryTag),
           color: getTagColor(primaryTag),
@@ -250,7 +253,7 @@ const TodayEventPopup: React.FC = () => {
                     { backgroundColor: item.color + "15" },
                   ]}
                 >
-                  <Ionicons name={item.emoji as any} size={22} color={item.color} />
+                  <IconImage source={item.image} size={24} />
                 </View>
                 <View style={styles.itemContent}>
                   <Text style={styles.itemTitle} numberOfLines={2}>

@@ -11,9 +11,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
+import IconImage from "@components/atoms/IconImage";
+import { getTagImage, getSpecialDateImage } from "@lib/iconImages";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
-import { Event, getTagEmoji, getTagIcon, getTagColor, getTagLabel } from "../types";
+import { Event, getTagColor, getTagLabel } from "../types";
 import { COLORS } from "@themes/colors";
 import { CALENDAR_THEME } from "@themes/calendarTheme";
 import { STRINGS } from "../constants/strings";
@@ -70,10 +72,10 @@ const CalendarScreen: React.FC = () => {
       }
 
       if (!marked[markDate]) {
-        marked[markDate] = { marked: true, emojis: [] };
+        marked[markDate] = { marked: true, dots: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].emojis.push(getTagEmoji(primaryTag));
+      marked[markDate].dots.push({ color: getTagColor(primaryTag), image: getTagImage(primaryTag) });
     });
 
     // Merge special dates (bao gồm âm lịch, nth-weekday)
@@ -83,9 +85,9 @@ const CalendarScreen: React.FC = () => {
       const mm = String(sd.solarMonth).padStart(2, "0");
       const dd = String(sd.solarDay).padStart(2, "0");
       const dateKey = `${calYear}-${mm}-${dd}`;
-      if (!marked[dateKey]) marked[dateKey] = { emojis: [] };
-      if (!marked[dateKey].emojis) marked[dateKey].emojis = [];
-      marked[dateKey].emojis.unshift(sd.emoji);
+      if (!marked[dateKey]) marked[dateKey] = { dots: [] };
+      if (!marked[dateKey].dots) marked[dateKey].dots = [];
+      marked[dateKey].dots.unshift({ color: sd.color, image: getSpecialDateImage(sd.id) });
     });
 
     // Highlight selected date
@@ -407,7 +409,7 @@ const CalendarScreen: React.FC = () => {
                             { backgroundColor: sd.color + "15" },
                           ]}
                         >
-                          <Text style={{ fontSize: 22 }}>{sd.emoji}</Text>
+                          <IconImage source={getSpecialDateImage(sd.id)} size={24} />
                         </View>
                         <View style={styles.calEventContent}>
                           <Text style={styles.calEventTitle} numberOfLines={1}>
@@ -463,7 +465,7 @@ const CalendarScreen: React.FC = () => {
                               { backgroundColor: tagColor + "15" },
                             ]}
                           >
-                            <Ionicons name={getTagIcon(primaryTag) as any} size={22} color={tagColor} />
+                            <IconImage source={getTagImage(primaryTag)} size={22} />
                           </View>
                           <View style={styles.calEventContent}>
                             <Text
@@ -585,7 +587,7 @@ const CalendarScreen: React.FC = () => {
                 const isSelected = !!marking?.selected;
                 const isToday = state === "today";
                 const isDisabled = state === "disabled";
-                const emojis: string[] = marking?.emojis ?? [];
+                const dots: { color: string; image: any }[] = marking?.dots ?? [];
 
                 return (
                   <TouchableOpacity
@@ -612,12 +614,10 @@ const CalendarScreen: React.FC = () => {
                       </Text>
                     </View>
 
-                    {emojis.length > 0 ? (
-                      <View style={styles.dayEmojisRow}>
-                        {emojis.slice(0, 2).map((e, i) => (
-                          <Text key={i} style={styles.dayEmoji}>
-                            {e}
-                          </Text>
+                    {dots.length > 0 ? (
+                      <View style={styles.dayDotsRow}>
+                        {dots.slice(0, 2).map((dot, i) => (
+                          <IconImage key={i} source={dot.image} size={12} />
                         ))}
                       </View>
                     ) : (
@@ -855,16 +855,14 @@ const styles = StyleSheet.create({
   dayTextDisabled: {
     color: COLORS.textLight,
   },
-  dayEmojisRow: {
+  dayDotsRow: {
     flexDirection: "row",
-    marginTop: 1,
-  },
-  dayEmoji: {
-    fontSize: 11,
-    lineHeight: 14,
+    marginTop: 2,
+    gap: 1,
+    justifyContent: "center",
   },
   dayPlaceholder: {
-    height: 15,
+    height: 12,
   },
   selectedDateContainer: {
     backgroundColor: COLORS.white,

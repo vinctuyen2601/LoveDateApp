@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
+import IconImage from "@components/atoms/IconImage";
+import { getTagImage } from "@lib/iconImages";
 import { useNavigation, useRoute } from "@react-navigation/native";
 // TODO(monetization): import { useSQLiteContext } from "expo-sqlite"; // cần lại khi re-enable premium check
 import { useEvents } from "@contexts/EventsContext";
@@ -700,7 +702,7 @@ const AddEventScreen: React.FC = () => {
                     setFormData({ ...formData, tags: newTags });
                   }}
                 >
-                  <Ionicons name={tag.icon as any} size={18} color={isSelected ? COLORS.white : tag.color} />
+                  <IconImage source={getTagImage(tag.value)} size={20} />
                   <Text
                     style={[
                       styles.tagText,

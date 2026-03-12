@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import IconImage from "@components/atoms/IconImage";
+import { getSpecialDateImage } from "@lib/iconImages";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "@contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
@@ -454,7 +456,7 @@ const SettingsScreen: React.FC = () => {
               const isMuted = mutedSpecialDates.includes(sd.id);
               return (
                 <View key={sd.id} style={styles.specialDateRow}>
-                  <Text style={styles.specialDateIcon}>{sd.emoji}</Text>
+                  <IconImage source={getSpecialDateImage(sd.id)} size={22} />
                   <Text style={[styles.specialDateName, isMuted && styles.specialDateMuted]}>
                     {sd.name}
                   </Text>
