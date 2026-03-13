@@ -523,7 +523,10 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* Related Articles */}
             {relatedArticles.length > 0 && (
               <View style={styles.articlesSection}>
-                <Text style={styles.articlesSectionTitle}>📖 Có thể bạn quan tâm</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="book-outline" size={20} color="#8B5CF6" />
+                  <Text style={styles.articlesSectionTitle}>Có thể bạn quan tâm</Text>
+                </View>
                 {relatedArticles.map((article, i) => (
                   <TouchableOpacity
                     key={article.id}

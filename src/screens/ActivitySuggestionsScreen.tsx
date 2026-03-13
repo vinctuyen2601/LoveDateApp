@@ -118,7 +118,7 @@ const ArticleMiniCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
       <Image source={{ uri: article.imageUrl }} style={styles.articleImage} />
     ) : (
       <View style={[styles.articleImage, { backgroundColor: article.color || '#FF6B6B', alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={{ fontSize: 22 }}>{article.icon || '📖'}</Text>
+        <Ionicons name="book-outline" size={22} color={article.color || '#FF6B6B'} />
       </View>
     )}
     <View style={styles.articleInfo}>
@@ -395,7 +395,7 @@ const DateSuggestionCard: React.FC<{
           {!loadingInner && articles.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionLabelRow}>
-                <Text style={styles.sectionIcon}>📖</Text>
+                <Ionicons name="book-outline" size={20} color="#FF6B6B" />
                 <Text style={styles.sectionLabel}>Kinh nghiệm & trải nghiệm</Text>
               </View>
               {articles.map((article) => (

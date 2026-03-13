@@ -465,7 +465,7 @@ const AllArticlesScreen: React.FC = () => {
               {/* AI input card */}
               <View style={styles.aiCard}>
                 <View style={styles.aiCardTitle}>
-                  <Text style={styles.aiSparkle}>📖</Text>
+                  <Ionicons name="book-outline" size={22} color="#8B5CF6" />
                   <Text style={styles.aiCardLabel}>Bạn muốn đọc về chủ đề gì?</Text>
                 </View>
                 <View style={styles.aiInputWrap}>
