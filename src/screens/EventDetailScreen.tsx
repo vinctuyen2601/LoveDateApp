@@ -352,7 +352,7 @@ const EventDetailScreen: React.FC = () => {
             activeOpacity={0.85}
             onPress={() => navigation.navigate("LocalShop")}
           >
-            <Image source={require("../../assets/icons/special/mothers-day.png")} style={{ width: 28, height: 28 }} />
+            <Image source={require("../../assets/icons/special/womens-day.png")} style={{ width: 28, height: 28 }} />
             <View style={styles.orderBannerText}>
               <Text style={styles.orderBannerTitle}>
                 Đặt hoa tươi giao tận nơi
