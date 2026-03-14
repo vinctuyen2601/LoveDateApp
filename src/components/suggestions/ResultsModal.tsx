@@ -184,7 +184,7 @@ const CategoryProducts: React.FC<CategoryProductsProps> = ({ categoryKey, shopee
       <View style={{ paddingLeft: 16, paddingRight: 4, flexDirection: "row", gap: 10 }}>
         {products.map((p) => (
           <View key={p.id} style={{ position: "relative" }}>
-            <ProductCard product={p} />
+            <ProductCard product={p} occasion={occasion} />
             {p.isTrending && (
               <View style={styles.trendingBadge}>
                 <Ionicons name="flame" size={11} color="#fff" /><Text style={styles.trendingBadgeText}> Đang hot</Text>

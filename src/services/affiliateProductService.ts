@@ -30,9 +30,9 @@ export const trackProductView = async (productId: string): Promise<void> => {
 /**
  * Track affiliate click (revenue tracking — fire and forget)
  */
-export const trackAffiliateClick = async (productId: string): Promise<void> => {
+export const trackAffiliateClick = async (productId: string, occasion?: string): Promise<void> => {
   try {
-    await apiService.post(`/products/${productId}/click`);
+    await apiService.post(`/products/${productId}/click`, occasion ? { occasion } : undefined);
   } catch {
     // Fail silently for analytics
   }

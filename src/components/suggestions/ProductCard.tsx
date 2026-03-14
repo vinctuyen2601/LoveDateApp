@@ -11,6 +11,7 @@ import { trackAffiliateClick } from '../../services/affiliateProductService';
 interface ProductCardProps {
   product: AffiliateProduct;
   variant?: 'horizontal' | 'vertical' | 'grid';
+  occasion?: string;
 }
 
 const stripHtml = (html: string): string =>
@@ -23,7 +24,7 @@ const getDiscountPercent = (price: number | string | undefined, originalPrice: n
   return Math.round((1 - p / op) * 100);
 };
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal' }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal', occasion }) => {
   const navigation = useNavigation<any>();
   const discount = getDiscountPercent(product.price, product.originalPrice);
 
@@ -33,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
 
   const handleBuyPress = () => {
     if (product.affiliateUrl) {
-      trackAffiliateClick(product.id);
+      trackAffiliateClick(product.id, occasion);
       Linking.openURL(product.affiliateUrl);
     }
   };

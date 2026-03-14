@@ -284,12 +284,12 @@ const CalendarScreen: React.FC = () => {
               onPress={() =>
                 navigation.navigate("EventsList", {
                   filter: "all",
-                  title: "Tất cả sự kiện",
+                  title: "Sự kiện của tôi",
                 })
               }
             >
               <Text style={styles.viewAllLinkText}>
-                Tất cả ({events.length})
+                Sự kiện của tôi ({events.length})
               </Text>
               <Ionicons
                 name="chevron-forward"

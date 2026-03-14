@@ -15,6 +15,9 @@ import { useToast } from '../contexts/ToastContext';
 import { Event, getTagLabel } from '../types';
 import { COLORS } from '@themes/colors';
 import EventCard from '@components/molecules/EventCard';
+import IconImage from '@components/atoms/IconImage';
+import { getSpecialDatesForMonth } from '../constants/specialDates';
+import { getSpecialDateImage } from '@lib/iconImages';
 
 type FilterType = 'all' | 'upcoming' | 'past' | 'birthday' | 'anniversary' | 'holiday' | 'other';
 
@@ -33,8 +36,14 @@ const EventsListScreen: React.FC = () => {
 
   const params: RouteParams = route.params || {};
   const initialFilter = params.filter || 'all';
-  const screenTitle = params.title || 'Tất cả sự kiện';
   const filterMonth = params.month; // optional month scope from CalendarScreen
+
+  const screenTitle = (() => {
+    const base = params.title || 'Sự kiện của tôi';
+    if (!filterMonth) return base;
+    const d = new Date(filterMonth);
+    return `${base} ${d.getMonth() + 1}/${d.getFullYear()}`;
+  })();
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>(initialFilter);
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
@@ -49,25 +58,40 @@ const EventsListScreen: React.FC = () => {
       const year = monthDate.getFullYear();
       const month = monthDate.getMonth();
       filtered = filtered.filter((event) => {
+        if (!event.eventDate) return false;
         const d = new Date(event.eventDate);
-        return !isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month;
+        if (isNaN(d.getTime())) return false;
+        // Recurring events: match by month only (same as CalendarScreen)
+        if (event.isRecurring) return d.getMonth() === month;
+        return d.getFullYear() === year && d.getMonth() === month;
       });
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // For recurring events in a month-scoped view, compare against their occurrence
+    // in the filtered year rather than the original eventDate year
+    const getEffectiveDate = (event: Event): Date => {
+      const d = new Date(event.eventDate);
+      if (event.isRecurring && filterMonth) {
+        const filterYear = new Date(filterMonth).getFullYear();
+        return new Date(filterYear, d.getMonth(), d.getDate(),
+          d.getHours(), d.getMinutes(), d.getSeconds());
+      }
+      return d;
+    };
+
     switch (selectedFilter) {
       case 'upcoming':
         filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.eventDate);
+          const eventDate = getEffectiveDate(event);
           const eventDateDay = new Date(eventDate);
           eventDateDay.setHours(0, 0, 0, 0);
 
-          if (eventDateDay > today) return true; // Ngày tương lai
+          if (eventDateDay > today) return true;
 
           if (eventDateDay.getTime() === today.getTime()) {
-            // Hôm nay: lặp lại luôn hiển thị, một lần chỉ khi chưa qua giờ nhắc
             if (event.isRecurring) return true;
             const now = new Date();
             const reminderTime = event.reminderSettings?.reminderTime;
@@ -76,19 +100,18 @@ const EventsListScreen: React.FC = () => {
             reminderDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
             return reminderDate > now;
           }
-          return false; // Ngày đã qua
+          return false;
         });
         break;
       case 'past':
         filtered = filtered.filter((event) => {
-          const eventDate = new Date(event.eventDate);
+          const eventDate = getEffectiveDate(event);
           const eventDateDay = new Date(eventDate);
           eventDateDay.setHours(0, 0, 0, 0);
 
-          if (eventDateDay < today) return true; // Ngày trước hôm nay
+          if (eventDateDay < today) return true;
 
           if (eventDateDay.getTime() === today.getTime()) {
-            // Hôm nay: một lần và đã qua giờ nhắc → chuyển vào "đã qua"
             if (event.isRecurring) return false;
             const now = new Date();
             const reminderTime = event.reminderSettings?.reminderTime;
@@ -120,6 +143,41 @@ const EventsListScreen: React.FC = () => {
 
     return filtered;
   }, [events, selectedFilter, sortBy, filterMonth]);
+
+  // System special dates for the filtered month, further filtered by selectedFilter
+  const filteredSpecialDates = useMemo(() => {
+    if (!filterMonth) return [];
+    const monthDate = new Date(filterMonth);
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth() + 1; // 1-based
+    const all = getSpecialDatesForMonth(year, month);
+
+    if (selectedFilter === 'all') return all;
+    if (selectedFilter === 'upcoming') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayYear = today.getFullYear();
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      if (year > todayYear || (year === todayYear && month > todayMonth)) return all;
+      if (year === todayYear && month === todayMonth)
+        return all.filter((sd) => sd.solarDay >= todayDay);
+      return [];
+    }
+    if (selectedFilter === 'past') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayYear = today.getFullYear();
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      if (year < todayYear || (year === todayYear && month < todayMonth)) return all;
+      if (year === todayYear && month === todayMonth)
+        return all.filter((sd) => sd.solarDay < todayDay);
+      return [];
+    }
+    // birthday/anniversary/holiday/other — special dates don't have tags, hide them
+    return [];
+  }, [filterMonth, selectedFilter]);
 
   const handleEventPress = (event: Event) => {
     navigation.navigate('EventDetail', { eventId: event.id });
@@ -184,7 +242,7 @@ const EventsListScreen: React.FC = () => {
   const getFilterLabel = (filter: FilterType): string => {
     switch (filter) {
       case 'all':
-        return 'Tất cả';
+        return 'Sự kiện của tôi';
       case 'upcoming':
         return 'Sắp tới';
       case 'past':
@@ -194,7 +252,22 @@ const EventsListScreen: React.FC = () => {
     }
   };
 
-  const filters: FilterType[] = ['all', 'upcoming', 'past', 'birthday', 'anniversary', 'holiday', 'other'];
+  const monthRelation = (() => {
+    if (!filterMonth) return 'current';
+    const d = new Date(filterMonth);
+    const today = new Date();
+    const diffMonths = (d.getFullYear() - today.getFullYear()) * 12 + (d.getMonth() - today.getMonth());
+    if (diffMonths > 0) return 'future';
+    if (diffMonths < 0) return 'past';
+    return 'current';
+  })();
+
+  const filters: FilterType[] = [
+    'all',
+    ...(monthRelation !== 'past' ? ['upcoming' as FilterType] : []),
+    ...(monthRelation !== 'future' ? ['past' as FilterType] : []),
+    'birthday', 'anniversary', 'holiday', 'other',
+  ];
 
   return (
     <View style={styles.container}>
@@ -278,8 +351,21 @@ const EventsListScreen: React.FC = () => {
 
       {/* Events List */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {filteredEvents.length > 0 ? (
+        {(filteredEvents.length > 0 || filteredSpecialDates.length > 0) ? (
           <View style={styles.eventsList}>
+            {/* System special dates */}
+            {filteredSpecialDates.map((sd) => (
+              <View key={sd.id} style={styles.specialDateCard}>
+                <View style={[styles.specialDateAccent, { backgroundColor: sd.color }]} />
+                <IconImage source={getSpecialDateImage(sd.id)} size={28} />
+                <View style={styles.specialDateInfo}>
+                  <Text style={styles.specialDateName}>{sd.name}</Text>
+                  <Text style={styles.specialDateSub}>
+                    {sd.solarDay}/{sd.solarMonth} · Ngày đặc biệt
+                  </Text>
+                </View>
+              </View>
+            ))}
             {filteredEvents.map((event) => (
               <EventCard
                 key={event.id}
@@ -459,6 +545,43 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  specialDateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    marginHorizontal: 8,
+    marginVertical: 4,
+    padding: 12,
+    gap: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  specialDateAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  specialDateInfo: {
+    flex: 1,
+  },
+  specialDateName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  specialDateSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
 });
 
