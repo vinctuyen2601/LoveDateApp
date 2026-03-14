@@ -578,22 +578,39 @@ export const REMIND_OPTIONS = [
   { value: 30, label: "1 tháng trước" },
 ];
 
+// ==================== TAG ICON IMAGES ====================
+import { ImageSourcePropType } from "react-native";
+
+export const TAG_ICONS: Record<string, ImageSourcePropType> = {
+  birthday:    require("../../assets/icons/tags/cake.png"),
+  anniversary: require("../../assets/icons/tags/hearts.png"),
+  holiday:     require("../../assets/icons/tags/confetti.png"),
+  memorial:    require("../../assets/icons/tags/candle.png"),
+  wife:        require("../../assets/icons/tags/woman.png"),
+  husband:     require("../../assets/icons/tags/man.png"),
+  family:      require("../../assets/icons/tags/family.png"),
+  other:       require("../../assets/icons/tags/star.png"),
+};
+
 // ==================== PREDEFINED TAGS ====================
 // Single source of truth for event tag definitions (hardcoded on mobile)
 export const PREDEFINED_TAGS = [
-  { value: "birthday",    label: "Sinh nhật", emoji: "🎂", icon: "gift-outline",         color: "#FF6B6B" },
-  { value: "anniversary", label: "Kỷ niệm",   emoji: "💑", icon: "heart-circle-outline", color: "#FF69B4" },
-  { value: "holiday",     label: "Ngày lễ",   emoji: "🎉", icon: "ribbon-outline",        color: "#F59E0B" },
-  { value: "memorial",    label: "Ngày giỗ",  emoji: "🕯️", icon: "flame-outline",         color: "#7C3AED" },
-  { value: "wife",        label: "Vợ",        emoji: "👩", icon: "woman-outline",         color: "#E74C3C" },
-  { value: "husband",     label: "Chồng",     emoji: "👨", icon: "man-outline",           color: "#3498DB" },
-  { value: "family",      label: "Gia đình",  emoji: "👨‍👩‍👧", icon: "people-outline",      color: "#9B59B6" },
-  { value: "other",       label: "Khác",      emoji: "⭐", icon: "star-outline",          color: "#64748B" },
+  { value: "birthday",    label: "Sinh nhật", emoji: "🎂", icon: "gift-outline",         color: "#FF6B6B",  image: TAG_ICONS.birthday },
+  { value: "anniversary", label: "Kỷ niệm",   emoji: "💑", icon: "heart-circle-outline", color: "#FF69B4", image: TAG_ICONS.anniversary },
+  { value: "holiday",     label: "Ngày lễ",   emoji: "🎉", icon: "ribbon-outline",        color: "#F59E0B", image: TAG_ICONS.holiday },
+  { value: "memorial",    label: "Ngày giỗ",  emoji: "🕯️", icon: "flame-outline",         color: "#7C3AED", image: TAG_ICONS.memorial },
+  { value: "wife",        label: "Vợ",        emoji: "👩", icon: "woman-outline",         color: "#E74C3C",  image: TAG_ICONS.wife },
+  { value: "husband",     label: "Chồng",     emoji: "👨", icon: "man-outline",           color: "#3498DB",  image: TAG_ICONS.husband },
+  { value: "family",      label: "Gia đình",  emoji: "👨‍👩‍👧", icon: "people-outline",      color: "#9B59B6", image: TAG_ICONS.family },
+  { value: "other",       label: "Khác",      emoji: "⭐", icon: "star-outline",          color: "#64748B",  image: TAG_ICONS.other },
 ] as const;
 
 // ── Tag lookup helpers (single source of truth) ──
 const TAG_MAP = new Map(PREDEFINED_TAGS.map((t) => [t.value as string, t]));
-const DEFAULT_TAG = { value: "other", label: "Khác", emoji: "⭐", icon: "star-outline", color: "#64748B" };
+const DEFAULT_TAG = { value: "other", label: "Khác", emoji: "⭐", icon: "star-outline", color: "#64748B", image: TAG_ICONS.other };
+
+export const getTagImage = (value: string): ImageSourcePropType =>
+  TAG_ICONS[value] ?? TAG_ICONS.other;
 
 export const getTagLabel = (value: string): string =>
   TAG_MAP.get(value)?.label ?? DEFAULT_TAG.label;

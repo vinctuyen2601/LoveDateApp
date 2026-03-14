@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -13,7 +14,7 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
-import { Event, ChecklistItem, getTagInfo } from "../types";
+import { Event, ChecklistItem, getTagInfo, getTagImage } from "../types";
 import { DateUtils } from "@lib/date.utils";
 import { COLORS } from "@themes/colors";
 import CountdownTimer from "@components/molecules/CountdownTimer";
@@ -126,7 +127,7 @@ const EventDetailScreen: React.FC = () => {
   const primaryTag = event.tags[0] || "other";
   const tagDetails = getTagInfo(primaryTag);
   const primaryColor = tagDetails.color;
-  const primaryEmoji = tagDetails.emoji;
+  const primaryImage = getTagImage(primaryTag);
 
   const handleEdit = () => {
     navigation.navigate("AddEvent", { eventId: event.id });
@@ -190,7 +191,7 @@ const EventDetailScreen: React.FC = () => {
                 { backgroundColor: primaryColor + "20" },
               ]}
             >
-              <Text style={{ fontSize: 32 }}>{primaryEmoji}</Text>
+              <Image source={primaryImage} style={{ width: 32, height: 32 }} />
             </View>
             <View style={styles.heroInfo}>
               <Text style={styles.eventTitle} numberOfLines={2}>
@@ -351,7 +352,7 @@ const EventDetailScreen: React.FC = () => {
             activeOpacity={0.85}
             onPress={() => navigation.navigate("LocalShop")}
           >
-            <Text style={styles.orderBannerEmoji}>💐</Text>
+            <Image source={require("../../assets/icons/special/womens-day.png")} style={{ width: 28, height: 28 }} />
             <View style={styles.orderBannerText}>
               <Text style={styles.orderBannerTitle}>
                 Đặt hoa tươi giao tận nơi
@@ -398,7 +399,7 @@ const EventDetailScreen: React.FC = () => {
             activeOpacity={0.85}
             onPress={() => navigation.navigate("AllArticles")}
           >
-            <Text style={styles.orderBannerEmoji}>📖</Text>
+            <Ionicons name="book-outline" size={28} color="#8B5CF6" style={styles.orderBannerEmoji} />
             <View style={styles.orderBannerText}>
               <Text style={styles.orderBannerTitle}>Bài viết hay</Text>
               <Text style={styles.orderBannerSub}>Mẹo tặng quà, hẹn hò & tình yêu</Text>
