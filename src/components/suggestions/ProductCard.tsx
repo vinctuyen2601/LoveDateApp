@@ -12,6 +12,7 @@ interface ProductCardProps {
   product: AffiliateProduct;
   variant?: 'horizontal' | 'vertical' | 'grid';
   occasion?: string;
+  onSaveToEvent?: (product: AffiliateProduct) => void;
 }
 
 const stripHtml = (html: string): string =>
@@ -24,7 +25,7 @@ const getDiscountPercent = (price: number | string | undefined, originalPrice: n
   return Math.round((1 - p / op) * 100);
 };
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal', occasion }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal', occasion, onSaveToEvent }) => {
   const navigation = useNavigation<any>();
   const discount = getDiscountPercent(product.price, product.originalPrice);
 
@@ -64,6 +65,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           <TouchableOpacity style={styles.verticalCta} onPress={handleBuyPress}>
             <Text style={styles.verticalCtaText}>Mua</Text>
           </TouchableOpacity>
+          {onSaveToEvent && (
+            <TouchableOpacity style={styles.verticalSave} onPress={() => onSaveToEvent(product)}>
+              <Ionicons name="bookmark-outline" size={16} color={COLORS.primary} />
+            </TouchableOpacity>
+          )}
           <Text style={styles.affiliateLabel}>AD</Text>
         </View>
       </PressableCard>
@@ -285,6 +291,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  verticalSave: {
+    backgroundColor: COLORS.primary + '15',
+    borderRadius: 8,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   affiliateLabel: {
     fontSize: 10,

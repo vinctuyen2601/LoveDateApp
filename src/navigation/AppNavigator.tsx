@@ -21,6 +21,7 @@ import OccasionProductsScreen from '../screens/OccasionProductsScreen';
 import AllProductsScreen from '../screens/AllProductsScreen';
 import AllArticlesScreen from '../screens/AllArticlesScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import OccasionPrepScreen from '../screens/OccasionPrepScreen';
 import LocalShopScreen from '../screens/LocalShopScreen';
 import MBTIGuideScreen from '../screens/MBTIGuideScreen';
 import MBTITypeDetailScreen from '../screens/MBTITypeDetailScreen';
@@ -194,6 +195,11 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="AllArticles"
           component={AllArticlesScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="OccasionPrep"
+          component={OccasionPrepScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

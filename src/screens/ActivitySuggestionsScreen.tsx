@@ -9,6 +9,7 @@ import {
   Animated,
   Image,
   Linking,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import IconImage from '@components/atoms/IconImage';
@@ -22,9 +23,10 @@ import { apiService } from '../services/api.service';
 import { useToast } from '../contexts/ToastContext';
 import { useAiRateLimit } from '../hooks/useAiRateLimit';
 import AiRateLimitModal from '@components/molecules/AiRateLimitModal';
+import { useEvents } from '@contexts/EventsContext';
 
 type ActivitySuggestionsRouteProp = RouteProp<
-  { ActivitySuggestions: { event?: Event } },
+  { ActivitySuggestions: { event?: Event; eventId?: string } },
   'ActivitySuggestions'
 >;
 
@@ -246,7 +248,8 @@ const DateSuggestionCard: React.FC<{
   suggestion: DateSuggestion;
   budgetMax: number;
   onNavigateArticle: (article: Article) => void;
-}> = ({ suggestion, budgetMax, onNavigateArticle }) => {
+  onSaveActivity?: (title: string) => void;
+}> = ({ suggestion, budgetMax, onNavigateArticle, onSaveActivity }) => {
   const [expanded, setExpanded]       = useState(false);
   const [articles,  setArticles]      = useState<Article[]>([]);
   const [products,  setProducts]      = useState<AffiliateProduct[]>([]);
@@ -420,6 +423,18 @@ const DateSuggestionCard: React.FC<{
               ))}
             </View>
           )}
+
+          {/* Save to event */}
+          {onSaveActivity && (
+            <TouchableOpacity
+              style={styles.saveActivityBtn}
+              onPress={() => onSaveActivity(suggestion.title)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="bookmark-outline" size={16} color={COLORS.secondary} />
+              <Text style={styles.saveActivityText}>Lưu kế hoạch này vào sự kiện</Text>
+            </TouchableOpacity>
+          )}
         </Animated.View>
       )}
     </View>
@@ -434,8 +449,20 @@ const ActivitySuggestionsScreen: React.FC = () => {
   const insets     = useSafeAreaInsets();
   const { showError } = useToast();
   const { handleAiError, rateLimitModal } = useAiRateLimit();
+  const { upsertEventNote } = useEvents();
 
-  const event = route.params?.event;
+  const event   = route.params?.event;
+  const eventId = route.params?.eventId;
+
+  const handleSaveActivity = React.useCallback(async (title: string) => {
+    if (!eventId) return;
+    try {
+      await upsertEventNote(eventId, { activity: title });
+      Alert.alert('Đã lưu', `Kế hoạch "${title}" đã được lưu vào sự kiện.`, [{ text: 'OK' }]);
+    } catch {
+      Alert.alert('Lỗi', 'Không thể lưu kế hoạch. Thử lại nhé.');
+    }
+  }, [eventId, upsertEventNote]);
 
   const defaultPrompt = event
     ? `hẹn hò lãng mạn dịp ${event.title}`
@@ -628,6 +655,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
                 onNavigateArticle={(article) =>
                   navigation.navigate('ArticleDetail', { article })
                 }
+                onSaveActivity={eventId ? handleSaveActivity : undefined}
               />
             ))}
           </>
@@ -844,6 +872,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
   },
   productBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.white },
+
+  // Save activity button
+  saveActivityBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    marginHorizontal: 16, marginBottom: 16, marginTop: 4,
+    paddingVertical: 10, borderRadius: 12,
+    backgroundColor: `${COLORS.secondary}12`,
+    borderWidth: 1, borderColor: `${COLORS.secondary}30`,
+  },
+  saveActivityText: {
+    fontSize: 13, fontWeight: '600', color: COLORS.secondary,
+  },
 
   // Skeleton
   skeletonCard: {

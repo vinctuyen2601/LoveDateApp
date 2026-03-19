@@ -15,6 +15,17 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
 import { Event, ChecklistItem, getTagInfo, getTagImage } from "../types";
+import { LinearGradient } from "expo-linear-gradient";
+
+const OCCASION_TAGS = ["birthday", "anniversary", "holiday"];
+
+const getDaysUntil = (eventDate: string): number => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(eventDate);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
 import { DateUtils } from "@lib/date.utils";
 import { COLORS } from "@themes/colors";
 import CountdownTimer from "@components/molecules/CountdownTimer";
@@ -302,6 +313,61 @@ const EventDetailScreen: React.FC = () => {
           )}
         </View>
 
+        {/* Occasion Prep Banner — eligible tag + còn ≤ 30 ngày + chưa có note năm nay */}
+        {(() => {
+          const isEligible = event.tags.some(t => OCCASION_TAGS.includes(t));
+          const daysUntil = getDaysUntil(event.eventDate);
+          const currentYear = new Date().getFullYear();
+          const hasNoteThisYear = event.notes?.some(n => n.year === currentYear && (n.gift || n.activity));
+          if (!isEligible || daysUntil < 0 || daysUntil > 30 || hasNoteThisYear) return null;
+          return (
+            <TouchableOpacity
+              style={styles.prepBanner}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate("OccasionPrep", { eventId: event.id, event })}
+            >
+              <LinearGradient
+                colors={[COLORS.primary, "#C850C0"]}
+                style={styles.prepBannerGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons name="sparkles" size={20} color="#fff" />
+                <View style={styles.prepBannerText}>
+                  <Text style={styles.prepBannerTitle}>Còn {daysUntil} ngày — Bắt đầu chuẩn bị?</Text>
+                  <Text style={styles.prepBannerSub}>Gợi ý quà, lịch trình và bài viết cho dịp này</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#fff" />
+              </LinearGradient>
+            </TouchableOpacity>
+          );
+        })()}
+
+        {/* Post-event Banner — eligible + đã qua ≤ 3 ngày + chưa rating */}
+        {(() => {
+          const isEligible = event.tags.some(t => OCCASION_TAGS.includes(t));
+          const daysUntil = getDaysUntil(event.eventDate);
+          const currentYear = new Date().getFullYear();
+          const hasRating = event.notes?.some(n => n.year === currentYear && n.rating);
+          if (!isEligible || daysUntil > 0 || daysUntil < -3 || hasRating) return null;
+          return (
+            <TouchableOpacity
+              style={styles.postEventBanner}
+              activeOpacity={0.85}
+              onPress={() => navigation.navigate("OccasionPrep", { eventId: event.id, event, postEvent: true })}
+            >
+              <Text style={styles.postEventEmoji}>
+                <Ionicons name="heart" size={18} color={COLORS.primary} />
+              </Text>
+              <View style={styles.prepBannerText}>
+                <Text style={styles.postEventTitle}>Hôm qua thế nào?</Text>
+                <Text style={styles.postEventSub}>Ghi lại kỷ niệm và đánh giá dịp này</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+            </TouchableOpacity>
+          );
+        })()}
+
         {/* Checklist Section */}
         <View style={styles.section}>
           <ChecklistSection
@@ -575,6 +641,64 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
 
+  // Occasion Prep Banner
+  prepBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 14,
+    overflow: "hidden",
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  prepBannerGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    gap: 10,
+  },
+  prepBannerText: {
+    flex: 1,
+  },
+  prepBannerTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 2,
+  },
+  prepBannerSub: {
+    fontSize: 12,
+    color: "#fff",
+    opacity: 0.85,
+  },
+  // Post-event Banner
+  postEventBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary + "30",
+  },
+  postEventTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  postEventSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  postEventEmoji: {
+    fontSize: 20,
+  },
   // Quick links compact row
   quickLinksRow: {
     flexDirection: "row",

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,9 +17,10 @@ import { AffiliateProduct } from '../types';
 import { fetchProductsByOccasionPaginated } from '../services/affiliateProductService';
 import { useInfiniteList } from '../hooks/useInfiniteList';
 import ProductCard from '../components/suggestions/ProductCard';
+import { useEvents } from '@contexts/EventsContext';
 
 type OccasionProductsRouteProp = RouteProp<
-  { OccasionProducts: { occasionId: string; occasionName: string; occasionColor?: string } },
+  { OccasionProducts: { occasionId: string; occasionName: string; occasionColor?: string; eventId?: string } },
   'OccasionProducts'
 >;
 
@@ -66,11 +68,34 @@ const OccasionProductsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<OccasionProductsRouteProp>();
   const navigation = useNavigation<any>();
-  const { occasionId, occasionName, occasionColor = COLORS.primary } = route.params;
+  const { occasionId, occasionName, occasionColor = COLORS.primary, eventId } = route.params;
+  const { upsertEventNote } = useEvents();
 
   const [budget, setBudget] = useState<BudgetKey>('all');
   const [sort, setSort] = useState<SortKey>('default');
   const [showSortSheet, setShowSortSheet] = useState(false);
+  const [savingProductId, setSavingProductId] = useState<string | null>(null);
+
+  const handleSaveToEvent = useCallback(async (product: AffiliateProduct) => {
+    if (!eventId || savingProductId) return;
+    setSavingProductId(product.id);
+    try {
+      await upsertEventNote(eventId, {
+        gift: {
+          name: product.name,
+          price: product.price ? Number(product.price) : undefined,
+          source: 'occasion_products',
+          productId: product.id,
+          link: product.affiliateUrl,
+        },
+      });
+      Alert.alert('Đã lưu', `"${product.name}" đã được lưu vào sự kiện.`, [{ text: 'OK' }]);
+    } catch {
+      Alert.alert('Lỗi', 'Không thể lưu quà tặng. Thử lại nhé.');
+    } finally {
+      setSavingProductId(null);
+    }
+  }, [eventId, savingProductId, upsertEventNote]);
 
   const fetchFn = useCallback(
     (page: number) =>
@@ -178,7 +203,14 @@ const OccasionProductsScreen: React.FC = () => {
           data={items}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => <ProductCard product={item} variant="vertical" />}
+          renderItem={({ item }) => (
+            <ProductCard
+              product={item}
+              variant="vertical"
+              occasion={occasionId}
+              onSaveToEvent={eventId ? handleSaveToEvent : undefined}
+            />
+          )}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.3}

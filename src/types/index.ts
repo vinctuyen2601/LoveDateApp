@@ -106,12 +106,21 @@ export interface ReminderSettings {
   reminderTime?: { hour: number; minute: number }; // Giờ nhắc mặc định (default: giờ hiện tại)
 }
 
+export interface EventNoteGift {
+  name: string;
+  price?: number;
+  source?: 'occasion_products' | 'manual';
+  productId?: string;
+  link?: string;
+}
+
 export interface EventNote {
   year: number;
-  gift?: string;
+  gift?: EventNoteGift;
   activity?: string;
   note?: string;
-  photos?: string[]; // URLs hoặc local paths
+  rating?: number;   // 1-5 sao
+  photos?: string[];
 }
 
 export interface Event {
@@ -125,6 +134,7 @@ export interface Event {
   recurrencePattern?: RecurrencePattern; // New: detailed recurrence info
   isDeleted: boolean;
   isNotificationEnabled: boolean; // Toggle notification for this event
+  notes?: EventNote[];
 
   // Sync fields
   localId?: string;
@@ -374,6 +384,7 @@ export interface DatabaseEvent {
   serverId: string | null;
   version: number;
   needsSync: number; // SQLite boolean
+  notes: string | null; // JSON string array of EventNote
   createdAt: string;
   updatedAt: string;
 }
@@ -479,6 +490,7 @@ export interface EventsContextValue {
   getEventsByTag: (tag: string) => Event[]; // Changed from getEventsByCategory
   searchEvents: (query: string) => Event[];
   toggleEventNotification: (id: string) => Promise<void>;
+  upsertEventNote: (eventId: string, noteData: Partial<EventNote>) => Promise<Event>;
 }
 
 export interface SyncContextValue {
@@ -639,23 +651,24 @@ export type ArticleCategory =
 
 export interface Article {
   id: string;
+  slug?: string;
   title: string;
   category: ArticleCategory;
   icon: string;
   color: string;
   content: string;
-  status: 'draft' | 'published' | 'archived';
-  imageUrl?: string;
+  imageUrl?: string | number | any;
   author?: string;
   readTime?: number;
   tags?: string[];
-  likes: number;
-  views: number;
-  isFeatured: boolean;
+  likes?: number;
+  views?: number;
+  status?: 'draft' | 'published' | 'archived';
+  isFeatured?: boolean;
   publishedAt?: string;
-  version: number;
-  createdAt: string;
-  updatedAt: string;
+  version?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DatabaseArticle {

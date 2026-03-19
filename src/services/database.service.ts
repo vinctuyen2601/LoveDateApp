@@ -88,6 +88,16 @@ export async function initializeTables(
       }
     }
 
+    // Add notes column if it doesn't exist (migration)
+    try {
+      await db.execAsync("ALTER TABLE events ADD COLUMN notes TEXT;");
+      console.log("Added notes column to events table");
+    } catch (error: any) {
+      if (!error.message?.includes("duplicate column")) {
+        console.warn("Error adding notes column:", error);
+      }
+    }
+
     console.log("✅ Database schema initialized with tags support");
 
     // Indexes
@@ -486,6 +496,7 @@ function dbEventToEvent(dbEvent: DatabaseEvent): Event {
       : undefined,
     isDeleted: Boolean(dbEvent.isDeleted),
     isNotificationEnabled: dbEvent.isNotificationEnabled !== undefined ? Boolean(dbEvent.isNotificationEnabled) : true,
+    notes: dbEvent.notes ? JSON.parse(dbEvent.notes) : undefined,
     localId: dbEvent.localId || undefined,
     serverId: dbEvent.serverId || undefined,
     version: dbEvent.version,
@@ -524,6 +535,8 @@ function eventToDbFormat(event: Partial<Event>): Partial<DatabaseEvent> {
   if (event.version !== undefined) dbEvent.version = event.version;
   if (event.needsSync !== undefined)
     dbEvent.needsSync = event.needsSync ? 1 : 0;
+  if (event.notes !== undefined)
+    dbEvent.notes = event.notes ? JSON.stringify(event.notes) : null;
   if (event.createdAt !== undefined) dbEvent.createdAt = event.createdAt;
   if (event.updatedAt !== undefined) dbEvent.updatedAt = event.updatedAt;
 

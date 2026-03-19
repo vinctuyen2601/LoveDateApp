@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Event, EventFormData, EventsContextValue } from '../types';
+import { Event, EventFormData, EventNote, EventsContextValue } from '../types';
 import * as DB from '../services/database.service';
 import { scheduleUpcomingNotifications } from '../services/notificationScheduler.service';
 
@@ -248,6 +248,31 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     }
   };
 
+  const upsertEventNote = async (eventId: string, noteData: Partial<EventNote>): Promise<Event> => {
+    try {
+      const existing = events.find(e => e.id === eventId);
+      if (!existing) throw new Error('Event not found');
+      const currentYear = new Date().getFullYear();
+      const year = noteData.year ?? currentYear;
+      const notes = existing.notes ? [...existing.notes] : [];
+      const idx = notes.findIndex(n => n.year === year);
+      if (idx >= 0) {
+        notes[idx] = { ...notes[idx], ...noteData, year };
+      } else {
+        notes.push({ year, ...noteData } as EventNote);
+      }
+      const updated = await DB.updateEvent(db, eventId, { notes, needsSync: true, version: Date.now() });
+      await refreshAndReschedule();
+      authService.isAnonymous().then(isAnon => {
+        if (!isAnon) syncService.sync().catch(err => console.warn('Note sync failed:', err));
+      });
+      return updated;
+    } catch (err: any) {
+      console.error('Failed to upsert event note:', err);
+      throw err;
+    }
+  };
+
   const value: EventsContextValue = {
     events,
     isLoading,
@@ -261,6 +286,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     getEventsByTag,
     searchEvents,
     toggleEventNotification,
+    upsertEventNote,
   };
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;

@@ -4,31 +4,8 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-
-// Article interface matching backend schema
-export interface Article {
-  id: string; // UUID from backend or local ID
-  slug?: string; // URL-friendly slug for web sharing
-  title: string;
-  category: ArticleCategory;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string; // Hex color code
-  content: string; // HTML content from CKEditor (supports images, videos, rich formatting, embeds, etc.)
-  imageUrl?: string | number | any; // Remote image URL from CDN/backend or local require()
-  author?: string; // Author name
-  readTime?: number; // Estimated read time in minutes
-  tags?: string[]; // Searchable tags
-  likes?: number; // Like count
-  views?: number; // View count
-  status?: 'draft' | 'published' | 'archived'; // Status from backend API
-  isFeatured?: boolean; // Featured article flag
-  publishedAt?: string; // ISO date when published
-  createdAt?: string; // ISO date string
-  updatedAt?: string; // ISO date string
-  version?: number; // Version for conflict resolution
-}
-
-export type ArticleCategory = 'gifts' | 'dates' | 'communication' | 'zodiac' | 'personality' | 'all';
+import type { Article, ArticleCategory } from '../types';
+export type { Article, ArticleCategory } from '../types';
 
 // Category metadata for UI display
 export interface CategoryInfo {
