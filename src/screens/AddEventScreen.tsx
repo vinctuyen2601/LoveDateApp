@@ -343,6 +343,7 @@ const AddEventScreen: React.FC = () => {
           <TextInput
             style={[styles.input, errors.title && styles.inputError]}
             placeholder="VD: Sinh nhật vợ"
+            placeholderTextColor={`${COLORS.textSecondary}99`}
             value={formData.title}
             onChangeText={(text) => {
               setFormData({ ...formData, title: text });

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -10,20 +10,17 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Calendar, DateData } from 'react-native-calendars';
-import { COLORS } from '@themes/colors';
-import { EventFormData, PREDEFINED_TAGS } from '../../types';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Calendar, DateData } from "react-native-calendars";
+import { COLORS } from "@themes/colors";
+import { EventFormData, PREDEFINED_TAGS } from "../../types";
 
-export const ONBOARDING_KEY = '@onboarding_v2_completed';
+export const ONBOARDING_KEY = "@onboarding_v2_completed";
 
-const GRADIENT_WELCOME: [string, string] = ['#FF6B9D', '#FF8E53'];
-const GRADIENT_SETUP: [string, string] = ['#667EEA', '#764BA2'];
-const GRADIENT_CONFIRM: [string, string] = ['#43C59E', '#2196F3'];
-const GRADIENT_AUTH: [string, string] = ['#F093FB', '#F5576C'];
+const GRADIENT_WELCOME: [string, string] = ["#FF6B9D", "#FF8E53"];
 
 interface Props {
   onComplete: () => void;
@@ -39,34 +36,57 @@ const getDaysUntilBirthday = (month: number, day: number): number => {
   if (next <= today) {
     next = new Date(thisYear + 1, month, day);
   }
-  const diff = Math.ceil((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.ceil(
+    (next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
   return diff;
 };
 
-const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent, addEvent }) => {
+const OnboardingOverlay: React.FC<Props> = ({
+  onComplete,
+  onRegister,
+  onAddEvent,
+  addEvent,
+}) => {
   const [step, setStep] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   // Screen 1 state
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [birthdayDate, setBirthdayDate] = useState<Date>(new Date());
   const [dateSelected, setDateSelected] = useState(false);
 
   // Screen 2 state
   const [daysUntil, setDaysUntil] = useState(0);
-  const [savedName, setSavedName] = useState('');
+  const [savedName, setSavedName] = useState("");
 
   const goToStep = (next: number) => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: -30, duration: 150, useNativeDriver: true }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -30,
+        duration: 150,
+        useNativeDriver: true,
+      }),
     ]).start(() => {
       setStep(next);
       slideAnim.setValue(30);
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
       ]).start();
     });
   };
@@ -75,44 +95,59 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
   const dismiss = (callback?: () => void) => {
     if (dismissedRef.current) return;
     dismissedRef.current = true;
-    const finish = () => { onComplete(); callback?.(); };
-    Animated.timing(fadeAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start(finish);
+    const finish = () => {
+      onComplete();
+      callback?.();
+    };
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: true,
+    }).start(finish);
     setTimeout(finish, 350);
   };
 
   const handleSaveBirthday = async () => {
-    const displayName = name.trim() || 'người thương';
+    const displayName = name.trim() || "người thương";
     setSavedName(displayName);
-    const days = getDaysUntilBirthday(birthdayDate.getMonth(), birthdayDate.getDate());
+    const days = getDaysUntilBirthday(
+      birthdayDate.getMonth(),
+      birthdayDate.getDate()
+    );
     setDaysUntil(days);
 
-    if (addEvent) {
-      try {
-        const today = new Date();
-        const thisYear = today.getFullYear();
-        let eventDate = new Date(thisYear, birthdayDate.getMonth(), birthdayDate.getDate());
-        if (eventDate <= today) {
-          eventDate = new Date(thisYear + 1, birthdayDate.getMonth(), birthdayDate.getDate());
-        }
-        await addEvent({
-          title: `Sinh nhật ${displayName}`,
-          eventDate,
-          isLunarCalendar: false,
-          tags: ['birthday'],
-          remindDaysBefore: [0, 1, 7],
-          reminderTime: { hour: 9, minute: 0 },
-          isRecurring: true,
-          recurrencePattern: {
-            type: 'yearly',
-            month: birthdayDate.getMonth() + 1,
-            day: birthdayDate.getDate(),
-          },
-        });
-      } catch (e) {
-        console.warn('Onboarding: failed to create event', e);
-      }
-    }
     goToStep(2);
+
+    if (addEvent) {
+      const today = new Date();
+      const thisYear = today.getFullYear();
+      let eventDate = new Date(
+        thisYear,
+        birthdayDate.getMonth(),
+        birthdayDate.getDate()
+      );
+      if (eventDate <= today) {
+        eventDate = new Date(
+          thisYear + 1,
+          birthdayDate.getMonth(),
+          birthdayDate.getDate()
+        );
+      }
+      addEvent({
+        title: `Sinh nhật ${displayName}`,
+        eventDate,
+        isLunarCalendar: false,
+        tags: ["birthday"],
+        remindDaysBefore: [0, 1, 7],
+        reminderTime: { hour: 9, minute: 0 },
+        isRecurring: true,
+        recurrencePattern: {
+          type: "yearly",
+          month: birthdayDate.getMonth() + 1,
+          day: birthdayDate.getDate(),
+        },
+      }).catch((e: unknown) => console.warn("Onboarding: failed to create event", e));
+    }
   };
 
   const handleSkipSetup = () => {
@@ -120,13 +155,17 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
   };
 
   const handleComplete = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
     dismiss();
   };
 
   const handleRegister = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    Animated.timing(fadeAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start(() => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: true,
+    }).start(() => {
       onRegister?.();
     });
   };
@@ -135,13 +174,13 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
     return `${date.getDate()} tháng ${date.getMonth() + 1}`;
   };
 
-  const displayLabel = name.trim() ? name.trim() : 'người thương';
+  const displayLabel = name.trim() ? name.trim() : "người thương";
 
   // Dots
   const totalSteps = 4;
 
   return (
-    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+    <View style={styles.overlay}>
       {/* Dots */}
       <View style={styles.topBar}>
         <View style={styles.dots}>
@@ -156,40 +195,55 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
             />
           ))}
         </View>
-        {step === 1 && (
+        {/* {step === 1 && (
           <TouchableOpacity onPress={handleSkipSetup} style={styles.skipBtn}>
             <Text style={styles.skipText}>Bỏ qua</Text>
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
 
       <Animated.View
-        style={[styles.stepContainer, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}
+        style={[
+          styles.stepContainer,
+          { opacity: fadeAnim, transform: [{ translateX: slideAnim }] },
+        ]}
       >
         {/* ── SCREEN 0: WELCOME ── */}
         {step === 0 && (
-          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
             <View style={styles.centerContent}>
-              <View style={styles.iconWrap}>
-                <LinearGradient colors={GRADIENT_WELCOME} style={styles.iconGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                  <Image
-                    source={require('../../../assets/adaptive-icon.png')}
-                    style={styles.appIcon}
-                    resizeMode="contain"
-                  />
-                </LinearGradient>
-              </View>
+              <Image
+                source={require("../../../assets/adaptive-icon.png")}
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
               <View style={styles.titleRow}>
                 <Text style={styles.title}>Chào mừng đến Ngày Yêu Thương </Text>
-                <Image source={require('../../../assets/icons/tags/hearts.png')} style={styles.titleEmoji} />
+                <Image
+                  source={require("../../../assets/icons/tags/hearts.png")}
+                  style={styles.titleEmoji}
+                />
               </View>
               <Text style={styles.subtitle}>
-                Không bao giờ quên ngày đặc biệt — Ngày Yêu Thương sẽ nhắc và tạo checklist chuẩn bị cho bạn.
+                Không bao giờ quên ngày đặc biệt — Ngày Yêu Thương sẽ nhắc và
+                tạo checklist chuẩn bị cho bạn.
               </Text>
             </View>
             <View style={styles.bottomArea}>
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => goToStep(1)} activeOpacity={0.85}>
-                <LinearGradient colors={GRADIENT_WELCOME} style={styles.primaryBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => goToStep(1)}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={GRADIENT_WELCOME}
+                  style={styles.primaryBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
                   <Text style={styles.primaryBtnText}>Bắt đầu nào</Text>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </LinearGradient>
@@ -200,16 +254,23 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
 
         {/* ── SCREEN 1: SETUP ── */}
         {step === 1 && (
-          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <ScrollView style={styles.flex} contentContainerStyle={styles.setupContent} keyboardShouldPersistTaps="handled">
-              <LinearGradient colors={GRADIENT_SETUP} style={styles.iconCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <Ionicons name="heart" size={52} color="#fff" />
-              </LinearGradient>
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <ScrollView
+              style={styles.flex}
+              contentContainerStyle={styles.setupContent}
+              keyboardShouldPersistTaps="handled"
+            >
               <View style={styles.titleRow}>
-                <Text style={styles.title}>Sinh nhật của{'\n'}người thương bạn </Text>
-                <Image source={require('../../../assets/icons/tags/cake.png')} style={styles.titleEmoji} />
+                <Text style={styles.title}>
+                  Sinh nhật của{"\n"}người thương bạn{" "}
+                </Text>
               </View>
-              <Text style={styles.subtitle}>Thêm ngay để không bao giờ quên</Text>
+              <Text style={styles.subtitle}>
+                Thêm ngay để không bao giờ quên
+              </Text>
 
               {/* Name input */}
               <View style={styles.inputGroup}>
@@ -217,7 +278,7 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
                 <TextInput
                   style={styles.textInput}
                   placeholder="Ví dụ: Minh, Anh, Em..."
-                  placeholderTextColor={COLORS.textSecondary + '80'}
+                  placeholderTextColor={COLORS.textSecondary + "80"}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -231,41 +292,53 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
                 <Text style={styles.inputLabel}>
                   Sinh nhật của {displayLabel} là ngày nào?
                 </Text>
-                {dateSelected && (
-                  <Text style={styles.dateSelectedLabel}>
-                    {formatBirthday(birthdayDate)}
-                  </Text>
-                )}
               </View>
 
               <View style={styles.calendarCard}>
                 <Calendar
-                  current={birthdayDate.toISOString().split('T')[0]}
+                  current={birthdayDate.toISOString().split("T")[0]}
+                  monthFormat="MMMM"
                   onDayPress={(day: DateData) => {
-                    const [year, month, date] = day.dateString.split('-').map(Number);
-                    const selected = new Date(year, month - 1, date, 12, 0, 0, 0);
+                    const [year, month, date] = day.dateString
+                      .split("-")
+                      .map(Number);
+                    const selected = new Date(
+                      year,
+                      month - 1,
+                      date,
+                      12,
+                      0,
+                      0,
+                      0
+                    );
                     setBirthdayDate(selected);
                     setDateSelected(true);
                   }}
                   markedDates={{
-                    [birthdayDate.toISOString().split('T')[0]]: dateSelected
+                    [birthdayDate.toISOString().split("T")[0]]: dateSelected
                       ? { selected: true, selectedColor: COLORS.primary }
                       : {},
                   }}
                   theme={{
-                    backgroundColor: 'transparent',
-                    calendarBackground: 'transparent',
+                    backgroundColor: "transparent",
+                    calendarBackground: "transparent",
                     textSectionTitleColor: COLORS.textSecondary,
                     selectedDayBackgroundColor: COLORS.primary,
                     selectedDayTextColor: COLORS.white,
                     todayTextColor: COLORS.primary,
                     dayTextColor: COLORS.textPrimary,
                     textDisabledColor: COLORS.textLight,
+                    dotColor: COLORS.primary,
+                    selectedDotColor: COLORS.white,
                     arrowColor: COLORS.primary,
                     monthTextColor: COLORS.textPrimary,
-                    textDayFontWeight: '400',
-                    textMonthFontWeight: '600',
-                    textDayHeaderFontWeight: '500',
+                    indicatorColor: COLORS.primary,
+                    textDayFontFamily: "System",
+                    textMonthFontFamily: "System",
+                    textDayHeaderFontFamily: "System",
+                    textDayFontWeight: "400",
+                    textMonthFontWeight: "600",
+                    textDayHeaderFontWeight: "500",
                     textDayFontSize: 15,
                     textMonthFontSize: 17,
                     textDayHeaderFontSize: 13,
@@ -275,8 +348,12 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
                   firstDay={1}
                   renderArrow={(direction: string) => (
                     <Ionicons
-                      name={direction === 'left' ? 'chevron-back' : 'chevron-forward'}
-                      size={22}
+                      name={
+                        direction === "left"
+                          ? "chevron-back"
+                          : "chevron-forward"
+                      }
+                      size={24}
                       color={COLORS.primary}
                     />
                   )}
@@ -286,13 +363,16 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
 
             <View style={styles.bottomArea}>
               <TouchableOpacity
-                style={[styles.primaryBtn, !dateSelected && styles.primaryBtnDisabled]}
+                style={[
+                  styles.primaryBtn,
+                  !dateSelected && styles.primaryBtnDisabled,
+                ]}
                 onPress={handleSaveBirthday}
                 disabled={!dateSelected}
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={dateSelected ? GRADIENT_SETUP : ['#ccc', '#aaa']}
+                  colors={dateSelected ? GRADIENT_WELCOME : ["#ccc", "#aaa"]}
                   style={styles.primaryBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -309,12 +389,12 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
         {step === 2 && (
           <View style={styles.flex}>
             <View style={styles.centerContent}>
-              <LinearGradient colors={GRADIENT_CONFIRM} style={styles.iconCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <Ionicons name="checkmark" size={60} color="#fff" />
-              </LinearGradient>
               <View style={styles.titleRow}>
                 <Text style={styles.title}>Tuyệt vời! </Text>
-                <Image source={require('../../../assets/icons/tags/confetti.png')} style={styles.titleEmoji} />
+                <Image
+                  source={require("../../../assets/icons/tags/confetti.png")}
+                  style={styles.titleEmoji}
+                />
               </View>
               {/* Days countdown — hero number */}
               <View style={styles.countdownCard}>
@@ -324,22 +404,34 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
 
               <View style={styles.confirmCard}>
                 <Text style={styles.confirmMain}>
-                  Sinh nhật của{' '}
-                  <Text style={styles.confirmName}>{savedName}</Text>
-                  {' '}đã được lưu
+                  Sinh nhật của{" "}
+                  <Text style={styles.confirmName}>{savedName}</Text> đã được
+                  lưu
                 </Text>
-                <View style={styles.confirmDivider} />
                 <Text style={styles.confirmRelax}>
-                  Ngày Yêu Thương sẽ nhắc bạn đúng lúc —{'\n'}đừng lo gì cả
+                  Bạn sẽ được nhắc trước{" "}
+                  <Text style={styles.confirmName}>7 ngày</Text>,{" "}
+                  <Text style={styles.confirmName}>1 ngày</Text> và{" "}
+                  <Text style={styles.confirmName}>đúng ngày</Text> sinh nhật
                 </Text>
               </View>
               <Text style={styles.confirmNote}>
-                Bạn có thể chỉnh sửa và thêm nhiều ngày khác trong phần cài đặt sau nhé!
+                Bạn có thể chỉnh sửa và thêm nhiều ngày khác trong phần cài đặt
+                sau nhé!
               </Text>
             </View>
             <View style={styles.bottomArea}>
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => goToStep(3)} activeOpacity={0.85}>
-                <LinearGradient colors={GRADIENT_CONFIRM} style={styles.primaryBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={() => goToStep(3)}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={GRADIENT_WELCOME}
+                  style={styles.primaryBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
                   <Text style={styles.primaryBtnText}>Tiếp tục</Text>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </LinearGradient>
@@ -352,48 +444,62 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
         {step === 3 && (
           <View style={styles.flex}>
             <View style={styles.centerContent}>
-              <LinearGradient colors={GRADIENT_AUTH} style={styles.iconCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <Ionicons name="shield-checkmark" size={52} color="#fff" />
-              </LinearGradient>
               <Text style={styles.title}>Giữ dữ liệu an toàn</Text>
               <Text style={styles.subtitle}>
-                Tạo tài khoản để không mất dữ liệu khi đổi máy và đồng bộ trên nhiều thiết bị
+                Tạo tài khoản để không mất dữ liệu khi đổi máy và đồng bộ trên
+                nhiều thiết bị
               </Text>
 
               <View style={styles.featureList}>
                 {[
-                  { icon: 'cloud-upload', text: 'Backup tự động lên cloud' },
-                  { icon: 'sync', text: 'Đồng bộ nhiều thiết bị' },
-                  { icon: 'lock-closed', text: 'Dữ liệu được mã hóa' },
+                  { icon: "cloud-upload", text: "Backup tự động lên cloud" },
+                  { icon: "sync", text: "Đồng bộ nhiều thiết bị" },
+                  { icon: "lock-closed", text: "Dữ liệu được mã hóa" },
                 ].map((f) => (
                   <View key={f.text} style={styles.featureRow}>
-                    <Ionicons name={f.icon as any} size={18} color={COLORS.primary} />
+                    <Ionicons
+                      name={f.icon as any}
+                      size={18}
+                      color={COLORS.primary}
+                    />
                     <Text style={styles.featureText}>{f.text}</Text>
                   </View>
                 ))}
               </View>
             </View>
             <View style={styles.bottomArea}>
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleRegister} activeOpacity={0.85}>
-                <LinearGradient colors={GRADIENT_AUTH} style={styles.primaryBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+              <TouchableOpacity
+                style={styles.primaryBtn}
+                onPress={handleRegister}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={GRADIENT_WELCOME}
+                  style={styles.primaryBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
                   <Ionicons name="person-add" size={18} color="#fff" />
                   <Text style={styles.primaryBtnText}>Đăng ký tài khoản</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.ghostBtn} onPress={handleComplete}>
+              <TouchableOpacity
+                style={styles.ghostBtn}
+                onPress={handleComplete}
+              >
                 <Text style={styles.ghostBtnText}>Dùng thử trước</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
       </Animated.View>
-    </Animated.View>
+    </View>
   );
 };
 
 export const checkOnboardingComplete = async (): Promise<boolean> => {
   const value = await AsyncStorage.getItem(ONBOARDING_KEY);
-  return value === 'true';
+  return value === "true";
 };
 
 const styles = StyleSheet.create({
@@ -402,6 +508,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     zIndex: 9999,
     elevation: 9999,
+    overflow: 'hidden',
   },
   flex: {
     flex: 1,
@@ -409,15 +516,15 @@ const styles = StyleSheet.create({
   topBar: {
     paddingTop: 52,
     paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   dots: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 6,
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   dot: {
     width: 8,
@@ -430,105 +537,107 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
   dotDone: {
-    backgroundColor: COLORS.primary + '60',
+    backgroundColor: COLORS.primary + "60",
   },
   skipBtn: {
-    position: 'absolute',
+    position: "absolute",
     right: 24,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: COLORS.border + '80',
+    backgroundColor: COLORS.border + "80",
   },
   skipText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   stepContainer: {
     flex: 1,
   },
   centerContent: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 32,
   },
   setupContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   iconWrap: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    overflow: 'hidden',
-    marginBottom: 36,
-    shadowColor: '#FF6B9D',
-    shadowOffset: { width: 0, height: 8 },
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    overflow: "hidden",
+    marginBottom: 20,
+    shadowColor: "#FF6B9D",
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 12,
+    elevation: 6,
   },
   iconGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   appIcon: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    marginBottom: 6,
   },
   titleEmoji: {
     width: 28,
     height: 28,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: "700",
     color: COLORS.textPrimary,
-    textAlign: 'center',
-    lineHeight: 32,
+    textAlign: "center",
+    lineHeight: 28,
+    marginTop: 20,
   },
   subtitle: {
     fontSize: 15,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 23,
     marginBottom: 8,
   },
   // Setup screen
   inputGroup: {
-    width: '100%',
-    marginTop: 20,
+    width: "100%",
+    marginTop: 12,
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
@@ -543,57 +652,63 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   calendarCard: {
-    backgroundColor: COLORS.white,
+    width: "100%",
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
-    overflow: 'hidden',
+    padding: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: 4,
+    elevation: 2,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   dateSelectedLabel: {
     fontSize: 14,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 4,
-    textAlign: 'center',
+    textAlign: "center",
   },
   // Countdown hero
   countdownCard: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 16,
     marginBottom: 4,
   },
   countdownNumber: {
     fontSize: 72,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.primary,
     lineHeight: 80,
   },
   countdownLabel: {
     fontSize: 16,
     color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
     marginTop: 2,
   },
   // Confirmation screen
   confirmCard: {
-    width: '100%',
+    width: "100%",
     backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 20,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: COLORS.primary + '20',
+    borderColor: COLORS.primary + "20",
     gap: 12,
   },
   confirmMain: {
     fontSize: 16,
     color: COLORS.textPrimary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   confirmName: {
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.primary,
   },
   confirmDivider: {
@@ -603,25 +718,25 @@ const styles = StyleSheet.create({
   confirmRelax: {
     fontSize: 15,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 23,
   },
   confirmNote: {
     fontSize: 13,
-    color: COLORS.textSecondary + 'aa',
-    textAlign: 'center',
+    color: COLORS.textSecondary + "aa",
+    textAlign: "center",
     marginTop: 16,
     lineHeight: 19,
   },
   // Auth screen
   featureList: {
-    width: '100%',
+    width: "100%",
     marginTop: 24,
     gap: 14,
   },
   featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     backgroundColor: COLORS.surface,
     borderRadius: 10,
@@ -631,7 +746,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 14,
     color: COLORS.textPrimary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   // Bottom
   bottomArea: {
@@ -641,8 +756,8 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#FF6B9D',
+    overflow: "hidden",
+    shadowColor: "#FF6B9D",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -653,25 +768,25 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   primaryBtnGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 16,
     gap: 10,
   },
   primaryBtnText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   ghostBtn: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 12,
   },
   ghostBtnText: {
     fontSize: 15,
     color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
 

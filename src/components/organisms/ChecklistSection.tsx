@@ -130,6 +130,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
               <TextInput
                 style={styles.input}
                 placeholder="Nhập công việc cần làm..."
+                placeholderTextColor={`${COLORS.textSecondary}99`}
                 value={newItemTitle}
                 onChangeText={setNewItemTitle}
                 autoFocus

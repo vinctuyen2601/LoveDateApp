@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { AffiliateProduct } from "../../types";
 import { COLORS } from "@themes/colors";
 import { logProductClick } from "../../services/analyticsService";
+import { useEvents } from "../../contexts/EventsContext";
 
 const CATEGORY_VI: Record<string, string> = {
   gift: "Quà tặng",
@@ -33,7 +34,11 @@ const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
 };
 
 const stripHtml = (html: string): string =>
-  html?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
+  html
+    ?.replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() ?? "";
 
 function formatPrice(price?: number): string | null {
   if (price == null) return null;
@@ -49,22 +54,30 @@ interface GiftSuggestionCardProps {
   product: AffiliateProduct;
   onSave?: (giftName: string) => void;
   showSaveButton?: boolean;
+  eventId?: string;
 }
 
 const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   product,
   onSave,
   showSaveButton = true,
+  eventId,
 }) => {
   const navigation = useNavigation<any>();
+  const { upsertEventNote } = useEvents();
   const [imageError, setImageError] = useState(false);
+  const [giftSaved, setGiftSaved] = useState(false);
 
   const handleCardPress = () => {
-    navigation.navigate('ProductDetail', { product });
+    navigation.navigate("ProductDetail", { product });
   };
 
   const handleOpenLink = () => {
-    logProductClick({ id: product.id, name: product.name, affiliateUrl: product.affiliateUrl });
+    logProductClick({
+      id: product.id,
+      name: product.name,
+      affiliateUrl: product.affiliateUrl,
+    });
     Linking.canOpenURL(product.affiliateUrl)
       .then((supported) => {
         if (supported) {
@@ -74,6 +87,25 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
         }
       })
       .catch(() => Alert.alert("Lỗi", "Không thể mở liên kết"));
+  };
+
+  const handleSelectGift = async () => {
+    if (!eventId) return;
+    try {
+      await upsertEventNote(eventId, {
+        gift: {
+          name: product.name,
+          price: Number(product.price) || undefined,
+          source: "occasion_products",
+          productId: product.id,
+          link: product.affiliateUrl,
+        },
+      });
+      setGiftSaved(true);
+    } catch {
+      // fail silently — gift save is best-effort
+    }
+    handleOpenLink();
   };
 
   const priceFormatted = formatPrice(product.price);
@@ -91,7 +123,11 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   ];
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.85} onPress={handleCardPress}>
+    <TouchableOpacity
+      style={styles.container}
+      activeOpacity={0.85}
+      onPress={handleCardPress}
+    >
       {/* Image / Fallback */}
       <View style={styles.imageWrapper}>
         {showImage ? (
@@ -108,7 +144,11 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
             end={{ x: 1, y: 1 }}
             style={styles.imageFallback}
           >
-            <Ionicons name="gift-outline" size={40} color="rgba(255,255,255,0.9)" />
+            <Ionicons
+              name="gift-outline"
+              size={40}
+              color="rgba(255,255,255,0.9)"
+            />
           </LinearGradient>
         )}
 
@@ -129,14 +169,16 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
                   { backgroundColor: COLORS.primary },
                 ]}
               >
-                <Ionicons name="star" size={11} color="#fff" /><Text style={styles.overlayBadgeText}> Nổi bật</Text>
+                <Ionicons name="star" size={11} color="#fff" />
+                <Text style={styles.overlayBadgeText}> Nổi bật</Text>
               </View>
             )}
             {product.isPopular && (
               <View
                 style={[styles.overlayBadge, { backgroundColor: "#D97706" }]}
               >
-                <Ionicons name="flame" size={11} color="#fff" /><Text style={styles.overlayBadgeText}> Phổ biến</Text>
+                <Ionicons name="flame" size={11} color="#fff" />
+                <Text style={styles.overlayBadgeText}> Phổ biến</Text>
               </View>
             )}
           </View>
@@ -205,10 +247,26 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
 
         {/* Actions */}
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.buyButton} onPress={handleOpenLink}>
-            <Ionicons name="cart-outline" size={16} color={COLORS.white} />
-            <Text style={styles.buyButtonText}>Mua ngay</Text>
-          </TouchableOpacity>
+          {eventId ? (
+            <TouchableOpacity
+              style={[styles.buyButton, giftSaved && styles.buyButtonSaved]}
+              onPress={handleSelectGift}
+            >
+              <Ionicons
+                name={giftSaved ? "checkmark-circle-outline" : "gift-outline"}
+                size={16}
+                color={COLORS.white}
+              />
+              <Text style={styles.buyButtonText}>
+                {giftSaved ? "Đã chọn" : "Chọn quà & Mua"}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.buyButton} onPress={handleOpenLink}>
+              <Ionicons name="cart-outline" size={16} color={COLORS.white} />
+              <Text style={styles.buyButtonText}>Mua ngay</Text>
+            </TouchableOpacity>
+          )}
 
           {showSaveButton && onSave && (
             <TouchableOpacity
@@ -382,6 +440,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: COLORS.white,
+  },
+  buyButtonSaved: {
+    backgroundColor: COLORS.success,
   },
   saveButton: {
     flexDirection: "row",

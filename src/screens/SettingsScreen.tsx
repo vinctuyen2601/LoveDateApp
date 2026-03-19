@@ -650,6 +650,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Nhập tên của bạn"
+              placeholderTextColor={`${COLORS.textSecondary}99`}
               value={editName}
               onChangeText={setEditName}
               autoCapitalize="words"
@@ -693,6 +694,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Tên hiển thị"
+              placeholderTextColor={`${COLORS.textSecondary}99`}
               value={linkDisplayName}
               onChangeText={setLinkDisplayName}
               autoCapitalize="words"
@@ -701,6 +703,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Email"
+              placeholderTextColor={`${COLORS.textSecondary}99`}
               value={linkEmail}
               onChangeText={setLinkEmail}
               keyboardType="email-address"
@@ -710,6 +713,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Mật khẩu (tối thiểu 6 ký tự)"
+              placeholderTextColor={`${COLORS.textSecondary}99`}
               value={linkPassword}
               onChangeText={setLinkPassword}
               secureTextEntry
