@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 import { SubscriptionProduct, PremiumSubscription } from '../types';
 import * as PremiumService from '../services/premium.service';
@@ -19,6 +20,7 @@ import * as PremiumService from '../services/premium.service';
 const PremiumScreen: React.FC = () => {
   const db = useSQLiteContext();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const [selectedProduct, setSelectedProduct] = useState<SubscriptionProduct>(
     PremiumService.SUBSCRIPTION_PRODUCTS[1] // Default to yearly (popular)
@@ -123,7 +125,7 @@ const PremiumScreen: React.FC = () => {
   if (currentSubscription && currentSubscription.status === 'active') {
     return (
       <ScrollView style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => navigation.goBack()}
@@ -312,7 +314,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     paddingHorizontal: 16,
-    paddingTop: 60,
     paddingBottom: 16,
   },
   closeButton: {

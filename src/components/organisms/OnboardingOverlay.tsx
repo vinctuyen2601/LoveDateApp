@@ -7,16 +7,16 @@ import {
   TouchableOpacity,
   Animated,
   TextInput,
-  Platform,
   KeyboardAvoidingView,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Calendar, DateData } from 'react-native-calendars';
 import { COLORS } from '@themes/colors';
-import { EventFormData } from '../../types';
+import { EventFormData, PREDEFINED_TAGS } from '../../types';
 
 export const ONBOARDING_KEY = '@onboarding_v2_completed';
 
@@ -52,7 +52,6 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
   const [name, setName] = useState('');
   const [birthdayDate, setBirthdayDate] = useState<Date>(new Date());
   const [dateSelected, setDateSelected] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Screen 2 state
   const [daysUntil, setDaysUntil] = useState(0);
@@ -96,10 +95,10 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
           eventDate = new Date(thisYear + 1, birthdayDate.getMonth(), birthdayDate.getDate());
         }
         await addEvent({
-          title: `Sinh nhật của ${displayName}`,
+          title: `Sinh nhật ${displayName}`,
           eventDate,
           isLunarCalendar: false,
-          tags: [],
+          tags: ['birthday'],
           remindDaysBefore: [0, 1, 7],
           reminderTime: { hour: 9, minute: 0 },
           isRecurring: true,
@@ -232,45 +231,57 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent
                 <Text style={styles.inputLabel}>
                   Sinh nhật của {displayLabel} là ngày nào?
                 </Text>
-                <TouchableOpacity
-                  style={[styles.datePickerBtn, dateSelected && styles.datePickerBtnSelected]}
-                  onPress={() => setShowDatePicker(true)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name="calendar"
-                    size={20}
-                    color={dateSelected ? COLORS.primary : COLORS.textSecondary}
-                  />
-                  <Text style={[styles.datePickerText, dateSelected && styles.datePickerTextSelected]}>
-                    {dateSelected ? formatBirthday(birthdayDate) : 'Chọn ngày sinh'}
+                {dateSelected && (
+                  <Text style={styles.dateSelectedLabel}>
+                    {formatBirthday(birthdayDate)}
                   </Text>
-                  <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
-                </TouchableOpacity>
+                )}
               </View>
 
-              {showDatePicker && (
-                <DateTimePicker
-                  value={birthdayDate}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(event, date) => {
-                    if (Platform.OS === 'android') setShowDatePicker(false);
-                    if (date) {
-                      setBirthdayDate(date);
-                      setDateSelected(true);
-                    }
+              <View style={styles.calendarCard}>
+                <Calendar
+                  current={birthdayDate.toISOString().split('T')[0]}
+                  onDayPress={(day: DateData) => {
+                    const [year, month, date] = day.dateString.split('-').map(Number);
+                    const selected = new Date(year, month - 1, date, 12, 0, 0, 0);
+                    setBirthdayDate(selected);
+                    setDateSelected(true);
                   }}
+                  markedDates={{
+                    [birthdayDate.toISOString().split('T')[0]]: dateSelected
+                      ? { selected: true, selectedColor: COLORS.primary }
+                      : {},
+                  }}
+                  theme={{
+                    backgroundColor: 'transparent',
+                    calendarBackground: 'transparent',
+                    textSectionTitleColor: COLORS.textSecondary,
+                    selectedDayBackgroundColor: COLORS.primary,
+                    selectedDayTextColor: COLORS.white,
+                    todayTextColor: COLORS.primary,
+                    dayTextColor: COLORS.textPrimary,
+                    textDisabledColor: COLORS.textLight,
+                    arrowColor: COLORS.primary,
+                    monthTextColor: COLORS.textPrimary,
+                    textDayFontWeight: '400',
+                    textMonthFontWeight: '600',
+                    textDayHeaderFontWeight: '500',
+                    textDayFontSize: 15,
+                    textMonthFontSize: 17,
+                    textDayHeaderFontSize: 13,
+                  }}
+                  enableSwipeMonths={true}
+                  hideExtraDays={false}
+                  firstDay={1}
+                  renderArrow={(direction: string) => (
+                    <Ionicons
+                      name={direction === 'left' ? 'chevron-back' : 'chevron-forward'}
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  )}
                 />
-              )}
-              {Platform.OS === 'ios' && showDatePicker && (
-                <TouchableOpacity
-                  style={styles.dateConfirmBtn}
-                  onPress={() => { setDateSelected(true); setShowDatePicker(false); }}
-                >
-                  <Text style={styles.dateConfirmText}>Xong</Text>
-                </TouchableOpacity>
-              )}
+              </View>
             </ScrollView>
 
             <View style={styles.bottomArea}>
@@ -531,42 +542,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  datePickerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 10,
+  calendarCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.border,
+    marginBottom: 4,
   },
-  datePickerBtnSelected: {
-    borderColor: COLORS.primary + '60',
-    backgroundColor: COLORS.primary + '08',
-  },
-  datePickerText: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.textSecondary,
-  },
-  datePickerTextSelected: {
-    color: COLORS.textPrimary,
-    fontWeight: '500',
-  },
-  dateConfirmBtn: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-  },
-  dateConfirmText: {
-    color: '#fff',
-    fontWeight: '600',
+  dateSelectedLabel: {
     fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
   },
   // Countdown hero
   countdownCard: {

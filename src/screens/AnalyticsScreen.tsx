@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 import StatCard from '@components/atoms/StatCard';
 import * as AnalyticsService from '../services/analytics.service';
@@ -20,6 +21,7 @@ const CHART_WIDTH = SCREEN_WIDTH - 32;
 
 const AnalyticsScreen: React.FC = () => {
   const db = useSQLiteContext();
+  const insets = useSafeAreaInsets();
 
   const [analytics, setAnalytics] = useState<AnalyticsService.AnalyticsDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,7 +95,7 @@ const AnalyticsScreen: React.FC = () => {
       }
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <Text style={styles.headerTitle}>Thống kê</Text>
         <Text style={styles.headerSubtitle}>Tổng quan hoạt động của bạn</Text>
       </View>
@@ -358,7 +360,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 60,
     paddingBottom: 20,
     backgroundColor: COLORS.white,
   },
