@@ -644,6 +644,7 @@ export const getTagInfo = (value: string) =>
 export type ArticleCategory =
   | "gifts"
   | "dates"
+  | "experiences"
   | "communication"
   | "zodiac"
   | "personality"
