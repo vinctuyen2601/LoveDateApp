@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import IconImage from "@components/atoms/IconImage";
 import { getSpecialDateImage } from "@lib/iconImages";
 import { useNavigation } from "@react-navigation/native";
@@ -423,23 +424,28 @@ const SettingsScreen: React.FC = () => {
       {/* Link Account Section */}
       {isAnonymous && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Liên kết tài khoản</Text>
-
-          <SettingItem
-            icon="mail"
-            title="Email & Mật khẩu"
-            subtitle={isLinked("password") ? "Đã liên kết" : "Chưa liên kết"}
-            onPress={() => !isLinked("password") && setShowLinkEmailModal(true)}
-            linked={isLinked("password")}
-            disabled={isLinked("password")}
-          />
-
-          <SettingItem
-            icon="log-in-outline"
-            title="Đã có tài khoản?"
-            subtitle="Đăng nhập để khôi phục dữ liệu"
+          <Text style={styles.sectionTitle}>Tài khoản</Text>
+          <TouchableOpacity
+            style={styles.authCard}
             onPress={() => navigation.navigate("Auth")}
-          />
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={[COLORS.primary, COLORS.primary + 'CC']}
+              style={styles.authCardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <View style={styles.authCardContent}>
+                <Ionicons name="person-circle-outline" size={36} color="#fff" />
+                <View style={styles.authCardText}>
+                  <Text style={styles.authCardTitle}>Đăng nhập / Đăng ký</Text>
+                  <Text style={styles.authCardSubtitle}>Backup dữ liệu và đồng bộ nhiều thiết bị</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#fff" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -1226,6 +1232,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: COLORS.white,
+  },
+  authCard: {
+    borderRadius: 14,
+    overflow: "hidden",
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  authCardGradient: {
+    borderRadius: 14,
+  },
+  authCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    gap: 12,
+  },
+  authCardText: {
+    flex: 1,
+  },
+  authCardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+    marginBottom: 2,
+  },
+  authCardSubtitle: {
+    fontSize: 13,
+    color: "#fff",
+    opacity: 0.85,
   },
 });
 
