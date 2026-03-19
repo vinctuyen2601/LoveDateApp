@@ -76,7 +76,7 @@ const TabNavigator: React.FC = () => {
         name="Suggestions"
         component={SuggestionsScreen}
         options={{
-          title: 'Gợi ý',
+          title: 'Khám phá',
           headerShown: false,
         }}
       />

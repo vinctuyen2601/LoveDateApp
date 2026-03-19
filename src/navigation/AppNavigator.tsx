@@ -2,6 +2,7 @@ import React, { createRef, useRef, useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '@contexts/AuthContext';
+import { useEvents } from '@contexts/EventsContext';
 import { logScreenView } from '../services/analyticsService';
 import { COLORS } from '@themes/colors';
 import AuthScreen from '../screens/AuthScreen';
@@ -37,7 +38,8 @@ export function navigate(name: string, params?: any) {
 }
 
 const AppNavigator: React.FC = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
+  const { addEvent } = useEvents();
   const routeNameRef = useRef<string | undefined>(undefined);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
 
@@ -45,7 +47,7 @@ const AppNavigator: React.FC = () => {
     checkOnboardingComplete().then(done => {
       setShowOnboarding(!done);
     });
-  }, []);
+  }, [user?.id]);
 
   if (isLoading) {
     // Show splash screen while auto-creating anonymous account
@@ -222,6 +224,11 @@ const AppNavigator: React.FC = () => {
           setShowOnboarding(false);
           navigate('Auth');
         }}
+        onAddEvent={() => {
+          setShowOnboarding(false);
+          navigate('AddEvent');
+        }}
+        addEvent={addEvent}
       />
     )}
     </>

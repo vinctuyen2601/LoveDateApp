@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  BackHandler,
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
@@ -63,6 +64,7 @@ const AddEventScreen: React.FC = () => {
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0); // 0=Tên, 1=Thời gian, 2=Nhắc nhở, 3=Nhãn
 
   // Load existing event data when in Edit mode
   useEffect(() => {
@@ -103,6 +105,47 @@ const AddEventScreen: React.FC = () => {
       }
     }
   }, [isEditMode, eventId]);
+
+  // Override header back button to go to previous step instead of exiting
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () =>
+        currentStep > 0 ? (
+          <TouchableOpacity
+            onPress={() => setCurrentStep((s) => s - 1)}
+            style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={26} color={COLORS.textPrimary} />
+          </TouchableOpacity>
+        ) : undefined,
+    });
+  }, [navigation, currentStep]);
+
+  // Android hardware back — navigate to previous step instead of exiting
+  useEffect(() => {
+    const onBack = () => {
+      if (currentStep > 0) {
+        setCurrentStep((s) => s - 1);
+        return true; // consume event
+      }
+      return false; // let default behavior (exit) happen
+    };
+    const sub = BackHandler.addEventListener("hardwareBackPress", onBack);
+    return () => sub.remove();
+  }, [currentStep]);
+
+  // Validate current step before advancing
+  const handleNext = () => {
+    if (currentStep === 0) {
+      if (!formData.title.trim()) {
+        setErrors({ title: "Vui lòng nhập tên sự kiện" });
+        return;
+      }
+      setErrors({});
+    }
+    setCurrentStep((s) => s + 1);
+  };
 
   const handleSubmit = async () => {
     // Validate
@@ -237,30 +280,47 @@ const AddEventScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Step Progress Indicator */}
       <View style={styles.stepIndicator}>
-        {formSteps.map((step, index) => (
-          <View key={step.label} style={styles.stepItem}>
-            <View
-              style={[
-                styles.stepDot,
-                {
-                  backgroundColor: COLORS.primary + (index === 0 ? "FF" : "40"),
-                },
-              ]}
-            >
-              <Ionicons
-                name={step.icon}
-                size={14}
-                color={index === 0 ? COLORS.white : COLORS.primary}
-              />
+        {formSteps.map((step, index) => {
+          const isActive = index === currentStep;
+          const isDone = index < currentStep;
+          return (
+            <View key={step.label} style={styles.stepItem}>
+              <View
+                style={[
+                  styles.stepDot,
+                  {
+                    backgroundColor: isActive
+                      ? COLORS.primary
+                      : isDone
+                      ? COLORS.primary + "60"
+                      : COLORS.primary + "25",
+                  },
+                ]}
+              >
+                {isDone ? (
+                  <Ionicons name="checkmark" size={14} color={COLORS.white} />
+                ) : (
+                  <Ionicons
+                    name={step.icon}
+                    size={14}
+                    color={isActive ? COLORS.white : COLORS.primary}
+                  />
+                )}
+              </View>
+              <Text style={[styles.stepLabel, isActive && styles.stepLabelActive]}>
+                {step.label}
+              </Text>
+              {index < formSteps.length - 1 && (
+                <View
+                  style={[
+                    styles.stepLine,
+                    isDone && { backgroundColor: COLORS.primary + "60" },
+                  ]}
+                />
+              )}
             </View>
-            <Text
-              style={[styles.stepLabel, index === 0 && styles.stepLabelActive]}
-            >
-              {step.label}
-            </Text>
-            {index < formSteps.length - 1 && <View style={styles.stepLine} />}
-          </View>
-        ))}
+          );
+        })}
       </View>
 
       <ScrollView
@@ -269,13 +329,13 @@ const AddEventScreen: React.FC = () => {
         onScroll={(e) => setIsScrolled(e.nativeEvent.contentOffset.y > 10)}
         scrollEventThrottle={16}
       >
-        {/* Section: Tên sự kiện */}
+        {/* ── Step 0: Tên sự kiện ── */}
+        {(currentStep === 0 || isEditMode) && <>
         <View style={styles.sectionDivider}>
           <Ionicons name="text-outline" size={16} color={COLORS.primary} />
           <Text style={styles.sectionDividerText}>Tên sự kiện</Text>
         </View>
 
-        {/* Title */}
         <View style={styles.section}>
           <Text style={styles.label}>
             {STRINGS.event_name} <Text style={styles.required}>*</Text>
@@ -289,6 +349,7 @@ const AddEventScreen: React.FC = () => {
               setErrors({ ...errors, title: undefined });
             }}
             maxLength={MAX_TITLE_LENGTH}
+            autoFocus
           />
           <View style={styles.inputFooter}>
             {errors.title ? (
@@ -307,8 +368,10 @@ const AddEventScreen: React.FC = () => {
             </Text>
           </View>
         </View>
+        </>}
 
-        {/* Section: Thời gian */}
+        {/* ── Step 1: Thời gian ── */}
+        {(currentStep === 1 || isEditMode) && <>
         <View style={styles.sectionDivider}>
           <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
           <Text style={styles.sectionDividerText}>Thời gian & Lặp lại</Text>
@@ -651,7 +714,10 @@ const AddEventScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Section: Nhắc nhở */}
+        </>}
+
+        {/* ── Step 2: Nhắc nhở ── */}
+        {(currentStep === 2 || isEditMode) && <>
         <View style={styles.sectionDivider}>
           <Ionicons
             name="notifications-outline"
@@ -678,7 +744,10 @@ const AddEventScreen: React.FC = () => {
           minTime={getReminderMinTime()}
         />
 
-        {/* Section: Nhãn */}
+        </>}
+
+        {/* ── Step 3: Nhãn ── */}
+        {(currentStep === 3 || isEditMode) && <>
         <View style={styles.sectionDivider}>
           <Ionicons name="pricetag-outline" size={16} color={COLORS.primary} />
           <Text style={styles.sectionDividerText}>Nhãn sự kiện</Text>
@@ -719,26 +788,27 @@ const AddEventScreen: React.FC = () => {
             Chọn một nhãn để phân loại sự kiện
           </Text>
         </View>
+        </>}
       </ScrollView>
 
-      {/* Submit Button */}
+      {/* Footer: Tiếp theo (create step 0-2) hoặc Lưu (step 3 hoặc edit mode) */}
       <View style={[styles.footer, isScrolled && styles.footerShadow]}>
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            isSubmitting && styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.submitButtonText}>
-            {isSubmitting
-              ? "Đang lưu..."
-              : isEditMode
-              ? "Cập nhật"
-              : STRINGS.save}
-          </Text>
-        </TouchableOpacity>
+        {currentStep < 3 && !isEditMode ? (
+          <TouchableOpacity style={styles.submitButton} onPress={handleNext}>
+            <Text style={styles.submitButtonText}>Tiếp theo</Text>
+            <Ionicons name="arrow-forward" size={18} color={COLORS.white} style={{ marginLeft: 6 }} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.submitButtonText}>
+              {isSubmitting ? "Đang lưu..." : isEditMode ? "Cập nhật" : STRINGS.save}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -827,6 +897,8 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   submitButtonDisabled: {
     opacity: 0.6,

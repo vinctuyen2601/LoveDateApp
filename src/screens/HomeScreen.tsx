@@ -319,19 +319,23 @@ const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* Empty hint banner */}
+        {/* Hero empty state — chỉ hiện khi chưa có sự kiện nào */}
         {!isLoading && events.length === 0 && (
-          <PressableCard style={styles.emptyHint} onPress={handleAddEvent}>
-            <Ionicons name="add-circle" size={20} color={COLORS.primary} />
-            <Text style={styles.emptyHintText}>
-              Thêm sự kiện đầu tiên của bạn
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={16}
-              color={COLORS.textSecondary}
+          <View style={styles.heroEmpty}>
+            <Image
+              source={require("../../assets/icons/tags/hearts.png")}
+              style={styles.heroEmptyIcon}
+              resizeMode="contain"
             />
-          </PressableCard>
+            <Text style={styles.heroEmptyTitle}>Bắt đầu nào!</Text>
+            <Text style={styles.heroEmptySub}>
+              Thêm sự kiện đầu tiên — app sẽ tự tạo checklist chuẩn bị và nhắc bạn đúng lúc
+            </Text>
+            <TouchableOpacity style={styles.heroEmptyBtn} onPress={handleAddEvent} activeOpacity={0.85}>
+              <Ionicons name="add-circle" size={20} color={COLORS.white} />
+              <Text style={styles.heroEmptyBtnText}>Thêm sự kiện đặc biệt</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Upcoming Events */}
@@ -542,8 +546,8 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
+        {/* Quick Actions — chỉ hiện khi đã có ít nhất 1 sự kiện */}
+        {events.length > 0 && <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderLeft}>
               <Ionicons name="flash-outline" size={20} color={COLORS.primary} />
@@ -586,7 +590,7 @@ const HomeScreen: React.FC = () => {
               </PressableCard>
             ))}
           </ScrollView>
-        </View>
+        </View>}
 
         {/* Articles */}
         <View style={styles.section}>
@@ -820,25 +824,59 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2,
   },
-  emptyHint: {
+  heroEmpty: {
+    marginHorizontal: 12,
+    marginTop: 16,
+    marginBottom: 4,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: "center",
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.primary + "15",
+  },
+  heroEmptyIcon: {
+    width: 72,
+    height: 72,
+    marginBottom: 12,
+  },
+  heroEmptyTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 8,
+  },
+  heroEmptySub: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 21,
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  heroEmptyBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
-    marginHorizontal: 12,
-    marginTop: 12,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primary + "20",
-    borderStyle: "dashed",
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 14,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  emptyHintText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: "500",
+  heroEmptyBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.white,
   },
 
   // Sections

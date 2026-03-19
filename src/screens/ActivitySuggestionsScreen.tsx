@@ -515,6 +515,24 @@ const ActivitySuggestionsScreen: React.FC = () => {
             <Text style={styles.inputCardLabel}>Bạn muốn làm gì?</Text>
           </View>
 
+          {/* Quick idea chips — hiện trước để user có gợi ý */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.ideasRow}
+          >
+            {QUICK_IDEAS.map((idea) => (
+              <TouchableOpacity
+                key={idea.text}
+                style={styles.ideaChip}
+                onPress={() => appendIdea(idea)}
+              >
+                <IconImage source={getActivityImage(idea.activity)} size={16} />
+                <Text style={styles.ideaChipText}>{idea.text}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
           {/* Free text input */}
           <View style={styles.inputWrap}>
             <TextInput
@@ -536,24 +554,6 @@ const ActivitySuggestionsScreen: React.FC = () => {
               </TouchableOpacity>
             )}
           </View>
-
-          {/* Quick idea chips — horizontal scroll */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.ideasRow}
-          >
-            {QUICK_IDEAS.map((idea) => (
-              <TouchableOpacity
-                key={idea.text}
-                style={styles.ideaChip}
-                onPress={() => appendIdea(idea)}
-              >
-                <IconImage source={getActivityImage(idea.activity)} size={16} />
-                <Text style={styles.ideaChipText}>{idea.text}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
 
           <View style={styles.divider} />
 

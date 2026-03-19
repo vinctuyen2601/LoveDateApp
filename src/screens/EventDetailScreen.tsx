@@ -302,6 +302,17 @@ const EventDetailScreen: React.FC = () => {
           )}
         </View>
 
+        {/* Checklist Section */}
+        <View style={styles.section}>
+          <ChecklistSection
+            eventId={event.id}
+            items={checklistItems}
+            onToggle={handleToggleChecklistItem}
+            onDelete={handleDeleteChecklistItem}
+            onAdd={handleAddChecklistItem}
+          />
+        </View>
+
         {/* Quick Actions Grid */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Chuẩn bị cho ngày đặc biệt</Text>
@@ -345,67 +356,38 @@ const EventDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Order banners — flower & cake */}
+        {/* Quick links row — compact */}
         <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.orderBanner}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate("LocalShop")}
-          >
-            <Image source={require("../../assets/icons/special/womens-day.png")} style={{ width: 28, height: 28 }} />
-            <View style={styles.orderBannerText}>
-              <Text style={styles.orderBannerTitle}>
-                Đặt hoa tươi giao tận nơi
-              </Text>
-              <Text style={styles.orderBannerSub}>
-                Bó hoa, giỏ hoa, hoa chúc mừng
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#EC4899" />
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Khám phá thêm</Text>
+          <View style={styles.quickLinksRow}>
+            <TouchableOpacity style={styles.quickLinkItem} onPress={() => navigation.navigate("LocalShop")} activeOpacity={0.75}>
+              <View style={[styles.quickLinkIcon, { backgroundColor: "#EC489915" }]}>
+                <Ionicons name="flower-outline" size={22} color="#EC4899" />
+              </View>
+              <Text style={styles.quickLinkLabel}>Đặt hoa</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.orderBanner, { borderColor: "#F59E0B25" }]}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate("LocalShop")}
-          >
-            <Ionicons name="restaurant-outline" size={28} color="#F59E0B" style={styles.orderBannerEmoji} />
-            <View style={styles.orderBannerText}>
-              <Text style={styles.orderBannerTitle}>
-                Đặt bánh kem, bánh ngọt
-              </Text>
-              <Text style={styles.orderBannerSub}>
-                Bánh sinh nhật, cupcake, bánh kem
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.quickLinkItem} onPress={() => navigation.navigate("LocalShop")} activeOpacity={0.75}>
+              <View style={[styles.quickLinkIcon, { backgroundColor: "#F59E0B15" }]}>
+                <Ionicons name="restaurant-outline" size={22} color="#F59E0B" />
+              </View>
+              <Text style={styles.quickLinkLabel}>Đặt bánh</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.orderBanner, { borderColor: COLORS.primary + "25" }]}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate("AllProducts")}
-          >
-            <Ionicons name="gift-outline" size={28} color={COLORS.primary} style={styles.orderBannerEmoji} />
-            <View style={styles.orderBannerText}>
-              <Text style={styles.orderBannerTitle}>Sản phẩm quà tặng</Text>
-              <Text style={styles.orderBannerSub}>Xem tất cả sản phẩm gợi ý</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.quickLinkItem} onPress={() => navigation.navigate("AllProducts")} activeOpacity={0.75}>
+              <View style={[styles.quickLinkIcon, { backgroundColor: COLORS.primary + "15" }]}>
+                <Ionicons name="gift-outline" size={22} color={COLORS.primary} />
+              </View>
+              <Text style={styles.quickLinkLabel}>Quà tặng</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.orderBanner, { borderColor: "#8B5CF625" }]}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate("AllArticles")}
-          >
-            <Ionicons name="book-outline" size={28} color="#8B5CF6" style={styles.orderBannerEmoji} />
-            <View style={styles.orderBannerText}>
-              <Text style={styles.orderBannerTitle}>Bài viết hay</Text>
-              <Text style={styles.orderBannerSub}>Mẹo tặng quà, hẹn hò & tình yêu</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#8B5CF6" />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.quickLinkItem} onPress={() => navigation.navigate("AllArticles")} activeOpacity={0.75}>
+              <View style={[styles.quickLinkIcon, { backgroundColor: "#8B5CF615" }]}>
+                <Ionicons name="book-outline" size={22} color="#8B5CF6" />
+              </View>
+              <Text style={styles.quickLinkLabel}>Bài viết</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={{ height: 40 }} />
@@ -593,39 +575,29 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
 
-  // Order banners (flower & cake)
-  orderBanner: {
+  // Quick links compact row
+  quickLinksRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 10,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary + "25",
-    marginBottom: 10,
-    elevation: 1,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    justifyContent: "space-between",
+    gap: 8,
   },
-  orderBannerEmoji: {
-    fontSize: 28,
-  },
-  orderBannerText: {
+  quickLinkItem: {
     flex: 1,
+    alignItems: "center",
+    gap: 6,
   },
-  orderBannerTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+  quickLinkIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  orderBannerSub: {
-    fontSize: 12,
+  quickLinkLabel: {
+    fontSize: 11,
+    fontWeight: "600",
     color: COLORS.textSecondary,
-    marginTop: 2,
+    textAlign: "center",
   },
 
   // Tags

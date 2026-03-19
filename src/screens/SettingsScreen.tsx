@@ -32,6 +32,7 @@ import {
   scheduleUpcomingNotifications,
 } from "../services/notificationScheduler.service";
 import { useEvents } from "@contexts/EventsContext";
+import { apiService } from "../services/api.service";
 
 const AVATAR_COLOR_KEY = "@user_avatar_color";
 const AVATAR_PHOTO_KEY = "@user_avatar_photo";
@@ -218,6 +219,40 @@ const SettingsScreen: React.FC = () => {
     } finally {
       setIsResendingVerification(false);
     }
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      await apiService.delete('/users/me');
+      await AsyncStorage.removeItem('@onboarding_v2_completed');
+      await logout();
+    } catch (error: any) {
+      Alert.alert('Lỗi', error.message || 'Không thể xóa tài khoản. Vui lòng thử lại.');
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Xóa tài khoản',
+      'Bạn có chắc muốn xóa tài khoản? Toàn bộ sự kiện và dữ liệu sẽ bị xóa vĩnh viễn.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa tài khoản',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Xác nhận lần cuối',
+              'Hành động này không thể hoàn tác. Tài khoản và tất cả dữ liệu sẽ bị xóa.',
+              [
+                { text: 'Hủy', style: 'cancel' },
+                { text: 'Xóa vĩnh viễn', style: 'destructive', onPress: confirmDeleteAccount },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const handleLogout = () => {
@@ -504,6 +539,17 @@ const SettingsScreen: React.FC = () => {
         <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
         <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
+
+      {/* Delete Account — only for registered users */}
+      {!isAnonymous && (
+        <TouchableOpacity
+          style={[styles.deleteButton, { marginHorizontal: 16, marginTop: 12 }]}
+          onPress={handleDeleteAccount}
+        >
+          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+          <Text style={styles.deleteText}>Xóa tài khoản</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Edit Profile Modal */}
       <Modal

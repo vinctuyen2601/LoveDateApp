@@ -262,18 +262,16 @@ const CalendarScreen: React.FC = () => {
       >
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <View style={styles.headerContent}>
-            {/* <View style={styles.headerLeft}>
-            <Ionicons name="calendar" size={28} color={COLORS.primary} />
-            <Text style={styles.headerTitle}>Quản lý các ngày quan trọng</Text>
-          </View>
-
-          <TouchableOpacity
+            <TouchableOpacity
             style={styles.todayButton}
-            onPress={() => setSelectedDate(DateUtils.getTodayString())}
+            onPress={() => {
+              setSelectedDate(DateUtils.getTodayString());
+              setCurrentMonth(DateUtils.getTodayString());
+            }}
           >
-            <Ionicons name="today" size={20} color={COLORS.white} />
+            <Ionicons name="today" size={16} color={COLORS.white} />
             <Text style={styles.todayButtonText}>Hôm nay</Text>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
           </View>
 
           {/* Section header: Sự kiện + Xem tất cả */}

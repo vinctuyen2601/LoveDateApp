@@ -1,134 +1,123 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   Image,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Animated,
-  FlatList,
-  ViewToken,
-  StatusBar,
+  TextInput,
+  Platform,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS } from '@themes/colors';
+import { EventFormData } from '../../types';
 
-const { width: SW, height: SH } = Dimensions.get('window');
 export const ONBOARDING_KEY = '@onboarding_v2_completed';
 
-interface OnboardingPage {
-  icon: keyof typeof Ionicons.glyphMap;
-  imageSource?: number;
-  title: string;
-  subtitle: string;
-  gradient: [string, string];
-  badge?: string;
-}
-
-const PAGES: OnboardingPage[] = [
-  {
-    icon: 'heart-circle',
-    imageSource: require('../../../assets/adaptive-icon.png'),
-    title: 'Chào mừng đến LoveDate 💕',
-    subtitle: 'Ứng dụng giúp bạn không bao giờ quên những ngày quan trọng với người thân yêu',
-    gradient: ['#FF6B9D', '#FF8E53'],
-    badge: 'Miễn phí',
-  },
-  {
-    icon: 'calendar',
-    title: 'Theo dõi ngày đặc biệt',
-    subtitle: 'Sinh nhật, kỷ niệm, ngày lễ — nhắc nhở tự động trước ngày diễn ra để bạn luôn chuẩn bị kịp thời',
-    gradient: ['#667EEA', '#764BA2'],
-  },
-  {
-    icon: 'sparkles',
-    title: 'AI gợi ý hoạt động hẹn hò',
-    subtitle: 'Nhập sở thích & ngân sách, AI lên kế hoạch hẹn hò chi tiết — từ địa điểm, thời gian đến những gì cần chuẩn bị',
-    gradient: ['#43C59E', '#2196F3'],
-    badge: 'AI',
-  },
-  {
-    icon: 'gift',
-    title: 'Tìm quà tặng hoàn hảo',
-    subtitle: 'Làm khảo sát tính cách và để AI gợi ý những món quà phù hợp nhất — không còn lo "tặng gì bây giờ"',
-    gradient: ['#F093FB', '#F5576C'],
-    badge: 'AI',
-  },
-  {
-    icon: 'person-add',
-    title: 'Đăng ký để mở khóa thêm',
-    subtitle: 'Tạo tài khoản miễn phí để được 10 lượt AI/ngày, đồng bộ dữ liệu và không mất dữ liệu khi đổi máy',
-    gradient: ['#FF6B9D', '#C850C0'],
-  },
-];
+const GRADIENT_WELCOME: [string, string] = ['#FF6B9D', '#FF8E53'];
+const GRADIENT_SETUP: [string, string] = ['#667EEA', '#764BA2'];
+const GRADIENT_CONFIRM: [string, string] = ['#43C59E', '#2196F3'];
+const GRADIENT_AUTH: [string, string] = ['#F093FB', '#F5576C'];
 
 interface Props {
   onComplete: () => void;
   onRegister?: () => void;
+  onAddEvent?: () => void;
+  addEvent?: (formData: EventFormData) => Promise<any>;
 }
 
-const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const dotWidthAnims = useRef(PAGES.map((_, i) => new Animated.Value(i === 0 ? 22 : 8))).current;
+const getDaysUntilBirthday = (month: number, day: number): number => {
+  const today = new Date();
+  const thisYear = today.getFullYear();
+  let next = new Date(thisYear, month, day);
+  if (next <= today) {
+    next = new Date(thisYear + 1, month, day);
+  }
+  const diff = Math.ceil((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
+};
 
-  // Fade in on mount
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister, onAddEvent, addEvent }) => {
+  const [step, setStep] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // Animate dot widths on page change
-  useEffect(() => {
-    PAGES.forEach((_, i) => {
-      Animated.spring(dotWidthAnims[i], {
-        toValue: currentPage === i ? 22 : 8,
-        useNativeDriver: false,
-      }).start();
+  // Screen 1 state
+  const [name, setName] = useState('');
+  const [birthdayDate, setBirthdayDate] = useState<Date>(new Date());
+  const [dateSelected, setDateSelected] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Screen 2 state
+  const [daysUntil, setDaysUntil] = useState(0);
+  const [savedName, setSavedName] = useState('');
+
+  const goToStep = (next: number) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: -30, duration: 150, useNativeDriver: true }),
+    ]).start(() => {
+      setStep(next);
+      slideAnim.setValue(30);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
     });
-  }, [currentPage]);
-
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setCurrentPage(viewableItems[0].index);
-      }
-    }
-  ).current;
-
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  };
 
   const dismissedRef = useRef(false);
-  const completedRef = useRef(false);
   const dismiss = (callback?: () => void) => {
     if (dismissedRef.current) return;
     dismissedRef.current = true;
-    const finish = () => {
-      if (completedRef.current) return;
-      completedRef.current = true;
-      onComplete();
-      callback?.();
-    };
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 280,
-      useNativeDriver: true,
-    }).start(finish);
-    // Safety fallback if animation callback doesn't fire
+    const finish = () => { onComplete(); callback?.(); };
+    Animated.timing(fadeAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start(finish);
     setTimeout(finish, 350);
   };
 
-  const handleNext = () => {
-    if (currentPage < PAGES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentPage + 1, animated: true });
+  const handleSaveBirthday = async () => {
+    const displayName = name.trim() || 'người thương';
+    setSavedName(displayName);
+    const days = getDaysUntilBirthday(birthdayDate.getMonth(), birthdayDate.getDate());
+    setDaysUntil(days);
+
+    if (addEvent) {
+      try {
+        const today = new Date();
+        const thisYear = today.getFullYear();
+        let eventDate = new Date(thisYear, birthdayDate.getMonth(), birthdayDate.getDate());
+        if (eventDate <= today) {
+          eventDate = new Date(thisYear + 1, birthdayDate.getMonth(), birthdayDate.getDate());
+        }
+        await addEvent({
+          title: `Sinh nhật của ${displayName}`,
+          eventDate,
+          isLunarCalendar: false,
+          tags: [],
+          remindDaysBefore: [0, 1, 7],
+          reminderTime: { hour: 9, minute: 0 },
+          isRecurring: true,
+          recurrencePattern: {
+            type: 'yearly',
+            month: birthdayDate.getMonth() + 1,
+            day: birthdayDate.getDate(),
+          },
+        });
+      } catch (e) {
+        console.warn('Onboarding: failed to create event', e);
+      }
     }
+    goToStep(2);
+  };
+
+  const handleSkipSetup = () => {
+    goToStep(3);
   };
 
   const handleComplete = async () => {
@@ -136,137 +125,257 @@ const OnboardingOverlay: React.FC<Props> = ({ onComplete, onRegister }) => {
     dismiss();
   };
 
-  const handleSkip = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    dismiss();
-  };
-
   const handleRegister = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 280,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 280, useNativeDriver: true }).start(() => {
       onRegister?.();
     });
   };
 
-  const isLastPage = currentPage === PAGES.length - 1;
-  const page = PAGES[currentPage];
+  const formatBirthday = (date: Date) => {
+    return `${date.getDate()} tháng ${date.getMonth() + 1}`;
+  };
 
-  const renderPage = ({ item }: { item: OnboardingPage }) => (
-    <View style={styles.page}>
-      {item.imageSource ? (
-        <View style={styles.appIconWrap}>
-          <Image source={item.imageSource} style={styles.appIcon} resizeMode="contain" />
-          {item.badge && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.badge}</Text>
-            </View>
-          )}
-        </View>
-      ) : (
-        <LinearGradient
-          colors={item.gradient}
-          style={styles.iconWrap}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name={item.icon} size={72} color="#fff" />
-          {item.badge && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.badge}</Text>
-            </View>
-          )}
-        </LinearGradient>
-      )}
+  const displayLabel = name.trim() ? name.trim() : 'người thương';
 
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.subtitle}>{item.subtitle}</Text>
-    </View>
-  );
+  // Dots
+  const totalSteps = 4;
 
   return (
     <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* Skip button */}
+      {/* Dots */}
       <View style={styles.topBar}>
-        {!isLastPage && (
-          <TouchableOpacity onPress={handleSkip} style={styles.skipBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <View style={styles.dots}>
+          {Array.from({ length: totalSteps }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === step && styles.dotActive,
+                i < step && styles.dotDone,
+              ]}
+            />
+          ))}
+        </View>
+        {step === 1 && (
+          <TouchableOpacity onPress={handleSkipSetup} style={styles.skipBtn}>
             <Text style={styles.skipText}>Bỏ qua</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Slides */}
-      <FlatList
-        ref={flatListRef}
-        data={PAGES}
-        renderItem={renderPage}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(_, i) => i.toString()}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        scrollEventThrottle={16}
-        style={styles.flatList}
-      />
-
-      {/* Dots */}
-      <View style={styles.dots}>
-        {PAGES.map((_, i) => (
-          <Animated.View
-            key={i}
-            style={[
-              styles.dot,
-              { width: dotWidthAnims[i] },
-              currentPage === i && { backgroundColor: page.gradient[0] },
-            ]}
-          />
-        ))}
-      </View>
-
-      {/* Bottom actions */}
-      <View style={styles.bottomArea}>
-        {isLastPage ? (
-          <>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={handleRegister}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={page.gradient}
-                style={styles.primaryBtnGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Ionicons name="person-add" size={20} color="#fff" />
-                <Text style={styles.primaryBtnText}>Đăng ký miễn phí</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.ghostBtn} onPress={handleComplete}>
-              <Text style={styles.ghostBtnText}>Dùng thử trước</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.85}>
-            <LinearGradient
-              colors={page.gradient}
-              style={styles.nextBtnGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Text style={styles.nextBtnText}>Tiếp theo</Text>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
-            </LinearGradient>
-          </TouchableOpacity>
+      <Animated.View
+        style={[styles.stepContainer, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}
+      >
+        {/* ── SCREEN 0: WELCOME ── */}
+        {step === 0 && (
+          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <View style={styles.centerContent}>
+              <View style={styles.iconWrap}>
+                <LinearGradient colors={GRADIENT_WELCOME} style={styles.iconGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <Image
+                    source={require('../../../assets/adaptive-icon.png')}
+                    style={styles.appIcon}
+                    resizeMode="contain"
+                  />
+                </LinearGradient>
+              </View>
+              <View style={styles.titleRow}>
+                <Text style={styles.title}>Chào mừng đến Ngày Yêu Thương </Text>
+                <Image source={require('../../../assets/icons/tags/hearts.png')} style={styles.titleEmoji} />
+              </View>
+              <Text style={styles.subtitle}>
+                Không bao giờ quên ngày đặc biệt — Ngày Yêu Thương sẽ nhắc và tạo checklist chuẩn bị cho bạn.
+              </Text>
+            </View>
+            <View style={styles.bottomArea}>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => goToStep(1)} activeOpacity={0.85}>
+                <LinearGradient colors={GRADIENT_WELCOME} style={styles.primaryBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <Text style={styles.primaryBtnText}>Bắt đầu nào</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
         )}
-      </View>
+
+        {/* ── SCREEN 1: SETUP ── */}
+        {step === 1 && (
+          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <ScrollView style={styles.flex} contentContainerStyle={styles.setupContent} keyboardShouldPersistTaps="handled">
+              <LinearGradient colors={GRADIENT_SETUP} style={styles.iconCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Ionicons name="heart" size={52} color="#fff" />
+              </LinearGradient>
+              <View style={styles.titleRow}>
+                <Text style={styles.title}>Sinh nhật của{'\n'}người thương bạn </Text>
+                <Image source={require('../../../assets/icons/tags/cake.png')} style={styles.titleEmoji} />
+              </View>
+              <Text style={styles.subtitle}>Thêm ngay để không bao giờ quên</Text>
+
+              {/* Name input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Tên người thương của bạn</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Ví dụ: Minh, Anh, Em..."
+                  placeholderTextColor={COLORS.textSecondary + '80'}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  returnKeyType="done"
+                  maxLength={30}
+                />
+              </View>
+
+              {/* Date picker */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>
+                  Sinh nhật của {displayLabel} là ngày nào?
+                </Text>
+                <TouchableOpacity
+                  style={[styles.datePickerBtn, dateSelected && styles.datePickerBtnSelected]}
+                  onPress={() => setShowDatePicker(true)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="calendar"
+                    size={20}
+                    color={dateSelected ? COLORS.primary : COLORS.textSecondary}
+                  />
+                  <Text style={[styles.datePickerText, dateSelected && styles.datePickerTextSelected]}>
+                    {dateSelected ? formatBirthday(birthdayDate) : 'Chọn ngày sinh'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={birthdayDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(event, date) => {
+                    if (Platform.OS === 'android') setShowDatePicker(false);
+                    if (date) {
+                      setBirthdayDate(date);
+                      setDateSelected(true);
+                    }
+                  }}
+                />
+              )}
+              {Platform.OS === 'ios' && showDatePicker && (
+                <TouchableOpacity
+                  style={styles.dateConfirmBtn}
+                  onPress={() => { setDateSelected(true); setShowDatePicker(false); }}
+                >
+                  <Text style={styles.dateConfirmText}>Xong</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+
+            <View style={styles.bottomArea}>
+              <TouchableOpacity
+                style={[styles.primaryBtn, !dateSelected && styles.primaryBtnDisabled]}
+                onPress={handleSaveBirthday}
+                disabled={!dateSelected}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={dateSelected ? GRADIENT_SETUP : ['#ccc', '#aaa']}
+                  style={styles.primaryBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Ionicons name="heart" size={18} color="#fff" />
+                  <Text style={styles.primaryBtnText}>Lưu lại</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        )}
+
+        {/* ── SCREEN 2: CONFIRMATION ── */}
+        {step === 2 && (
+          <View style={styles.flex}>
+            <View style={styles.centerContent}>
+              <LinearGradient colors={GRADIENT_CONFIRM} style={styles.iconCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Ionicons name="checkmark" size={60} color="#fff" />
+              </LinearGradient>
+              <View style={styles.titleRow}>
+                <Text style={styles.title}>Tuyệt vời! </Text>
+                <Image source={require('../../../assets/icons/tags/confetti.png')} style={styles.titleEmoji} />
+              </View>
+              {/* Days countdown — hero number */}
+              <View style={styles.countdownCard}>
+                <Text style={styles.countdownNumber}>{daysUntil}</Text>
+                <Text style={styles.countdownLabel}>ngày nữa thôi</Text>
+              </View>
+
+              <View style={styles.confirmCard}>
+                <Text style={styles.confirmMain}>
+                  Sinh nhật của{' '}
+                  <Text style={styles.confirmName}>{savedName}</Text>
+                  {' '}đã được lưu
+                </Text>
+                <View style={styles.confirmDivider} />
+                <Text style={styles.confirmRelax}>
+                  Ngày Yêu Thương sẽ nhắc bạn đúng lúc —{'\n'}đừng lo gì cả
+                </Text>
+              </View>
+              <Text style={styles.confirmNote}>
+                Bạn có thể chỉnh sửa và thêm nhiều ngày khác trong phần cài đặt sau nhé!
+              </Text>
+            </View>
+            <View style={styles.bottomArea}>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => goToStep(3)} activeOpacity={0.85}>
+                <LinearGradient colors={GRADIENT_CONFIRM} style={styles.primaryBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <Text style={styles.primaryBtnText}>Tiếp tục</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── SCREEN 3: AUTH ── */}
+        {step === 3 && (
+          <View style={styles.flex}>
+            <View style={styles.centerContent}>
+              <LinearGradient colors={GRADIENT_AUTH} style={styles.iconCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Ionicons name="shield-checkmark" size={52} color="#fff" />
+              </LinearGradient>
+              <Text style={styles.title}>Giữ dữ liệu an toàn</Text>
+              <Text style={styles.subtitle}>
+                Tạo tài khoản để không mất dữ liệu khi đổi máy và đồng bộ trên nhiều thiết bị
+              </Text>
+
+              <View style={styles.featureList}>
+                {[
+                  { icon: 'cloud-upload', text: 'Backup tự động lên cloud' },
+                  { icon: 'sync', text: 'Đồng bộ nhiều thiết bị' },
+                  { icon: 'lock-closed', text: 'Dữ liệu được mã hóa' },
+                ].map((f) => (
+                  <View key={f.text} style={styles.featureRow}>
+                    <Ionicons name={f.icon as any} size={18} color={COLORS.primary} />
+                    <Text style={styles.featureText}>{f.text}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={styles.bottomArea}>
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleRegister} activeOpacity={0.85}>
+                <LinearGradient colors={GRADIENT_AUTH} style={styles.primaryBtnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <Ionicons name="person-add" size={18} color="#fff" />
+                  <Text style={styles.primaryBtnText}>Đăng ký tài khoản</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.ghostBtn} onPress={handleComplete}>
+                <Text style={styles.ghostBtnText}>Dùng thử trước</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </Animated.View>
     </Animated.View>
   );
 };
@@ -283,14 +392,38 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     elevation: 9999,
   },
+  flex: {
+    flex: 1,
+  },
   topBar: {
-    height: 56,
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    alignItems: 'flex-end',
+    paddingTop: 52,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
   },
+  dots: {
+    flexDirection: 'row',
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.border,
+  },
+  dotActive: {
+    width: 22,
+    backgroundColor: COLORS.primary,
+  },
+  dotDone: {
+    backgroundColor: COLORS.primary + '60',
+  },
   skipBtn: {
+    position: 'absolute',
+    right: 24,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
@@ -301,61 +434,73 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontWeight: '500',
   },
-  flatList: {
+  stepContainer: {
     flex: 1,
   },
-  page: {
-    width: SW,
+  centerContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 36,
-    paddingBottom: 20,
+    paddingHorizontal: 32,
   },
-  appIconWrap: {
-    width: 180,
-    height: 180,
+  setupContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-  },
-  appIcon: {
-    width: 180,
-    height: 180,
   },
   iconWrap: {
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-    shadowColor: '#000',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    overflow: 'hidden',
+    marginBottom: 36,
+    shadowColor: '#FF6B9D',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 8,
   },
-  badge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#FFD700',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  iconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#333',
+  appIcon: {
+    width: 120,
+    height: 120,
+  },
+  iconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  titleEmoji: {
+    width: 28,
+    height: 28,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
-    marginBottom: 16,
     lineHeight: 32,
   },
   subtitle: {
@@ -363,20 +508,143 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 23,
+    marginBottom: 8,
   },
-  dots: {
+  // Setup screen
+  inputGroup: {
+    width: '100%',
+    marginTop: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  datePickerBtn: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  datePickerBtnSelected: {
+    borderColor: COLORS.primary + '60',
+    backgroundColor: COLORS.primary + '08',
+  },
+  datePickerText: {
+    flex: 1,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  datePickerTextSelected: {
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  dateConfirmBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+  },
+  dateConfirmText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  // Countdown hero
+  countdownCard: {
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  countdownNumber: {
+    fontSize: 72,
+    fontWeight: '800',
+    color: COLORS.primary,
+    lineHeight: 80,
+  },
+  countdownLabel: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  // Confirmation screen
+  confirmCard: {
+    width: '100%',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: COLORS.primary + '20',
+    gap: 12,
+  },
+  confirmMain: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  confirmName: {
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  confirmDivider: {
+    height: 1,
     backgroundColor: COLORS.border,
   },
+  confirmRelax: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 23,
+  },
+  confirmNote: {
+    fontSize: 13,
+    color: COLORS.textSecondary + 'aa',
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 19,
+  },
+  // Auth screen
+  featureList: {
+    width: '100%',
+    marginTop: 24,
+    gap: 14,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  featureText: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  // Bottom
   bottomArea: {
     paddingHorizontal: 24,
     paddingBottom: 48,
@@ -387,9 +655,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#FF6B9D',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
+  },
+  primaryBtnDisabled: {
+    shadowOpacity: 0,
+    elevation: 0,
   },
   primaryBtnGradient: {
     flexDirection: 'row',
@@ -411,27 +683,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textSecondary,
     fontWeight: '500',
-  },
-  nextBtn: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  nextBtnGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 8,
-  },
-  nextBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
 });
 
