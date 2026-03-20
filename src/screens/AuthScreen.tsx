@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,16 @@ import {
   Keyboard,
   ActivityIndicator,
   Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '@contexts/AuthContext';
-import { COLORS } from '@themes/colors';
-import { STRINGS } from '../constants/strings';
-import { ValidationUtils } from '@lib/validation.utils';
-import { logLogin, logSignUp } from '../services/analyticsService';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "@contexts/AuthContext";
+import { COLORS } from "@themes/colors";
+import { STRINGS } from "../constants/strings";
+import { ValidationUtils } from "@lib/validation.utils";
+import { logLogin, logSignUp } from "../services/analyticsService";
 
-const APP_LOGO = require('../../assets/icon.png');
+const APP_LOGO = require("../../assets/icon.png");
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -28,17 +28,19 @@ const AuthScreen: React.FC = () => {
   const wasAnonymousRef = useRef(isAnonymous);
 
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // Real-time validation state
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<string, string | undefined>
+  >({});
   const [formError, setFormError] = useState<string | null>(null);
 
   // Refs for field chaining
@@ -48,8 +50,12 @@ const AuthScreen: React.FC = () => {
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    const show = Keyboard.addListener("keyboardDidShow", () =>
+      setKeyboardVisible(true)
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardVisible(false)
+    );
     return () => {
       show.remove();
       hide.remove();
@@ -64,43 +70,50 @@ const AuthScreen: React.FC = () => {
   }, [isAnonymous]);
 
   const markTouched = (field: string) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const validateField = (field: string, value: string) => {
     let error: string | undefined;
     switch (field) {
-      case 'email':
+      case "email":
         if (value.length > 0 && !ValidationUtils.isValidEmail(value))
           error = STRINGS.error_invalid_email;
         break;
-      case 'password':
+      case "password":
         if (value.length > 0 && !ValidationUtils.isValidPassword(value))
           error = STRINGS.error_invalid_password;
         break;
-      case 'confirmPassword':
-        if (value.length > 0 && !ValidationUtils.doPasswordsMatch(password, value))
+      case "confirmPassword":
+        if (
+          value.length > 0 &&
+          !ValidationUtils.doPasswordsMatch(password, value)
+        )
           error = STRINGS.error_password_mismatch;
         break;
-      case 'displayName':
+      case "displayName":
         if (value.length > 0) {
           const result = ValidationUtils.isValidDisplayName(value);
           if (!result.valid) error = result.error;
         }
         break;
     }
-    setFieldErrors(prev => ({ ...prev, [field]: error }));
+    setFieldErrors((prev) => ({ ...prev, [field]: error }));
   };
 
-  const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
+  const handleFieldChange = (
+    field: string,
+    value: string,
+    setter: (v: string) => void
+  ) => {
     setter(value);
     const shouldValidateNow =
       touched[field] ||
-      (field === 'email' && value.includes('@')) ||
-      (field === 'password' && value.length > 0) ||
-      (field === 'confirmPassword' && value.length > 0);
+      (field === "email" && value.includes("@")) ||
+      (field === "password" && value.length > 0) ||
+      (field === "confirmPassword" && value.length > 0);
     if (shouldValidateNow) {
-      if (!touched[field]) setTouched(prev => ({ ...prev, [field]: true }));
+      if (!touched[field]) setTouched((prev) => ({ ...prev, [field]: true }));
       validateField(field, value);
     }
   };
@@ -120,12 +133,18 @@ const AuthScreen: React.FC = () => {
     const newErrors: Record<string, string | undefined> = {};
 
     if (!ValidationUtils.isValidEmail(email)) {
-      newErrors.email = email.length === 0 ? 'Vui lòng nhập email' : STRINGS.error_invalid_email;
+      newErrors.email =
+        email.length === 0
+          ? "Vui lòng nhập email"
+          : STRINGS.error_invalid_email;
       hasError = true;
     }
 
     if (!ValidationUtils.isValidPassword(password)) {
-      newErrors.password = password.length === 0 ? 'Vui lòng nhập mật khẩu' : STRINGS.error_invalid_password;
+      newErrors.password =
+        password.length === 0
+          ? "Vui lòng nhập mật khẩu"
+          : STRINGS.error_invalid_password;
       hasError = true;
     }
 
@@ -135,18 +154,24 @@ const AuthScreen: React.FC = () => {
 
       const nameValidation = ValidationUtils.isValidDisplayName(displayName);
       if (!nameValidation.valid) {
-        newErrors.displayName = displayName.length === 0 ? 'Vui lòng nhập tên hiển thị' : nameValidation.error;
+        newErrors.displayName =
+          displayName.length === 0
+            ? "Vui lòng nhập tên hiển thị"
+            : nameValidation.error;
         hasError = true;
       }
 
       if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
-        newErrors.confirmPassword = confirmPassword.length === 0 ? 'Vui lòng xác nhận mật khẩu' : STRINGS.error_password_mismatch;
+        newErrors.confirmPassword =
+          confirmPassword.length === 0
+            ? "Vui lòng xác nhận mật khẩu"
+            : STRINGS.error_password_mismatch;
         hasError = true;
       }
     }
 
-    setTouched(prev => ({ ...prev, ...newTouched }));
-    setFieldErrors(prev => ({ ...prev, ...newErrors }));
+    setTouched((prev) => ({ ...prev, ...newTouched }));
+    setFieldErrors((prev) => ({ ...prev, ...newErrors }));
 
     if (hasError) {
       // Scroll lên field lỗi đầu tiên
@@ -159,13 +184,14 @@ const AuthScreen: React.FC = () => {
 
       if (isLogin) {
         await login(email, password);
-        logLogin('email');
+        logLogin("email");
       } else {
         await register(email, password, displayName);
-        logSignUp('email');
+        logSignUp("email");
       }
     } catch (error: any) {
-      const msg = error.message || (isLogin ? 'Đăng nhập thất bại' : 'Đăng ký thất bại');
+      const msg =
+        error.message || (isLogin ? "Đăng nhập thất bại" : "Đăng ký thất bại");
       setFormError(msg);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     } finally {
@@ -199,7 +225,7 @@ const AuthScreen: React.FC = () => {
       hint?: string;
       renderRight?: React.ReactNode;
       renderHint?: React.ReactNode;
-    },
+    }
   ) => {
     const hasError = touched[field] && !!fieldErrors[field];
     const valid = isFieldValid(field, value);
@@ -207,8 +233,24 @@ const AuthScreen: React.FC = () => {
     return (
       <View style={styles.fieldWrap}>
         <Text style={styles.fieldLabel}>{label}</Text>
-        <View style={[styles.inputContainer, hasError && styles.inputError, valid && styles.inputValid]}>
-          <Ionicons name={icon as any} size={20} color={hasError ? COLORS.error : valid ? COLORS.success : COLORS.textSecondary} />
+        <View
+          style={[
+            styles.inputContainer,
+            hasError && styles.inputError,
+            valid && styles.inputValid,
+          ]}
+        >
+          <Ionicons
+            name={icon as any}
+            size={20}
+            color={
+              hasError
+                ? COLORS.error
+                : valid
+                ? COLORS.success
+                : COLORS.textSecondary
+            }
+          />
           <TextInput
             ref={options?.ref}
             style={styles.input}
@@ -216,18 +258,25 @@ const AuthScreen: React.FC = () => {
             placeholderTextColor={`${COLORS.textSecondary}99`}
             value={value}
             onChangeText={(v) => handleFieldChange(field, v, setter)}
-            onBlur={() => { markTouched(field); validateField(field, value); }}
+            onBlur={() => {
+              markTouched(field);
+              validateField(field, value);
+            }}
             onFocus={handleFocusScroll}
             secureTextEntry={options?.secure}
             keyboardType={options?.keyboardType}
-            autoCapitalize={options?.autoCapitalize ?? 'none'}
+            autoCapitalize={options?.autoCapitalize ?? "none"}
             autoCorrect={false}
-            returnKeyType={options?.returnKeyType ?? 'next'}
+            returnKeyType={options?.returnKeyType ?? "next"}
             onSubmitEditing={options?.onSubmitEditing}
             blurOnSubmit={options?.blurOnSubmit ?? false}
           />
           {valid && !options?.renderRight && (
-            <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={COLORS.success}
+            />
           )}
           {options?.renderRight}
         </View>
@@ -245,8 +294,7 @@ const AuthScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior="padding"
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         ref={scrollRef}
@@ -279,7 +327,12 @@ const AuthScreen: React.FC = () => {
           <View style={styles.tabRow}>
             <TouchableOpacity
               style={[styles.tab, isLogin && styles.tabActive]}
-              onPress={() => { setIsLogin(true); setTouched({}); setFieldErrors({}); setFormError(null); }}
+              onPress={() => {
+                setIsLogin(true);
+                setTouched({});
+                setFieldErrors({});
+                setFormError(null);
+              }}
             >
               <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>
                 {STRINGS.auth_login}
@@ -287,7 +340,12 @@ const AuthScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, !isLogin && styles.tabActive]}
-              onPress={() => { setIsLogin(false); setTouched({}); setFieldErrors({}); setFormError(null); }}
+              onPress={() => {
+                setIsLogin(false);
+                setTouched({});
+                setFieldErrors({});
+                setFormError(null);
+              }}
             >
               <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>
                 {STRINGS.auth_register}
@@ -300,7 +358,10 @@ const AuthScreen: React.FC = () => {
             <View style={styles.errorBanner}>
               <Ionicons name="alert-circle" size={20} color={COLORS.error} />
               <Text style={styles.errorBannerText}>{formError}</Text>
-              <TouchableOpacity onPress={() => setFormError(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <TouchableOpacity
+                onPress={() => setFormError(null)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
                 <Ionicons name="close" size={18} color={COLORS.error} />
               </TouchableOpacity>
             </View>
@@ -308,73 +369,115 @@ const AuthScreen: React.FC = () => {
 
           {/* Display Name (Register only) */}
           {!isLogin &&
-            renderInput('Tên hiển thị', 'person-outline', 'displayName', displayName, setDisplayName, {
-              placeholder: 'Nhập tên của bạn',
-              autoCapitalize: 'words',
-              onSubmitEditing: () => emailRef.current?.focus(),
-              hint: 'Tên sẽ hiển thị trong ứng dụng',
-            })
-          }
+            renderInput(
+              "Tên hiển thị",
+              "person-outline",
+              "displayName",
+              displayName,
+              setDisplayName,
+              {
+                placeholder: "Nhập tên của bạn",
+                autoCapitalize: "words",
+                onSubmitEditing: () => emailRef.current?.focus(),
+                hint: "Tên sẽ hiển thị trong ứng dụng",
+              }
+            )}
 
           {/* Email */}
-          {renderInput('Email', 'mail-outline', 'email', email, setEmail, {
+          {renderInput("Email", "mail-outline", "email", email, setEmail, {
             ref: emailRef,
-            placeholder: 'ten@email.com',
-            keyboardType: 'email-address',
+            placeholder: "ten@email.com",
+            keyboardType: "email-address",
             onSubmitEditing: () => passwordRef.current?.focus(),
           })}
 
           {/* Password */}
-          {renderInput('Mật khẩu', 'lock-closed-outline', 'password', password, setPassword, {
-            ref: passwordRef,
-            placeholder: 'Tối thiểu 6 ký tự',
-            secure: !showPassword,
-            returnKeyType: isLogin ? 'done' : 'next',
-            onSubmitEditing: isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus(),
-            blurOnSubmit: isLogin,
-            renderRight: (
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons
-                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color={COLORS.textSecondary}
-                />
-              </TouchableOpacity>
-            ),
-            renderHint: (
-              <Text style={[
-                styles.fieldHint,
-                password.length > 0 && (password.length >= 6 ? styles.fieldHintValid : styles.fieldHintWarn),
-              ]}>
-                {password.length > 0
-                  ? password.length >= 6
-                    ? `Mật khẩu hợp lệ (${password.length} ký tự)`
-                    : `Cần thêm ${6 - password.length} ký tự nữa`
-                  : 'Mật khẩu tối thiểu 6 ký tự'}
-              </Text>
-            ),
-          })}
+          {renderInput(
+            "Mật khẩu",
+            "lock-closed-outline",
+            "password",
+            password,
+            setPassword,
+            {
+              ref: passwordRef,
+              placeholder: "Tối thiểu 6 ký tự",
+              secure: !showPassword,
+              returnKeyType: isLogin ? "done" : "next",
+              onSubmitEditing: isLogin
+                ? handleSubmit
+                : () => confirmPasswordRef.current?.focus(),
+              blurOnSubmit: isLogin,
+              renderRight: (
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color={COLORS.textSecondary}
+                  />
+                </TouchableOpacity>
+              ),
+              renderHint: (
+                <Text
+                  style={[
+                    styles.fieldHint,
+                    password.length > 0 &&
+                      (password.length >= 6
+                        ? styles.fieldHintValid
+                        : styles.fieldHintWarn),
+                  ]}
+                >
+                  {password.length > 0
+                    ? password.length >= 6
+                      ? `Mật khẩu hợp lệ (${password.length} ký tự)`
+                      : `Cần thêm ${6 - password.length} ký tự nữa`
+                    : "Mật khẩu tối thiểu 6 ký tự"}
+                </Text>
+              ),
+            }
+          )}
 
           {/* Confirm Password (Register only) */}
           {!isLogin &&
-            renderInput('Xác nhận mật khẩu', 'lock-closed-outline', 'confirmPassword', confirmPassword, setConfirmPassword, {
-              ref: confirmPasswordRef,
-              placeholder: 'Nhập lại mật khẩu',
-              secure: !showPassword,
-              returnKeyType: 'done',
-              onSubmitEditing: handleSubmit,
-              blurOnSubmit: true,
-              renderHint: confirmPassword.length > 0 ? (
-                <Text style={[styles.fieldHint, confirmPassword === password ? styles.fieldHintValid : styles.fieldHintWarn]}>
-                  {confirmPassword === password ? 'Mật khẩu khớp' : 'Mật khẩu chưa khớp'}
-                </Text>
-              ) : undefined,
-            })
-          }
+            renderInput(
+              "Xác nhận mật khẩu",
+              "lock-closed-outline",
+              "confirmPassword",
+              confirmPassword,
+              setConfirmPassword,
+              {
+                ref: confirmPasswordRef,
+                placeholder: "Nhập lại mật khẩu",
+                secure: !showPassword,
+                returnKeyType: "done",
+                onSubmitEditing: handleSubmit,
+                blurOnSubmit: true,
+                renderHint:
+                  confirmPassword.length > 0 ? (
+                    <Text
+                      style={[
+                        styles.fieldHint,
+                        confirmPassword === password
+                          ? styles.fieldHintValid
+                          : styles.fieldHintWarn,
+                      ]}
+                    >
+                      {confirmPassword === password
+                        ? "Mật khẩu khớp"
+                        : "Mật khẩu chưa khớp"}
+                    </Text>
+                  ) : undefined,
+              }
+            )}
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+            style={[
+              styles.submitButton,
+              isLoading && styles.submitButtonDisabled,
+            ]}
             onPress={handleSubmit}
             disabled={isLoading}
             activeOpacity={0.8}
@@ -384,7 +487,7 @@ const AuthScreen: React.FC = () => {
             ) : (
               <>
                 <Ionicons
-                  name={isLogin ? 'log-in-outline' : 'person-add-outline'}
+                  name={isLogin ? "log-in-outline" : "person-add-outline"}
                   size={20}
                   color={COLORS.white}
                 />
@@ -400,7 +503,14 @@ const AuthScreen: React.FC = () => {
             <Text style={styles.toggleText}>
               {isLogin ? STRINGS.auth_no_account : STRINGS.auth_have_account}
             </Text>
-            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setTouched({}); setFieldErrors({}); setFormError(null); }}>
+            <TouchableOpacity
+              onPress={() => {
+                setIsLogin(!isLogin);
+                setTouched({});
+                setFieldErrors({});
+                setFormError(null);
+              }}
+            >
               <Text style={styles.toggleLink}>
                 {isLogin ? STRINGS.auth_register : STRINGS.auth_login}
               </Text>
@@ -417,7 +527,7 @@ const AuthScreen: React.FC = () => {
           <View style={styles.loadingCard}>
             <ActivityIndicator size="large" color={COLORS.primary} />
             <Text style={styles.loadingText}>
-              {isLogin ? 'Đang đăng nhập...' : 'Đang tạo tài khoản...'}
+              {isLogin ? "Đang đăng nhập..." : "Đang tạo tài khoản..."}
             </Text>
           </View>
         </View>
@@ -433,13 +543,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 20,
+    paddingTop: 20,
   },
 
   // ── Header ──
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 28,
   },
   logo: {
@@ -449,7 +559,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.primary,
     marginTop: 12,
     letterSpacing: 0.5,
@@ -458,12 +568,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 6,
-    textAlign: 'center',
+    textAlign: "center",
   },
   miniHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 10,
     marginBottom: 16,
   },
@@ -474,13 +584,13 @@ const styles = StyleSheet.create({
   },
   miniAppName: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.primary,
   },
 
   // ── Tab ──
   tabRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: COLORS.background,
     borderRadius: 12,
     padding: 4,
@@ -490,11 +600,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   tabActive: {
     backgroundColor: COLORS.white,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -502,7 +612,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textSecondary,
   },
   tabTextActive: {
@@ -511,8 +621,8 @@ const styles = StyleSheet.create({
 
   // ── Error banner ──
   errorBanner: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: `${COLORS.error}10`,
     borderRadius: 12,
     padding: 12,
@@ -526,7 +636,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.error,
     lineHeight: 19,
-    fontWeight: '500' as const,
+    fontWeight: "500" as const,
   },
 
   // ── Form ──
@@ -534,7 +644,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -545,21 +655,21 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
     marginBottom: 6,
     marginLeft: 4,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.background,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
     gap: 10,
     borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   inputError: {
     borderColor: COLORS.error,
@@ -590,17 +700,17 @@ const styles = StyleSheet.create({
     color: COLORS.success,
   },
   fieldHintWarn: {
-    color: '#F59E0B',
+    color: "#F59E0B",
   },
 
   // ── Submit ──
   submitButton: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: COLORS.primary,
     borderRadius: 14,
     paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     marginTop: 8,
     shadowColor: COLORS.primary,
@@ -615,13 +725,13 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: COLORS.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   // ── Toggle ──
   toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 20,
     gap: 4,
   },
@@ -632,7 +742,7 @@ const styles = StyleSheet.create({
   toggleLink: {
     color: COLORS.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   // ── Other ──
@@ -641,18 +751,18 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 100,
   },
   loadingCard: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 32,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -660,7 +770,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     color: COLORS.textPrimary,
   },
 });
