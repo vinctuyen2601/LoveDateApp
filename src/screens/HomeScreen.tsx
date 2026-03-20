@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Animated,
 } from "react-native";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import IconImage from "@components/atoms/IconImage";
 import { getTagImage, getSpecialDateImage } from "@lib/iconImages";
 import { Calendar, DateData } from "react-native-calendars";
@@ -34,6 +36,13 @@ import { vi } from "date-fns/locale";
 import { DateUtils } from "@lib/date.utils";
 import NotificationBanner from "@components/molecules/NotificationBanner";
 import PressableCard from "@components/atoms/PressableCard";
+import HolidaySuggestionOverlay from "@components/organisms/HolidaySuggestionOverlay";
+import {
+  getActiveSuggestion,
+  markSuggestionDone,
+  snoozeSuggestion,
+} from "@lib/holidaySuggestionHelper";
+import { HolidaySuggestion } from "@constants/holidaySuggestions";
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -50,7 +59,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { events, isLoading, refreshEvents } = useEvents();
+  const { events, isLoading, refreshEvents, addEvent } = useEvents();
   const { sync } = useSync();
   const { message, image } = useNotification();
 
@@ -103,6 +112,28 @@ const HomeScreen: React.FC = () => {
           new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
       )
       .slice(0, 3);
+  }, [events]);
+
+  const nearestOccasionEvent = useMemo(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const thirtyDaysLater = addDays(todayStart, 30);
+    const eligibleTags = ["birthday", "anniversary", "holiday"];
+    return (
+      events
+        .filter((event) => {
+          if (!event.eventDate) return false;
+          const primaryTag = event.tags?.[0];
+          if (!eligibleTags.includes(primaryTag)) return false;
+          const eventDay = new Date(event.eventDate);
+          eventDay.setHours(0, 0, 0, 0);
+          return eventDay >= todayStart && eventDay <= thirtyDaysLater;
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+        )[0] ?? null
+    );
   }, [events]);
 
 
@@ -214,11 +245,56 @@ const HomeScreen: React.FC = () => {
       .catch(() => {});
   }, []);
 
+  // Holiday suggestion overlay
+  const [activeSuggestion, setActiveSuggestion] = useState<HolidaySuggestion | null>(null);
+  useEffect(() => {
+    getActiveSuggestion().then(setActiveSuggestion).catch(() => {});
+  }, []);
+
+  const handleSuggestionComplete = async () => {
+    if (!activeSuggestion) return;
+    await markSuggestionDone(activeSuggestion.id);
+    setActiveSuggestion(null);
+  };
+
+  const handleSuggestionSkip = async () => {
+    if (!activeSuggestion) return;
+    await snoozeSuggestion(activeSuggestion.id);
+    setActiveSuggestion(null);
+  };
+
   const handleSurveyPress = () =>
     navigation.navigate("Suggestions", { openSurvey: true });
   const handleEventPress = (event: Event) =>
     navigation.navigate("EventDetail", { eventId: event.id });
   const handleAddEvent = () => navigation.navigate("AddEvent");
+
+  // FAB pulse animation
+  const pulse1 = useRef(new Animated.Value(0)).current;
+  const pulse2 = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const createPulse = (anim: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 1600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    const a1 = createPulse(pulse1, 0);
+    const a2 = createPulse(pulse2, 700);
+    a1.start();
+    a2.start();
+    return () => { a1.stop(); a2.stop(); };
+  }, []);
   const handleViewCalendar = () => navigation.navigate("Calendar");
 
   // ===== SHARED EVENT CARD =====
@@ -271,6 +347,33 @@ const HomeScreen: React.FC = () => {
 
   // ===== QUICK ACTIONS =====
   const quickActions = [
+    ...(nearestOccasionEvent
+      ? [
+          {
+            id: "occasion-prep",
+            icon: "gift-outline" as const,
+            title: (() => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const daysLeft = differenceInCalendarDays(
+                new Date(nearestOccasionEvent.eventDate),
+                today
+              );
+              return daysLeft === 0
+                ? "Hôm nay!\nChuẩn bị"
+                : `Còn ${daysLeft} ngày\nChuẩn bị`;
+            })(),
+            subtitle: nearestOccasionEvent.title,
+            color: getTagColor(nearestOccasionEvent.tags?.[0] || "other"),
+            gradient: ["#FF6B6B", "#C850C0"] as [string, string],
+            onPress: () =>
+              navigation.navigate("OccasionPrep", {
+                eventId: nearestOccasionEvent.id,
+                event: nearestOccasionEvent,
+              }),
+          },
+        ]
+      : []),
     {
       id: "survey",
       icon: "heart-circle" as const,
@@ -303,6 +406,15 @@ const HomeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <NotificationBanner message={message} image={image} />
+
+      {activeSuggestion && (
+        <HolidaySuggestionOverlay
+          suggestion={activeSuggestion}
+          onComplete={handleSuggestionComplete}
+          onSkip={handleSuggestionSkip}
+          addEvent={addEvent}
+        />
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -339,110 +451,96 @@ const HomeScreen: React.FC = () => {
         )}
 
         {/* Upcoming Events */}
-        {/* {upcomingEvents.length > 0 && (
+        {upcomingEvents.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <TouchableOpacity
-                style={styles.sectionHeaderLeft}
-                onPress={() => setIsUpcomingExpanded(!isUpcomingExpanded)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name="alarm-outline"
-                  size={20}
-                  color={COLORS.primary}
-                />
+              <View style={styles.sectionHeaderLeft}>
+                <Ionicons name="alarm-outline" size={20} color={COLORS.primary} />
                 <Text style={styles.sectionTitle}>Sự kiện sắp tới</Text>
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{upcomingEvents.length}</Text>
                 </View>
-                <Ionicons
-                  name={isUpcomingExpanded ? "chevron-up" : "chevron-down"}
-                  size={18}
-                  color={COLORS.textSecondary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("EventsList")}
-              >
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate("EventsList")}>
                 <Text style={styles.viewAllText}>Xem tất cả</Text>
               </TouchableOpacity>
             </View>
-            {isUpcomingExpanded &&
-              upcomingEvents.map((event) => {
-                const primaryTag = event.tags?.[0] || "other";
-                const categoryColor = getTagColor(primaryTag);
-                const eventDate = new Date(event.eventDate);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const daysLeft = differenceInCalendarDays(eventDate, today);
-                const daysLabel =
-                  daysLeft === 0
-                    ? "Hôm nay"
-                    : daysLeft === 1
-                    ? "Ngày mai"
-                    : `${daysLeft} ngày`;
+            {upcomingEvents.map((event) => {
+              const primaryTag = event.tags?.[0] || "other";
+              const categoryColor = getTagColor(primaryTag);
+              const eventDate = new Date(event.eventDate);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const daysLeft = differenceInCalendarDays(eventDate, today);
+              const isOccasion = ["birthday", "anniversary", "holiday"].includes(primaryTag);
 
-                return (
-                  <PressableCard
-                    key={event.id}
-                    style={styles.upcomingCard}
-                    onPress={() => handleEventPress(event)}
+              return (
+                <PressableCard
+                  key={event.id}
+                  style={styles.upcomingCard}
+                  onPress={() => handleEventPress(event)}
+                >
+                  <View
+                    style={[
+                      styles.upcomingIconWrap,
+                      { backgroundColor: categoryColor + "18" },
+                    ]}
                   >
-                    <View
-                      style={[
-                        styles.upcomingAccent,
-                        { backgroundColor: categoryColor },
-                      ]}
-                    />
-                    <View style={styles.upcomingBody}>
-                      <View style={styles.upcomingTop}>
-                        <View
-                          style={[
-                            styles.upcomingIconWrap,
-                            { backgroundColor: categoryColor + "15" },
-                          ]}
-                        >
-                          <IconImage source={getTagImage(primaryTag)} size={22} />
-                        </View>
-                        <View style={styles.upcomingInfo}>
-                          <Text style={styles.upcomingTitle} numberOfLines={1}>
-                            {event.title}
-                          </Text>
-                          <View style={styles.upcomingDateRow}>
-                            <Ionicons
-                              name="calendar-outline"
-                              size={13}
-                              color={COLORS.textSecondary}
-                            />
-                            <Text style={styles.upcomingDateText}>
-                              {format(eventDate, "EEEE, d/MM", { locale: vi })}
-                            </Text>
-                          </View>
-                        </View>
-                        <View
-                          style={[
-                            styles.upcomingCountdown,
-                            daysLeft === 0 && styles.upcomingCountdownToday,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.upcomingCountdownText,
-                              daysLeft === 0 &&
-                                styles.upcomingCountdownTextToday,
-                            ]}
-                          >
-                            {daysLabel}
-                          </Text>
-                        </View>
-                      </View>
+                    <IconImage source={getTagImage(primaryTag)} size={26} />
+                  </View>
+                  <View style={styles.upcomingInfo}>
+                    <Text style={styles.upcomingTitle} numberOfLines={1}>
+                      {event.title}
+                    </Text>
+                    <View style={styles.upcomingDateRow}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={12}
+                        color={COLORS.textSecondary}
+                      />
+                      <Text style={styles.upcomingDateText}>
+                        {format(eventDate, "EEEE, d/MM", { locale: vi })}
+                      </Text>
                     </View>
-                  </PressableCard>
-                );
-              })}
+                    {isOccasion && (
+                      <View style={styles.prepBadge}>
+                        <Ionicons name="sparkles" size={11} color={categoryColor} />
+                        <Text style={[styles.prepBadgeText, { color: categoryColor }]}>
+                          Bắt đầu chuẩn bị
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View
+                    style={[
+                      styles.countdownCircle,
+                      {
+                        backgroundColor:
+                          daysLeft === 0 ? categoryColor : categoryColor + "15",
+                      },
+                    ]}
+                  >
+                    {daysLeft === 0 ? (
+                      <Image
+                        source={require("../../assets/icons/tags/confetti.png")}
+                        style={styles.countdownToday}
+                      />
+                    ) : (
+                      <>
+                        <Text style={[styles.countdownNum, { color: categoryColor }]}>
+                          {daysLeft}
+                        </Text>
+                        <Text style={[styles.countdownLabel, { color: categoryColor + "CC" }]}>
+                          ngày
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                </PressableCard>
+              );
+            })}
           </View>
-        )} */}
+        )}
 
         {/* Local Shop Banner — hiện khi có sự kiện sắp tới */}
         {upcomingEvents.length > 0 && (
@@ -559,36 +657,57 @@ const HomeScreen: React.FC = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.quickActionsScroll}
           >
-            {quickActions.map((action) => (
-              <PressableCard
-                key={action.id}
-                style={[
-                  styles.quickActionCard,
-                  { backgroundColor: action.color },
-                ]}
-                onPress={action.onPress}
-              >
-                {/* Decorative circle top-right */}
-                <View style={styles.qaDecorCircle} />
-                <View style={styles.qaIconBg}>
+            {quickActions.map((action) => {
+              const cardContent = (
+                <>
+                  {/* Decorative circle top-right */}
+                  <View style={styles.qaDecorCircle} />
+                  <View style={styles.qaIconBg}>
+                    <Ionicons
+                      name={action.icon}
+                      size={26}
+                      color="rgba(255,255,255,0.95)"
+                    />
+                  </View>
+                  <Text style={styles.qaTitle}>{action.title}</Text>
+                  <Text style={styles.qaSub} numberOfLines={2}>
+                    {action.subtitle}
+                  </Text>
                   <Ionicons
-                    name={action.icon}
-                    size={26}
-                    color="rgba(255,255,255,0.95)"
+                    name="arrow-forward-circle"
+                    size={20}
+                    color="rgba(255,255,255,0.5)"
+                    style={styles.qaArrow}
                   />
-                </View>
-                <Text style={styles.qaTitle}>{action.title}</Text>
-                <Text style={styles.qaSub} numberOfLines={2}>
-                  {action.subtitle}
-                </Text>
-                <Ionicons
-                  name="arrow-forward-circle"
-                  size={20}
-                  color="rgba(255,255,255,0.5)"
-                  style={styles.qaArrow}
-                />
-              </PressableCard>
-            ))}
+                </>
+              );
+              return (action as any).gradient ? (
+                <PressableCard
+                  key={action.id}
+                  style={styles.quickActionCard}
+                  onPress={action.onPress}
+                >
+                  <LinearGradient
+                    colors={(action as any).gradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  {cardContent}
+                </PressableCard>
+              ) : (
+                <PressableCard
+                  key={action.id}
+                  style={[
+                    styles.quickActionCard,
+                    { backgroundColor: action.color },
+                  ]}
+                  onPress={action.onPress}
+                >
+                  {cardContent}
+                </PressableCard>
+              );
+            })}
           </ScrollView>
         </View>}
 
@@ -640,7 +759,7 @@ const HomeScreen: React.FC = () => {
               {/* Decorative large icon watermark (shown when no image) */}
               {!articles[0].imageUrl && (
                 <Ionicons
-                  name={articles[0].icon}
+                  name={articles[0].icon as any}
                   size={96}
                   color="rgba(255,255,255,0.12)"
                   style={styles.featuredDecorIcon}
@@ -715,7 +834,7 @@ const HomeScreen: React.FC = () => {
                     />
                   ) : (
                     <Ionicons
-                      name={article.icon}
+                      name={article.icon as any}
                       size={24}
                       color="rgba(255,255,255,0.95)"
                     />
@@ -769,13 +888,23 @@ const HomeScreen: React.FC = () => {
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity
-        style={[styles.fab, { bottom: 20 + TAB_BAR_HEIGHT + insets.bottom }]}
-        onPress={handleAddEvent}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color={COLORS.white} />
-      </TouchableOpacity>
+      <View style={[styles.fabWrapper, { bottom: 20 + TAB_BAR_HEIGHT + insets.bottom }]}>
+        {[pulse1, pulse2].map((anim, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.fabRing,
+              {
+                opacity: anim.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.45, 0] }),
+                transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] }) }],
+              },
+            ]}
+          />
+        ))}
+        <TouchableOpacity style={styles.fab} onPress={handleAddEvent} activeOpacity={0.8}>
+          <Ionicons name="add" size={28} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -966,48 +1095,37 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
-  // Upcoming Event Card
+  // Upcoming Event Card — redesigned
   upcomingCard: {
     flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.white,
-    borderRadius: 14,
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 10,
-    overflow: "hidden",
+    gap: 12,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: 5,
     elevation: 2,
   },
-  upcomingAccent: {
-    width: 4,
-  },
-  upcomingBody: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  upcomingTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   upcomingIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    flexShrink: 0,
   },
   upcomingInfo: {
     flex: 1,
-    marginRight: 8,
+    gap: 3,
   },
   upcomingTitle: {
     fontSize: 15,
     fontWeight: "600",
     color: COLORS.textPrimary,
-    marginBottom: 3,
   },
   upcomingDateRow: {
     flexDirection: "row",
@@ -1019,22 +1137,37 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textTransform: "capitalize",
   },
-  upcomingCountdown: {
-    backgroundColor: COLORS.primary + "12",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+  prepBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
   },
-  upcomingCountdownToday: {
-    backgroundColor: COLORS.primary,
-  },
-  upcomingCountdownText: {
+  prepBadgeText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontWeight: "600",
   },
-  upcomingCountdownTextToday: {
-    color: COLORS.white,
+  countdownCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  countdownNum: {
+    fontSize: 20,
+    fontWeight: "700",
+    lineHeight: 24,
+  },
+  countdownLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+    lineHeight: 13,
+  },
+  countdownToday: {
+    width: 32,
+    height: 32,
   },
 
   // Custom day cell
@@ -1157,7 +1290,7 @@ const styles = StyleSheet.create({
     width: 158,
     borderRadius: 18,
     padding: 16,
-    minHeight: 148,
+    height: 202,
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -1197,7 +1330,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   qaArrow: {
-    marginTop: 10,
+    marginTop: 0,
     alignSelf: "flex-end",
   },
 
@@ -1345,9 +1478,22 @@ const styles = StyleSheet.create({
   },
 
   // FAB
-  fab: {
+  fabWrapper: {
     position: "absolute",
     right: 20,
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fabRing: {
+    position: "absolute",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary,
+  },
+  fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
