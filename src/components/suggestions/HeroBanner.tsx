@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 interface HeroBannerProps {
   onStartSurvey: () => void;
+  onStartDetailedSurvey: () => void;
 }
 
 const FEATURES = [
@@ -14,7 +15,7 @@ const FEATURES = [
   { icon: 'pricetag-outline' as const, label: 'Link mua ngay' },
 ];
 
-const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey }) => {
+const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey, onStartDetailedSurvey }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
 
@@ -75,11 +76,16 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey }) => {
         {/* CTA button with pulse */}
         <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
           <TouchableOpacity style={styles.ctaButton} onPress={onStartSurvey} activeOpacity={0.85}>
-            <Ionicons name="sparkles" size={17} color="#FF6B6B" />
-            <Text style={styles.ctaText}>Bắt đầu khảo sát ngay</Text>
+            <Ionicons name="flash" size={17} color="#FF6B6B" />
+            <Text style={styles.ctaText}>Khảo sát nhanh (3 câu)</Text>
             <Ionicons name="arrow-forward" size={17} color="#FF6B6B" />
           </TouchableOpacity>
         </Animated.View>
+
+        {/* Secondary link — detailed survey */}
+        <TouchableOpacity onPress={onStartDetailedSurvey} activeOpacity={0.7} style={styles.detailedLink}>
+          <Text style={styles.detailedLinkText}>Muốn gợi ý chính xác hơn? Khảo sát chi tiết →</Text>
+        </TouchableOpacity>
       </LinearGradient>
     </View>
   );
@@ -196,6 +202,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#FF6B6B',
+  },
+  detailedLink: {
+    marginTop: 14,
+    paddingVertical: 4,
+  },
+  detailedLinkText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    textDecorationLine: 'underline',
   },
 });
 

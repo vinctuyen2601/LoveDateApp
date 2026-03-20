@@ -29,10 +29,11 @@ import HeroBanner from "../components/suggestions/HeroBanner";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
 import ProductCard from "../components/suggestions/ProductCard";
 // import ExperienceCard from "../components/suggestions/ExperienceCard"; // tạm ẩn
-import OccasionCards from "../components/suggestions/OccasionCard";
+// import OccasionCards from "../components/suggestions/OccasionCard"; // tạm ẩn
 import { useMasterData } from "../contexts/MasterDataContext";
 // import BudgetFilter from "../components/suggestions/BudgetFilter"; // tạm ẩn
 import SurveyModal from "../components/suggestions/SurveyModal";
+import QuickSurveyModal from "../components/suggestions/QuickSurveyModal";
 import {
   logGiftSurveyStart,
   logGiftSurveyComplete,
@@ -55,7 +56,7 @@ const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation
       removeClippedSubviews={false}
     >
       <PressableCard
-        style={[styles.toolCard, { backgroundColor: "#7C3AED" }]}
+        style={[styles.toolCard, { backgroundColor: COLORS.primary }]}
         onPress={() => navigation.navigate("PersonalitySurvey")}
       >
         <View style={styles.toolTop}>
@@ -148,7 +149,7 @@ const SuggestionsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { occasions } = useMasterData();
+  useMasterData();
 
   // Core state
   const [articles, setArticles] = useState<Article[]>([]);
@@ -163,6 +164,7 @@ const SuggestionsScreen: React.FC = () => {
   const [productsError, setProductsError] = useState<string | null>(null);
 
   // Modal state
+  const [showQuickSurveyModal, setShowQuickSurveyModal] = useState(false);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [resultSuggestions, setResultSuggestions] = useState<Suggestion[]>([]);
@@ -267,17 +269,10 @@ const SuggestionsScreen: React.FC = () => {
     [navigation]
   );
 
-  const handleOccasionPress = useCallback(
-    (occasionId: string) => {
-      const occasion = occasions.find((o) => o.id === occasionId);
-      navigation.navigate("OccasionProducts", {
-        occasionId,
-        occasionName: occasion?.name ?? occasionId,
-        occasionColor: occasion?.color,
-      });
-    },
-    [occasions, navigation]
-  );
+  const handleStartQuickSurvey = useCallback(() => {
+    logGiftSurveyStart();
+    setShowQuickSurveyModal(true);
+  }, []);
 
   const handleStartSurvey = useCallback(() => {
     logGiftSurveyStart();
@@ -292,10 +287,8 @@ const SuggestionsScreen: React.FC = () => {
       });
       setResultSuggestions(suggestions);
       setResultSurveyAnswers(answers);
-      setShowSurveyModal(false);
-      setTimeout(() => {
-        setShowResultsModal(true);
-      }, 300);
+      setShowResultsModal(true);
+      setTimeout(() => setShowSurveyModal(false), 400);
     },
     []
   );
@@ -327,7 +320,10 @@ const SuggestionsScreen: React.FC = () => {
         }
       >
         {/* Section 1: Hero Banner */}
-        <HeroBanner onStartSurvey={handleStartSurvey} />
+        <HeroBanner
+          onStartSurvey={handleStartQuickSurvey}
+          onStartDetailedSurvey={handleStartSurvey}
+        />
 
         {/* Section 2: Tools */}
         <ToolCardsSection navigation={navigation} />
@@ -342,8 +338,8 @@ const SuggestionsScreen: React.FC = () => {
           onViewAll={() => navigation.navigate("AllArticles")}
         />
 
-        {/* Section 5: Gift by Occasion */}
-        <OccasionCards onOccasionPress={handleOccasionPress} />
+        {/* Section 5: Gift by Occasion — tạm ẩn */}
+        {/* <OccasionCards onOccasionPress={handleOccasionPress} /> */}
 
         {/* Section 6: Trending Products */}
         <View style={styles.section}>
@@ -402,6 +398,19 @@ const SuggestionsScreen: React.FC = () => {
       </ScrollView>
 
       {/* Modals — lazy-mounted to avoid heavy render when hidden */}
+      {showQuickSurveyModal && (
+        <QuickSurveyModal
+          visible={showQuickSurveyModal}
+          onClose={() => setShowQuickSurveyModal(false)}
+          onComplete={(suggestions, answers) => {
+            setResultSuggestions(suggestions);
+            setResultSurveyAnswers(answers);
+            setShowResultsModal(true);
+            setTimeout(() => setShowQuickSurveyModal(false), 400);
+          }}
+        />
+      )}
+
       {showSurveyModal && (
         <SurveyModal
           visible={showSurveyModal}

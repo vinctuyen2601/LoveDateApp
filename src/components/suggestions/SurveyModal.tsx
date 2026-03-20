@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -10,7 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from '@themes/colors';
+import { COLORS } from "@themes/colors";
 import { filterSuggestions, Suggestion } from "../../data/suggestions";
 
 interface SurveyQuestion {
@@ -31,18 +37,18 @@ interface SurveyModalProps {
 }
 
 const QUESTION_ICONS: Record<string, string> = {
-  gender: 'people-outline',
-  relationship: 'heart-outline',
-  relationship_duration: 'time-outline',
-  personality: 'person-outline',
-  hobbies: 'game-controller-outline',
-  hobbies_other: 'create-outline',
-  needs: 'star-outline',
-  love_language: 'chatbubble-ellipses-outline',
-  style: 'shirt-outline',
-  budget: 'wallet-outline',
-  occasion: 'calendar-outline',
-  gift_purpose: 'gift-outline',
+  gender: "people-outline",
+  relationship: "heart-outline",
+  relationship_duration: "time-outline",
+  personality: "person-outline",
+  hobbies: "game-controller-outline",
+  hobbies_other: "create-outline",
+  needs: "star-outline",
+  love_language: "chatbubble-ellipses-outline",
+  style: "shirt-outline",
+  budget: "wallet-outline",
+  occasion: "calendar-outline",
+  gift_purpose: "gift-outline",
 };
 
 const SurveyModal: React.FC<SurveyModalProps> = ({
@@ -55,7 +61,9 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
   const progressAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const [currentMultipleSelections, setCurrentMultipleSelections] = useState<string[]>([]);
+  const [currentMultipleSelections, setCurrentMultipleSelections] = useState<
+    string[]
+  >([]);
   const [currentTextInput, setCurrentTextInput] = useState<string>("");
 
   useEffect(() => {
@@ -70,247 +78,258 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   }, [visible]);
 
   const animateNext = (cb: () => void) => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 140, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 140,
+      useNativeDriver: true,
+    }).start();
     setTimeout(() => {
       cb();
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
     }, 140);
   };
 
-  const surveyQuestions = useMemo((): SurveyQuestion[] => [
-    {
-      id: "gender",
-      question: "Người bạn muốn tặng quà thuộc giới tính nào?",
-      questionHint: "Giúp chúng tôi gợi ý quà phù hợp với sở thích chung",
-      type: "single",
-      options: ["Nam", "Nữ", "Khác"],
-    },
-    {
-      id: "relationship",
-      question: "Mối quan hệ của bạn với người đó?",
-      questionHint:
-        "Mối quan hệ khác nhau sẽ có cách thể hiện tình cảm khác nhau",
-      type: "single",
-      options: [
-        "Người yêu/Vợ/Chồng",
-        "Cha/Mẹ",
-        "Anh/Chị/Em ruột",
-        "Bạn thân",
-        "Đồng nghiệp/Sếp",
-        "Người mới quen",
-      ],
-    },
-    {
-      id: "relationship_duration",
-      question: "Bạn và người ấy đã yêu nhau được bao lâu?",
-      questionHint: "Giai đoạn khác nhau cần quà khác nhau",
-      type: "single",
-      options: [
-        "Dưới 3 tháng (Mới yêu)",
-        "3-6 tháng (Đang tìm hiểu)",
-        "6 tháng - 1 năm",
-        "1-3 năm",
-        "Trên 3 năm",
-        "Đã kết hôn",
-      ],
-      condition: (answers) => answers.relationship === "Người yêu/Vợ/Chồng",
-    },
-    {
-      id: "personality",
-      question: "Tính cách của người đó? (Chọn tối đa 3)",
-      questionHint: "Hiểu tính cách giúp chọn quà hợp gu",
-      type: "multiple",
-      maxSelections: 3,
-      options: [
-        "Hướng ngoại, thích giao lưu",
-        "Hướng nội, trầm tĩnh",
-        "Lãng mạn, mơ mộng",
-        "Thực tế, cụ thể",
-        "Thích công nghệ, hiện đại",
-        "Thích cổ điển, truyền thống",
-        "Năng động, thể thao",
-        "Nghệ thuật, sáng tạo",
-        "Chu đáo, tỉ mỉ",
-        "Tự do, phóng khoáng",
-      ],
-    },
-    {
-      id: "hobbies",
-      question: "Người đó thường làm gì lúc rảnh? (Chọn nhiều đáp án)",
-      questionHint: "Quà liên quan đến sở thích luôn được yêu thích",
-      type: "multiple",
-      maxSelections: 5,
-      options: [
-        "Đọc sách/Truyện/Manga",
-        "Xem phim/Series/Anime",
-        "Nghe nhạc/Đi concert",
-        "Chơi game (Mobile/PC/Console)",
-        "Thể thao (Gym/Yoga/Chạy bộ/Bơi)",
-        "Du lịch/Khám phá",
-        "Nấu ăn/Làm bánh",
-        "Chụp ảnh/Quay video",
-        "Mua sắm/Làm đẹp",
-        "Vẽ/Handmade/DIY",
-        "Chơi với thú cưng",
-        "Gặp gỡ bạn bè",
-      ],
-    },
-    {
-      id: "hobbies_other",
-      question: "Có sở thích đặc biệt nào khác không?",
-      questionHint: "VD: Sưu tầm mô hình, chơi nhạc cụ, làm vườn...",
-      type: "text",
-      placeholder: "Nhập sở thích khác (nếu có)...",
-    },
-    {
-      id: "needs",
-      question:
-        surveyAnswers.gender === "Nam"
-          ? "Điều anh ấy đang cần/muốn nhất hiện tại?"
-          : surveyAnswers.gender === "Nữ"
-          ? "Điều cô ấy đang cần/muốn nhất hiện tại?"
-          : "Điều họ đang cần/muốn nhất hiện tại?",
-      questionHint: "Quà thiết thực luôn có giá trị cao",
-      type: "multiple",
-      maxSelections: 3,
-      options:
-        surveyAnswers.gender === "Nam"
-          ? [
-              "Nâng cấp đồ công nghệ",
-              "Đồ thể thao/Gym",
-              "Quần áo/Giày dép mới",
-              "Đồ dùng công việc",
-              "Thư giãn/Giảm stress",
-              "Cải thiện ngoại hình",
-              "Học hỏi kỹ năng mới",
-              "Giải trí/Vui chơi",
-            ]
-          : surveyAnswers.gender === "Nữ"
-          ? [
-              "Đồ skincare/Makeup",
-              "Quần áo/Túi xách/Giày",
-              "Trang sức/Phụ kiện",
-              "Thư giãn/Spa/Massage",
-              "Đồ dùng nhà cửa",
-              "Sách/Khóa học",
-              "Du lịch/Trải nghiệm",
-              "Đồ công nghệ/Gadget",
-            ]
-          : [
-              "Đồ công nghệ",
-              "Quần áo/Phụ kiện",
-              "Thư giãn/Giải trí",
-              "Học tập/Phát triển",
-              "Sức khỏe/Làm đẹp",
-              "Du lịch/Trải nghiệm",
-            ],
-    },
-    {
-      id: "love_language",
-      question: "Người đó cảm nhận tình cảm qua cách nào nhiều nhất?",
-      questionHint: "Hiểu 5 ngôn ngữ yêu thương để thể hiện đúng cách",
-      type: "single",
-      options: [
-        "Lời nói ngọt ngào, khen ngợi",
-        "Thời gian chất lượng bên nhau",
-        "Nhận quà tặng, dù nhỏ",
-        "Hành động phục vụ (làm việc giúp đỡ)",
-        "Chạm chạm, ôm ấp, nắm tay",
-        "Chưa rõ/Không chắc",
-      ],
-      condition: (answers) =>
-        answers.relationship === "Người yêu/Vợ/Chồng" ||
-        answers.relationship === "Bạn thân",
-    },
-    {
-      id: "style",
-      question:
-        surveyAnswers.gender === "Nam"
-          ? "Phong cách ăn mặc của anh ấy?"
-          : surveyAnswers.gender === "Nữ"
-          ? "Phong cách thời trang cô ấy thích?"
-          : "Phong cách của họ?",
-      questionHint: "Giúp chọn quà về thời trang, phụ kiện",
-      type: "multiple",
-      maxSelections: 2,
-      options:
-        surveyAnswers.gender === "Nam"
-          ? [
-              "Lịch sự, công sở",
-              "Thể thao, năng động",
-              "Streetwear, hip-hop",
-              "Tối giản, basic",
-              "Vintage, cổ điển",
-              "Không quan tâm nhiều",
-            ]
-          : surveyAnswers.gender === "Nữ"
-          ? [
-              "Nữ tính, dịu dàng",
-              "Cá tính, mạnh mẽ",
-              "Hàn Quốc, ulzzang",
-              "Vintage, retro",
-              "Tối giản, minimal",
-              "Thể thao, active",
-              "Boho, tự do",
-              "Công sở, thanh lịch",
-            ]
-          : [
-              "Lịch sự, thanh lịch",
-              "Thoải mái, đơn giản",
-              "Thể thao, năng động",
-              "Cá tính, độc đáo",
-            ],
-    },
-    {
-      id: "budget",
-      question: "Ngân sách bạn dự định cho món quà này?",
-      questionHint: "Giúp gợi ý quà phù hợp với khả năng tài chính",
-      type: "single",
-      options: [
-        "Dưới 200k (Quà ý nghĩa, handmade)",
-        "200k - 500k",
-        "500k - 1 triệu",
-        "1 - 2 triệu",
-        "2 - 5 triệu",
-        "Trên 5 triệu (Quà cao cấp)",
-        "Không giới hạn",
-      ],
-    },
-    {
-      id: "occasion",
-      question: "Quà tặng cho dịp gì?",
-      questionHint: "Mỗi dịp có ý nghĩa riêng",
-      type: "single",
-      options: [
-        "Sinh nhật",
-        "Kỷ niệm yêu nhau",
-        "Valentine/Lễ tình nhân",
-        "8/3 - Quốc tế Phụ nữ",
-        "20/10 - Phụ nữ Việt Nam",
-        "Giáng sinh/Tết",
-        "Xin lỗi/Hòa giải",
-        "Động viên/Khích lệ",
-        "Không có dịp, tặng bất ngờ",
-      ],
-    },
-    {
-      id: "gift_purpose",
-      question: "Bạn muốn món quà này mang lại điều gì?",
-      questionHint: "Hiểu rõ mục đích để gợi ý chính xác hơn",
-      type: "multiple",
-      maxSelections: 2,
-      options: [
-        "Thể hiện tình cảm sâu sắc",
-        "Làm người đó bất ngờ, vui vẻ",
-        "Thực tế, hữu ích hàng ngày",
-        "Kỷ niệm lâu dài, ý nghĩa",
-        "Nâng cao chất lượng cuộc sống",
-        "Thể hiện sự hiểu biết về họ",
-        "Độc đáo, khác biệt",
-        "Sang trọng, đẳng cấp",
-      ],
-    },
-  ], [surveyAnswers.gender, surveyAnswers.relationship]);
+  const surveyQuestions = useMemo(
+    (): SurveyQuestion[] => [
+      {
+        id: "gender",
+        question: "Người bạn muốn tặng quà thuộc giới tính nào?",
+        questionHint: "Giúp chúng tôi gợi ý quà phù hợp với sở thích chung",
+        type: "single",
+        options: ["Nam", "Nữ", "Khác"],
+      },
+      {
+        id: "relationship",
+        question: "Bạn muốn tìm quà cho ai?",
+        questionHint:
+          "Mối quan hệ khác nhau sẽ có cách thể hiện tình cảm khác nhau",
+        type: "single",
+        options: [
+          "Người yêu/Vợ/Chồng",
+          "Cha/Mẹ",
+          "Anh/Chị/Em ruột",
+          "Bạn thân",
+          "Đồng nghiệp/Sếp",
+          "Người mới quen",
+        ],
+      },
+      {
+        id: "relationship_duration",
+        question: "Bạn và người ấy đã yêu nhau được bao lâu?",
+        questionHint: "Giai đoạn khác nhau cần quà khác nhau",
+        type: "single",
+        options: [
+          "Dưới 3 tháng (Mới yêu)",
+          "3-6 tháng (Đang tìm hiểu)",
+          "6 tháng - 1 năm",
+          "1-3 năm",
+          "Trên 3 năm",
+          "Đã kết hôn",
+        ],
+        condition: (answers) => answers.relationship === "Người yêu/Vợ/Chồng",
+      },
+      {
+        id: "personality",
+        question: "Tính cách của người đó? (Chọn tối đa 3)",
+        questionHint: "Hiểu tính cách giúp chọn quà hợp gu",
+        type: "multiple",
+        maxSelections: 3,
+        options: [
+          "Hướng ngoại, thích giao lưu",
+          "Hướng nội, trầm tĩnh",
+          "Lãng mạn, mơ mộng",
+          "Thực tế, cụ thể",
+          "Thích công nghệ, hiện đại",
+          "Thích cổ điển, truyền thống",
+          "Năng động, thể thao",
+          "Nghệ thuật, sáng tạo",
+          "Chu đáo, tỉ mỉ",
+          "Tự do, phóng khoáng",
+        ],
+      },
+      {
+        id: "hobbies",
+        question: "Người đó thường làm gì lúc rảnh? (Chọn nhiều đáp án)",
+        questionHint: "Quà liên quan đến sở thích luôn được yêu thích",
+        type: "multiple",
+        maxSelections: 5,
+        options: [
+          "Đọc sách/Truyện/Manga",
+          "Xem phim/Series/Anime",
+          "Nghe nhạc/Đi concert",
+          "Chơi game (Mobile/PC/Console)",
+          "Thể thao (Gym/Yoga/Chạy bộ/Bơi)",
+          "Du lịch/Khám phá",
+          "Nấu ăn/Làm bánh",
+          "Chụp ảnh/Quay video",
+          "Mua sắm/Làm đẹp",
+          "Vẽ/Handmade/DIY",
+          "Chơi với thú cưng",
+          "Gặp gỡ bạn bè",
+        ],
+      },
+      {
+        id: "hobbies_other",
+        question: "Có sở thích đặc biệt nào khác không?",
+        questionHint: "VD: Sưu tầm mô hình, chơi nhạc cụ, làm vườn...",
+        type: "text",
+        placeholder: "Nhập sở thích khác (nếu có)...",
+      },
+      {
+        id: "needs",
+        question:
+          surveyAnswers.gender === "Nam"
+            ? "Điều anh ấy đang cần/muốn nhất hiện tại?"
+            : surveyAnswers.gender === "Nữ"
+            ? "Điều cô ấy đang cần/muốn nhất hiện tại?"
+            : "Điều họ đang cần/muốn nhất hiện tại?",
+        questionHint: "Quà thiết thực luôn có giá trị cao",
+        type: "multiple",
+        maxSelections: 3,
+        options:
+          surveyAnswers.gender === "Nam"
+            ? [
+                "Nâng cấp đồ công nghệ",
+                "Đồ thể thao/Gym",
+                "Quần áo/Giày dép mới",
+                "Đồ dùng công việc",
+                "Thư giãn/Giảm stress",
+                "Cải thiện ngoại hình",
+                "Học hỏi kỹ năng mới",
+                "Giải trí/Vui chơi",
+              ]
+            : surveyAnswers.gender === "Nữ"
+            ? [
+                "Đồ skincare/Makeup",
+                "Quần áo/Túi xách/Giày",
+                "Trang sức/Phụ kiện",
+                "Thư giãn/Spa/Massage",
+                "Đồ dùng nhà cửa",
+                "Sách/Khóa học",
+                "Du lịch/Trải nghiệm",
+                "Đồ công nghệ/Gadget",
+              ]
+            : [
+                "Đồ công nghệ",
+                "Quần áo/Phụ kiện",
+                "Thư giãn/Giải trí",
+                "Học tập/Phát triển",
+                "Sức khỏe/Làm đẹp",
+                "Du lịch/Trải nghiệm",
+              ],
+      },
+      {
+        id: "love_language",
+        question: "Người đó cảm nhận tình cảm qua cách nào nhiều nhất?",
+        questionHint: "Hiểu 5 ngôn ngữ yêu thương để thể hiện đúng cách",
+        type: "single",
+        options: [
+          "Lời nói ngọt ngào, khen ngợi",
+          "Thời gian chất lượng bên nhau",
+          "Nhận quà tặng, dù nhỏ",
+          "Hành động phục vụ (làm việc giúp đỡ)",
+          "Chạm chạm, ôm ấp, nắm tay",
+          "Chưa rõ/Không chắc",
+        ],
+        condition: (answers) =>
+          answers.relationship === "Người yêu/Vợ/Chồng" ||
+          answers.relationship === "Bạn thân",
+      },
+      {
+        id: "style",
+        question:
+          surveyAnswers.gender === "Nam"
+            ? "Phong cách ăn mặc của anh ấy?"
+            : surveyAnswers.gender === "Nữ"
+            ? "Phong cách thời trang cô ấy thích?"
+            : "Phong cách của họ?",
+        questionHint: "Giúp chọn quà về thời trang, phụ kiện",
+        type: "multiple",
+        maxSelections: 2,
+        options:
+          surveyAnswers.gender === "Nam"
+            ? [
+                "Lịch sự, công sở",
+                "Thể thao, năng động",
+                "Streetwear, hip-hop",
+                "Tối giản, basic",
+                "Vintage, cổ điển",
+                "Không quan tâm nhiều",
+              ]
+            : surveyAnswers.gender === "Nữ"
+            ? [
+                "Nữ tính, dịu dàng",
+                "Cá tính, mạnh mẽ",
+                "Hàn Quốc, ulzzang",
+                "Vintage, retro",
+                "Tối giản, minimal",
+                "Thể thao, active",
+                "Boho, tự do",
+                "Công sở, thanh lịch",
+              ]
+            : [
+                "Lịch sự, thanh lịch",
+                "Thoải mái, đơn giản",
+                "Thể thao, năng động",
+                "Cá tính, độc đáo",
+              ],
+      },
+      {
+        id: "budget",
+        question: "Ngân sách bạn dự định cho món quà này?",
+        questionHint: "Giúp gợi ý quà phù hợp với khả năng tài chính",
+        type: "single",
+        options: [
+          "Dưới 200k (Quà ý nghĩa, handmade)",
+          "200k - 500k",
+          "500k - 1 triệu",
+          "1 - 2 triệu",
+          "2 - 5 triệu",
+          "Trên 5 triệu (Quà cao cấp)",
+          "Không giới hạn",
+        ],
+      },
+      {
+        id: "occasion",
+        question: "Quà tặng cho dịp gì?",
+        questionHint: "Mỗi dịp có ý nghĩa riêng",
+        type: "single",
+        options: [
+          "Sinh nhật",
+          "Kỷ niệm yêu nhau",
+          "Valentine/Lễ tình nhân",
+          "8/3 - Quốc tế Phụ nữ",
+          "20/10 - Phụ nữ Việt Nam",
+          "Giáng sinh/Tết",
+          "Xin lỗi/Hòa giải",
+          "Động viên/Khích lệ",
+          "Không có dịp, tặng bất ngờ",
+        ],
+      },
+      {
+        id: "gift_purpose",
+        question: "Bạn muốn món quà này mang lại điều gì?",
+        questionHint: "Hiểu rõ mục đích để gợi ý chính xác hơn",
+        type: "multiple",
+        maxSelections: 2,
+        options: [
+          "Thể hiện tình cảm sâu sắc",
+          "Làm người đó bất ngờ, vui vẻ",
+          "Thực tế, hữu ích hàng ngày",
+          "Kỷ niệm lâu dài, ý nghĩa",
+          "Nâng cao chất lượng cuộc sống",
+          "Thể hiện sự hiểu biết về họ",
+          "Độc đáo, khác biệt",
+          "Sang trọng, đẳng cấp",
+        ],
+      },
+    ],
+    [surveyAnswers.gender, surveyAnswers.relationship]
+  );
 
   const currentFilteredQuestions = surveyQuestions.filter((q) => {
     if (!q.condition) return true;
@@ -425,8 +444,9 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   ]);
 
   const isNextDisabled =
-    (currentQuestion?.type === 'multiple' && currentMultipleSelections.length === 0) ||
-    (currentQuestion?.type === 'text' && currentTextInput.trim().length === 0);
+    (currentQuestion?.type === "multiple" &&
+      currentMultipleSelections.length === 0) ||
+    (currentQuestion?.type === "text" && currentTextInput.trim().length === 0);
 
   return (
     <Modal
@@ -436,201 +456,251 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={[styles.sheet, { paddingTop: insets.top }]}>
-
-          {/* Header */}
-          <View style={styles.sheetHeader}>
-            {surveyStep > 0 ? (
-              <TouchableOpacity
-                onPress={() => {
-                  const prevStep = surveyStep - 1;
-                  const prevQuestion = currentFilteredQuestions[prevStep];
-                  animateNext(() => {
-                    setSurveyStep(prevStep);
-                    // Restore previous answers so user sees what they selected before
-                    if (prevQuestion?.type === 'multiple') {
-                      setCurrentMultipleSelections(surveyAnswers[prevQuestion.id] ?? []);
-                    } else {
-                      setCurrentMultipleSelections([]);
-                    }
-                    if (prevQuestion?.type === 'text') {
-                      setCurrentTextInput(surveyAnswers[prevQuestion.id] ?? '');
-                    } else {
-                      setCurrentTextInput('');
-                    }
-                  });
-                }}
-                style={styles.headerBtn}
-              >
-                <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.headerBtnPlaceholder} />
-            )}
-            <Text style={styles.headerProgress}>
-              Câu {surveyStep + 1}/{currentFilteredQuestions.length}
-            </Text>
-            <TouchableOpacity onPress={onClose} style={styles.headerBtn}>
-              <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+        {/* Header */}
+        <View style={styles.sheetHeader}>
+          {surveyStep > 0 ? (
+            <TouchableOpacity
+              onPress={() => {
+                const prevStep = surveyStep - 1;
+                const prevQuestion = currentFilteredQuestions[prevStep];
+                animateNext(() => {
+                  setSurveyStep(prevStep);
+                  // Restore previous answers so user sees what they selected before
+                  if (prevQuestion?.type === "multiple") {
+                    setCurrentMultipleSelections(
+                      surveyAnswers[prevQuestion.id] ?? []
+                    );
+                  } else {
+                    setCurrentMultipleSelections([]);
+                  }
+                  if (prevQuestion?.type === "text") {
+                    setCurrentTextInput(surveyAnswers[prevQuestion.id] ?? "");
+                  } else {
+                    setCurrentTextInput("");
+                  }
+                });
+              }}
+              style={styles.headerBtn}
+            >
+              <Ionicons
+                name="arrow-back"
+                size={22}
+                color={COLORS.textPrimary}
+              />
             </TouchableOpacity>
-          </View>
+          ) : (
+            <View style={styles.headerBtnPlaceholder} />
+          )}
+          <Text style={styles.headerProgress}>
+            Câu {surveyStep + 1}/{currentFilteredQuestions.length}
+          </Text>
+          <TouchableOpacity onPress={onClose} style={styles.headerBtn}>
+            <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
-          {/* Progress bar */}
-          <View style={styles.progressTrack}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  width: progressAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0%", "100%"],
-                  }),
-                },
-              ]}
-            />
-          </View>
+        {/* Progress bar */}
+        <View style={styles.progressTrack}>
+          <Animated.View
+            style={[
+              styles.progressFill,
+              {
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0%", "100%"],
+                }),
+              },
+            ]}
+          />
+        </View>
 
-          {currentQuestion && (
-            <>
-              <Animated.ScrollView
-                style={[styles.scrollArea, { opacity: fadeAnim }]}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {/* Question icon */}
-                <View style={styles.questionIconWrap}>
-                  <Ionicons
-                    name={(QUESTION_ICONS[currentQuestion.id] ?? 'gift-outline') as any}
-                    size={26}
-                    color={COLORS.primary}
-                  />
+        {currentQuestion && (
+          <>
+            <Animated.ScrollView
+              style={[styles.scrollArea, { opacity: fadeAnim }]}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Question icon */}
+              <View style={styles.questionIconWrap}>
+                <Ionicons
+                  name={
+                    (QUESTION_ICONS[currentQuestion.id] ??
+                      "gift-outline") as any
+                  }
+                  size={26}
+                  color={COLORS.primary}
+                />
+              </View>
+
+              <Text style={styles.questionText}>
+                {currentQuestion.question}
+              </Text>
+              {currentQuestion.questionHint && (
+                <Text style={styles.questionHint}>
+                  {currentQuestion.questionHint}
+                </Text>
+              )}
+
+              {/* Single Choice */}
+              {currentQuestion.type === "single" && (
+                <View style={styles.optionsWrap}>
+                  {currentQuestion.options?.map((option, index) => {
+                    const isSelected =
+                      surveyAnswers[currentQuestion.id] === option;
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.optionBtn,
+                          isSelected && styles.optionBtnSelected,
+                        ]}
+                        onPress={() => handleSurveyAnswer(option)}
+                        activeOpacity={0.8}
+                      >
+                        <View
+                          style={[
+                            styles.optionRadio,
+                            isSelected && styles.optionRadioSelected,
+                          ]}
+                        >
+                          {isSelected && <View style={styles.optionRadioDot} />}
+                        </View>
+                        <Text
+                          style={[
+                            styles.optionText,
+                            isSelected && styles.optionTextSelected,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
+              )}
 
-                <Text style={styles.questionText}>{currentQuestion.question}</Text>
-                {currentQuestion.questionHint && (
-                  <Text style={styles.questionHint}>{currentQuestion.questionHint}</Text>
-                )}
-
-                {/* Single Choice */}
-                {currentQuestion.type === "single" && (
+              {/* Multiple Choice */}
+              {currentQuestion.type === "multiple" && (
+                <>
+                  {currentQuestion.maxSelections && (
+                    <Text style={styles.selectionHint}>
+                      Chọn tối đa {currentQuestion.maxSelections} đáp án • Đã
+                      chọn {currentMultipleSelections.length}/
+                      {currentQuestion.maxSelections}
+                    </Text>
+                  )}
                   <View style={styles.optionsWrap}>
                     {currentQuestion.options?.map((option, index) => {
-                      const isSelected = surveyAnswers[currentQuestion.id] === option;
+                      const isSelected =
+                        currentMultipleSelections.includes(option);
+                      const isDisabled =
+                        !isSelected &&
+                        !!currentQuestion.maxSelections &&
+                        currentMultipleSelections.length >=
+                          currentQuestion.maxSelections;
                       return (
                         <TouchableOpacity
                           key={index}
-                          style={[styles.optionBtn, isSelected && styles.optionBtnSelected]}
+                          style={[
+                            styles.optionBtn,
+                            isSelected && styles.optionBtnSelected,
+                            isDisabled && styles.optionBtnDisabled,
+                          ]}
                           onPress={() => handleSurveyAnswer(option)}
+                          disabled={isDisabled}
                           activeOpacity={0.8}
                         >
-                          <View style={[styles.optionRadio, isSelected && styles.optionRadioSelected]}>
-                            {isSelected && <View style={styles.optionRadioDot} />}
+                          <View
+                            style={[
+                              styles.checkBox,
+                              isSelected && styles.checkBoxSelected,
+                            ]}
+                          >
+                            {isSelected && (
+                              <Ionicons
+                                name="checkmark"
+                                size={13}
+                                color="#fff"
+                              />
+                            )}
                           </View>
-                          <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                          <Text
+                            style={[
+                              styles.optionText,
+                              isSelected && styles.optionTextSelected,
+                              isDisabled && styles.optionTextDisabled,
+                            ]}
+                          >
                             {option}
                           </Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
-                )}
-
-                {/* Multiple Choice */}
-                {currentQuestion.type === "multiple" && (
-                  <>
-                    {currentQuestion.maxSelections && (
-                      <Text style={styles.selectionHint}>
-                        Chọn tối đa {currentQuestion.maxSelections} đáp án • Đã chọn{" "}
-                        {currentMultipleSelections.length}/{currentQuestion.maxSelections}
-                      </Text>
-                    )}
-                    <View style={styles.optionsWrap}>
-                      {currentQuestion.options?.map((option, index) => {
-                        const isSelected = currentMultipleSelections.includes(option);
-                        const isDisabled =
-                          !isSelected &&
-                          !!currentQuestion.maxSelections &&
-                          currentMultipleSelections.length >= currentQuestion.maxSelections;
-                        return (
-                          <TouchableOpacity
-                            key={index}
-                            style={[
-                              styles.optionBtn,
-                              isSelected && styles.optionBtnSelected,
-                              isDisabled && styles.optionBtnDisabled,
-                            ]}
-                            onPress={() => handleSurveyAnswer(option)}
-                            disabled={isDisabled}
-                            activeOpacity={0.8}
-                          >
-                            <View style={[styles.checkBox, isSelected && styles.checkBoxSelected]}>
-                              {isSelected && (
-                                <Ionicons name="checkmark" size={13} color="#fff" />
-                              )}
-                            </View>
-                            <Text
-                              style={[
-                                styles.optionText,
-                                isSelected && styles.optionTextSelected,
-                                isDisabled && styles.optionTextDisabled,
-                              ]}
-                            >
-                              {option}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </>
-                )}
-
-                {/* Text Input */}
-                {currentQuestion.type === "text" && (
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder={currentQuestion.placeholder || "Nhập câu trả lời..."}
-                    placeholderTextColor={COLORS.textSecondary}
-                    value={currentTextInput}
-                    onChangeText={setCurrentTextInput}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-                )}
-              </Animated.ScrollView>
-
-              {/* Footer — only for multiple/text types */}
-              {currentQuestion.type !== "single" && (
-                <View style={[styles.footer, { paddingBottom: insets.bottom || 16 }]}>
-                  {currentQuestion.type === "text" && (
-                    <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-                      <Text style={styles.skipBtnText}>Bỏ qua</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                    style={[styles.nextBtn, isNextDisabled && styles.nextBtnDisabled]}
-                    onPress={handleContinue}
-                    disabled={isNextDisabled}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[styles.nextBtnText, isNextDisabled && styles.nextBtnTextDisabled]}>
-                      {surveyStep < currentFilteredQuestions.length - 1
-                        ? "Tiếp theo"
-                        : "Xem gợi ý"}
-                    </Text>
-                    <Ionicons
-                      name={
-                        surveyStep < currentFilteredQuestions.length - 1
-                          ? "arrow-forward"
-                          : "sparkles"
-                      }
-                      size={18}
-                      color={isNextDisabled ? COLORS.textSecondary : "#fff"}
-                    />
-                  </TouchableOpacity>
-                </View>
+                </>
               )}
-            </>
-          )}
+
+              {/* Text Input */}
+              {currentQuestion.type === "text" && (
+                <TextInput
+                  style={styles.textInput}
+                  placeholder={
+                    currentQuestion.placeholder || "Nhập câu trả lời..."
+                  }
+                  placeholderTextColor={COLORS.textSecondary}
+                  value={currentTextInput}
+                  onChangeText={setCurrentTextInput}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              )}
+            </Animated.ScrollView>
+
+            {/* Footer — only for multiple/text types */}
+            {currentQuestion.type !== "single" && (
+              <View
+                style={[styles.footer, { paddingBottom: insets.bottom || 16 }]}
+              >
+                {currentQuestion.type === "text" && (
+                  <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
+                    <Text style={styles.skipBtnText}>Bỏ qua</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[
+                    styles.nextBtn,
+                    isNextDisabled && styles.nextBtnDisabled,
+                  ]}
+                  onPress={handleContinue}
+                  disabled={isNextDisabled}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    style={[
+                      styles.nextBtnText,
+                      isNextDisabled && styles.nextBtnTextDisabled,
+                    ]}
+                  >
+                    {surveyStep < currentFilteredQuestions.length - 1
+                      ? "Tiếp theo"
+                      : "Xem gợi ý"}
+                  </Text>
+                  <Ionicons
+                    name={
+                      surveyStep < currentFilteredQuestions.length - 1
+                        ? "arrow-forward"
+                        : "sparkles"
+                    }
+                    size={18}
+                    color={isNextDisabled ? COLORS.textSecondary : "#fff"}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        )}
       </View>
     </Modal>
   );
