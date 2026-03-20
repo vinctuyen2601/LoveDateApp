@@ -16,6 +16,8 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
 import { Event, ChecklistItem, getTagInfo, getTagImage } from "../types";
+import { getSpecialDateImage } from "@lib/iconImages";
+import { getSpecialDatesForMonth } from "../constants/specialDates";
 import { LinearGradient } from "expo-linear-gradient";
 
 const OCCASION_TAGS = ["birthday", "anniversary", "holiday"];
@@ -183,7 +185,26 @@ const EventDetailScreen: React.FC = () => {
   const primaryTag = event.tags[0] || "other";
   const tagDetails = getTagInfo(primaryTag);
   const primaryColor = tagDetails.color;
-  const primaryImage = getTagImage(primaryTag);
+  const PREP_SPECIAL_IDS = [
+    "sys_valentine",
+    "sys_quocte_phunu",
+    "sys_phunu_vn",
+    "sys_giang_sinh",
+  ];
+  const primaryImage = (() => {
+    if (event.tags.includes("holiday")) {
+      const d = new Date(event.eventDate);
+      const specials = getSpecialDatesForMonth(
+        d.getFullYear(),
+        d.getMonth() + 1
+      );
+      const match = specials.find(
+        (sd) => PREP_SPECIAL_IDS.includes(sd.id) && sd.solarDay === d.getDate()
+      );
+      if (match) return getSpecialDateImage(match.id);
+    }
+    return getTagImage(primaryTag);
+  })();
 
   const handleEdit = () => {
     navigation.navigate("AddEvent", { eventId: event.id });
@@ -388,10 +409,14 @@ const EventDetailScreen: React.FC = () => {
                 <Ionicons name="sparkles" size={20} color="#fff" />
                 <View style={styles.prepBannerText}>
                   <Text style={styles.prepBannerTitle}>
-                    Còn {daysUntil} ngày — Bắt đầu chuẩn bị?
+                    {daysUntil === 0
+                      ? "Hôm nay rồi! Chuẩn bị gì chưa?"
+                      : `Còn ${daysUntil} ngày — Bắt đầu chuẩn bị?`}
                   </Text>
                   <Text style={styles.prepBannerSub}>
-                    Gợi ý quà, lịch trình và bài viết cho dịp này
+                    {daysUntil === 0
+                      ? "Để AI gợi ý quà và lịch trình ngay bây giờ"
+                      : "Gợi ý quà, lịch trình và bài viết cho dịp này"}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#fff" />
@@ -408,7 +433,7 @@ const EventDetailScreen: React.FC = () => {
           const hasRating = event.notes?.some(
             (n) => n.year === currentYear && n.rating
           );
-          if (!isEligible || daysUntil > 0 || daysUntil < -3 || hasRating)
+          if (!isEligible || daysUntil >= 0 || daysUntil < -3 || hasRating)
             return null;
           return (
             <TouchableOpacity
@@ -422,20 +447,25 @@ const EventDetailScreen: React.FC = () => {
                 })
               }
             >
-              <Text style={styles.postEventEmoji}>
-                <Ionicons name="heart" size={18} color={COLORS.primary} />
-              </Text>
-              <View style={styles.prepBannerText}>
-                <Text style={styles.postEventTitle}>Hôm qua thế nào?</Text>
-                <Text style={styles.postEventSub}>
-                  Ghi lại kỷ niệm và đánh giá dịp này
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={COLORS.primary}
-              />
+              <LinearGradient
+                colors={[COLORS.primary, "#C850C0"]}
+                style={styles.postEventBannerGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons name="heart" size={20} color="#fff" />
+                <View style={styles.prepBannerText}>
+                  <Text style={styles.postEventTitle}>Hôm qua thế nào?</Text>
+                  <Text style={styles.postEventSub}>
+                    Ghi lại kỷ niệm và đánh giá dịp này
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color="rgba(255,255,255,0.8)"
+                />
+              </LinearGradient>
             </TouchableOpacity>
           );
         })()}
@@ -448,21 +478,43 @@ const EventDetailScreen: React.FC = () => {
             (n) => n.year === currentYear && (n.gift || n.activity)
           );
           if (daysUntil <= 0 || !thisYearNote) return null;
+          const giftDone = !!thisYearNote.gift;
+          const activityDone = !!thisYearNote.activity;
+          const allDone = giftDone && activityDone;
           return (
             <View style={[styles.section, { marginTop: 12 }]}>
               <View style={styles.prepStatusCard}>
                 {/* Header */}
                 <View style={styles.prepStatusHeader}>
-                  <View style={styles.prepStatusIconWrap}>
+                  <View
+                    style={[
+                      styles.prepStatusIconWrap,
+                      allDone && { backgroundColor: COLORS.success + "20" },
+                    ]}
+                  >
                     <Ionicons
-                      name="checkmark-circle"
+                      name={allDone ? "checkmark-circle" : "time-outline"}
                       size={20}
-                      color={COLORS.success}
+                      color={allDone ? COLORS.success : COLORS.primary}
                     />
                   </View>
-                  <Text style={styles.prepStatusTitle}>
-                    Đang chuẩn bị cho ngày này
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.prepStatusTitle}>
+                      {allDone
+                        ? "Đã sẵn sàng cho ngày này!"
+                        : "Đang chuẩn bị..."}
+                    </Text>
+                    {!allDone && (
+                      <Text style={styles.prepStatusSubtitle}>
+                        Còn thiếu{" "}
+                        {!giftDone && !activityDone
+                          ? "quà & lịch trình"
+                          : !giftDone
+                          ? "quà tặng"
+                          : "lịch trình"}
+                      </Text>
+                    )}
+                  </View>
                   <TouchableOpacity
                     onPress={() =>
                       navigation.navigate("OccasionPrep", {
@@ -476,70 +528,287 @@ const EventDetailScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Gift row */}
+                {/* Gift detail */}
                 {thisYearNote.gift && (
-                  <View style={styles.prepStatusRow}>
-                    <View style={styles.prepStatusCheck}>
+                  <View style={styles.prepDetailCard}>
+                    <View style={styles.prepDetailHeader}>
+                      <View style={styles.prepStatusCheck}>
+                        <Ionicons
+                          name="checkmark"
+                          size={13}
+                          color={COLORS.success}
+                        />
+                      </View>
                       <Ionicons
-                        name="checkmark"
-                        size={13}
-                        color={COLORS.success}
+                        name="gift-outline"
+                        size={14}
+                        color={COLORS.primary}
                       />
-                    </View>
-                    <Ionicons
-                      name="gift-outline"
-                      size={16}
-                      color={COLORS.primary}
-                    />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.prepStatusLabel}>
-                        Bạn đã chuẩn bị quà
-                      </Text>
-                      <Text style={styles.prepStatusValue} numberOfLines={1}>
-                        {thisYearNote.gift.name}
-                        {thisYearNote.gift.price != null
-                          ? `  ·  ${formatNotePrice(thisYearNote.gift.price)}`
-                          : ""}
+                      <Text style={styles.prepDetailSectionLabel}>
+                        Quà tặng
                       </Text>
                     </View>
-                    {thisYearNote.gift.link ? (
-                      <TouchableOpacity
-                        onPress={() =>
-                          Linking.openURL(thisYearNote.gift!.link!)
-                        }
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    <View style={styles.prepDetailBody}>
+                      {thisYearNote.gift.imageUrl ? (
+                        <Image
+                          source={{ uri: thisYearNote.gift.imageUrl }}
+                          style={styles.prepDetailImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <LinearGradient
+                          colors={[primaryColor, primaryColor + "CC"]}
+                          style={styles.prepDetailImage}
+                        >
+                          <Ionicons name="gift" size={28} color="#fff" />
+                        </LinearGradient>
+                      )}
+                      <View style={styles.prepDetailInfo}>
+                        <Text style={styles.prepDetailName} numberOfLines={2}>
+                          {thisYearNote.gift.name}
+                        </Text>
+                        {thisYearNote.gift.rating ? (
+                          <View style={styles.prepDetailRatingRow}>
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Ionicons
+                                key={s}
+                                name={
+                                  s <= Math.round(thisYearNote.gift!.rating!)
+                                    ? "star"
+                                    : "star-outline"
+                                }
+                                size={11}
+                                color="#FFB800"
+                              />
+                            ))}
+                            {thisYearNote.gift.reviewCount ? (
+                              <Text style={styles.prepDetailReviewCount}>
+                                ({thisYearNote.gift.reviewCount})
+                              </Text>
+                            ) : null}
+                          </View>
+                        ) : null}
+                        <View style={styles.prepDetailMeta}>
+                          {thisYearNote.gift.price != null && (
+                            <View
+                              style={[
+                                styles.prepDetailBadge,
+                                {
+                                  borderColor: primaryColor + "40",
+                                  backgroundColor: primaryColor + "0D",
+                                },
+                              ]}
+                            >
+                              <Ionicons
+                                name="wallet-outline"
+                                size={11}
+                                color={primaryColor}
+                              />
+                              <Text
+                                style={[
+                                  styles.prepDetailBadgeText,
+                                  { color: primaryColor },
+                                ]}
+                              >
+                                {formatNotePrice(thisYearNote.gift.price)}
+                              </Text>
+                            </View>
+                          )}
+                          {thisYearNote.gift.source === "occasion_products" && (
+                            <View style={styles.prepDetailBadge}>
+                              <Ionicons
+                                name="sparkles-outline"
+                                size={11}
+                                color={COLORS.textSecondary}
+                              />
+                              <Text style={styles.prepDetailBadgeText}>
+                                Gợi ý AI
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      {thisYearNote.gift.link ? (
+                        <TouchableOpacity
+                          onPress={() =>
+                            Linking.openURL(thisYearNote.gift!.link!)
+                          }
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Ionicons
+                            name="open-outline"
+                            size={16}
+                            color={COLORS.info}
+                          />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                    {thisYearNote.gift.reason ||
+                    thisYearNote.gift.description ? (
+                      <View
+                        style={[
+                          styles.prepDetailReasonBox,
+                          {
+                            backgroundColor: primaryColor + "0A",
+                            borderColor: primaryColor + "25",
+                          },
+                        ]}
                       >
                         <Ionicons
-                          name="open-outline"
-                          size={16}
-                          color={COLORS.info}
+                          name="sparkles"
+                          size={12}
+                          color={primaryColor}
                         />
-                      </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.prepDetailReasonText,
+                            { color: primaryColor },
+                          ]}
+                          numberOfLines={5}
+                        >
+                          {thisYearNote.gift.reason ||
+                            thisYearNote.gift.description}
+                        </Text>
+                      </View>
                     ) : null}
                   </View>
                 )}
 
-                {/* Activity row */}
-                {thisYearNote.activity ? (
-                  <View style={styles.prepStatusRow}>
-                    <View style={styles.prepStatusCheck}>
-                      <Ionicons
-                        name="checkmark"
-                        size={13}
-                        color={COLORS.success}
-                      />
-                    </View>
-                    <Ionicons name="map-outline" size={16} color="#4ECDC4" />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.prepStatusLabel}>
-                        Bạn đã lên lịch trình
-                      </Text>
-                      <Text style={styles.prepStatusValue} numberOfLines={1}>
-                        {thisYearNote.activity}
+                {/* Activity detail */}
+                {thisYearNote.activity && (
+                  <View style={styles.prepDetailCard}>
+                    <View style={styles.prepDetailHeader}>
+                      <View style={styles.prepStatusCheck}>
+                        <Ionicons
+                          name="checkmark"
+                          size={13}
+                          color={COLORS.success}
+                        />
+                      </View>
+                      <Ionicons name="map-outline" size={14} color="#4ECDC4" />
+                      <Text style={styles.prepDetailSectionLabel}>
+                        Lịch trình
                       </Text>
                     </View>
+                    <View style={styles.prepDetailBody}>
+                      <View
+                        style={[
+                          styles.prepDetailImage,
+                          {
+                            backgroundColor: primaryColor + "18",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          },
+                        ]}
+                      >
+                        {thisYearNote.activityEmoji ? (
+                          <Text style={{ fontSize: 32 }}>
+                            {thisYearNote.activityEmoji}
+                          </Text>
+                        ) : (
+                          <Ionicons name="map" size={28} color={primaryColor} />
+                        )}
+                      </View>
+                      <View style={styles.prepDetailInfo}>
+                        <Text style={styles.prepDetailName} numberOfLines={2}>
+                          {thisYearNote.activity}
+                        </Text>
+                        <View style={styles.prepDetailMeta}>
+                          {thisYearNote.activityBudget && (
+                            <View
+                              style={[
+                                styles.prepDetailBadge,
+                                {
+                                  borderColor: primaryColor + "40",
+                                  backgroundColor: primaryColor + "0D",
+                                },
+                              ]}
+                            >
+                              <Ionicons
+                                name="wallet-outline"
+                                size={11}
+                                color={primaryColor}
+                              />
+                              <Text
+                                style={[
+                                  styles.prepDetailBadgeText,
+                                  { color: primaryColor },
+                                ]}
+                              >
+                                {thisYearNote.activityBudget}
+                              </Text>
+                            </View>
+                          )}
+                          <View style={styles.prepDetailBadge}>
+                            <Ionicons
+                              name="sparkles-outline"
+                              size={11}
+                              color={COLORS.textSecondary}
+                            />
+                            <Text style={styles.prepDetailBadgeText}>
+                              AI gợi ý
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                    {thisYearNote.activityWhyFit ? (
+                      <View
+                        style={[
+                          styles.prepDetailReasonBox,
+                          {
+                            backgroundColor: primaryColor + "0A",
+                            borderColor: primaryColor + "25",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="sparkles"
+                          size={12}
+                          color={primaryColor}
+                        />
+                        <Text
+                          style={[
+                            styles.prepDetailReasonText,
+                            { color: primaryColor },
+                          ]}
+                          numberOfLines={3}
+                        >
+                          {thisYearNote.activityWhyFit}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {thisYearNote.activityTimeline &&
+                      thisYearNote.activityTimeline.length > 0 && (
+                        <View style={styles.prepDetailTimeline}>
+                          {thisYearNote.activityTimeline
+                            .slice(0, 4)
+                            .map((step, i) => (
+                              <View
+                                key={i}
+                                style={styles.prepDetailTimelineStep}
+                              >
+                                <View
+                                  style={[
+                                    styles.prepDetailTimelineDot,
+                                    { backgroundColor: primaryColor },
+                                  ]}
+                                />
+                                <Text style={styles.prepDetailTimelineTime}>
+                                  {step.time}
+                                </Text>
+                                <Text
+                                  style={styles.prepDetailTimelineAction}
+                                  numberOfLines={1}
+                                >
+                                  {step.action}
+                                </Text>
+                              </View>
+                            ))}
+                        </View>
+                      )}
                   </View>
-                ) : null}
+                )}
               </View>
             </View>
           );
@@ -582,33 +851,142 @@ const EventDetailScreen: React.FC = () => {
                   </View>
 
                   {note.gift && (
-                    <View style={styles.noteGiftRow}>
-                      <Ionicons
-                        name="gift-outline"
-                        size={16}
-                        color={COLORS.primary}
-                      />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.noteGiftName}>
-                          {note.gift.name}
+                    <View style={styles.prepDetailCard}>
+                      <View style={styles.prepDetailHeader}>
+                        <View style={styles.prepStatusCheck}>
+                          <Ionicons
+                            name="checkmark"
+                            size={13}
+                            color={COLORS.success}
+                          />
+                        </View>
+                        <Ionicons
+                          name="gift-outline"
+                          size={14}
+                          color={COLORS.primary}
+                        />
+                        <Text style={styles.prepDetailSectionLabel}>
+                          Quà tặng
                         </Text>
-                        {note.gift.price != null && (
-                          <Text style={styles.noteGiftPrice}>
-                            {formatNotePrice(note.gift.price)}
-                          </Text>
-                        )}
                       </View>
-                      {note.gift.link ? (
-                        <TouchableOpacity
-                          onPress={() => Linking.openURL(note.gift!.link!)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      <View style={styles.prepDetailBody}>
+                        {note.gift.imageUrl ? (
+                          <Image
+                            source={{ uri: note.gift.imageUrl }}
+                            style={styles.prepDetailImage}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <LinearGradient
+                            colors={[primaryColor, primaryColor + "CC"]}
+                            style={styles.prepDetailImage}
+                          >
+                            <Ionicons name="gift" size={24} color="#fff" />
+                          </LinearGradient>
+                        )}
+                        <View style={styles.prepDetailInfo}>
+                          <Text style={styles.prepDetailName} numberOfLines={2}>
+                            {note.gift.name}
+                          </Text>
+                          {note.gift.rating ? (
+                            <View style={styles.prepDetailRatingRow}>
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Ionicons
+                                  key={s}
+                                  name={
+                                    s <= Math.round(note.gift!.rating!)
+                                      ? "star"
+                                      : "star-outline"
+                                  }
+                                  size={11}
+                                  color="#FFB800"
+                                />
+                              ))}
+                              {note.gift.reviewCount ? (
+                                <Text style={styles.prepDetailReviewCount}>
+                                  ({note.gift.reviewCount})
+                                </Text>
+                              ) : null}
+                            </View>
+                          ) : null}
+                          <View style={styles.prepDetailMeta}>
+                            {note.gift.price != null && (
+                              <View
+                                style={[
+                                  styles.prepDetailBadge,
+                                  {
+                                    borderColor: primaryColor + "40",
+                                    backgroundColor: primaryColor + "0D",
+                                  },
+                                ]}
+                              >
+                                <Ionicons
+                                  name="wallet-outline"
+                                  size={11}
+                                  color={primaryColor}
+                                />
+                                <Text
+                                  style={[
+                                    styles.prepDetailBadgeText,
+                                    { color: primaryColor },
+                                  ]}
+                                >
+                                  {formatNotePrice(note.gift.price)}
+                                </Text>
+                              </View>
+                            )}
+                            {note.gift.source === "occasion_products" && (
+                              <View style={styles.prepDetailBadge}>
+                                <Ionicons
+                                  name="sparkles-outline"
+                                  size={11}
+                                  color={COLORS.textSecondary}
+                                />
+                                <Text style={styles.prepDetailBadgeText}>
+                                  Gợi ý AI
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                        {note.gift.link ? (
+                          <TouchableOpacity
+                            onPress={() => Linking.openURL(note.gift!.link!)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Ionicons
+                              name="open-outline"
+                              size={16}
+                              color={COLORS.info}
+                            />
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                      {note.gift.reason || note.gift.description ? (
+                        <View
+                          style={[
+                            styles.prepDetailReasonBox,
+                            {
+                              backgroundColor: primaryColor + "0A",
+                              borderColor: primaryColor + "25",
+                            },
+                          ]}
                         >
                           <Ionicons
-                            name="open-outline"
-                            size={16}
-                            color={COLORS.info}
+                            name="sparkles"
+                            size={12}
+                            color={primaryColor}
                           />
-                        </TouchableOpacity>
+                          <Text
+                            style={[
+                              styles.prepDetailReasonText,
+                              { color: primaryColor },
+                            ]}
+                            numberOfLines={5}
+                          >
+                            {note.gift.reason || note.gift.description}
+                          </Text>
+                        </View>
                       ) : null}
                     </View>
                   )}
@@ -952,6 +1330,7 @@ const styles = StyleSheet.create({
   prepBanner: {
     marginHorizontal: 16,
     marginTop: 12,
+    marginBottom: 12,
     borderRadius: 14,
     overflow: "hidden",
     shadowColor: COLORS.primary,
@@ -982,29 +1361,31 @@ const styles = StyleSheet.create({
   },
   // Post-event Banner
   postEventBanner: {
-    flexDirection: "row",
-    alignItems: "center",
     marginHorizontal: 16,
     marginTop: 12,
-    backgroundColor: COLORS.surface,
     borderRadius: 14,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  postEventBannerGradient: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 14,
     gap: 10,
-    borderWidth: 1,
-    borderColor: COLORS.primary + "30",
   },
   postEventTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.textPrimary,
+    color: "#fff",
     marginBottom: 2,
   },
   postEventSub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  postEventEmoji: {
-    fontSize: 20,
+    color: "rgba(255,255,255,0.8)",
   },
   // Quick links compact row
   quickLinksRow: {
@@ -1041,8 +1422,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.success,
     gap: 10,
   },
   prepStatusHeader: {
@@ -1221,6 +1600,127 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: COLORS.textPrimary,
+  },
+
+  // Prep Status — detail card styles (matching OccasionPrepScreen savedCard)
+  prepStatusSubtitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 1,
+  },
+  prepDetailCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    overflow: "hidden",
+  },
+  prepDetailHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  prepDetailSectionLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  prepDetailBody: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  prepDetailImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    overflow: "hidden",
+  },
+  prepDetailInfo: {
+    flex: 1,
+  },
+  prepDetailName: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  prepDetailMeta: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  prepDetailBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  prepDetailBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  prepDetailRatingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    marginBottom: 4,
+  },
+  prepDetailReviewCount: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginLeft: 2,
+  },
+  prepDetailReasonBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10,
+  },
+  prepDetailReasonText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontStyle: "italic",
+  },
+  prepDetailTimeline: {
+    marginTop: 10,
+    gap: 6,
+  },
+  prepDetailTimelineStep: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  prepDetailTimelineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    flexShrink: 0,
+  },
+  prepDetailTimelineTime: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.textSecondary,
+    width: 42,
+  },
+  prepDetailTimelineAction: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.textPrimary,
+    lineHeight: 16,
   },
 });
 

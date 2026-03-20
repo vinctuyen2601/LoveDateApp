@@ -99,6 +99,11 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
           source: "occasion_products",
           productId: product.id,
           link: product.affiliateUrl,
+          imageUrl: product.imageUrl,
+          rating: product.rating,
+          reviewCount: product.reviewCount,
+          description: product.description ? stripHtml(product.description) : undefined,
+          reason: product.reason,
         },
       });
       setGiftSaved(true);

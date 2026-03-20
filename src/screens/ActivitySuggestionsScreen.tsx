@@ -9,7 +9,6 @@ import {
   Animated,
   Image,
   Linking,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import IconImage from '@components/atoms/IconImage';
@@ -248,7 +247,7 @@ const DateSuggestionCard: React.FC<{
   suggestion: DateSuggestion;
   budgetMax: number;
   onNavigateArticle: (article: Article) => void;
-  onSaveActivity?: (title: string) => void;
+  onSaveActivity?: (title: string, description?: string, budget?: string, emoji?: string, whyFit?: string, timeline?: { time: string; action: string }[]) => void;
 }> = ({ suggestion, budgetMax, onNavigateArticle, onSaveActivity }) => {
   const [expanded, setExpanded]       = useState(false);
   const [articles,  setArticles]      = useState<Article[]>([]);
@@ -355,6 +354,18 @@ const DateSuggestionCard: React.FC<{
         ) : null}
       </View>
 
+      {/* ── Save to event (always visible) ── */}
+      {onSaveActivity && (
+        <TouchableOpacity
+          style={styles.saveActivityBtn}
+          onPress={() => onSaveActivity(suggestion.title, suggestion.description, suggestion.estimatedBudget, suggestion.emoji, suggestion.whyFit, suggestion.timeline)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="bookmark-outline" size={16} color={COLORS.secondary} />
+          <Text style={styles.saveActivityText}>Chọn kế hoạch này</Text>
+        </TouchableOpacity>
+      )}
+
       {/* ── Expanded content ── */}
       {expanded && (
         <Animated.View style={{ opacity: animOpacity }}>
@@ -424,17 +435,6 @@ const DateSuggestionCard: React.FC<{
             </View>
           )}
 
-          {/* Save to event */}
-          {onSaveActivity && (
-            <TouchableOpacity
-              style={styles.saveActivityBtn}
-              onPress={() => onSaveActivity(suggestion.title)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="bookmark-outline" size={16} color={COLORS.secondary} />
-              <Text style={styles.saveActivityText}>Lưu kế hoạch này vào sự kiện</Text>
-            </TouchableOpacity>
-          )}
         </Animated.View>
       )}
     </View>
@@ -447,22 +447,30 @@ const ActivitySuggestionsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route      = useRoute<ActivitySuggestionsRouteProp>();
   const insets     = useSafeAreaInsets();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
   const { handleAiError, rateLimitModal } = useAiRateLimit();
   const { upsertEventNote } = useEvents();
 
   const event   = route.params?.event;
   const eventId = route.params?.eventId;
 
-  const handleSaveActivity = React.useCallback(async (title: string) => {
+  const handleSaveActivity = React.useCallback(async (title: string, description?: string, budget?: string, emoji?: string, whyFit?: string, timeline?: { time: string; action: string }[]) => {
     if (!eventId) return;
     try {
-      await upsertEventNote(eventId, { activity: title });
-      Alert.alert('Đã lưu', `Kế hoạch "${title}" đã được lưu vào sự kiện.`, [{ text: 'OK' }]);
+      await upsertEventNote(eventId, {
+        activity: title,
+        activityDescription: description,
+        activityBudget: budget,
+        activityEmoji: emoji,
+        activityWhyFit: whyFit,
+        activityTimeline: timeline,
+      });
+      showSuccess(`Đã lưu kế hoạch "${title}" vào sự kiện`);
+      navigation.goBack();
     } catch {
-      Alert.alert('Lỗi', 'Không thể lưu kế hoạch. Thử lại nhé.');
+      showError('Không thể lưu kế hoạch. Thử lại nhé.');
     }
-  }, [eventId, upsertEventNote]);
+  }, [eventId, upsertEventNote, showSuccess, showError, navigation]);
 
   const defaultPrompt = event
     ? `hẹn hò lãng mạn dịp ${event.title}`

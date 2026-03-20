@@ -9,6 +9,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  KeyboardAvoidingView,
   Linking,
   Platform,
   Switch,
@@ -560,11 +561,14 @@ const SettingsScreen: React.FC = () => {
       {/* Edit Profile Modal */}
       <Modal
         visible={showEditModal}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setShowEditModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Chỉnh sửa hồ sơ</Text>
@@ -667,13 +671,13 @@ const SettingsScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Link Email Modal */}
       <Modal
         visible={showLinkEmailModal}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setShowLinkEmailModal(false)}
       >
@@ -1034,14 +1038,15 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: COLORS.overlay,
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
   },
   modalContent: {
     backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 20,
     padding: 20,
-    paddingBottom: 40,
+    width: "100%",
   },
   modalHeader: {
     flexDirection: "row",

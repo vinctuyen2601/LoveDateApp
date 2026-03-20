@@ -22,14 +22,17 @@ import { STRINGS } from "../constants/strings";
 import { DateUtils } from "@lib/date.utils";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFeaturedArticles, DEFAULT_ARTICLES } from "../data/articles";
-import { getSpecialDatesForMonth } from "../constants/specialDates";
-
+import {
+  getSpecialDatesForMonth,
+  SpecialDate,
+} from "../constants/specialDates";
 
 const CalendarScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { events, isLoading, refreshEvents, deleteEvent } = useEvents();
+  const { events, isLoading, refreshEvents, deleteEvent, addEvent } =
+    useEvents();
   const { sync, syncStatus } = useSync();
 
   // Accept selectedDate from navigation params (e.g. from HomeScreen)
@@ -51,6 +54,13 @@ const CalendarScreen: React.FC = () => {
       setIsRefreshing(false);
     }
   };
+
+  const PREP_SPECIAL_IDS = [
+    "sys_valentine",
+    "sys_quocte_phunu",
+    "sys_phunu_vn",
+    "sys_giang_sinh",
+  ];
 
   // Prepare marked dates for calendar (emoji-based, same as HomeScreen)
   const markedDates = useMemo(() => {
@@ -75,10 +85,13 @@ const CalendarScreen: React.FC = () => {
         marked[markDate] = { marked: true, dots: [] };
       }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].dots.push({ color: getTagColor(primaryTag), image: getTagImage(primaryTag) });
+      marked[markDate].dots.push({
+        color: getTagColor(primaryTag),
+        image: getTagImage(primaryTag),
+      });
     });
 
-    // Merge special dates (bao gồm âm lịch, nth-weekday)
+    // Merge special dates (bao gom am lich, nth-weekday)
     const calMonth = parseInt(currentMonth.slice(5, 7), 10);
     const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
     resolvedSpecials.forEach((sd) => {
@@ -87,7 +100,41 @@ const CalendarScreen: React.FC = () => {
       const dateKey = `${calYear}-${mm}-${dd}`;
       if (!marked[dateKey]) marked[dateKey] = { dots: [] };
       if (!marked[dateKey].dots) marked[dateKey].dots = [];
-      marked[dateKey].dots.unshift({ color: sd.color, image: getSpecialDateImage(sd.id) });
+
+      if (PREP_SPECIAL_IDS.includes(sd.id)) {
+        // Find the holiday event dot index for this date (if any)
+        const holidayEventExists = events.some((e) => {
+          if (!e.eventDate || !e.tags.includes("holiday")) return false;
+          const d = new Date(e.eventDate);
+          const mk = e.isRecurring
+            ? `${calYear}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+                d.getDate()
+              ).padStart(2, "0")}`
+            : DateUtils.toLocalDateString(d);
+          return mk === dateKey;
+        });
+        if (holidayEventExists) {
+          // Replace holiday dot with special date icon so only one dot shows
+          const holidayDotIdx = marked[dateKey].dots.findIndex(
+            (dot: any) => dot.color === getTagColor("holiday")
+          );
+          const specialDot = {
+            color: sd.color,
+            image: getSpecialDateImage(sd.id),
+          };
+          if (holidayDotIdx >= 0) {
+            marked[dateKey].dots[holidayDotIdx] = specialDot;
+          } else {
+            marked[dateKey].dots.unshift(specialDot);
+          }
+          return;
+        }
+      }
+
+      marked[dateKey].dots.unshift({
+        color: sd.color,
+        image: getSpecialDateImage(sd.id),
+      });
     });
 
     // Highlight selected date
@@ -203,6 +250,41 @@ const CalendarScreen: React.FC = () => {
     setCurrentMonth(month.dateString);
   };
 
+  const handlePrepSpecialDate = async (sd: SpecialDate, date: Date) => {
+    const existing = events.find((e) => {
+      const eDate = new Date(e.eventDate);
+      return (
+        eDate.getMonth() === date.getMonth() &&
+        eDate.getDate() === date.getDate() &&
+        e.tags.includes("holiday")
+      );
+    });
+    if (existing) {
+      navigation.navigate("OccasionPrep", {
+        eventId: existing.id,
+        event: existing,
+      });
+      return;
+    }
+    try {
+      const newEvent = await addEvent({
+        title: sd.name,
+        eventDate: date,
+        isLunarCalendar: false,
+        tags: ["holiday"],
+        remindDaysBefore: [7, 1],
+        reminderTime: { hour: 9, minute: 0 },
+        isRecurring: true,
+      });
+      navigation.navigate("OccasionPrep", {
+        eventId: newEvent.id,
+        event: newEvent,
+      });
+    } catch {
+      // fail silently
+    }
+  };
+
   const handleEventPress = (event: Event) => {
     navigation.navigate("EventDetail", { eventId: event.id });
   };
@@ -261,18 +343,18 @@ const CalendarScreen: React.FC = () => {
         }
       >
         <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <View style={styles.headerContent}>
+          {/* <View style={styles.headerContent}>
             <TouchableOpacity
-            style={styles.todayButton}
-            onPress={() => {
-              setSelectedDate(DateUtils.getTodayString());
-              setCurrentMonth(DateUtils.getTodayString());
-            }}
-          >
-            <Ionicons name="today" size={16} color={COLORS.white} />
-            <Text style={styles.todayButtonText}>Hôm nay</Text>
-          </TouchableOpacity>
-          </View>
+              style={styles.todayButton}
+              onPress={() => {
+                setSelectedDate(DateUtils.getTodayString());
+                setCurrentMonth(DateUtils.getTodayString());
+              }}
+            >
+              <Ionicons name="today" size={16} color={COLORS.white} />
+              <Text style={styles.todayButtonText}>Hôm nay</Text>
+            </TouchableOpacity>
+          </View> */}
 
           {/* Section header: Sự kiện + Xem tất cả */}
           <View style={styles.sectionHeader}>
@@ -378,69 +460,123 @@ const CalendarScreen: React.FC = () => {
                   {formatSelectedDate()}
                 </Text>
               </View>
-              {(selectedDateEvents.length + selectedDateSpecials.length) > 0 && (
+              {selectedDateEvents.length + selectedDateSpecials.length > 0 && (
                 <View style={styles.eventCountBadge}>
                   <Text style={styles.eventCountBadgeText}>
-                    {selectedDateEvents.length + selectedDateSpecials.length} sự kiện
+                    {selectedDateEvents.length +
+                      selectedDateSpecials.filter(
+                        (sd) =>
+                          !PREP_SPECIAL_IDS.includes(sd.id) ||
+                          !selectedDateEvents.some((e) =>
+                            e.tags.includes("holiday")
+                          )
+                      ).length}{" "}
+                    sự kiện
                   </Text>
                 </View>
               )}
             </View>
 
             {/* Events List */}
-            {(selectedDateEvents.length + selectedDateSpecials.length) > 0 ? (
+            {selectedDateEvents.length + selectedDateSpecials.length > 0 ? (
               <View style={styles.eventsList}>
                 {/* System special dates */}
-                {selectedDateSpecials.map((sd) => (
-                  <View key={sd.id} style={styles.calEventCard}>
-                    <View
-                      style={[
-                        styles.calEventAccent,
-                        { backgroundColor: sd.color },
-                      ]}
-                    />
-                    <View style={styles.calEventBody}>
-                      <View style={styles.calEventRow}>
+                {selectedDateSpecials
+                  .filter((sd) => {
+                    // Ẩn special date nếu đã có holiday event trùng ngày (tránh duplicate)
+                    if (!PREP_SPECIAL_IDS.includes(sd.id)) return true;
+                    return !selectedDateEvents.some((e) =>
+                      e.tags.includes("holiday")
+                    );
+                  })
+                  .map((sd) => {
+                    const isPrep = PREP_SPECIAL_IDS.includes(sd.id);
+                    const Wrapper = isPrep ? TouchableOpacity : View;
+                    const wrapperProps = isPrep
+                      ? {
+                          activeOpacity: 0.7,
+                          onPress: () =>
+                            handlePrepSpecialDate(sd, new Date(selectedDate)),
+                        }
+                      : {};
+                    return (
+                      <Wrapper
+                        key={sd.id}
+                        style={styles.calEventCard}
+                        {...wrapperProps}
+                      >
                         <View
                           style={[
-                            styles.calEventIcon,
-                            { backgroundColor: sd.color + "15" },
+                            styles.calEventAccent,
+                            { backgroundColor: sd.color },
                           ]}
-                        >
-                          <IconImage source={getSpecialDateImage(sd.id)} size={24} />
-                        </View>
-                        <View style={styles.calEventContent}>
-                          <Text style={styles.calEventTitle} numberOfLines={1}>
-                            {sd.name}
-                          </Text>
-                          <View style={styles.calEventMeta}>
+                        />
+                        <View style={styles.calEventBody}>
+                          <View style={styles.calEventRow}>
                             <View
                               style={[
-                                styles.calEventTag,
+                                styles.calEventIcon,
                                 { backgroundColor: sd.color + "15" },
                               ]}
                             >
-                              <Text
-                                style={[
-                                  styles.calEventTagText,
-                                  { color: sd.color },
-                                ]}
-                              >
-                                Ngày đặc biệt
-                              </Text>
+                              <IconImage
+                                source={getSpecialDateImage(sd.id)}
+                                size={24}
+                              />
                             </View>
+                            <View style={styles.calEventContent}>
+                              <Text
+                                style={styles.calEventTitle}
+                                numberOfLines={1}
+                              >
+                                {sd.name}
+                              </Text>
+                              <View style={styles.calEventMeta}>
+                                <View
+                                  style={[
+                                    styles.calEventTag,
+                                    { backgroundColor: sd.color + "15" },
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.calEventTagText,
+                                      { color: sd.color },
+                                    ]}
+                                  >
+                                    {isPrep
+                                      ? "Chuẩn bị dịp này"
+                                      : "Ngày đặc biệt"}
+                                  </Text>
+                                </View>
+                              </View>
+                            </View>
+                            {isPrep && (
+                              <Ionicons
+                                name="chevron-forward"
+                                size={18}
+                                color={COLORS.textLight}
+                              />
+                            )}
                           </View>
                         </View>
-                      </View>
-                    </View>
-                  </View>
-                ))}
+                      </Wrapper>
+                    );
+                  })}
 
                 {/* User events */}
                 {selectedDateEvents.map((event) => {
                   const primaryTag = event.tags?.[0] || "other";
                   const tagColor = getTagColor(primaryTag);
                   const tagLabel = getTagLabel(primaryTag);
+                  const matchingSpecial = event.tags.includes("holiday")
+                    ? selectedDateSpecials.find((sd) =>
+                        PREP_SPECIAL_IDS.includes(sd.id)
+                      )
+                    : undefined;
+                  const icon = matchingSpecial
+                    ? getSpecialDateImage(matchingSpecial.id)
+                    : getTagImage(primaryTag);
 
                   return (
                     <TouchableOpacity
@@ -463,7 +599,7 @@ const CalendarScreen: React.FC = () => {
                               { backgroundColor: tagColor + "15" },
                             ]}
                           >
-                            <IconImage source={getTagImage(primaryTag)} size={22} />
+                            <IconImage source={icon} size={22} />
                           </View>
                           <View style={styles.calEventContent}>
                             <Text
@@ -585,7 +721,8 @@ const CalendarScreen: React.FC = () => {
                 const isSelected = !!marking?.selected;
                 const isToday = state === "today";
                 const isDisabled = state === "disabled";
-                const dots: { color: string; image: any }[] = marking?.dots ?? [];
+                const dots: { color: string; image: any }[] =
+                  marking?.dots ?? [];
 
                 return (
                   <TouchableOpacity
