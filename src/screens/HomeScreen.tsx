@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
   Animated,
+  Modal,
 } from "react-native";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,7 +29,8 @@ import { getFeaturedArticles } from "../data/articles";
 import { getArticles } from "../services/articleService";
 import { databaseService } from "../services/database.service";
 import { getTrendingProducts } from "../services/affiliateProductService";
-import { getSpecialDatesForMonth } from "../constants/specialDates";
+import { getSpecialDatesForMonth, SPECIAL_DATES, resolveSpecialDateForYear, SpecialDate } from "../constants/specialDates";
+import { checkOnboardingComplete } from "../components/organisms/OnboardingOverlay";
 import { AffiliateProduct } from "../types";
 import ProductCard from "../components/suggestions/ProductCard";
 import { format, addDays, differenceInCalendarDays } from "date-fns";
@@ -114,11 +116,13 @@ const HomeScreen: React.FC = () => {
       .slice(0, 3);
   }, [events]);
 
-  const nearestOccasionEvent = useMemo(() => {
+  // Sự kiện gần nhất trong 30 ngày tới CHƯA được chuẩn bị (chưa có gift hoặc activity note)
+  const nearestUnpreparedEvent = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const thirtyDaysLater = addDays(todayStart, 30);
     const eligibleTags = ["birthday", "anniversary", "holiday"];
+    const currentYear = todayStart.getFullYear();
     return (
       events
         .filter((event) => {
@@ -127,7 +131,10 @@ const HomeScreen: React.FC = () => {
           if (!eligibleTags.includes(primaryTag)) return false;
           const eventDay = new Date(event.eventDate);
           eventDay.setHours(0, 0, 0, 0);
-          return eventDay >= todayStart && eventDay <= thirtyDaysLater;
+          if (eventDay < todayStart || eventDay > thirtyDaysLater) return false;
+          // Loại bỏ event đã có note gift hoặc activity
+          const note = event.notes?.find((n) => n.year === currentYear);
+          return !(note?.gift || note?.activity);
         })
         .sort(
           (a, b) =>
@@ -135,6 +142,35 @@ const HomeScreen: React.FC = () => {
         )[0] ?? null
     );
   }, [events]);
+
+  // Các ngày lễ đặc biệt cần flow chuẩn bị (Valentine, 8/3, 20/10, Giáng Sinh)
+  const PREP_SPECIAL_IDS = ["sys_valentine", "sys_quocte_phunu", "sys_phunu_vn", "sys_giang_sinh"];
+
+  const nearestSpecialOccasion = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thirtyDaysLater = addDays(today, 30);
+    const currentYear = today.getFullYear();
+    let nearest: { sd: SpecialDate; date: Date; daysLeft: number } | null = null;
+
+    for (const sd of SPECIAL_DATES.filter((s) => PREP_SPECIAL_IDS.includes(s.id))) {
+      let date = resolveSpecialDateForYear(sd, currentYear);
+      if (!date) continue;
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const resolved = d < today ? resolveSpecialDateForYear(sd, currentYear + 1) : d;
+      if (!resolved) continue;
+      const finalDate = new Date(resolved);
+      finalDate.setHours(0, 0, 0, 0);
+      if (finalDate >= today && finalDate <= thirtyDaysLater) {
+        const daysLeft = differenceInCalendarDays(finalDate, today);
+        if (!nearest || daysLeft < nearest.daysLeft) {
+          nearest = { sd, date: finalDate, daysLeft };
+        }
+      }
+    }
+    return nearest;
+  }, []);
 
 
   const markedDates = useMemo(() => {
@@ -251,6 +287,78 @@ const HomeScreen: React.FC = () => {
     getActiveSuggestion().then(setActiveSuggestion).catch(() => {});
   }, []);
 
+  // Occasion prep popup — show once per session
+  type PrepTarget =
+    | { type: "event"; daysLeft: number; tagColor: string }
+    | { type: "special"; sd: SpecialDate; date: Date; daysLeft: number };
+  const [prepTarget, setPrepTarget] = useState<PrepTarget | null>(null);
+  const [isOnboardingDone, setIsOnboardingDone] = useState<boolean | null>(null);
+  const prepModalShown = useRef(false);
+
+  useEffect(() => {
+    checkOnboardingComplete().then(setIsOnboardingDone).catch(() => setIsOnboardingDone(false));
+  }, []);
+
+  // Cho hiện popup nếu:
+  // - Đã hoàn tất onboarding (isOnboardingDone = true), HOẶC
+  // - Là user cũ có sự kiện nhưng chưa từng set ONBOARDING_KEY (isOnboardingDone = false && events.length > 0)
+  const canShowPrepModal =
+    isOnboardingDone === true || (isOnboardingDone === false && events.length > 0);
+
+  useEffect(() => {
+    if (isOnboardingDone === null) return; // đang load AsyncStorage, chờ
+    if (!canShowPrepModal) return;         // đang onboarding thật sự
+    if (prepModalShown.current) return;
+    if (nearestUnpreparedEvent) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysLeft = differenceInCalendarDays(new Date(nearestUnpreparedEvent.eventDate), today);
+      const timer = setTimeout(() => {
+        setPrepTarget({ type: "event", daysLeft, tagColor: getTagColor(nearestUnpreparedEvent.tags?.[0] || "other") });
+        prepModalShown.current = true;
+      }, 900);
+      return () => clearTimeout(timer);
+    }
+    if (nearestSpecialOccasion) {
+      const timer = setTimeout(() => {
+        setPrepTarget({ type: "special", ...nearestSpecialOccasion });
+        prepModalShown.current = true;
+      }, 900);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnboardingDone, nearestUnpreparedEvent, nearestSpecialOccasion]);
+
+  const handlePrepSpecialDate = async (sd: SpecialDate, date: Date) => {
+    setPrepTarget(null);
+    // Tìm event holiday đã tồn tại cho ngày này
+    const existing = events.find((e) => {
+      const eDate = new Date(e.eventDate);
+      return (
+        eDate.getMonth() === date.getMonth() &&
+        eDate.getDate() === date.getDate() &&
+        e.tags.includes("holiday")
+      );
+    });
+    if (existing) {
+      navigation.navigate("OccasionPrep", { eventId: existing.id, event: existing });
+      return;
+    }
+    try {
+      const newEvent = await addEvent({
+        title: sd.name,
+        eventDate: date,
+        isLunarCalendar: false,
+        tags: ["holiday"],
+        remindDaysBefore: [7, 1],
+        reminderTime: { hour: 9, minute: 0 },
+        isRecurring: true,
+      });
+      navigation.navigate("OccasionPrep", { eventId: newEvent.id, event: newEvent });
+    } catch {
+      // fail silently
+    }
+  };
+
   const handleSuggestionComplete = async () => {
     if (!activeSuggestion) return;
     await markSuggestionDone(activeSuggestion.id);
@@ -347,33 +455,6 @@ const HomeScreen: React.FC = () => {
 
   // ===== QUICK ACTIONS =====
   const quickActions = [
-    ...(nearestOccasionEvent
-      ? [
-          {
-            id: "occasion-prep",
-            icon: "gift-outline" as const,
-            title: (() => {
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const daysLeft = differenceInCalendarDays(
-                new Date(nearestOccasionEvent.eventDate),
-                today
-              );
-              return daysLeft === 0
-                ? "Hôm nay!\nChuẩn bị"
-                : `Còn ${daysLeft} ngày\nChuẩn bị`;
-            })(),
-            subtitle: nearestOccasionEvent.title,
-            color: getTagColor(nearestOccasionEvent.tags?.[0] || "other"),
-            gradient: ["#FF6B6B", "#C850C0"] as [string, string],
-            onPress: () =>
-              navigation.navigate("OccasionPrep", {
-                eventId: nearestOccasionEvent.id,
-                event: nearestOccasionEvent,
-              }),
-          },
-        ]
-      : []),
     {
       id: "survey",
       icon: "heart-circle" as const,
@@ -416,12 +497,92 @@ const HomeScreen: React.FC = () => {
         />
       )}
 
+      {/* Occasion Prep Popup — hiển thị 1 lần khi mở app */}
+      <Modal
+        visible={!!prepTarget}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setPrepTarget(null)}
+      >
+        <TouchableOpacity
+          style={styles.prepModalBackdrop}
+          activeOpacity={1}
+          onPress={() => setPrepTarget(null)}
+        >
+          <TouchableOpacity activeOpacity={1} style={[styles.prepModalCard, { paddingBottom: insets.bottom + 24 }]}>
+            {prepTarget && (() => {
+              const isEvent = prepTarget.type === "event";
+              const tagColor = isEvent
+                ? prepTarget.tagColor
+                : prepTarget.sd.color;
+              const title = isEvent ? nearestOccasionEvent?.title ?? "" : prepTarget.sd.name;
+              const emoji = isEvent ? null : prepTarget.sd.emoji;
+              const daysLeft = prepTarget.daysLeft;
+
+              return (
+                <>
+                  <View style={styles.prepModalHandle} />
+                  <View style={styles.prepModalTopRow}>
+                    <View style={[styles.prepModalIconWrap, { backgroundColor: tagColor + "20" }]}>
+                      {isEvent && nearestOccasionEvent ? (
+                        <IconImage source={getTagImage(nearestOccasionEvent.tags?.[0] || "other")} size={36} />
+                      ) : (
+                        <Text style={{ fontSize: 36 }}>{emoji}</Text>
+                      )}
+                    </View>
+                    <View style={[styles.prepModalDaysBadge, { backgroundColor: tagColor }]}>
+                      <Text style={styles.prepModalDaysText}>
+                        {daysLeft === 0 ? "Hôm nay!" : `Còn ${daysLeft} ngày`}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.prepModalTitle}>{title}</Text>
+                  <Text style={styles.prepModalSub}>
+                    {isEvent
+                      ? "Bạn chưa chuẩn bị gì cho dịp này. Để AI gợi ý quà và lịch trình nhé!"
+                      : `${prepTarget.sd.hint}`}
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (isEvent && nearestOccasionEvent) {
+                        setPrepTarget(null);
+                        navigation.navigate("OccasionPrep", {
+                          eventId: nearestOccasionEvent.id,
+                          event: nearestOccasionEvent,
+                        });
+                      } else if (!isEvent) {
+                        handlePrepSpecialDate(prepTarget.sd, prepTarget.date);
+                      }
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={[tagColor, tagColor + "CC"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.prepModalBtn}
+                    >
+                      <Ionicons name="sparkles" size={18} color="#fff" />
+                      <Text style={styles.prepModalBtnText}>Chuẩn bị ngay</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.prepModalSkip} onPress={() => setPrepTarget(null)}>
+                    <Text style={styles.prepModalSkipText}>Để sau</Text>
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 56 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -431,6 +592,18 @@ const HomeScreen: React.FC = () => {
           />
         }
       >
+        {/* Greeting header */}
+        <View style={[styles.greeting, { paddingTop: insets.top + 16 }]}>
+          <Text style={styles.greetingText}>
+            {(() => {
+              const h = new Date().getHours();
+              if (h < 12) return "Buổi sáng tốt lành ☀️";
+              if (h < 18) return "Buổi chiều vui vẻ 🌤️";
+              return "Buổi tối bình an 🌙";
+            })()}
+          </Text>
+        </View>
+
         {/* Hero empty state — chỉ hiện khi chưa có sự kiện nào */}
         {!isLoading && events.length === 0 && (
           <View style={styles.heroEmpty}>
@@ -474,6 +647,19 @@ const HomeScreen: React.FC = () => {
               const daysLeft = differenceInCalendarDays(eventDate, today);
               const isOccasion = ["birthday", "anniversary", "holiday"].includes(primaryTag);
 
+              // Trạng thái chuẩn bị từ EventNote năm nay
+              const currentYear = new Date().getFullYear();
+              const note = event.notes?.find((n) => n.year === currentYear);
+              const hasGift = !!note?.gift;
+              const hasActivity = !!note?.activity;
+              const prepState = hasGift && hasActivity ? "done" : hasGift || hasActivity ? "partial" : "none";
+
+              const prepBadgeConfig = {
+                none:    { icon: "sparkles" as const,              color: categoryColor,  text: "Bắt đầu chuẩn bị" },
+                partial: { icon: "refresh-circle-outline" as const, color: "#F59E0B",      text: "Tiếp tục chuẩn bị" },
+                done:    { icon: "checkmark-circle" as const,       color: COLORS.success, text: "Đã được chuẩn bị" },
+              }[prepState];
+
               return (
                 <PressableCard
                   key={event.id}
@@ -503,10 +689,10 @@ const HomeScreen: React.FC = () => {
                       </Text>
                     </View>
                     {isOccasion && (
-                      <View style={styles.prepBadge}>
-                        <Ionicons name="sparkles" size={11} color={categoryColor} />
-                        <Text style={[styles.prepBadgeText, { color: categoryColor }]}>
-                          Bắt đầu chuẩn bị
+                      <View style={[styles.prepBadge, { backgroundColor: prepBadgeConfig.color + "15" }]}>
+                        <Ionicons name={prepBadgeConfig.icon} size={11} color={prepBadgeConfig.color} />
+                        <Text style={[styles.prepBadgeText, { color: prepBadgeConfig.color }]}>
+                          {prepBadgeConfig.text}
                         </Text>
                       </View>
                     )}
@@ -549,16 +735,23 @@ const HomeScreen: React.FC = () => {
             onPress={() => navigation.navigate("LocalShop")}
             activeOpacity={0.85}
           >
-            <Ionicons name="flower-outline" size={32} color={COLORS.primary} style={styles.shopBannerEmoji} />
-            <View style={styles.shopBannerText}>
-              <Text style={styles.shopBannerTitle}>
-                Đặt hoa, bánh và quà giao tận nơi
-              </Text>
-              <Text style={styles.shopBannerSub}>
-                Gợi ý hoàn hảo cho ngày đặc biệt sắp tới
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+            <LinearGradient
+              colors={[COLORS.primary + "18", "#C850C015"]}
+              style={styles.shopBannerGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="flower-outline" size={32} color={COLORS.primary} />
+              <View style={styles.shopBannerText}>
+                <Text style={styles.shopBannerTitle}>
+                  Đặt hoa, bánh và quà giao tận nơi
+                </Text>
+                <Text style={styles.shopBannerSub}>
+                  Gợi ý hoàn hảo cho ngày đặc biệt sắp tới
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
@@ -642,74 +835,65 @@ const HomeScreen: React.FC = () => {
               }}
             />
           </View>
+
+          {/* Selected date panel — hiện khi có sự kiện hoặc ngày lễ */}
+          {(selectedDateEvents.length > 0 || selectedDateSpecials.length > 0) && (
+            <View style={styles.selectedDatePanel}>
+              {selectedDateSpecials.map((sd) => (
+                <View key={sd.id} style={styles.selectedDateSpecialRow}>
+                  <IconImage source={getSpecialDateImage(sd.id)} size={18} />
+                  <Text style={[styles.selectedDateSpecialText, { color: sd.color }]}>
+                    {sd.name}
+                  </Text>
+                </View>
+              ))}
+              {selectedDateEvents.map((event) =>
+                renderEventCard(event, { showDate: false })
+              )}
+            </View>
+          )}
         </View>
 
-        {/* Quick Actions — chỉ hiện khi đã có ít nhất 1 sự kiện */}
-        {events.length > 0 && <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionHeaderLeft}>
-              <Ionicons name="flash-outline" size={20} color={COLORS.primary} />
-              <Text style={styles.sectionTitle}>Khám phá</Text>
+        {/* Khám phá — sau Calendar */}
+        {events.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionHeaderLeft}>
+                <Ionicons name="flash-outline" size={20} color={COLORS.primary} />
+                <Text style={styles.sectionTitle}>Khám phá</Text>
+              </View>
             </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickActionsScroll}
+            >
+              {quickActions.map((action) => {
+                const cardContent = (
+                  <>
+                    <View style={styles.qaDecorCircle} />
+                    <View style={styles.qaIconBg}>
+                      <Ionicons name={action.icon} size={26} color="rgba(255,255,255,0.95)" />
+                    </View>
+                    <Text style={styles.qaTitle}>{action.title}</Text>
+                    <Text style={styles.qaSub} numberOfLines={2}>{action.subtitle}</Text>
+                    <Ionicons name="arrow-forward-circle" size={20} color="rgba(255,255,255,0.5)" style={styles.qaArrow} />
+                  </>
+                );
+                return (action as any).gradient ? (
+                  <PressableCard key={action.id} style={styles.quickActionCard} onPress={action.onPress}>
+                    <LinearGradient colors={(action as any).gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+                    {cardContent}
+                  </PressableCard>
+                ) : (
+                  <PressableCard key={action.id} style={[styles.quickActionCard, { backgroundColor: action.color }]} onPress={action.onPress}>
+                    {cardContent}
+                  </PressableCard>
+                );
+              })}
+            </ScrollView>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.quickActionsScroll}
-          >
-            {quickActions.map((action) => {
-              const cardContent = (
-                <>
-                  {/* Decorative circle top-right */}
-                  <View style={styles.qaDecorCircle} />
-                  <View style={styles.qaIconBg}>
-                    <Ionicons
-                      name={action.icon}
-                      size={26}
-                      color="rgba(255,255,255,0.95)"
-                    />
-                  </View>
-                  <Text style={styles.qaTitle}>{action.title}</Text>
-                  <Text style={styles.qaSub} numberOfLines={2}>
-                    {action.subtitle}
-                  </Text>
-                  <Ionicons
-                    name="arrow-forward-circle"
-                    size={20}
-                    color="rgba(255,255,255,0.5)"
-                    style={styles.qaArrow}
-                  />
-                </>
-              );
-              return (action as any).gradient ? (
-                <PressableCard
-                  key={action.id}
-                  style={styles.quickActionCard}
-                  onPress={action.onPress}
-                >
-                  <LinearGradient
-                    colors={(action as any).gradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={StyleSheet.absoluteFill}
-                  />
-                  {cardContent}
-                </PressableCard>
-              ) : (
-                <PressableCard
-                  key={action.id}
-                  style={[
-                    styles.quickActionCard,
-                    { backgroundColor: action.color },
-                  ]}
-                  onPress={action.onPress}
-                >
-                  {cardContent}
-                </PressableCard>
-              );
-            })}
-          </ScrollView>
-        </View>}
+        )}
 
         {/* Articles */}
         <View style={styles.section}>
@@ -917,28 +1101,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 0,
   },
-  // Empty hint
+  // Greeting header
+  greeting: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  greetingText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  // Shop banner (gradient)
   shopBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 4,
     borderRadius: 14,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  shopBannerGradient: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 10,
     borderWidth: 1.5,
     borderColor: COLORS.primary + "25",
-    elevation: 1,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  shopBannerEmoji: {
-    fontSize: 28,
+    borderRadius: 14,
   },
   shopBannerText: {
     flex: 1,
@@ -952,6 +1146,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 2,
+  },
+  // Selected date panel
+  selectedDatePanel: {
+    marginTop: 12,
+    gap: 8,
+  },
+  selectedDateSpecialRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  selectedDateSpecialText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   heroEmpty: {
     marginHorizontal: 12,
@@ -1141,7 +1353,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginTop: 2,
+    marginTop: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   prepBadgeText: {
     fontSize: 12,
@@ -1505,6 +1721,83 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+
+  // Occasion prep popup modal
+  prepModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  prepModalCard: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    gap: 12,
+  },
+  prepModalHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    marginBottom: 4,
+  },
+  prepModalTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  prepModalIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  prepModalDaysBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  prepModalDaysText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  prepModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  prepModalSub: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  prepModalBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginTop: 4,
+  },
+  prepModalBtnText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  prepModalSkip: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  prepModalSkipText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
   },
 });
 

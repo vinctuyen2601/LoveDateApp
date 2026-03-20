@@ -7,6 +7,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { ChecklistItem as ChecklistItemType } from "../../types";
 import { COLORS } from '@themes/colors';
@@ -71,11 +72,11 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
           <Ionicons
             name="checkbox-outline"
             size={24}
-            color={COLORS.primary}
+            color={progressPercentage === 100 ? COLORS.success : COLORS.primary}
           />
-          <Text style={styles.headerTitle}>Checklist</Text>
+          <Text style={styles.headerTitle}>Việc cần làm</Text>
           {totalItems > 0 && (
-            <View style={styles.badge}>
+            <View style={[styles.badge, progressPercentage === 100 && { backgroundColor: COLORS.success }]}>
               <Text style={styles.badgeText}>
                 {completedItems}/{totalItems}
               </Text>
@@ -94,15 +95,25 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
       {showProgress && totalItems > 0 && isExpanded && (
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${progressPercentage}%` },
-              ]}
+            <LinearGradient
+              colors={progressPercentage === 100
+                ? [COLORS.success, COLORS.success]
+                : [COLORS.primary, "#C850C0"]}
+              style={[styles.progressFill, { width: `${progressPercentage}%` }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
             />
           </View>
-          <Text style={styles.progressText}>{progressPercentage}%</Text>
+          <Text style={[
+            styles.progressText,
+            progressPercentage === 100 && { color: COLORS.success },
+          ]}>
+            {progressPercentage === 100 ? "🎉 100%" : `${progressPercentage}%`}
+          </Text>
         </View>
+      )}
+      {progressPercentage === 100 && totalItems > 0 && isExpanded && (
+        <Text style={styles.completionText}>Hoàn thành tất cả! Bạn thật tuyệt 🎉</Text>
       )}
 
       {/* Checklist Items */}
@@ -175,10 +186,12 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   header: {
     flexDirection: "row",
@@ -215,15 +228,14 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     flex: 1,
-    height: 8,
+    height: 10,
     backgroundColor: `${COLORS.primary}20`,
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: COLORS.primary,
-    borderRadius: 4,
+    borderRadius: 5,
   },
   progressText: {
     fontSize: 14,
@@ -231,6 +243,14 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     minWidth: 40,
     textAlign: "right",
+  },
+  completionText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.success,
+    textAlign: "center",
+    paddingVertical: 6,
+    marginBottom: 4,
   },
   itemsContainer: {
     gap: 0,

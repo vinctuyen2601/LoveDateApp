@@ -112,12 +112,22 @@ export interface EventNoteGift {
   source?: 'occasion_products' | 'manual';
   productId?: string;
   link?: string;
+  imageUrl?: string;
+  rating?: number;
+  reviewCount?: number;
+  description?: string;
+  reason?: string;
 }
 
 export interface EventNote {
   year: number;
   gift?: EventNoteGift;
   activity?: string;
+  activityDescription?: string;
+  activityBudget?: string;
+  activityEmoji?: string;
+  activityWhyFit?: string;
+  activityTimeline?: { time: string; action: string }[];
   note?: string;
   rating?: number;   // 1-5 sao
   photos?: string[];

@@ -14,6 +14,7 @@ import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
 import IconImage from "@components/atoms/IconImage";
 import { getTagImage } from "@lib/iconImages";
+import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
 // TODO(monetization): import { useSQLiteContext } from "expo-sqlite"; // cần lại khi re-enable premium check
 import { useEvents } from "@contexts/EventsContext";
@@ -64,7 +65,7 @@ const AddEventScreen: React.FC = () => {
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0); // 0=Tên, 1=Thời gian, 2=Nhắc nhở, 3=Nhãn
+  const [currentStep, setCurrentStep] = useState(0); // 0=Tên, 1=Nhãn, 2=Thời gian, 3=Nhắc nhở
 
   // Load existing event data when in Edit mode
   useEffect(() => {
@@ -271,9 +272,9 @@ const AddEventScreen: React.FC = () => {
   // Form steps for progress indicator
   const formSteps = [
     { label: "Tên", icon: "text-outline" as const },
+    { label: "Nhãn", icon: "pricetag-outline" as const },
     { label: "Thời gian", icon: "calendar-outline" as const },
     { label: "Nhắc nhở", icon: "notifications-outline" as const },
-    { label: "Nhãn", icon: "pricetag-outline" as const },
   ];
 
   return (
@@ -371,8 +372,52 @@ const AddEventScreen: React.FC = () => {
         </View>
         </>}
 
-        {/* ── Step 1: Thời gian ── */}
+        {/* ── Step 1: Nhãn ── */}
         {(currentStep === 1 || isEditMode) && <>
+        <View style={styles.sectionDivider}>
+          <Ionicons name="pricetag-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.sectionDividerText}>Nhãn sự kiện <Text style={styles.optionalLabel}>(Tuỳ chọn)</Text></Text>
+        </View>
+
+        {/* Tags Picker */}
+        <View style={styles.section}>
+          <View style={styles.tagsContainer}>
+            {PREDEFINED_TAGS.map((tag) => {
+              const isSelected = formData.tags.includes(tag.value);
+              return (
+                <TouchableOpacity
+                  key={tag.value}
+                  style={[
+                    styles.tagChip,
+                    isSelected && { backgroundColor: tag.color, borderColor: tag.color },
+                    !isSelected && { borderColor: COLORS.border },
+                  ]}
+                  onPress={() => {
+                    const newTags = isSelected ? [] : [tag.value];
+                    setFormData({ ...formData, tags: newTags });
+                  }}
+                >
+                  <IconImage source={getTagImage(tag.value)} size={20} />
+                  <Text
+                    style={[
+                      styles.tagText,
+                      { color: isSelected ? COLORS.white : COLORS.textPrimary },
+                    ]}
+                  >
+                    {tag.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={styles.helperText}>
+            Chọn một nhãn để phân loại sự kiện — app sẽ gợi ý quà và tạo checklist phù hợp
+          </Text>
+        </View>
+        </>}
+
+        {/* ── Step 2: Thời gian ── */}
+        {(currentStep === 2 || isEditMode) && <>
         <View style={styles.sectionDivider}>
           <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
           <Text style={styles.sectionDividerText}>Thời gian & Lặp lại</Text>
@@ -717,15 +762,15 @@ const AddEventScreen: React.FC = () => {
 
         </>}
 
-        {/* ── Step 2: Nhắc nhở ── */}
-        {(currentStep === 2 || isEditMode) && <>
+        {/* ── Step 3: Nhắc nhở ── */}
+        {(currentStep === 3 || isEditMode) && <>
         <View style={styles.sectionDivider}>
           <Ionicons
             name="notifications-outline"
             size={16}
             color={COLORS.primary}
           />
-          <Text style={styles.sectionDividerText}>Nhắc nhở</Text>
+          <Text style={styles.sectionDividerText}>Nhắc nhở <Text style={styles.optionalLabel}>(Tuỳ chọn)</Text></Text>
         </View>
 
         {/* Reminders */}
@@ -747,67 +792,39 @@ const AddEventScreen: React.FC = () => {
 
         </>}
 
-        {/* ── Step 3: Nhãn ── */}
-        {(currentStep === 3 || isEditMode) && <>
-        <View style={styles.sectionDivider}>
-          <Ionicons name="pricetag-outline" size={16} color={COLORS.primary} />
-          <Text style={styles.sectionDividerText}>Nhãn sự kiện</Text>
-        </View>
-
-        {/* Tags Picker */}
-        <View style={styles.section}>
-          <View style={styles.tagsContainer}>
-            {PREDEFINED_TAGS.map((tag) => {
-              const isSelected = formData.tags.includes(tag.value);
-              return (
-                <TouchableOpacity
-                  key={tag.value}
-                  style={[
-                    styles.tagChip,
-                    isSelected && { backgroundColor: tag.color, borderColor: tag.color },
-                    !isSelected && { borderColor: COLORS.border },
-                  ]}
-                  onPress={() => {
-                    const newTags = isSelected ? [] : [tag.value];
-                    setFormData({ ...formData, tags: newTags });
-                  }}
-                >
-                  <IconImage source={getTagImage(tag.value)} size={20} />
-                  <Text
-                    style={[
-                      styles.tagText,
-                      { color: isSelected ? COLORS.white : COLORS.textPrimary },
-                    ]}
-                  >
-                    {tag.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-          <Text style={styles.helperText}>
-            Chọn một nhãn để phân loại sự kiện
-          </Text>
-        </View>
-        </>}
       </ScrollView>
 
       {/* Footer: Tiếp theo (create step 0-2) hoặc Lưu (step 3 hoặc edit mode) */}
       <View style={[styles.footer, isScrolled && styles.footerShadow]}>
         {currentStep < 3 && !isEditMode ? (
-          <TouchableOpacity style={styles.submitButton} onPress={handleNext}>
-            <Text style={styles.submitButtonText}>Tiếp theo</Text>
-            <Ionicons name="arrow-forward" size={18} color={COLORS.white} style={{ marginLeft: 6 }} />
+          <TouchableOpacity style={styles.submitButton} onPress={handleNext} activeOpacity={0.85}>
+            <LinearGradient
+              colors={[COLORS.primary, "#C850C0"]}
+              style={styles.submitBtnGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.submitButtonText}>Tiếp theo</Text>
+              <Ionicons name="arrow-forward" size={18} color={COLORS.white} style={{ marginLeft: 6 }} />
+            </LinearGradient>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
+            activeOpacity={0.85}
           >
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? "Đang lưu..." : isEditMode ? "Cập nhật" : STRINGS.save}
-            </Text>
+            <LinearGradient
+              colors={[COLORS.primary, "#C850C0"]}
+              style={styles.submitBtnGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.submitButtonText}>
+                {isSubmitting ? "Đang lưu..." : isEditMode ? "Cập nhật" : STRINGS.save}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </View>
@@ -894,20 +911,29 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
   },
   submitButton: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
     borderRadius: 12,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
+    overflow: "hidden",
   },
   submitButtonDisabled: {
     opacity: 0.6,
+  },
+  submitBtnGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
   },
   submitButtonText: {
     color: COLORS.white,
     fontSize: 16,
     fontWeight: "600",
+  },
+  optionalLabel: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: COLORS.textSecondary,
   },
   inlinePickerContainer: {
     marginTop: 12,
