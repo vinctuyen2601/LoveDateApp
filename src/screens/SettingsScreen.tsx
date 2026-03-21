@@ -330,7 +330,10 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top }]}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
+    >
       {/* Profile Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
@@ -435,7 +438,6 @@ const SettingsScreen: React.FC = () => {
       {/* Link Account Section */}
       {isAnonymous && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tài khoản</Text>
           <TouchableOpacity
             style={styles.authCard}
             onPress={() => navigation.navigate("Auth")}
