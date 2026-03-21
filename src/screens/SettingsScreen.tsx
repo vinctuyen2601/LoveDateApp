@@ -109,13 +109,13 @@ const SettingsScreen: React.FC = () => {
 
   const handleToggleSpecialDate = async (id: string) => {
     const nowMuted = await toggleMutedSpecialDate(id);
-    setMutedSpecialDates(prev =>
-      nowMuted ? [...prev, id] : prev.filter(x => x !== id)
+    setMutedSpecialDates((prev) =>
+      nowMuted ? [...prev, id] : prev.filter((x) => x !== id)
     );
     try {
       await scheduleUpcomingNotifications(events);
     } catch (e) {
-      console.warn('Failed to reschedule after toggle:', e);
+      console.warn("Failed to reschedule after toggle:", e);
     }
   };
 
@@ -222,9 +222,9 @@ const SettingsScreen: React.FC = () => {
     try {
       setIsResendingVerification(true);
       await resendVerificationEmail();
-      showSuccess('Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.');
+      showSuccess("Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.");
     } catch (error: any) {
-      showError(error.message || 'Không thể gửi email xác thực');
+      showError(error.message || "Không thể gửi email xác thực");
     } finally {
       setIsResendingVerification(false);
     }
@@ -232,30 +232,37 @@ const SettingsScreen: React.FC = () => {
 
   const confirmDeleteAccount = async () => {
     try {
-      await apiService.delete('/users/me');
-      await AsyncStorage.removeItem('@onboarding_v2_completed');
+      await apiService.delete("/users/me");
+      await AsyncStorage.removeItem("@onboarding_v2_completed");
       await logout();
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể xóa tài khoản. Vui lòng thử lại.');
+      Alert.alert(
+        "Lỗi",
+        error.message || "Không thể xóa tài khoản. Vui lòng thử lại."
+      );
     }
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Xóa tài khoản',
-      'Bạn có chắc muốn xóa tài khoản? Toàn bộ sự kiện và dữ liệu sẽ bị xóa vĩnh viễn.',
+      "Xóa tài khoản",
+      "Bạn có chắc muốn xóa tài khoản? Toàn bộ sự kiện và dữ liệu sẽ bị xóa vĩnh viễn.",
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: "Hủy", style: "cancel" },
         {
-          text: 'Xóa tài khoản',
-          style: 'destructive',
+          text: "Xóa tài khoản",
+          style: "destructive",
           onPress: () => {
             Alert.alert(
-              'Xác nhận lần cuối',
-              'Hành động này không thể hoàn tác. Tài khoản và tất cả dữ liệu sẽ bị xóa.',
+              "Xác nhận lần cuối",
+              "Hành động này không thể hoàn tác. Tài khoản và tất cả dữ liệu sẽ bị xóa.",
               [
-                { text: 'Hủy', style: 'cancel' },
-                { text: 'Xóa vĩnh viễn', style: 'destructive', onPress: confirmDeleteAccount },
+                { text: "Hủy", style: "cancel" },
+                {
+                  text: "Xóa vĩnh viễn",
+                  style: "destructive",
+                  onPress: confirmDeleteAccount,
+                },
               ]
             );
           },
@@ -324,11 +331,6 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header */}
-      <View style={[styles.screenHeader, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.screenHeaderTitle}>Cài đặt</Text>
-      </View>
-
       {/* Profile Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
@@ -413,7 +415,8 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.verifyContent}>
               <Text style={styles.verifyTitle}>Xác thực email của bạn</Text>
               <Text style={styles.verifyText}>
-                Vui lòng kiểm tra hộp thư và nhấn vào link xác thực để bảo vệ tài khoản.
+                Vui lòng kiểm tra hộp thư và nhấn vào link xác thực để bảo vệ
+                tài khoản.
               </Text>
               <TouchableOpacity
                 style={styles.resendBtn}
@@ -421,7 +424,7 @@ const SettingsScreen: React.FC = () => {
                 disabled={isResendingVerification}
               >
                 <Text style={styles.resendBtnText}>
-                  {isResendingVerification ? 'Đang gửi...' : 'Gửi lại email'}
+                  {isResendingVerification ? "Đang gửi..." : "Gửi lại email"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -439,7 +442,7 @@ const SettingsScreen: React.FC = () => {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[COLORS.primary, COLORS.primary + 'CC']}
+              colors={[COLORS.primary, COLORS.primary + "CC"]}
               style={styles.authCardGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -448,7 +451,9 @@ const SettingsScreen: React.FC = () => {
                 <Ionicons name="person-circle-outline" size={36} color="#fff" />
                 <View style={styles.authCardText}>
                   <Text style={styles.authCardTitle}>Đăng nhập / Đăng ký</Text>
-                  <Text style={styles.authCardSubtitle}>Backup dữ liệu và đồng bộ nhiều thiết bị</Text>
+                  <Text style={styles.authCardSubtitle}>
+                    Backup dữ liệu và đồng bộ nhiều thiết bị
+                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#fff" />
               </View>
@@ -481,19 +486,25 @@ const SettingsScreen: React.FC = () => {
         >
           <View style={styles.settingLeft}>
             <View style={styles.iconContainer}>
-              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={COLORS.primary}
+              />
             </View>
             <View style={styles.settingText}>
               <Text style={styles.settingTitle}>Ngày đặc biệt</Text>
               <Text style={styles.settingSubtitle}>
                 {mutedSpecialDates.length > 0
-                  ? `${SYSTEM_SPECIAL_DATES.length - mutedSpecialDates.length}/${SYSTEM_SPECIAL_DATES.length} đang bật`
-                  : 'Tất cả đang bật'}
+                  ? `${
+                      SYSTEM_SPECIAL_DATES.length - mutedSpecialDates.length
+                    }/${SYSTEM_SPECIAL_DATES.length} đang bật`
+                  : "Tất cả đang bật"}
               </Text>
             </View>
           </View>
           <Ionicons
-            name={showSpecialDates ? 'chevron-up' : 'chevron-down'}
+            name={showSpecialDates ? "chevron-up" : "chevron-down"}
             size={18}
             color={COLORS.textSecondary}
           />
@@ -506,13 +517,21 @@ const SettingsScreen: React.FC = () => {
               return (
                 <View key={sd.id} style={styles.specialDateRow}>
                   <IconImage source={getSpecialDateImage(sd.id)} size={22} />
-                  <Text style={[styles.specialDateName, isMuted && styles.specialDateMuted]}>
+                  <Text
+                    style={[
+                      styles.specialDateName,
+                      isMuted && styles.specialDateMuted,
+                    ]}
+                  >
                     {sd.name}
                   </Text>
                   <Switch
                     value={!isMuted}
                     onValueChange={() => handleToggleSpecialDate(sd.id)}
-                    trackColor={{ false: COLORS.border, true: COLORS.primary + '60' }}
+                    trackColor={{
+                      false: COLORS.border,
+                      true: COLORS.primary + "60",
+                    }}
                     thumbColor={!isMuted ? COLORS.primary : COLORS.textLight}
                   />
                 </View>
@@ -641,13 +660,19 @@ const SettingsScreen: React.FC = () => {
                         style={[
                           styles.colorDot,
                           { backgroundColor: color },
-                          isSelected ? styles.colorDotSelected : styles.colorDotUnselected,
+                          isSelected
+                            ? styles.colorDotSelected
+                            : styles.colorDotUnselected,
                         ]}
                         onPress={() => setSelectedColor(color)}
                         activeOpacity={0.8}
                       >
                         {isSelected && (
-                          <Ionicons name="checkmark" size={15} color={COLORS.white} />
+                          <Ionicons
+                            name="checkmark"
+                            size={15}
+                            color={COLORS.white}
+                          />
                         )}
                       </TouchableOpacity>
                     );
@@ -840,7 +865,7 @@ const styles = StyleSheet.create({
   },
   screenHeaderTitle: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     color: COLORS.textPrimary,
   },
   section: {
