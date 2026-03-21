@@ -330,7 +330,7 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top }]}>
       {/* Profile Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
