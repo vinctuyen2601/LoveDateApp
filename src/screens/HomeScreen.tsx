@@ -725,14 +725,20 @@ const HomeScreen: React.FC = () => {
       >
         {/* Greeting header */}
         <View style={[styles.greeting, { paddingTop: insets.top + 16 }]}>
-          <Text style={styles.greetingText}>
-            {(() => {
-              const h = new Date().getHours();
-              if (h < 12) return "Buổi sáng tốt lành ☀️";
-              if (h < 18) return "Buổi chiều vui vẻ 🌤️";
-              return "Buổi tối bình an 🌙";
-            })()}
-          </Text>
+          {(() => {
+            const h = new Date().getHours();
+            let label: string;
+            let iconName: keyof typeof Ionicons.glyphMap;
+            if (h < 12) { label = "Buổi sáng tốt lành"; iconName = "sunny-outline"; }
+            else if (h < 18) { label = "Buổi chiều vui vẻ"; iconName = "partly-sunny-outline"; }
+            else { label = "Buổi tối bình an"; iconName = "moon-outline"; }
+            return (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name={iconName} size={20} color={COLORS.primary} />
+                <Text style={styles.greetingText}>{label}</Text>
+              </View>
+            );
+          })()}
         </View>
 
         {/* Hero empty state — chỉ hiện khi chưa có sự kiện nào */}
