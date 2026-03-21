@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 
 const LAST_UPDATED = '06/03/2026';
-const APP_NAME = 'LoveDate';
+const APP_NAME = 'Ngày yêu thương';
 const CONTACT_EMAIL = 'support@ngayyeuthuong.com';
 
 const PrivacyPolicyScreen: React.FC = () => {

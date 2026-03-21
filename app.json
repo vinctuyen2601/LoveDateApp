@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "LoveDate",
+    "name": "Ngày yêu thương",
     "slug": "important-dates-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lovedate.mobile",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -32,7 +32,7 @@
       }
     },
     "android": {
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

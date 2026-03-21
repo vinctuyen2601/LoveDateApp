@@ -1,7 +1,7 @@
 // App Strings - Ready for i18n
 export const STRINGS = {
   // Common
-  app_name: "LoveDate",
+  app_name: "Ngày yêu thương",
   ok: "OK",
   cancel: "Hủy",
   save: "Lưu",

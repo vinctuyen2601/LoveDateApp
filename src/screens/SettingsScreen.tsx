@@ -553,7 +553,7 @@ const SettingsScreen: React.FC = () => {
           subtitle={`Phiên bản ${APP_VERSION || "1.0.0"}`}
           onPress={() =>
             Alert.alert(
-              "LoveDate",
+              "Ngày yêu thương",
               `Version: ${
                 APP_VERSION || "1.0.0"
               }\n\nỨng dụng nhắc nhở những ngày quan trọng trong cuộc sống.`
