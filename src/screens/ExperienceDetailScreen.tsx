@@ -150,7 +150,7 @@ const ExperienceDetailScreen: React.FC = () => {
                 setGalleryIndex(Math.round(e.nativeEvent.contentOffset.x / screenWidth));
               }}
             >
-              {product.galleryUrls.map((url, i) => (
+              {product.galleryUrls.filter(Boolean).map((url, i) => (
                 <Image key={i} source={{ uri: url }} style={styles.heroImage} resizeMode="cover" />
               ))}
             </ScrollView>

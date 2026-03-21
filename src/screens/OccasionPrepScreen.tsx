@@ -468,7 +468,7 @@ const OccasionPrepScreen: React.FC = () => {
                         ))}
                         {savedGift.reviewCount ? (
                           <Text style={styles.savedCardReviewCount}>
-                            ({savedGift.reviewCount.toLocaleString("vi-VN")})
+                            ({Number(savedGift.reviewCount).toLocaleString("vi-VN")})
                           </Text>
                         ) : null}
                       </View>
@@ -478,7 +478,7 @@ const OccasionPrepScreen: React.FC = () => {
                         <View style={[styles.savedCardBadge, { borderColor: occasionColor + "40", backgroundColor: occasionColor + "0D" }]}>
                           <Ionicons name="wallet-outline" size={11} color={occasionColor} />
                           <Text style={[styles.savedCardBadgeText, { color: occasionColor }]}>
-                            {savedGift.price.toLocaleString("vi-VN")}₫
+                            {Number(savedGift.price).toLocaleString("vi-VN")}₫
                           </Text>
                         </View>
                       ) : null}

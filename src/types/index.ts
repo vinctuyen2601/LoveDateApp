@@ -485,6 +485,7 @@ export interface AuthContextValue {
     code: string
   ) => Promise<void>;
   updateProfile: (displayName: string) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 export interface EventsContextValue {

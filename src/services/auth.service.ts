@@ -339,6 +339,20 @@ class AuthService {
   }
 
   /**
+   * Fetch latest user data from server (e.g. to check emailVerified status)
+   */
+  async fetchUserFromServer(): Promise<User | null> {
+    try {
+      const user = await apiService.get<User>('/users/me');
+      await this.saveUser(user);
+      return user;
+    } catch (error) {
+      console.error('fetchUserFromServer failed:', error);
+      return null;
+    }
+  }
+
+  /**
    * Delete account permanently
    * Calls backend to delete account, then clears all local data.
    * Works even if backend is unreachable (local-only account).

@@ -125,7 +125,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           {activity.rating && (
             <View style={styles.metaItem}>
               <Ionicons name="star" size={14} color={COLORS.warning} />
-              <Text style={styles.metaText}>{activity.rating.toFixed(1)}</Text>
+              <Text style={styles.metaText}>{Number(activity.rating).toFixed(1)}</Text>
             </View>
           )}
 

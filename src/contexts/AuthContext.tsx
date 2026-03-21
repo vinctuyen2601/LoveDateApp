@@ -290,6 +290,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const user = await authService.fetchUserFromServer();
+      if (user) {
+        setUser(user);
+        setIsEmailVerified(user.emailVerified || false);
+      }
+    } catch (error) {
+      console.error('refreshUser failed:', error);
+    }
+  };
+
   const value: AuthContextValue = {
     user,
     tokens,
@@ -311,6 +323,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     linkWithPhoneNumber,
     completeLinkWithPhone,
     updateProfile,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

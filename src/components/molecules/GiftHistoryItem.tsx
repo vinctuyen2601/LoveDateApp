@@ -105,7 +105,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
                   color={COLORS.textSecondary}
                 />
                 <Text style={styles.priceText}>
-                  {item.price.toLocaleString("vi-VN")} đ
+                  {Number(item.price).toLocaleString("vi-VN")} đ
                 </Text>
               </View>
             )}

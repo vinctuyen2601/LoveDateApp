@@ -58,7 +58,7 @@ const ProductDetailScreen: React.FC = () => {
   useEffect(() => {
     // Track view on mount (fire-and-forget)
     trackProductView(product.id);
-    logProductView({ id: product.id, name: product.name, category: product.category, price: product.price });
+    logProductView({ id: product.id, name: product.name, category: product.category, price: product.price != null ? Number(product.price) : undefined });
 
     // Load similar products async
     const loadSimilar = async () => {
@@ -151,7 +151,7 @@ const ProductDetailScreen: React.FC = () => {
               showsHorizontalScrollIndicator={false}
               style={styles.galleryScroll}
             >
-              {product.galleryUrls.map((url, index) => (
+              {product.galleryUrls.filter(Boolean).map((url, index) => (
                 <Image
                   key={index}
                   source={{ uri: url }}
@@ -233,8 +233,8 @@ const ProductDetailScreen: React.FC = () => {
 
           {/* Rating */}
           <View style={styles.ratingSection}>
-            <View style={styles.starsRow}>{renderStars(product.rating)}</View>
-            <Text style={styles.ratingNumber}>{product.rating}</Text>
+            <View style={styles.starsRow}>{renderStars(Number(product.rating))}</View>
+            <Text style={styles.ratingNumber}>{Number(product.rating).toFixed(1)}</Text>
             <Text style={styles.reviewCount}>
               ({product.reviewCount} đánh giá)
             </Text>

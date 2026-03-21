@@ -21,7 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import IconImage from "@components/atoms/IconImage";
 import { getSpecialDateImage } from "@lib/iconImages";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { syncService } from "../services/sync.service";
@@ -88,7 +88,14 @@ const SettingsScreen: React.FC = () => {
     updateProfile,
     linkWithEmailPassword,
     resendVerificationEmail,
+    refreshUser,
   } = useAuth();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isAnonymous && !isEmailVerified) refreshUser();
+    }, [isAnonymous, isEmailVerified])
+  );
   const { showSuccess, showError } = useToast();
   const { events } = useEvents();
 

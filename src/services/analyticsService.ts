@@ -3,7 +3,7 @@
  * Gracefully no-ops when Firebase is unavailable (Expo Go / dev without custom build)
  */
 
-import type { FirebaseAnalyticsTypes } from '@react-native-firebase/analytics';
+import type { FirebaseAnalyticsTypes } from "@react-native-firebase/analytics";
 
 let _analytics: FirebaseAnalyticsTypes.Module | null = null;
 
@@ -12,7 +12,7 @@ const getAnalytics = (): FirebaseAnalyticsTypes.Module | null => {
   try {
     // Dynamic import so it doesn't crash in Expo Go
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { default: analytics } = require('@react-native-firebase/analytics');
+    const { default: analytics } = require("@react-native-firebase/analytics");
     _analytics = analytics();
     return _analytics;
   } catch {
@@ -24,15 +24,22 @@ const getAnalytics = (): FirebaseAnalyticsTypes.Module | null => {
 
 export const logScreenView = (screenName: string, screenClass?: string) => {
   getAnalytics()
-    ?.logScreenView({ screen_name: screenName, screen_class: screenClass ?? screenName })
+    ?.logScreenView({
+      screen_name: screenName,
+      screen_class: screenClass ?? screenName,
+    })
     .catch(() => {});
 };
 
 // ─── Article events ───────────────────────────────────────────────────────────
 
-export const logArticleView = (params: { id: string; title: string; category: string }) => {
+export const logArticleView = (params: {
+  id: string;
+  title: string;
+  category: string;
+}) => {
   getAnalytics()
-    ?.logEvent('article_view', {
+    ?.logEvent("article_view", {
       article_id: params.id,
       article_title: params.title.slice(0, 100),
       article_category: params.category,
@@ -43,9 +50,9 @@ export const logArticleView = (params: { id: string; title: string; category: st
 export const logArticleShare = (params: { id: string; title: string }) => {
   getAnalytics()
     ?.logShare({
-      content_type: 'article',
+      content_type: "article",
       item_id: params.id,
-      method: 'native_share',
+      method: "native_share",
     })
     .catch(() => {});
 };
@@ -54,22 +61,30 @@ export const logArticleShare = (params: { id: string; title: string }) => {
 
 export const logGiftSurveyStart = () => {
   getAnalytics()
-    ?.logEvent('gift_survey_start', {})
+    ?.logEvent("gift_survey_start", {})
     .catch(() => {});
 };
 
-export const logGiftSurveyComplete = (params: { occasion?: string; budget?: string }) => {
+export const logGiftSurveyComplete = (params: {
+  occasion?: string;
+  budget?: string;
+}) => {
   getAnalytics()
-    ?.logEvent('gift_survey_complete', {
-      occasion: params.occasion ?? 'unknown',
-      budget: params.budget ?? 'unknown',
+    ?.logEvent("gift_survey_complete", {
+      occasion: params.occasion ?? "unknown",
+      budget: params.budget ?? "unknown",
     })
     .catch(() => {});
 };
 
 // ─── Product / gift events ────────────────────────────────────────────────────
 
-export const logProductView = (params: { id: string; name: string; category?: string; price?: number }) => {
+export const logProductView = (params: {
+  id: string;
+  name: string;
+  category?: string;
+  price?: number;
+}) => {
   getAnalytics()
     ?.logViewItem({
       items: [
@@ -77,16 +92,20 @@ export const logProductView = (params: { id: string; name: string; category?: st
           item_id: params.id,
           item_name: params.name.slice(0, 100),
           item_category: params.category,
-          price: params.price,
+          price: params.price != null ? Number(params.price) : undefined,
         },
       ],
     })
     .catch(() => {});
 };
 
-export const logProductClick = (params: { id: string; name: string; affiliateUrl: string }) => {
+export const logProductClick = (params: {
+  id: string;
+  name: string;
+  affiliateUrl: string;
+}) => {
   getAnalytics()
-    ?.logEvent('affiliate_click', {
+    ?.logEvent("affiliate_click", {
       product_id: params.id,
       product_name: params.name.slice(0, 100),
       affiliate_url: params.affiliateUrl.slice(0, 200),
@@ -98,16 +117,20 @@ export const logProductClick = (params: { id: string; name: string; affiliateUrl
 
 export const logEventCreate = (category: string) => {
   getAnalytics()
-    ?.logEvent('calendar_event_create', { category })
+    ?.logEvent("calendar_event_create", { category })
     .catch(() => {});
 };
 
 // ─── Auth events ──────────────────────────────────────────────────────────────
 
 export const logLogin = (method: string) => {
-  getAnalytics()?.logLogin({ method }).catch(() => {});
+  getAnalytics()
+    ?.logLogin({ method })
+    .catch(() => {});
 };
 
 export const logSignUp = (method: string) => {
-  getAnalytics()?.logSignUp({ method }).catch(() => {});
+  getAnalytics()
+    ?.logSignUp({ method })
+    .catch(() => {});
 };
