@@ -119,7 +119,14 @@ const OccasionPrepScreen: React.FC = () => {
   const { upsertEventNote, getEventById } = useEvents();
   const { showSuccess, showError } = useToast();
 
-  const [step, setStep] = useState(postEvent ? 3 : 0);
+  // Khi review lại (cả 2 step đã xong), mở ở step 1 để thấy activity ngay
+  const initialStep = (() => {
+    if (postEvent) return 3;
+    const note = getEventById(event.id)?.notes?.find((n) => n.year === new Date().getFullYear());
+    if (note?.gift && note?.activity) return 1;
+    return 0;
+  })();
+  const [step, setStep] = useState(initialStep);
   const [articles, setArticles] = useState<Article[]>([]);
   const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
@@ -285,6 +292,28 @@ const OccasionPrepScreen: React.FC = () => {
 
   const isPostEvent = postEvent || step === 3;
 
+  // Sự kiện từ kết nối (shared) không tham gia flow chuẩn bị quà
+  if (event.sourceSharedEventId) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}>
+        <View style={{ paddingTop: insets.top }} />
+        <Ionicons name="people-outline" size={56} color="#4ECDC4" />
+        <Text style={[styles.headerTitle, { marginTop: 16, textAlign: 'center' }]}>
+          Sự kiện được chia sẻ
+        </Text>
+        <Text style={{ color: '#888', textAlign: 'center', marginTop: 12, lineHeight: 22 }}>
+          Sự kiện này được chia sẻ từ người thân. Mỗi người tự chuẩn bị theo cách của mình — flow chuẩn bị quà không áp dụng cho sự kiện này.
+        </Text>
+        <TouchableOpacity
+          style={{ marginTop: 32, backgroundColor: '#4ECDC4', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32 }}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header — gradient cho pre-event, plain cho post-event */}
@@ -341,7 +370,13 @@ const OccasionPrepScreen: React.FC = () => {
         <View style={styles.stepIndicator}>
           {STEPS.map((label, i) => (
             <React.Fragment key={i}>
-              <View style={styles.stepItem}>
+              <TouchableOpacity
+                style={styles.stepItem}
+                onPress={() => stepDone[i] && setStep(i)}
+                activeOpacity={stepDone[i] ? 0.7 : 1}
+                accessibilityRole="button"
+                accessibilityLabel={stepDone[i] ? `Xem lại ${label}` : label}
+              >
                 <View
                   style={[
                     styles.stepDot,
@@ -361,11 +396,12 @@ const OccasionPrepScreen: React.FC = () => {
                   style={[
                     styles.stepLabel,
                     i === step && { color: occasionColor, fontWeight: "600" },
+                    stepDone[i] && i !== step && { color: COLORS.success },
                   ]}
                 >
                   {label}
                 </Text>
-              </View>
+              </TouchableOpacity>
               {i < STEPS.length - 1 && (
                 <View
                   style={[

@@ -9,6 +9,9 @@ import {
   Switch,
   Alert,
   BackHandler,
+  Modal,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,7 +22,9 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 // TODO(monetization): import { useSQLiteContext } from "expo-sqlite"; // cần lại khi re-enable premium check
 import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
-import { EventFormData, RecurrenceType, PREDEFINED_TAGS } from "../types";
+import { EventFormData, RecurrenceType, PREDEFINED_TAGS, Event } from "../types";
+import { getConnectionsWithQuota, shareEvent } from "../services/connections.service";
+import type { ConnectionWithQuota } from "../types/connections";
 import { COLORS } from "@themes/colors";
 import { STRINGS } from "../constants/strings";
 import { DateUtils } from "@lib/date.utils";
@@ -66,6 +71,14 @@ const AddEventScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentStep, setCurrentStep] = useState(0); // 0=Tên, 1=Nhãn, 2=Thời gian, 3=Nhắc nhở
+
+  // Share modal after event creation
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
+  const [connections, setConnections] = useState<ConnectionWithQuota[]>([]);
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false);
+  const [selectedConnIds, setSelectedConnIds] = useState<Set<string>>(new Set());
+  const [isSharing, setIsSharing] = useState(false);
 
   // Load existing event data when in Edit mode
   useEffect(() => {
@@ -200,8 +213,18 @@ const AddEventScreen: React.FC = () => {
       } else {
         // Add new event
         // EventsContext.addEvent already handles checklist auto-generation
-        await addEvent({ ...formData, recurrencePattern });
+        const newEvent = await addEvent({ ...formData, recurrencePattern });
         showSuccess(`✨ Đã thêm sự kiện "${formData.title}" thành công!`);
+        // Offer to share with connections if user has any
+        setCreatedEvent(newEvent);
+        setIsLoadingConnections(true);
+        setShowShareModal(true);
+        setSelectedConnIds(new Set());
+        getConnectionsWithQuota()
+          .then(setConnections)
+          .catch(() => setConnections([]))
+          .finally(() => setIsLoadingConnections(false));
+        return; // Don't navigate yet; share modal handles navigation
       }
 
       setTimeout(() => {
@@ -269,7 +292,36 @@ const AddEventScreen: React.FC = () => {
     return undefined;
   };
 
-  // Form steps for progress indicator
+  // ── Share modal handlers ──────────────────────────────────────────────────
+
+  const handleShareDone = async (skip: boolean) => {
+    if (!skip && selectedConnIds.size > 0 && createdEvent?.serverId) {
+      setIsSharing(true);
+      try {
+        await shareEvent(createdEvent.serverId, Array.from(selectedConnIds));
+        showSuccess(`Đã chia sẻ với ${selectedConnIds.size} người!`);
+      } catch (e: any) {
+        showError(e.message || 'Không thể chia sẻ');
+      } finally {
+        setIsSharing(false);
+      }
+    }
+    setShowShareModal(false);
+    navigation.goBack();
+  };
+
+  const toggleConnSelection = (connId: string, canReceive: boolean) => {
+    if (!canReceive) return;
+    setSelectedConnIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(connId)) next.delete(connId);
+      else next.add(connId);
+      return next;
+    });
+  };
+
+  // ── Form steps for progress indicator ────────────────────────────────────
+
   const formSteps = [
     { label: "Tên", icon: "text-outline" as const },
     { label: "Nhãn", icon: "pricetag-outline" as const },
@@ -828,6 +880,132 @@ const AddEventScreen: React.FC = () => {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* ── Share with connections modal ──────────────────────────────────── */}
+      <Modal
+        visible={showShareModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => handleShareDone(true)}
+      >
+        <View style={styles.shareModalContainer}>
+          <View style={styles.shareModalHeader}>
+            <View>
+              <Text style={styles.shareModalTitle}>Chia sẻ sự kiện</Text>
+              <Text style={styles.shareModalSub}>
+                {createdEvent?.title}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => handleShareDone(true)} style={styles.shareModalCloseBtn}>
+              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+            </TouchableOpacity>
+          </View>
+
+          {isLoadingConnections ? (
+            <View style={styles.shareModalLoading}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.shareModalLoadingText}>Đang tải danh sách kết nối...</Text>
+            </View>
+          ) : connections.length === 0 ? (
+            <View style={styles.shareModalEmpty}>
+              <Ionicons name="people-outline" size={48} color={COLORS.textLight} />
+              <Text style={styles.shareModalEmptyTitle}>Chưa có kết nối</Text>
+              <Text style={styles.shareModalEmptySub}>
+                Thêm kết nối với người thân để có thể chia sẻ sự kiện sau này
+              </Text>
+            </View>
+          ) : !createdEvent?.serverId ? (
+            <View style={styles.shareModalEmpty}>
+              <Ionicons name="cloud-offline-outline" size={48} color={COLORS.textLight} />
+              <Text style={styles.shareModalEmptyTitle}>Cần đồng bộ</Text>
+              <Text style={styles.shareModalEmptySub}>
+                Sự kiện cần được đồng bộ lên server trước khi chia sẻ. Vui lòng thử lại sau khi có kết nối internet.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.shareModalList} contentContainerStyle={{ padding: 16, gap: 10 }}>
+              <Text style={styles.shareModalHint}>
+                Chọn những người bạn muốn chia sẻ "{createdEvent?.title}". Họ sẽ nhận được thông báo và có thể thêm vào lịch của mình.
+              </Text>
+              {connections.map(({ connection, partner, canReceive }) => {
+                const isSelected = selectedConnIds.has(connection.id);
+                return (
+                  <TouchableOpacity
+                    key={connection.id}
+                    style={[
+                      styles.shareConnCard,
+                      isSelected && styles.shareConnCardSelected,
+                      !canReceive && styles.shareConnCardDisabled,
+                    ]}
+                    onPress={() => toggleConnSelection(connection.id, canReceive)}
+                    activeOpacity={canReceive ? 0.7 : 1}
+                  >
+                    <View style={[
+                      styles.shareConnAvatar,
+                      { backgroundColor: ['#FF6B6B','#4ECDC4','#845EF7','#339AF0'][partner.id.charCodeAt(0) % 4] },
+                    ]}>
+                      {partner.photoUrl ? (
+                        <Image source={{ uri: partner.photoUrl }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                      ) : (
+                        <Text style={styles.shareConnAvatarText}>
+                          {(partner.displayName || partner.email || '?')[0].toUpperCase()}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.shareConnName, !canReceive && { color: COLORS.textLight }]}>
+                        {partner.displayName || 'Người dùng'}
+                      </Text>
+                      <Text style={styles.shareConnEmail} numberOfLines={1}>{partner.email}</Text>
+                      {!canReceive && (
+                        <Text style={styles.shareConnFull}>Hết lượt nhận</Text>
+                      )}
+                    </View>
+                    {canReceive && (
+                      <View style={[
+                        styles.shareConnCheck,
+                        isSelected && { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+                      ]}>
+                        {isSelected && <Ionicons name="checkmark" size={14} color={COLORS.white} />}
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          <View style={styles.shareModalFooter}>
+            <TouchableOpacity
+              style={styles.shareModalSkipBtn}
+              onPress={() => handleShareDone(true)}
+            >
+              <Text style={styles.shareModalSkipText}>Bỏ qua</Text>
+            </TouchableOpacity>
+            {connections.length > 0 && createdEvent?.serverId && (
+              <TouchableOpacity
+                style={[
+                  styles.shareModalSendBtn,
+                  (selectedConnIds.size === 0 || isSharing) && styles.shareModalSendBtnDisabled,
+                ]}
+                onPress={() => handleShareDone(false)}
+                disabled={selectedConnIds.size === 0 || isSharing}
+              >
+                {isSharing ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <>
+                    <Ionicons name="share-outline" size={18} color={COLORS.white} />
+                    <Text style={styles.shareModalSendText}>
+                      Chia sẻ{selectedConnIds.size > 0 ? ` (${selectedConnIds.size})` : ''}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1144,6 +1322,169 @@ const styles = StyleSheet.create({
   },
   charCountLimit: {
     color: COLORS.error,
+  },
+  // ── Share modal styles ──────────────────────────────────────────────────────
+  shareModalContainer: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+  },
+  shareModalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  shareModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.textPrimary,
+  },
+  shareModalSub: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  shareModalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.background,
+  },
+  shareModalLoading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  shareModalLoadingText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+  },
+  shareModalEmpty: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    gap: 12,
+  },
+  shareModalEmptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+  shareModalEmptySub: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  shareModalList: {
+    flex: 1,
+  },
+  shareModalHint: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  shareConnCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    gap: 12,
+  },
+  shareConnCardSelected: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + "08",
+  },
+  shareConnCardDisabled: {
+    opacity: 0.5,
+  },
+  shareConnAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareConnAvatarText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  shareConnName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+  },
+  shareConnEmail: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  shareConnFull: {
+    fontSize: 11,
+    color: COLORS.error,
+    marginTop: 2,
+    fontWeight: "500",
+  },
+  shareConnCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareModalFooter: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  shareModalSkipBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 28,
+    alignItems: "center",
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  shareModalSkipText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: COLORS.textSecondary,
+  },
+  shareModalSendBtn: {
+    flex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary,
+  },
+  shareModalSendBtnDisabled: {
+    backgroundColor: COLORS.textLight,
+  },
+  shareModalSendText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.white,
   },
 });
 

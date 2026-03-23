@@ -25,6 +25,9 @@ import OccasionPrepScreen from "../screens/OccasionPrepScreen";
 import LocalShopScreen from "../screens/LocalShopScreen";
 import MBTIGuideScreen from "../screens/MBTIGuideScreen";
 import MBTITypeDetailScreen from "../screens/MBTITypeDetailScreen";
+import ConnectionsScreen from "../screens/ConnectionsScreen";
+import QRScreen from "../screens/QRScreen";
+import SharedInboxScreen from "../screens/SharedInboxScreen";
 import OnboardingOverlay, {
   checkOnboardingComplete,
 } from "../components/organisms/OnboardingOverlay";
@@ -212,6 +215,21 @@ const AppNavigator: React.FC = () => {
           <Stack.Screen
             name="LocalShop"
             component={LocalShopScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Connections"
+            component={ConnectionsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="QRScreen"
+            component={QRScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SharedInbox"
+            component={SharedInboxScreen}
             options={{ headerShown: false }}
           />
           {/* Auth screen available from Settings if user wants to link account */}

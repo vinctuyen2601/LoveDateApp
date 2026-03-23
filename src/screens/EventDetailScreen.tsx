@@ -45,6 +45,7 @@ import { COLORS } from "@themes/colors";
 import CountdownTimer from "@components/molecules/CountdownTimer";
 import ChecklistSection from "@components/organisms/ChecklistSection";
 import * as ChecklistService from "../services/checklist.service";
+import { getSharedEventInfo } from "../services/connections.service";
 
 const EventDetailScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -61,6 +62,7 @@ const EventDetailScreen: React.FC = () => {
   // Checklist state
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(true);
+  const [sharerPlanInfo, setSharerPlanInfo] = useState<{ hasPlan: boolean; sharerName: string } | null>(null);
 
   // If event is deleted or not found, navigate back
   React.useEffect(() => {
@@ -76,6 +78,14 @@ const EventDetailScreen: React.FC = () => {
       loadChecklist();
     }
   }, [event?.id]);
+
+  // Nếu event từ shared → lấy thông tin hasPlan của người share
+  useEffect(() => {
+    if (!event?.sourceSharedEventId) return;
+    getSharedEventInfo(event.sourceSharedEventId)
+      .then(setSharerPlanInfo)
+      .catch(() => {});
+  }, [event?.sourceSharedEventId]);
 
   const loadChecklist = async () => {
     if (!event) return;
@@ -379,8 +389,27 @@ const EventDetailScreen: React.FC = () => {
           )}
         </View>
 
+        {/* Sharer Plan Badge — chỉ hiện nếu event từ shared + người share đã có kế hoạch */}
+        {event.sourceSharedEventId && sharerPlanInfo?.hasPlan && (
+          <View style={styles.sharerPlanBadge}>
+            <View style={styles.sharerPlanIconWrap}>
+              <Text style={styles.sharerPlanEmoji}>🎁</Text>
+            </View>
+            <View style={styles.sharerPlanTextWrap}>
+              <Text style={styles.sharerPlanTitle}>
+                {sharerPlanInfo.sharerName} đã có kế hoạch chuẩn bị
+              </Text>
+              <Text style={styles.sharerPlanSub}>
+                Hãy để họ làm bạn ngạc nhiên nhé!
+              </Text>
+            </View>
+            <Ionicons name="sparkles" size={18} color="#FF6B6B" />
+          </View>
+        )}
+
         {/* Occasion Prep Banner — eligible tag + còn ≤ 30 ngày + chưa có note năm nay */}
         {(() => {
+          if (event.sourceSharedEventId) return null; // Sự kiện từ kết nối không hiện prep
           const isEligible = event.tags.some((t) => OCCASION_TAGS.includes(t));
           const daysUntil = getDaysUntil(event.eventDate);
           const currentYear = new Date().getFullYear();
@@ -427,6 +456,7 @@ const EventDetailScreen: React.FC = () => {
 
         {/* Post-event Banner — eligible + đã qua ≤ 3 ngày + chưa rating */}
         {(() => {
+          if (event.sourceSharedEventId) return null; // Sự kiện từ kết nối không hiện post-event prep
           const isEligible = event.tags.some((t) => OCCASION_TAGS.includes(t));
           const daysUntil = getDaysUntil(event.eventDate);
           const currentYear = new Date().getFullYear();
@@ -472,6 +502,7 @@ const EventDetailScreen: React.FC = () => {
 
         {/* Preparation Status Card — upcoming event already has note for current year */}
         {(() => {
+          if (event.sourceSharedEventId) return null; // Sự kiện từ kết nối không hiện prep status
           const currentYear = new Date().getFullYear();
           const daysUntil = getDaysUntil(event.eventDate);
           const thisYearNote = event.notes?.find(
@@ -1327,6 +1358,43 @@ const styles = StyleSheet.create({
   },
 
   // Occasion Prep Banner
+  sharerPlanBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    backgroundColor: '#FFF5F5',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FFD6D6',
+    gap: 10,
+  },
+  sharerPlanIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFE8E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sharerPlanEmoji: {
+    fontSize: 20,
+  },
+  sharerPlanTextWrap: {
+    flex: 1,
+  },
+  sharerPlanTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  sharerPlanSub: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
   prepBanner: {
     marginHorizontal: 16,
     marginTop: 12,

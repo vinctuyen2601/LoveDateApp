@@ -152,6 +152,9 @@ export interface Event {
   version: number; // Timestamp for conflict resolution
   needsSync: boolean;
 
+  /** Nếu event được tạo từ shared event — không hiển thị flow chuẩn bị quà */
+  sourceSharedEventId?: string | null;
+
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
 }
@@ -397,6 +400,7 @@ export interface DatabaseEvent {
   notes: string | null; // JSON string array of EventNote
   createdAt: string;
   updatedAt: string;
+  sourceSharedEventId: string | null;
 }
 
 export interface SyncMetadata {

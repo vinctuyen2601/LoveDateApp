@@ -130,6 +130,7 @@ const HomeScreen: React.FC = () => {
       events
         .filter((event) => {
           if (!event.eventDate) return false;
+          if (event.sourceSharedEventId) return false; // Sự kiện từ kết nối không chuẩn bị quà
           const primaryTag = event.tags?.[0];
           if (!eligibleTags.includes(primaryTag)) return false;
           const eventDay = new Date(event.eventDate);

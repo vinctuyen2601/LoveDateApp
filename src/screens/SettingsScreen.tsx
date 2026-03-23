@@ -477,6 +477,31 @@ const SettingsScreen: React.FC = () => {
       </View>
       */}
 
+      {/* Connections Section — only for registered users */}
+      {!isAnonymous && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Kết nối</Text>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => navigation.navigate("Connections")}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: "#4ECDC415" }]}>
+                <Ionicons name="people-outline" size={22} color="#4ECDC4" />
+              </View>
+              <View style={styles.settingText}>
+                <Text style={styles.settingTitle}>Kết nối & Chia sẻ</Text>
+                <Text style={styles.settingSubtitle}>
+                  Kết nối với người thân, chia sẻ ngày kỷ niệm
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Notification Settings */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Thông báo</Text>
@@ -1178,6 +1203,7 @@ const styles = StyleSheet.create({
   },
   colorPalette: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     marginBottom: 16,
   },

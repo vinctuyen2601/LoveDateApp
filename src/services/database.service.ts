@@ -98,6 +98,16 @@ export async function initializeTables(
       }
     }
 
+    // Add sourceSharedEventId column if it doesn't exist (migration)
+    try {
+      await db.execAsync("ALTER TABLE events ADD COLUMN sourceSharedEventId TEXT;");
+      console.log("Added sourceSharedEventId column to events table");
+    } catch (error: any) {
+      if (!error.message?.includes("duplicate column")) {
+        console.warn("Error adding sourceSharedEventId column:", error);
+      }
+    }
+
     console.log("✅ Database schema initialized with tags support");
 
     // Indexes
@@ -503,6 +513,7 @@ function dbEventToEvent(dbEvent: DatabaseEvent): Event {
     needsSync: Boolean(dbEvent.needsSync),
     createdAt: dbEvent.createdAt,
     updatedAt: dbEvent.updatedAt,
+    sourceSharedEventId: dbEvent.sourceSharedEventId || null,
   };
 }
 
@@ -537,6 +548,8 @@ function eventToDbFormat(event: Partial<Event>): Partial<DatabaseEvent> {
     dbEvent.needsSync = event.needsSync ? 1 : 0;
   if (event.notes !== undefined)
     dbEvent.notes = event.notes ? JSON.stringify(event.notes) : null;
+  if (event.sourceSharedEventId !== undefined)
+    dbEvent.sourceSharedEventId = event.sourceSharedEventId || null;
   if (event.createdAt !== undefined) dbEvent.createdAt = event.createdAt;
   if (event.updatedAt !== undefined) dbEvent.updatedAt = event.updatedAt;
 
@@ -577,8 +590,8 @@ export async function createEvent(
       `INSERT INTO events (
         id, title, eventDate, isLunarCalendar, tags,
         reminderSettings, isRecurring, recurrencePattern, isDeleted,
-        localId, serverId, version, needsSync, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        localId, serverId, version, needsSync, sourceSharedEventId, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         dbEvent.id,
         dbEvent.title,
@@ -593,6 +606,7 @@ export async function createEvent(
         dbEvent.serverId ?? null,
         dbEvent.version ?? 0,
         dbEvent.needsSync ?? 1,
+        dbEvent.sourceSharedEventId ?? null,
         now,
         now,
       ]
