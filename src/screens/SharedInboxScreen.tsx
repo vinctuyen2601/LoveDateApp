@@ -9,7 +9,6 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -18,8 +17,6 @@ import { useToast } from '../contexts/ToastContext';
 import {
   getSharedInbox,
   getSharedOutbox,
-  acceptSharedEvent,
-  declineSharedEvent,
 } from '../services/connections.service';
 import type { SharedEvent } from '../types/connections';
 import { getTagEmoji } from '../types';
@@ -94,13 +91,6 @@ const SharedInboxScreen: React.FC = () => {
   const [outbox, setOutbox] = useState<SharedEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    visible: boolean; title: string; message: string;
-    confirmText: string; icon: any; iconColor: string;
-    onConfirm: () => void;
-  }>({ visible: false, title: '', message: '', confirmText: 'Xác nhận', icon: 'alert-circle', iconColor: COLORS.primary, onConfirm: () => {} });
-  const closeConfirm = () => setConfirmDialog((d) => ({ ...d, visible: false }));
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -126,60 +116,10 @@ const SharedInboxScreen: React.FC = () => {
     loadData(true);
   };
 
-  const handleAccept = (event: SharedEvent) => {
-    setConfirmDialog({
-      visible: true,
-      title: 'Thêm vào lịch',
-      message: `Thêm "${event.eventSnapshot.title}" vào lịch của bạn?\n\nSự kiện sẽ hoàn toàn độc lập — thay đổi của ${event.sharer.displayName || event.sharer.email} sẽ không ảnh hưởng đến lịch bạn.`,
-      confirmText: 'Thêm vào lịch',
-      icon: 'calendar-outline',
-      iconColor: COLORS.primary,
-      onConfirm: async () => {
-        closeConfirm();
-        setActionLoading(event.id);
-        try {
-          await acceptSharedEvent(event.id);
-          showSuccess(`Đã thêm "${event.eventSnapshot.title}" vào lịch!`);
-          loadData(true);
-        } catch (e: any) {
-          showError(e.message || 'Không thể thêm sự kiện');
-        } finally {
-          setActionLoading(null);
-        }
-      },
-    });
-  };
-
-  const handleDecline = (event: SharedEvent) => {
-    setConfirmDialog({
-      visible: true,
-      title: 'Từ chối sự kiện',
-      message: `Từ chối sự kiện "${event.eventSnapshot.title}" từ ${event.sharer.displayName || event.sharer.email}?`,
-      confirmText: 'Từ chối',
-      icon: 'close-circle-outline',
-      iconColor: COLORS.error,
-      onConfirm: async () => {
-        closeConfirm();
-        setActionLoading(event.id);
-        try {
-          await declineSharedEvent(event.id);
-          showSuccess('Đã từ chối sự kiện');
-          loadData(true);
-        } catch (e: any) {
-          showError(e.message || 'Không thể từ chối');
-        } finally {
-          setActionLoading(null);
-        }
-      },
-    });
-  };
-
   // ── Inbox card ────────────────────────────────────────────────────────────────
 
   const InboxCard: React.FC<{ event: SharedEvent }> = ({ event }) => {
-    const { sharer, eventSnapshot, status, createdAt } = event;
-    const statusCfg = getStatusConfig(status);
-    const isActing = actionLoading === event.id;
+    const { sharer, eventSnapshot, createdAt } = event;
     const tags = eventSnapshot.tags || [];
     const firstTag = tags[0];
     const emoji = firstTag ? getTagEmoji(firstTag) : '📅';
@@ -199,13 +139,13 @@ const SharedInboxScreen: React.FC = () => {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.senderName} numberOfLines={1}>
-              {sharer.displayName || sharer.email} đã chia sẻ
+              {sharer.displayName || sharer.email} đã thêm vào lịch bạn
             </Text>
             <Text style={styles.senderTime}>{getRelativeTime(createdAt)}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
-            <Ionicons name={statusCfg.icon} size={13} color={statusCfg.color} />
-            <Text style={[styles.statusText, { color: statusCfg.color }]}>{statusCfg.label}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: COLORS.success + '18' }]}>
+            <Ionicons name="checkmark-circle-outline" size={13} color={COLORS.success} />
+            <Text style={[styles.statusText, { color: COLORS.success }]}>Đã thêm</Text>
           </View>
         </View>
 
@@ -229,31 +169,6 @@ const SharedInboxScreen: React.FC = () => {
             )}
           </View>
         </View>
-
-        {/* Actions — only for pending inbox */}
-        {status === 'pending' && (
-          <View style={styles.cardActions}>
-            {isActing ? (
-              <ActivityIndicator color={COLORS.primary} />
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.acceptBtn]}
-                  onPress={() => handleAccept(event)}
-                >
-                  <Ionicons name="calendar-outline" size={16} color={COLORS.white} />
-                  <Text style={styles.acceptBtnText}>Thêm vào lịch</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.declineBtn]}
-                  onPress={() => handleDecline(event)}
-                >
-                  <Text style={styles.declineBtnText}>Từ chối</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        )}
       </View>
     );
   };
@@ -306,7 +221,7 @@ const SharedInboxScreen: React.FC = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const pendingCount = inbox.filter((e) => e.status === 'pending').length;
+  const newCount = inbox.length;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -328,9 +243,9 @@ const SharedInboxScreen: React.FC = () => {
           <Text style={[styles.tabLabel, activeTab === 'inbox' && styles.tabLabelActive]}>
             Nhận được
           </Text>
-          {pendingCount > 0 && (
+          {newCount > 0 && (
             <View style={styles.tabBadge}>
-              <Text style={styles.tabBadgeText}>{pendingCount}</Text>
+              <Text style={styles.tabBadgeText}>{newCount}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -349,8 +264,8 @@ const SharedInboxScreen: React.FC = () => {
         <Ionicons name="information-circle-outline" size={16} color={COLORS.info} />
         <Text style={styles.infoBannerText}>
           {activeTab === 'inbox'
-            ? 'Sự kiện được thêm vào lịch sẽ hoàn toàn độc lập — bạn có thể tuỳ chỉnh sau'
-            : 'Lịch sử các sự kiện bạn đã chia sẻ với người khác'}
+            ? 'Sự kiện được chia sẻ tự động thêm vào lịch — hoàn toàn độc lập, bạn có thể tuỳ chỉnh hoặc xoá bất cứ lúc nào'
+            : 'Lịch sử các sự kiện bạn đã chia sẻ với người thân'}
         </Text>
       </View>
 
@@ -396,16 +311,6 @@ const SharedInboxScreen: React.FC = () => {
         </ScrollView>
       )}
 
-      <ConfirmDialog
-        visible={confirmDialog.visible}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        confirmText={confirmDialog.confirmText}
-        icon={confirmDialog.icon}
-        iconColor={confirmDialog.iconColor}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={closeConfirm}
-      />
     </View>
   );
 };

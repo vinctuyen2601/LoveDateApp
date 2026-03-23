@@ -948,7 +948,7 @@ const AddEventScreen: React.FC = () => {
                 Chọn những người bạn muốn chia sẻ "{createdEvent?.title}". Họ sẽ nhận được thông báo và có thể thêm vào lịch của mình.
               </Text>
               {connections.map(({ connection, partner, canReceive }) => {
-                const isSelected = selectedConnIds.has(connection.id);
+                const isSelected = selectedConnIds.has(partner.id);
                 return (
                   <TouchableOpacity
                     key={connection.id}
@@ -957,7 +957,7 @@ const AddEventScreen: React.FC = () => {
                       isSelected && styles.shareConnCardSelected,
                       !canReceive && styles.shareConnCardDisabled,
                     ]}
-                    onPress={() => toggleConnSelection(connection.id, canReceive)}
+                    onPress={() => toggleConnSelection(partner.id, canReceive)}
                     activeOpacity={canReceive ? 0.7 : 1}
                   >
                     <View style={[
