@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
+import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -47,6 +47,10 @@ const EventsListScreen: React.FC = () => {
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>(initialFilter);
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    visible: boolean; title: string; message: string; onConfirm: () => void;
+  }>({ visible: false, title: '', message: '', onConfirm: () => {} });
+  const closeConfirm = () => setConfirmDialog((d) => ({ ...d, visible: false }));
 
   // Filter events based on selected filter
   const filteredEvents = useMemo(() => {
@@ -197,25 +201,20 @@ const EventsListScreen: React.FC = () => {
   };
 
   const handleEventDelete = async (event: Event) => {
-    Alert.alert(
-      'Xóa sự kiện',
-      `Bạn có chắc muốn xóa "${event.title}"?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteEvent(event.id);
-              showSuccess(`Đã xóa sự kiện "${event.title}"`);
-            } catch (error) {
-              showError('Không thể xóa sự kiện');
-            }
-          },
-        },
-      ]
-    );
+    setConfirmDialog({
+      visible: true,
+      title: 'Xóa sự kiện',
+      message: `Bạn có chắc muốn xóa "${event.title}"? Hành động này không thể hoàn tác.`,
+      onConfirm: async () => {
+        closeConfirm();
+        try {
+          await deleteEvent(event.id);
+          showSuccess(`Đã xóa sự kiện "${event.title}"`);
+        } catch (error) {
+          showError('Không thể xóa sự kiện');
+        }
+      },
+    });
   };
 
   const getFilterIcon = (filter: FilterType): keyof typeof Ionicons.glyphMap => {
@@ -401,6 +400,17 @@ const EventsListScreen: React.FC = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <ConfirmDialog
+        visible={confirmDialog.visible}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Xóa"
+        icon="trash-outline"
+        iconColor={COLORS.error}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+      />
     </View>
   );
 };

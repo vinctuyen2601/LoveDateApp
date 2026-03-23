@@ -19,9 +19,12 @@ import IconImage from "@components/atoms/IconImage";
 import { getTagImage } from "@lib/iconImages";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
-// TODO(monetization): import { useSQLiteContext } from "expo-sqlite"; // cần lại khi re-enable premium check
+import { useSQLiteContext } from "expo-sqlite";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEvents } from "@contexts/EventsContext";
+import { useSync } from "../contexts/SyncContext";
 import { useToast } from "../contexts/ToastContext";
+import * as DB from "../services/database.service";
 import { EventFormData, RecurrenceType, PREDEFINED_TAGS, Event } from "../types";
 import { getConnectionsWithQuota, shareEvent } from "../services/connections.service";
 import type { ConnectionWithQuota } from "../types/connections";
@@ -38,8 +41,10 @@ import { MAX_TITLE_LENGTH } from "../constants/config";
 const AddEventScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  // TODO(monetization): const db = useSQLiteContext(); // cần lại khi re-enable premium check
+  const db = useSQLiteContext();
+  const insets = useSafeAreaInsets();
   const { addEvent, updateEvent, getEventById } = useEvents();
+  const { sync } = useSync();
   const { showSuccess, showError } = useToast();
 
   // Check if this is Edit mode
@@ -77,6 +82,7 @@ const AddEventScreen: React.FC = () => {
   const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
   const [connections, setConnections] = useState<ConnectionWithQuota[]>([]);
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
+  const [isSyncingForShare, setIsSyncingForShare] = useState(false);
   const [selectedConnIds, setSelectedConnIds] = useState<Set<string>>(new Set());
   const [isSharing, setIsSharing] = useState(false);
 
@@ -218,12 +224,24 @@ const AddEventScreen: React.FC = () => {
         // Offer to share with connections if user has any
         setCreatedEvent(newEvent);
         setIsLoadingConnections(true);
+        setIsSyncingForShare(true);
         setShowShareModal(true);
         setSelectedConnIds(new Set());
+        // Fetch connections and sync to get serverId — run in parallel
         getConnectionsWithQuota()
           .then(setConnections)
           .catch(() => setConnections([]))
           .finally(() => setIsLoadingConnections(false));
+        sync()
+          .then(async () => {
+            // Read serverId from DB directly after sync
+            const fresh = await DB.getEventById(db, newEvent.id);
+            if (fresh?.serverId) {
+              setCreatedEvent((prev) => prev ? { ...prev, serverId: fresh.serverId } : prev);
+            }
+          })
+          .catch(console.warn)
+          .finally(() => setIsSyncingForShare(false));
         return; // Don't navigate yet; share modal handles navigation
       }
 
@@ -888,7 +906,7 @@ const AddEventScreen: React.FC = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => handleShareDone(true)}
       >
-        <View style={styles.shareModalContainer}>
+        <View style={[styles.shareModalContainer, { paddingTop: insets.top }]}>
           <View style={styles.shareModalHeader}>
             <View>
               <Text style={styles.shareModalTitle}>Chia sẻ sự kiện</Text>
@@ -901,10 +919,12 @@ const AddEventScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {isLoadingConnections ? (
+          {isLoadingConnections || isSyncingForShare ? (
             <View style={styles.shareModalLoading}>
               <ActivityIndicator color={COLORS.primary} />
-              <Text style={styles.shareModalLoadingText}>Đang tải danh sách kết nối...</Text>
+              <Text style={styles.shareModalLoadingText}>
+                {isSyncingForShare ? 'Đang đồng bộ sự kiện...' : 'Đang tải danh sách kết nối...'}
+              </Text>
             </View>
           ) : connections.length === 0 ? (
             <View style={styles.shareModalEmpty}>
@@ -917,9 +937,9 @@ const AddEventScreen: React.FC = () => {
           ) : !createdEvent?.serverId ? (
             <View style={styles.shareModalEmpty}>
               <Ionicons name="cloud-offline-outline" size={48} color={COLORS.textLight} />
-              <Text style={styles.shareModalEmptyTitle}>Cần đồng bộ</Text>
+              <Text style={styles.shareModalEmptyTitle}>Không đồng bộ được</Text>
               <Text style={styles.shareModalEmptySub}>
-                Sự kiện cần được đồng bộ lên server trước khi chia sẻ. Vui lòng thử lại sau khi có kết nối internet.
+                Kiểm tra kết nối internet và thử lại. Bạn vẫn có thể chia sẻ sau từ chi tiết sự kiện.
               </Text>
             </View>
           ) : (
@@ -982,7 +1002,7 @@ const AddEventScreen: React.FC = () => {
             >
               <Text style={styles.shareModalSkipText}>Bỏ qua</Text>
             </TouchableOpacity>
-            {connections.length > 0 && createdEvent?.serverId && (
+            {connections.length > 0 && !isSyncingForShare && createdEvent?.serverId && (
               <TouchableOpacity
                 style={[
                   styles.shareModalSendBtn,

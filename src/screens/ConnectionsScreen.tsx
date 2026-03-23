@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   Modal,
   Image,
   RefreshControl,
 } from 'react-native';
+import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -86,6 +86,14 @@ const ConnectionsScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Confirm dialog
+  const [confirmDialog, setConfirmDialog] = useState<{
+    visible: boolean; title: string; message: string;
+    confirmText: string; icon: any; iconColor: string;
+    onConfirm: () => void;
+  }>({ visible: false, title: '', message: '', confirmText: 'Xác nhận', icon: 'alert-circle', iconColor: COLORS.error, onConfirm: () => {} });
+  const closeConfirm = () => setConfirmDialog((d) => ({ ...d, visible: false }));
 
   // Add connection modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -190,29 +198,27 @@ const ConnectionsScreen: React.FC = () => {
 
   const handleRemove = (conn: UserConnection) => {
     const partner = getPartner(conn);
-    Alert.alert(
-      'Xoá kết nối',
-      `Bạn có chắc muốn xoá kết nối với ${partner.displayName || partner.email}?`,
-      [
-        { text: 'Huỷ', style: 'cancel' },
-        {
-          text: 'Xoá',
-          style: 'destructive',
-          onPress: async () => {
-            setActionLoading(conn.id);
-            try {
-              await removeConnection(conn.id);
-              showSuccess('Đã xoá kết nối');
-              loadData(true);
-            } catch (e: any) {
-              showError(e.message || 'Không thể xoá kết nối');
-            } finally {
-              setActionLoading(null);
-            }
-          },
-        },
-      ],
-    );
+    setConfirmDialog({
+      visible: true,
+      title: 'Xoá kết nối',
+      message: `Bạn có chắc muốn xoá kết nối với ${partner.displayName || partner.email}?`,
+      confirmText: 'Xoá',
+      icon: 'person-remove-outline',
+      iconColor: COLORS.error,
+      onConfirm: async () => {
+        closeConfirm();
+        setActionLoading(conn.id);
+        try {
+          await removeConnection(conn.id);
+          showSuccess('Đã xoá kết nối');
+          loadData(true);
+        } catch (e: any) {
+          showError(e.message || 'Không thể xoá kết nối');
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
   };
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -375,10 +381,7 @@ const ConnectionsScreen: React.FC = () => {
             style={[styles.headerBtn, styles.addBtn]}
             onPress={() => {
               if (!canAddMore) {
-                Alert.alert(
-                  'Hết lượt kết nối',
-                  `Bạn đã dùng hết ${limits?.connectionsMax} kết nối. Liên hệ admin để được nâng giới hạn.`,
-                );
+                showError(`Đã dùng hết ${limits?.connectionsMax} kết nối. Liên hệ admin để được nâng giới hạn.`);
                 return;
               }
               setShowAddModal(true);
@@ -612,6 +615,17 @@ const ConnectionsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      <ConfirmDialog
+        visible={confirmDialog.visible}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        icon={confirmDialog.icon}
+        iconColor={confirmDialog.iconColor}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+      />
     </View>
   );
 };

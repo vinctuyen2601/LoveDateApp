@@ -99,9 +99,9 @@ const QRScreen: React.FC = () => {
     setScanResult(null);
     try {
       // code may be raw userId or deep link format
-      let userId = code;
-      const match = code.match(/lovedate:\/\/connect\/(.+)/);
-      if (match) userId = match[1];
+      let userId = code.toLowerCase();
+      const match = code.match(/lovedate:\/\/connect\/(.+)/i);
+      if (match) userId = match[1].toLowerCase();
       const result = await resolveQR(userId);
       setScanResult(result);
     } catch (e: any) {

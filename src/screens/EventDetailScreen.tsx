@@ -6,9 +6,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Linking,
 } from "react-native";
+import ConfirmDialog from "@components/organisms/ConfirmDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -45,7 +45,8 @@ import { COLORS } from "@themes/colors";
 import CountdownTimer from "@components/molecules/CountdownTimer";
 import ChecklistSection from "@components/organisms/ChecklistSection";
 import * as ChecklistService from "../services/checklist.service";
-import { getSharedEventInfo } from "../services/connections.service";
+import { getSharedEventInfo, getSharedOutbox } from "../services/connections.service";
+import type { SharedEvent } from "../types/connections";
 
 const EventDetailScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -63,6 +64,12 @@ const EventDetailScreen: React.FC = () => {
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(true);
   const [sharerPlanInfo, setSharerPlanInfo] = useState<{ hasPlan: boolean; sharerName: string } | null>(null);
+  const [sharedWithList, setSharedWithList] = useState<SharedEvent[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    visible: boolean; title: string; message: string;
+    confirmText: string; onConfirm: () => void;
+  }>({ visible: false, title: '', message: '', confirmText: 'Xác nhận', onConfirm: () => {} });
+  const closeConfirm = () => setConfirmDialog((d) => ({ ...d, visible: false }));
 
   // If event is deleted or not found, navigate back
   React.useEffect(() => {
@@ -86,6 +93,17 @@ const EventDetailScreen: React.FC = () => {
       .then(setSharerPlanInfo)
       .catch(() => {});
   }, [event?.sourceSharedEventId]);
+
+  // Nếu là event gốc (có serverId) → lấy danh sách đã chia sẻ
+  useEffect(() => {
+    if (event?.sourceSharedEventId || !event?.serverId) return;
+    getSharedOutbox()
+      .then((list) => {
+        const filtered = list.filter((se) => se.originalEventId === event.serverId);
+        setSharedWithList(filtered);
+      })
+      .catch(() => {});
+  }, [event?.serverId, event?.sourceSharedEventId]);
 
   const loadChecklist = async () => {
     if (!event) return;
@@ -221,23 +239,22 @@ const EventDetailScreen: React.FC = () => {
   };
 
   const handleDelete = () => {
-    Alert.alert("Xóa sự kiện", `Bạn có chắc muốn xóa "${event.title}"?`, [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: "Xóa",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const eventTitle = event.title; // Save title before delete
-            await deleteEvent(event.id);
-            showSuccess(`Đã xóa sự kiện "${eventTitle}"`);
-            // No need to manually navigate - useEffect will handle it when event becomes null
-          } catch (error) {
-            showError("Không thể xóa sự kiện");
-          }
-        },
+    setConfirmDialog({
+      visible: true,
+      title: 'Xóa sự kiện',
+      message: `Bạn có chắc muốn xóa "${event.title}"? Hành động này không thể hoàn tác.`,
+      confirmText: 'Xóa',
+      onConfirm: async () => {
+        closeConfirm();
+        try {
+          const eventTitle = event.title;
+          await deleteEvent(event.id);
+          showSuccess(`Đã xóa sự kiện "${eventTitle}"`);
+        } catch (error) {
+          showError("Không thể xóa sự kiện");
+        }
       },
-    ]);
+    });
   };
 
   return (
@@ -1064,6 +1081,54 @@ const EventDetailScreen: React.FC = () => {
           />
         </View>
 
+        {/* Shared With — chỉ hiện cho event gốc khi đã chia sẻ */}
+        {!event.sourceSharedEventId && sharedWithList.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Đã chia sẻ với</Text>
+            <View style={styles.sharedWithList}>
+              {sharedWithList.map((se) => {
+                const statusColor =
+                  se.status === 'accepted' ? COLORS.success :
+                  se.status === 'declined' ? COLORS.error :
+                  '#F59E0B';
+                const statusBg =
+                  se.status === 'accepted' ? COLORS.success + '18' :
+                  se.status === 'declined' ? COLORS.error + '18' :
+                  '#F59E0B18';
+                const statusLabel =
+                  se.status === 'accepted' ? 'Đã thêm' :
+                  se.status === 'declined' ? 'Đã từ chối' : 'Chờ xác nhận';
+                const initials = (se.recipient.displayName || se.recipient.email || '?')[0].toUpperCase();
+                const avatarBg = ['#FF6B6B', '#4ECDC4', '#845EF7', '#339AF0'][se.recipient.id.charCodeAt(0) % 4];
+                return (
+                  <View key={se.id} style={styles.sharedWithRow}>
+                    <View style={[styles.sharedWithAvatar, { backgroundColor: avatarBg }]}>
+                      {se.recipient.photoUrl ? (
+                        <Image source={{ uri: se.recipient.photoUrl }} style={styles.sharedWithAvatarImg} />
+                      ) : (
+                        <Text style={styles.sharedWithAvatarText}>{initials}</Text>
+                      )}
+                    </View>
+                    <View style={styles.sharedWithInfo}>
+                      <Text style={styles.sharedWithName} numberOfLines={1}>
+                        {se.recipient.displayName || 'Người dùng'}
+                      </Text>
+                      <Text style={styles.sharedWithEmail} numberOfLines={1}>
+                        {se.recipient.email}
+                      </Text>
+                    </View>
+                    <View style={[styles.sharedWithBadge, { backgroundColor: statusBg }]}>
+                      <Text style={[styles.sharedWithBadgeText, { color: statusColor }]}>
+                        {statusLabel}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Quick Actions Grid */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Chuẩn bị cho ngày đặc biệt</Text>
@@ -1174,6 +1239,17 @@ const EventDetailScreen: React.FC = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <ConfirmDialog
+        visible={confirmDialog.visible}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        icon="trash-outline"
+        iconColor={COLORS.error}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+      />
     </View>
   );
 };
@@ -1394,6 +1470,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 2,
+  },
+  sharedWithList: {
+    gap: 10,
+  },
+  sharedWithRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 12,
+    gap: 12,
+  },
+  sharedWithAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sharedWithAvatarImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  sharedWithAvatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sharedWithInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  sharedWithName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  sharedWithEmail: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  sharedWithBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  sharedWithBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   prepBanner: {
     marginHorizontal: 16,

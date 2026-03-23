@@ -6,10 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   Image,
 } from 'react-native';
+import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -95,6 +95,12 @@ const SharedInboxScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    visible: boolean; title: string; message: string;
+    confirmText: string; icon: any; iconColor: string;
+    onConfirm: () => void;
+  }>({ visible: false, title: '', message: '', confirmText: 'Xác nhận', icon: 'alert-circle', iconColor: COLORS.primary, onConfirm: () => {} });
+  const closeConfirm = () => setConfirmDialog((d) => ({ ...d, visible: false }));
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -121,54 +127,51 @@ const SharedInboxScreen: React.FC = () => {
   };
 
   const handleAccept = (event: SharedEvent) => {
-    Alert.alert(
-      'Thêm vào lịch',
-      `Thêm "${event.eventSnapshot.title}" vào lịch của bạn?\n\nSự kiện này sẽ hoàn toàn độc lập — thay đổi sau này của ${event.sharer.displayName || event.sharer.email} sẽ không ảnh hưởng đến lịch của bạn.`,
-      [
-        { text: 'Huỷ', style: 'cancel' },
-        {
-          text: 'Thêm vào lịch',
-          onPress: async () => {
-            setActionLoading(event.id);
-            try {
-              await acceptSharedEvent(event.id);
-              showSuccess(`Đã thêm "${event.eventSnapshot.title}" vào lịch!`);
-              loadData(true);
-            } catch (e: any) {
-              showError(e.message || 'Không thể thêm sự kiện');
-            } finally {
-              setActionLoading(null);
-            }
-          },
-        },
-      ],
-    );
+    setConfirmDialog({
+      visible: true,
+      title: 'Thêm vào lịch',
+      message: `Thêm "${event.eventSnapshot.title}" vào lịch của bạn?\n\nSự kiện sẽ hoàn toàn độc lập — thay đổi của ${event.sharer.displayName || event.sharer.email} sẽ không ảnh hưởng đến lịch bạn.`,
+      confirmText: 'Thêm vào lịch',
+      icon: 'calendar-outline',
+      iconColor: COLORS.primary,
+      onConfirm: async () => {
+        closeConfirm();
+        setActionLoading(event.id);
+        try {
+          await acceptSharedEvent(event.id);
+          showSuccess(`Đã thêm "${event.eventSnapshot.title}" vào lịch!`);
+          loadData(true);
+        } catch (e: any) {
+          showError(e.message || 'Không thể thêm sự kiện');
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
   };
 
   const handleDecline = (event: SharedEvent) => {
-    Alert.alert(
-      'Từ chối',
-      `Từ chối sự kiện "${event.eventSnapshot.title}" từ ${event.sharer.displayName || event.sharer.email}?`,
-      [
-        { text: 'Huỷ', style: 'cancel' },
-        {
-          text: 'Từ chối',
-          style: 'destructive',
-          onPress: async () => {
-            setActionLoading(event.id);
-            try {
-              await declineSharedEvent(event.id);
-              showSuccess('Đã từ chối sự kiện');
-              loadData(true);
-            } catch (e: any) {
-              showError(e.message || 'Không thể từ chối');
-            } finally {
-              setActionLoading(null);
-            }
-          },
-        },
-      ],
-    );
+    setConfirmDialog({
+      visible: true,
+      title: 'Từ chối sự kiện',
+      message: `Từ chối sự kiện "${event.eventSnapshot.title}" từ ${event.sharer.displayName || event.sharer.email}?`,
+      confirmText: 'Từ chối',
+      icon: 'close-circle-outline',
+      iconColor: COLORS.error,
+      onConfirm: async () => {
+        closeConfirm();
+        setActionLoading(event.id);
+        try {
+          await declineSharedEvent(event.id);
+          showSuccess('Đã từ chối sự kiện');
+          loadData(true);
+        } catch (e: any) {
+          showError(e.message || 'Không thể từ chối');
+        } finally {
+          setActionLoading(null);
+        }
+      },
+    });
   };
 
   // ── Inbox card ────────────────────────────────────────────────────────────────
@@ -392,6 +395,17 @@ const SharedInboxScreen: React.FC = () => {
           )}
         </ScrollView>
       )}
+
+      <ConfirmDialog
+        visible={confirmDialog.visible}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        icon={confirmDialog.icon}
+        iconColor={confirmDialog.iconColor}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirm}
+      />
     </View>
   );
 };

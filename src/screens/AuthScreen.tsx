@@ -11,9 +11,11 @@ import {
   Keyboard,
   ActivityIndicator,
   Image,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@contexts/AuthContext";
 import { COLORS } from "@themes/colors";
 import { STRINGS } from "../constants/strings";
@@ -24,6 +26,7 @@ const APP_LOGO = require("../../assets/icon.png");
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { login, register, isAnonymous } = useAuth();
   const wasAnonymousRef = useRef(isAnonymous);
 
@@ -35,6 +38,9 @@ const AuthScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
+  const registeredEmail = useRef("");
+  const suppressGoBack = useRef(false);
 
   // Real-time validation state
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -63,7 +69,7 @@ const AuthScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (wasAnonymousRef.current && !isAnonymous) {
+    if (wasAnonymousRef.current && !isAnonymous && !suppressGoBack.current) {
       navigation.goBack();
     }
     wasAnonymousRef.current = isAnonymous;
@@ -186,8 +192,11 @@ const AuthScreen: React.FC = () => {
         await login(email, password);
         logLogin("email");
       } else {
+        suppressGoBack.current = true;
         await register(email, password, displayName);
         logSignUp("email");
+        registeredEmail.current = email;
+        setShowRegisterSuccess(true);
       }
     } catch (error: any) {
       const msg =
@@ -298,7 +307,7 @@ const AuthScreen: React.FC = () => {
     >
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 20) }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -521,6 +530,47 @@ const AuthScreen: React.FC = () => {
         <View style={styles.bottomPadding} />
       </ScrollView>
 
+      {/* Register Success Modal */}
+      <Modal
+        visible={showRegisterSuccess}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconWrap}>
+              <Ionicons name="checkmark-circle" size={40} color={COLORS.primary} />
+            </View>
+            <Text style={styles.modalTitle}>Đăng ký thành công!</Text>
+            <Text style={styles.modalSub}>
+              Chào mừng <Text style={styles.modalHighlight}>{displayName}</Text> đến với Love Date!
+            </Text>
+            <View style={styles.modalEmailBox}>
+              <Ionicons name="mail-outline" size={18} color={COLORS.primary} />
+              <Text style={styles.modalEmailText}>
+                Chúng tôi đã gửi email xác thực đến{"\n"}
+                <Text style={styles.modalEmailAddr}>{registeredEmail.current}</Text>
+              </Text>
+            </View>
+            <Text style={styles.modalHint}>
+              Vui lòng kiểm tra hộp thư (kể cả mục Spam) và nhấn link xác thực để kích hoạt tài khoản.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                setShowRegisterSuccess(false);
+                suppressGoBack.current = false;
+                navigation.goBack();
+              }}
+            >
+              <Text style={styles.modalBtnText}>Bắt đầu khám phá</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Loading overlay */}
       {isLoading && (
         <View style={styles.loadingOverlay}>
@@ -544,7 +594,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 20,
-    paddingTop: 20,
   },
 
   // ── Header ──
@@ -743,6 +792,100 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 14,
     fontWeight: "600",
+  },
+
+  // ── Register Success Modal ──
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    padding: 28,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFF5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  modalSub: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalHighlight: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+  modalEmailBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: `${COLORS.primary}0D`,
+    borderRadius: 12,
+    padding: 14,
+    width: '100%',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: `${COLORS.primary}20`,
+  },
+  modalEmailText: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
+  modalEmailAddr: {
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  modalHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  modalBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalBtnText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '700',
   },
 
   // ── Other ──
