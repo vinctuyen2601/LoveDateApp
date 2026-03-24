@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import IconImage from '@components/atoms/IconImage';
+import { getMBTITypeImage } from '@lib/iconImages';
 
 export interface ShareableMBTIResult {
   type: string;
@@ -18,17 +20,17 @@ interface Props {
 // ── Màu gradient theo nhóm MBTI ────────────────────────────────────────────
 function getTheme(type: string): {
   colors: [string, string, ...string[]];
-  emoji: string;
+  ionIcon: string;
   group: string;
 } {
   const t = type.toUpperCase();
   if (['INTJ', 'INTP', 'ENTJ', 'ENTP'].includes(t))
-    return { colors: ['#667EEA', '#764BA2'], emoji: '🧠', group: 'Nhà phân tích' };
+    return { colors: ['#667EEA', '#764BA2'], ionIcon: 'analytics-outline', group: 'Nhà phân tích' };
   if (['INFJ', 'INFP', 'ENFJ', 'ENFP'].includes(t))
-    return { colors: ['#0F9B8E', '#00C9FF'], emoji: '🌿', group: 'Nhà ngoại giao' };
+    return { colors: ['#0F9B8E', '#00C9FF'], ionIcon: 'heart-outline', group: 'Nhà ngoại giao' };
   if (['ISTJ', 'ISFJ', 'ESTJ', 'ESFJ'].includes(t))
-    return { colors: ['#F7971E', '#FFD200'], emoji: '🏛️', group: 'Người gác cổng' };
-  return { colors: ['#F953C6', '#B91D73'], emoji: '🎯', group: 'Nhà khám phá' };
+    return { colors: ['#F7971E', '#FFD200'], ionIcon: 'shield-outline', group: 'Người gác cổng' };
+  return { colors: ['#F953C6', '#B91D73'], ionIcon: 'flame-outline', group: 'Nhà khám phá' };
 }
 
 // ── Tách tên vai trò khỏi description ──────────────────────────────────────
@@ -62,7 +64,7 @@ const MBTIShareCard: React.FC<Props> = ({ result }) => {
 
       {/* ── Hero: Type ── */}
       <View style={styles.heroSection}>
-        <Text style={styles.heroEmoji}>{theme.emoji}</Text>
+        <IconImage source={getMBTITypeImage(result.type)} size={56} />
         <Text style={styles.typeText}>{result.type}</Text>
         <Text style={styles.roleText}>{roleName}</Text>
         <View style={styles.typeDivider} />
@@ -103,7 +105,7 @@ const MBTIShareCard: React.FC<Props> = ({ result }) => {
         <View style={styles.footerDivider} />
         <Text style={styles.footerText}>
           Khám phá tính cách của bạn tại{' '}
-          <Text style={styles.footerBold}>Love Date App</Text> 💕
+          <Text style={styles.footerBold}>Love Date App</Text>
         </Text>
       </View>
     </LinearGradient>
@@ -134,7 +136,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#fff',
     letterSpacing: 0.3,
   },
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
   },
   groupText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#fff',
   },
 
@@ -161,14 +163,14 @@ const styles = StyleSheet.create({
   },
   typeText: {
     fontSize: 64,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
     color: '#fff',
     letterSpacing: 6,
     lineHeight: 72,
   },
   roleText: {
     fontSize: 17,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: 'rgba(255,255,255,0.9)',
     marginTop: 4,
     letterSpacing: 0.5,
@@ -193,7 +195,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: 'rgba(255,255,255,0.8)',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
   strengthText: {
     fontSize: 13,
     color: '#fff',
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
 
   // Compatibility
@@ -238,12 +240,12 @@ const styles = StyleSheet.create({
   compatLabel: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.8)',
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   compatTypes: {
     fontSize: 13,
     color: '#fff',
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: 0.5,
   },
 
@@ -264,7 +266,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footerBold: {
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#fff',
   },
 });

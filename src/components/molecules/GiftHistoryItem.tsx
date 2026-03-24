@@ -10,6 +10,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { GiftHistoryItem as GiftHistoryItemType } from "../../types";
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface GiftHistoryItemProps {
   item: GiftHistoryItemType;
@@ -24,6 +26,9 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
   onDelete,
   onEdit,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const handleDelete = () => {
     if (onDelete) {
       Alert.alert("Xóa quà tặng", "Bạn có chắc muốn xóa quà tặng này?", [
@@ -60,7 +65,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
           key={i}
           name={i <= rating ? "star" : "star-outline"}
           size={14}
-          color={i <= rating ? "#FFB800" : COLORS.textSecondary}
+          color={i <= rating ? colors.warning : colors.textSecondary}
         />
       );
     }
@@ -82,7 +87,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
             ]}
           >
             {item.isPurchased && (
-              <Ionicons name="checkmark" size={18} color={COLORS.white} />
+              <Ionicons name="checkmark" size={18} color={colors.white} />
             )}
           </View>
         </TouchableOpacity>
@@ -102,7 +107,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
                 <Ionicons
                   name="pricetag-outline"
                   size={14}
-                  color={COLORS.textSecondary}
+                  color={colors.textSecondary}
                 />
                 <Text style={styles.priceText}>
                   {Number(item.price).toLocaleString("vi-VN")} đ
@@ -135,7 +140,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
               onPress={handleOpenLink}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="link-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="link-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
           )}
           {onEdit && (
@@ -144,7 +149,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
               onPress={() => onEdit(item)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="create-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="create-outline" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
           {onDelete && (
@@ -153,7 +158,7 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
               onPress={handleDelete}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="trash-outline" size={20} color={COLORS.textSecondary} />
+              <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -162,20 +167,20 @@ const GiftHistoryItem: React.FC<GiftHistoryItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
   containerPurchased: {
-    backgroundColor: `${COLORS.success}08`,
+    backgroundColor: `${colors.success}08`,
   },
   header: {
     flexDirection: "row",
@@ -190,27 +195,27 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   checkboxPurchased: {
-    backgroundColor: COLORS.success || "#10B981",
-    borderColor: COLORS.success || "#10B981",
+    backgroundColor: colors.success,
+    borderColor: colors.success,
   },
   content: {
     flex: 1,
   },
   name: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   namePurchased: {
     textDecorationLine: "line-through",
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   metaRow: {
     flexDirection: "row",
@@ -225,8 +230,8 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   starsContainer: {
     flexDirection: "row",
@@ -235,13 +240,13 @@ const styles = StyleSheet.create({
   notes: {
     fontSize: 13,
     lineHeight: 18,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   purchasedDate: {
     fontSize: 12,
-    color: COLORS.success || "#10B981",
-    fontWeight: "500",
+    color: colors.success,
+    fontFamily: 'Manrope_500Medium',
   },
   actions: {
     flexDirection: "column",
@@ -251,12 +256,6 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 4,
   },
-});
-
-// Add success color if not defined
-const SUCCESS_COLOR = "#10B981"; // Green
-if (!COLORS.success) {
-  (COLORS as any).success = SUCCESS_COLOR;
-}
+}));
 
 export default GiftHistoryItem;

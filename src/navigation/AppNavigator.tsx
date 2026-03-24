@@ -87,7 +87,7 @@ const AppNavigator: React.FC = () => {
             },
             headerTintColor: COLORS.textPrimary,
             headerTitleStyle: {
-              fontWeight: "600",
+              fontFamily: 'Manrope_600SemiBold',
               fontSize: 18,
             },
           }}

@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivitySuggestion } from '../../types';
 import { COLORS } from '@themes/colors';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ActivityCardProps {
   activity: ActivitySuggestion;
@@ -16,6 +18,9 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   onPress,
   showBookingButton = true,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const handleBooking = async () => {
     if (activity.bookingUrl) {
       try {
@@ -61,13 +66,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   const getCategoryColor = (): string => {
     switch (activity.category) {
       case 'restaurant':
-        return COLORS.categoryBirthday; // Red-ish
+        return colors.categoryBirthday; // Red-ish
       case 'activity':
-        return COLORS.categoryAnniversary; // Pink
+        return colors.categoryAnniversary; // Pink
       case 'location':
-        return COLORS.categoryHoliday; // Purple
+        return colors.categoryHoliday; // Purple
       default:
-        return COLORS.primary;
+        return colors.primary;
     }
   };
 
@@ -105,7 +110,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             </Text>
             {activity.location && (
               <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={12} color={COLORS.textSecondary} />
+                <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
                 <Text style={styles.location}>{activity.location}</Text>
               </View>
             )}
@@ -124,7 +129,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           {/* Rating */}
           {activity.rating && (
             <View style={styles.metaItem}>
-              <Ionicons name="star" size={14} color={COLORS.warning} />
+              <Ionicons name="star" size={14} color={colors.warning} />
               <Text style={styles.metaText}>{Number(activity.rating).toFixed(1)}</Text>
             </View>
           )}
@@ -156,7 +161,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 style={[styles.actionButton, styles.callButton]}
                 onPress={handleCall}
               >
-                <Ionicons name="call-outline" size={16} color={COLORS.white} />
+                <Ionicons name="call-outline" size={16} color={colors.white} />
                 <Text style={styles.actionButtonText}>Gọi</Text>
               </TouchableOpacity>
             )}
@@ -165,7 +170,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 style={[styles.actionButton, styles.bookButton]}
                 onPress={handleBooking}
               >
-                <Ionicons name="open-outline" size={16} color={COLORS.white} />
+                <Ionicons name="open-outline" size={16} color={colors.white} />
                 <Text style={styles.actionButtonText}>Đặt chỗ</Text>
               </TouchableOpacity>
             )}
@@ -176,14 +181,14 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   card: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 8,
     borderLeftWidth: 4,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -193,7 +198,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 150,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   content: {
     padding: 12,
@@ -216,8 +221,8 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   locationRow: {
@@ -227,11 +232,11 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   description: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 10,
     lineHeight: 18,
   },
@@ -249,13 +254,13 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   priceText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.success,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.success,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -263,15 +268,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tag: {
-    backgroundColor: `${COLORS.primary}10`,
+    backgroundColor: `${colors.primary}10`,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   tagText: {
     fontSize: 11,
-    color: COLORS.primary,
-    fontWeight: '500',
+    color: colors.primary,
+    fontFamily: 'Manrope_500Medium',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -289,16 +294,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   callButton: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
   },
   bookButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   actionButtonText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
-});
-
-export default ActivityCard;
+}));export default ActivityCard;

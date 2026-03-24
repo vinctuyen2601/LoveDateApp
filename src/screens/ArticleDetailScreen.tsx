@@ -24,10 +24,15 @@ import { getArticles } from '../services/articleService';
 import { AffiliateProduct } from '../types';
 import ProductCard from '../components/suggestions/ProductCard';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const ArticleDetailScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -122,19 +127,19 @@ const ArticleDetailScreen: React.FC = () => {
             style={[styles.heroBack, { top: heroPaddingTop }]}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="chevron-back" size={22} color={COLORS.white} />
+            <Ionicons name="chevron-back" size={22} color={colors.white} />
           </TouchableOpacity>
 
           {/* Floating share + like */}
           <View style={[styles.heroActionRow, { top: heroPaddingTop }]}>
             <TouchableOpacity style={styles.heroActionBtn} onPress={handleShare}>
-              <Ionicons name="share-outline" size={20} color={COLORS.white} />
+              <Ionicons name="share-outline" size={20} color={colors.white} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.heroActionBtn} onPress={handleLike}>
               <Ionicons
                 name={isLiked ? 'heart' : 'heart-outline'}
                 size={20}
-                color={isLiked ? '#FF6B6B' : COLORS.white}
+                color={isLiked ? colors.primary : colors.white}
               />
             </TouchableOpacity>
           </View>
@@ -143,7 +148,7 @@ const ArticleDetailScreen: React.FC = () => {
           <View style={styles.heroContent}>
             {categoryInfo && (
               <View style={[styles.heroCatBadge, { backgroundColor: article.color }]}>
-                <Ionicons name={article.icon as any} size={11} color={COLORS.white} />
+                <Ionicons name={article.icon as any} size={11} color={colors.white} />
                 <Text style={styles.heroCatText}>{categoryInfo.name}</Text>
               </View>
             )}
@@ -154,17 +159,17 @@ const ArticleDetailScreen: React.FC = () => {
         {/* Metadata Bar */}
         <View style={styles.metadataCard}>
           <View style={styles.metaItem}>
-            <Ionicons name="person-outline" size={14} color={COLORS.textSecondary} />
+            <Ionicons name="person-outline" size={14} color={colors.textSecondary} />
             <Text style={styles.metaText}>{article.author || 'Love Date App'}</Text>
           </View>
           <View style={styles.metaDivider} />
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={14} color={COLORS.textSecondary} />
+            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
             <Text style={styles.metaText}>{article.readTime || 5} phút đọc</Text>
           </View>
           <View style={styles.metaDivider} />
           <View style={styles.metaItem}>
-            <Ionicons name="eye-outline" size={14} color={COLORS.textSecondary} />
+            <Ionicons name="eye-outline" size={14} color={colors.textSecondary} />
             <Text style={styles.metaText}>{article.views || 0}</Text>
           </View>
           <View style={styles.metaDivider} />
@@ -172,7 +177,7 @@ const ArticleDetailScreen: React.FC = () => {
             <Ionicons
               name={isLiked ? 'heart' : 'heart-outline'}
               size={14}
-              color={isLiked ? COLORS.error : COLORS.textSecondary}
+              color={isLiked ? colors.error : colors.textSecondary}
             />
             <Text style={styles.metaText}>{likeCount}</Text>
           </View>
@@ -184,6 +189,8 @@ const ArticleDetailScreen: React.FC = () => {
             contentWidth={screenWidth - 72}
             source={{ html: article.content }}
             tagsStyles={htmlStyles}
+            baseStyle={{ fontFamily: 'Manrope_400Regular' }}
+            systemFonts={['Manrope_400Regular', 'Manrope_500Medium', 'Manrope_600SemiBold', 'Manrope_700Bold', 'Manrope_800ExtraBold']}
           />
         </View>
 
@@ -191,7 +198,7 @@ const ArticleDetailScreen: React.FC = () => {
         {article.tags && article.tags.length > 0 && (
           <View style={styles.tagsSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="pricetags-outline" size={18} color={COLORS.textSecondary} />
+              <Ionicons name="pricetags-outline" size={18} color={colors.textSecondary} />
               <Text style={styles.sectionHeaderText}>Thẻ</Text>
             </View>
             <View style={styles.tagsWrap}>
@@ -217,7 +224,7 @@ const ArticleDetailScreen: React.FC = () => {
         {relatedProducts.length > 0 && (
           <View style={styles.relatedSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="bag-outline" size={18} color={COLORS.primary} />
+              <Ionicons name="bag-outline" size={18} color={colors.primary} />
               <Text style={styles.sectionHeaderText}>Sản phẩm gợi ý</Text>
             </View>
             <ScrollView
@@ -236,7 +243,7 @@ const ArticleDetailScreen: React.FC = () => {
         {relatedArticles.length > 0 && (
           <View style={styles.relatedSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="newspaper-outline" size={18} color={COLORS.primary} />
+              <Ionicons name="newspaper-outline" size={18} color={colors.primary} />
               <Text style={styles.sectionHeaderText}>Bài viết tương tự</Text>
             </View>
             {relatedArticles.map((relArticle) => {
@@ -282,7 +289,7 @@ const ArticleDetailScreen: React.FC = () => {
                   <Ionicons
                     name="chevron-forward"
                     size={18}
-                    color={COLORS.textLight}
+                    color={colors.textLight}
                   />
                 </PressableCard>
               );
@@ -296,10 +303,10 @@ const ArticleDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -365,13 +372,13 @@ const styles = StyleSheet.create({
   },
   heroCatText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   heroTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     lineHeight: 27,
   },
 
@@ -380,13 +387,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: -8,
     borderRadius: 12,
     padding: 14,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -398,24 +405,24 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   metaDivider: {
     width: 1,
     height: 14,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginHorizontal: 10,
   },
 
   // Content
   contentCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     margin: 16,
     borderRadius: 12,
     padding: 20,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
@@ -434,8 +441,8 @@ const styles = StyleSheet.create({
   },
   sectionHeaderText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   tagsWrap: {
     flexDirection: 'row',
@@ -450,7 +457,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
 
   // Related Sections
@@ -467,12 +474,12 @@ const styles = StyleSheet.create({
   relatedArticleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 2,
@@ -491,8 +498,8 @@ const styles = StyleSheet.create({
   },
   relatedArticleTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 20,
     marginBottom: 4,
   },
@@ -503,12 +510,10 @@ const styles = StyleSheet.create({
   },
   relatedArticleCat: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   relatedArticleTime: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
-});
-
-export default ArticleDetailScreen;
+}));export default ArticleDetailScreen;

@@ -19,10 +19,15 @@ import { Event, ChecklistItem, getTagInfo, getTagImage } from "../types";
 import { getSpecialDateImage } from "@lib/iconImages";
 import { getSpecialDatesForMonth } from "../constants/specialDates";
 import { LinearGradient } from "expo-linear-gradient";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const OCCASION_TAGS = ["birthday", "anniversary", "holiday"];
 
 function formatNotePrice(price: number): string {
+  const styles = useStyles();
+  const colors = useColors();
+
   if (price >= 1_000_000) {
     const m = price / 1_000_000;
     return `${m % 1 === 0 ? m : m.toFixed(1)}M đ`;
@@ -49,6 +54,9 @@ import { getSharedEventInfo, getSharedOutbox } from "../services/connections.ser
 import type { SharedEvent } from "../types/connections";
 
 const EventDetailScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -202,7 +210,7 @@ const EventDetailScreen: React.FC = () => {
           <Ionicons
             name="alert-circle-outline"
             size={64}
-            color={COLORS.error}
+            color={colors.error}
           />
           <Text style={styles.errorText}>Đang tải...</Text>
         </View>
@@ -265,17 +273,17 @@ const EventDetailScreen: React.FC = () => {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Chi tiết sự kiện</Text>
 
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerButton} onPress={handleEdit}>
-            <Ionicons name="create-outline" size={24} color={COLORS.primary} />
+            <Ionicons name="create-outline" size={24} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton} onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={24} color={COLORS.error} />
+            <Ionicons name="trash-outline" size={24} color={colors.error} />
           </TouchableOpacity>
         </View>
       </View>
@@ -317,7 +325,7 @@ const EventDetailScreen: React.FC = () => {
                     <Ionicons
                       name="repeat"
                       size={12}
-                      color={COLORS.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.recurBadgeText}>Hàng năm</Text>
                   </View>
@@ -327,10 +335,10 @@ const EventDetailScreen: React.FC = () => {
                     <Ionicons
                       name="moon-outline"
                       size={12}
-                      color={COLORS.warning}
+                      color={colors.warning}
                     />
                     <Text
-                      style={[styles.recurBadgeText, { color: COLORS.warning }]}
+                      style={[styles.recurBadgeText, { color: colors.warning }]}
                     >
                       Âm lịch
                     </Text>
@@ -355,13 +363,13 @@ const EventDetailScreen: React.FC = () => {
                     <View
                       style={[
                         styles.reminderDot,
-                        { backgroundColor: COLORS.primary },
+                        { backgroundColor: colors.primary },
                       ]}
                     />
                     <Ionicons
                       name="time-outline"
                       size={16}
-                      color={COLORS.primary}
+                      color={colors.primary}
                     />
                     <Text style={styles.reminderInlineText}>
                       Nhắc lúc{" "}
@@ -381,13 +389,13 @@ const EventDetailScreen: React.FC = () => {
                   <View
                     style={[
                       styles.reminderDot,
-                      { backgroundColor: COLORS.info },
+                      { backgroundColor: colors.info },
                     ]}
                   />
                   <Ionicons
                     name="notifications-outline"
                     size={16}
-                    color={COLORS.info}
+                    color={colors.info}
                   />
                   <Text style={styles.reminderInlineText}>
                     Nhắc trước{" "}
@@ -410,7 +418,7 @@ const EventDetailScreen: React.FC = () => {
         {event.sourceSharedEventId && sharerPlanInfo?.hasPlan && (
           <View style={styles.sharerPlanBadge}>
             <View style={styles.sharerPlanIconWrap}>
-              <Text style={styles.sharerPlanEmoji}>🎁</Text>
+              <Ionicons name="gift-outline" size={22} color={colors.primary} />
             </View>
             <View style={styles.sharerPlanTextWrap}>
               <Text style={styles.sharerPlanTitle}>
@@ -420,7 +428,7 @@ const EventDetailScreen: React.FC = () => {
                 Hãy để họ làm bạn ngạc nhiên nhé!
               </Text>
             </View>
-            <Ionicons name="sparkles" size={18} color="#FF6B6B" />
+            <Ionicons name="sparkles" size={18} color={colors.primary} />
           </View>
         )}
 
@@ -447,12 +455,12 @@ const EventDetailScreen: React.FC = () => {
               }
             >
               <LinearGradient
-                colors={[COLORS.primary, "#C850C0"]}
+                colors={[colors.primary, "#C850C0"]}
                 style={styles.prepBannerGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Ionicons name="sparkles" size={20} color="#fff" />
+                <Ionicons name="sparkles" size={20} color={colors.white} />
                 <View style={styles.prepBannerText}>
                   <Text style={styles.prepBannerTitle}>
                     {daysUntil === 0
@@ -465,7 +473,7 @@ const EventDetailScreen: React.FC = () => {
                       : "Gợi ý quà, lịch trình và bài viết cho dịp này"}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#fff" />
+                <Ionicons name="chevron-forward" size={18} color={colors.white} />
               </LinearGradient>
             </TouchableOpacity>
           );
@@ -495,12 +503,12 @@ const EventDetailScreen: React.FC = () => {
               }
             >
               <LinearGradient
-                colors={[COLORS.primary, "#C850C0"]}
+                colors={[colors.primary, "#C850C0"]}
                 style={styles.postEventBannerGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Ionicons name="heart" size={20} color="#fff" />
+                <Ionicons name="heart" size={20} color={colors.white} />
                 <View style={styles.prepBannerText}>
                   <Text style={styles.postEventTitle}>Hôm qua thế nào?</Text>
                   <Text style={styles.postEventSub}>
@@ -537,13 +545,13 @@ const EventDetailScreen: React.FC = () => {
                   <View
                     style={[
                       styles.prepStatusIconWrap,
-                      allDone && { backgroundColor: COLORS.success + "20" },
+                      allDone && { backgroundColor: colors.success + "20" },
                     ]}
                   >
                     <Ionicons
                       name={allDone ? "checkmark-circle" : "time-outline"}
                       size={20}
-                      color={allDone ? COLORS.success : COLORS.primary}
+                      color={allDone ? colors.success : colors.primary}
                     />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -584,13 +592,13 @@ const EventDetailScreen: React.FC = () => {
                         <Ionicons
                           name="checkmark"
                           size={13}
-                          color={COLORS.success}
+                          color={colors.success}
                         />
                       </View>
                       <Ionicons
                         name="gift-outline"
                         size={14}
-                        color={COLORS.primary}
+                        color={colors.primary}
                       />
                       <Text style={styles.prepDetailSectionLabel}>
                         Quà tặng
@@ -608,7 +616,7 @@ const EventDetailScreen: React.FC = () => {
                           colors={[primaryColor, primaryColor + "CC"]}
                           style={styles.prepDetailImage}
                         >
-                          <Ionicons name="gift" size={28} color="#fff" />
+                          <Ionicons name="gift" size={28} color={colors.white} />
                         </LinearGradient>
                       )}
                       <View style={styles.prepDetailInfo}>
@@ -667,7 +675,7 @@ const EventDetailScreen: React.FC = () => {
                               <Ionicons
                                 name="sparkles-outline"
                                 size={11}
-                                color={COLORS.textSecondary}
+                                color={colors.textSecondary}
                               />
                               <Text style={styles.prepDetailBadgeText}>
                                 Gợi ý AI
@@ -686,7 +694,7 @@ const EventDetailScreen: React.FC = () => {
                           <Ionicons
                             name="open-outline"
                             size={16}
-                            color={COLORS.info}
+                            color={colors.info}
                           />
                         </TouchableOpacity>
                       ) : null}
@@ -730,7 +738,7 @@ const EventDetailScreen: React.FC = () => {
                         <Ionicons
                           name="checkmark"
                           size={13}
-                          color={COLORS.success}
+                          color={colors.success}
                         />
                       </View>
                       <Ionicons name="map-outline" size={14} color="#4ECDC4" />
@@ -791,7 +799,7 @@ const EventDetailScreen: React.FC = () => {
                             <Ionicons
                               name="sparkles-outline"
                               size={11}
-                              color={COLORS.textSecondary}
+                              color={colors.textSecondary}
                             />
                             <Text style={styles.prepDetailBadgeText}>
                               AI gợi ý
@@ -905,13 +913,13 @@ const EventDetailScreen: React.FC = () => {
                           <Ionicons
                             name="checkmark"
                             size={13}
-                            color={COLORS.success}
+                            color={colors.success}
                           />
                         </View>
                         <Ionicons
                           name="gift-outline"
                           size={14}
-                          color={COLORS.primary}
+                          color={colors.primary}
                         />
                         <Text style={styles.prepDetailSectionLabel}>
                           Quà tặng
@@ -929,7 +937,7 @@ const EventDetailScreen: React.FC = () => {
                             colors={[primaryColor, primaryColor + "CC"]}
                             style={styles.prepDetailImage}
                           >
-                            <Ionicons name="gift" size={24} color="#fff" />
+                            <Ionicons name="gift" size={24} color={colors.white} />
                           </LinearGradient>
                         )}
                         <View style={styles.prepDetailInfo}>
@@ -988,7 +996,7 @@ const EventDetailScreen: React.FC = () => {
                                 <Ionicons
                                   name="sparkles-outline"
                                   size={11}
-                                  color={COLORS.textSecondary}
+                                  color={colors.textSecondary}
                                 />
                                 <Text style={styles.prepDetailBadgeText}>
                                   Gợi ý AI
@@ -1005,7 +1013,7 @@ const EventDetailScreen: React.FC = () => {
                             <Ionicons
                               name="open-outline"
                               size={16}
-                              color={COLORS.info}
+                              color={colors.info}
                             />
                           </TouchableOpacity>
                         ) : null}
@@ -1055,7 +1063,7 @@ const EventDetailScreen: React.FC = () => {
                       <Ionicons
                         name="document-text-outline"
                         size={15}
-                        color={COLORS.textSecondary}
+                        color={colors.textSecondary}
                       />
                       <Text
                         style={[styles.noteRowText, { fontStyle: "italic" }]}
@@ -1088,12 +1096,12 @@ const EventDetailScreen: React.FC = () => {
             <View style={styles.sharedWithList}>
               {sharedWithList.map((se) => {
                 const statusColor =
-                  se.status === 'accepted' ? COLORS.success :
-                  se.status === 'declined' ? COLORS.error :
+                  se.status === 'accepted' ? colors.success :
+                  se.status === 'declined' ? colors.error :
                   '#F59E0B';
                 const statusBg =
-                  se.status === 'accepted' ? COLORS.success + '18' :
-                  se.status === 'declined' ? COLORS.error + '18' :
+                  se.status === 'accepted' ? colors.success + '18' :
+                  se.status === 'declined' ? colors.error + '18' :
                   '#F59E0B18';
                 const statusLabel =
                   se.status === 'accepted' ? 'Đã thêm' :
@@ -1143,9 +1151,9 @@ const EventDetailScreen: React.FC = () => {
               }
             >
               <View
-                style={[styles.actionIcon, { backgroundColor: "#FF6B6B15" }]}
+                style={[styles.actionIcon, { backgroundColor: colors.error + "15" }]}
               >
-                <Ionicons name="gift" size={22} color="#FF6B6B" />
+                <Ionicons name="gift" size={22} color={colors.error} />
               </View>
               <Text style={styles.actionTitle}>Gợi ý quà</Text>
               <Text style={styles.actionSub}>AI tìm quà phù hợp</Text>
@@ -1162,9 +1170,9 @@ const EventDetailScreen: React.FC = () => {
               }
             >
               <View
-                style={[styles.actionIcon, { backgroundColor: "#4ECDC415" }]}
+                style={[styles.actionIcon, { backgroundColor: colors.secondary + "15" }]}
               >
-                <Ionicons name="restaurant" size={22} color="#4ECDC4" />
+                <Ionicons name="restaurant" size={22} color={colors.secondary} />
               </View>
               <Text style={styles.actionTitle}>Hoạt động</Text>
               <Text style={styles.actionSub}>Nhà hàng, địa điểm</Text>
@@ -1182,9 +1190,9 @@ const EventDetailScreen: React.FC = () => {
               activeOpacity={0.75}
             >
               <View
-                style={[styles.quickLinkIcon, { backgroundColor: "#EC489915" }]}
+                style={[styles.quickLinkIcon, { backgroundColor: colors.primary + "15" }]}
               >
-                <Ionicons name="flower-outline" size={22} color="#EC4899" />
+                <Ionicons name="flower-outline" size={22} color={colors.primary} />
               </View>
               <Text style={styles.quickLinkLabel}>Đặt hoa</Text>
             </TouchableOpacity>
@@ -1195,9 +1203,9 @@ const EventDetailScreen: React.FC = () => {
               activeOpacity={0.75}
             >
               <View
-                style={[styles.quickLinkIcon, { backgroundColor: "#F59E0B15" }]}
+                style={[styles.quickLinkIcon, { backgroundColor: colors.warning + "15" }]}
               >
-                <Ionicons name="restaurant-outline" size={22} color="#F59E0B" />
+                <Ionicons name="restaurant-outline" size={22} color={colors.warning} />
               </View>
               <Text style={styles.quickLinkLabel}>Đặt bánh</Text>
             </TouchableOpacity>
@@ -1210,13 +1218,13 @@ const EventDetailScreen: React.FC = () => {
               <View
                 style={[
                   styles.quickLinkIcon,
-                  { backgroundColor: COLORS.primary + "15" },
+                  { backgroundColor: colors.primary + "15" },
                 ]}
               >
                 <Ionicons
                   name="gift-outline"
                   size={22}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
               </View>
               <Text style={styles.quickLinkLabel}>Quà tặng</Text>
@@ -1228,9 +1236,9 @@ const EventDetailScreen: React.FC = () => {
               activeOpacity={0.75}
             >
               <View
-                style={[styles.quickLinkIcon, { backgroundColor: "#8B5CF615" }]}
+                style={[styles.quickLinkIcon, { backgroundColor: colors.info + "15" }]}
               >
-                <Ionicons name="book-outline" size={22} color="#8B5CF6" />
+                <Ionicons name="book-outline" size={22} color={colors.info} />
               </View>
               <Text style={styles.quickLinkLabel}>Bài viết</Text>
             </TouchableOpacity>
@@ -1246,7 +1254,7 @@ const EventDetailScreen: React.FC = () => {
         message={confirmDialog.message}
         confirmText={confirmDialog.confirmText}
         icon="trash-outline"
-        iconColor={COLORS.error}
+        iconColor={colors.error}
         onConfirm={confirmDialog.onConfirm}
         onCancel={closeConfirm}
       />
@@ -1254,10 +1262,10 @@ const EventDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -1266,11 +1274,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 0,
     paddingBottom: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1280,8 +1288,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   headerActions: {
     flexDirection: "row",
@@ -1298,8 +1306,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginTop: 16,
     marginBottom: 24,
   },
@@ -1326,8 +1334,8 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 6,
     lineHeight: 26,
   },
@@ -1343,30 +1351,30 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryBadgeText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   recurBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   recurBadgeText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   heroDateRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 14,
-    // backgroundColor: COLORS.white,
+    // backgroundColor: colors.surface,
     borderRadius: 12,
   },
   heroDateInfo: {
@@ -1376,8 +1384,8 @@ const styles = StyleSheet.create({
   },
   heroDateText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   heroCountdown: {
     // CountdownTimer compact will render here
@@ -1391,8 +1399,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     paddingTop: 16,
     fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 16,
   },
 
@@ -1404,11 +1412,11 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: "48%" as any,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1423,13 +1431,13 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   actionSub: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 15,
   },
 
@@ -1440,7 +1448,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 4,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: colors.primary + '10',
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
@@ -1451,7 +1459,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFE8E8',
+    backgroundColor: colors.error + '15',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1463,7 +1471,7 @@ const styles = StyleSheet.create({
   },
   sharerPlanTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: '#333',
   },
   sharerPlanSub: {
@@ -1477,7 +1485,7 @@ const styles = StyleSheet.create({
   sharedWithRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 12,
     gap: 12,
@@ -1495,9 +1503,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   sharedWithAvatarText: {
-    color: '#fff',
+    color: colors.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   sharedWithInfo: {
     flex: 1,
@@ -1505,12 +1513,12 @@ const styles = StyleSheet.create({
   },
   sharedWithName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   sharedWithEmail: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   sharedWithBadge: {
     paddingHorizontal: 10,
@@ -1519,7 +1527,7 @@ const styles = StyleSheet.create({
   },
   sharedWithBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   prepBanner: {
     marginHorizontal: 16,
@@ -1527,7 +1535,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -1544,13 +1552,13 @@ const styles = StyleSheet.create({
   },
   prepBannerTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     marginBottom: 2,
   },
   prepBannerSub: {
     fontSize: 12,
-    color: "#fff",
+    color: colors.white,
     opacity: 0.85,
   },
   // Post-event Banner
@@ -1560,7 +1568,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
     elevation: 4,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -1573,8 +1581,8 @@ const styles = StyleSheet.create({
   },
   postEventTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     marginBottom: 2,
   },
   postEventSub: {
@@ -1601,18 +1609,18 @@ const styles = StyleSheet.create({
   },
   quickLinkLabel: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     textAlign: "center",
   },
 
   // Preparation Status Card
   prepStatusCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -1627,26 +1635,26 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.success + "15",
+    backgroundColor: colors.success + "15",
     alignItems: "center",
     justifyContent: "center",
   },
   prepStatusTitle: {
     flex: 1,
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   prepStatusEdit: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   prepStatusRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 10,
   },
@@ -1654,29 +1662,29 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: COLORS.success + "20",
+    backgroundColor: colors.success + "20",
     alignItems: "center",
     justifyContent: "center",
   },
   prepStatusLabel: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 1,
   },
   prepStatusValue: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
 
   // EventNote history
   noteCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1688,15 +1696,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   noteYearBadge: {
-    backgroundColor: COLORS.textSecondary,
+    backgroundColor: colors.textSecondary,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 8,
   },
   noteYearText: {
     fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   noteStars: {
     flexDirection: "row",
@@ -1705,34 +1713,34 @@ const styles = StyleSheet.create({
   },
   noteCurrentBadge: {
     marginLeft: "auto" as any,
-    backgroundColor: COLORS.primary + "15",
+    backgroundColor: colors.primary + "15",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
   noteCurrentBadgeText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   noteGiftRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: COLORS.primary + "08",
+    backgroundColor: colors.primary + "08",
     borderRadius: 10,
     padding: 10,
   },
   noteGiftName: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 19,
   },
   noteGiftPrice: {
     fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: "500",
+    color: colors.primary,
+    fontFamily: 'Manrope_500Medium',
     marginTop: 1,
   },
   noteRow: {
@@ -1743,7 +1751,7 @@ const styles = StyleSheet.create({
   noteRowText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 18,
   },
 
@@ -1763,7 +1771,7 @@ const styles = StyleSheet.create({
   },
   tagPillText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Reminders (inline in hero)
@@ -1787,23 +1795,23 @@ const styles = StyleSheet.create({
   },
   reminderInlineText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   reminderInlineBold: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
 
   // Prep Status — detail card styles (matching OccasionPrepScreen savedCard)
   prepStatusSubtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 1,
   },
   prepDetailCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     gap: 10,
@@ -1816,8 +1824,8 @@ const styles = StyleSheet.create({
   },
   prepDetailSectionLabel: {
     fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -1840,8 +1848,8 @@ const styles = StyleSheet.create({
   },
   prepDetailName: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   prepDetailMeta: {
@@ -1857,12 +1865,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   prepDetailBadgeText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   prepDetailRatingRow: {
     flexDirection: "row",
@@ -1872,7 +1880,7 @@ const styles = StyleSheet.create({
   },
   prepDetailReviewCount: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginLeft: 2,
   },
   prepDetailReasonBox: {
@@ -1906,16 +1914,14 @@ const styles = StyleSheet.create({
   },
   prepDetailTimelineTime: {
     fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textSecondary,
     width: 42,
   },
   prepDetailTimelineAction: {
     flex: 1,
     fontSize: 12,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     lineHeight: 16,
   },
-});
-
-export default EventDetailScreen;
+}));export default EventDetailScreen;

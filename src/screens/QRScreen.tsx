@@ -19,10 +19,15 @@ import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getMyQRData, resolveQR, sendConnectionRequest } from '../services/connections.service';
 import type { QRData, ConnectionSearchResult } from '../types/connections';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 type ViewMode = 'my-qr' | 'scan';
 
 const QRScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
@@ -134,7 +139,7 @@ const QRScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {mode === 'my-qr' ? 'Mã QR của tôi' : 'Quét mã QR'}
@@ -151,7 +156,7 @@ const QRScreen: React.FC = () => {
           <Ionicons
             name="qr-code-outline"
             size={18}
-            color={mode === 'my-qr' ? COLORS.white : COLORS.textSecondary}
+            color={mode === 'my-qr' ? colors.white : colors.textSecondary}
           />
           <Text style={[styles.modeTabText, mode === 'my-qr' && styles.modeTabTextActive]}>
             Mã của tôi
@@ -164,7 +169,7 @@ const QRScreen: React.FC = () => {
           <Ionicons
             name="enter-outline"
             size={18}
-            color={mode === 'scan' ? COLORS.white : COLORS.textSecondary}
+            color={mode === 'scan' ? colors.white : colors.textSecondary}
           />
           <Text style={[styles.modeTabText, mode === 'scan' && styles.modeTabTextActive]}>
             Nhập mã
@@ -178,7 +183,7 @@ const QRScreen: React.FC = () => {
           <View style={styles.qrCard}>
             {isLoadingQR ? (
               <View style={styles.qrLoading}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.qrLoadingText}>Đang tạo mã QR...</Text>
               </View>
             ) : qrData ? (
@@ -206,11 +211,11 @@ const QRScreen: React.FC = () => {
 
           <View style={styles.shareButtons}>
             <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-              <Ionicons name="share-outline" size={20} color={COLORS.white} />
+              <Ionicons name="share-outline" size={20} color={colors.white} />
               <Text style={styles.shareButtonText}>Chia sẻ</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
-              <Ionicons name="copy-outline" size={20} color={COLORS.secondary} />
+              <Ionicons name="copy-outline" size={20} color={colors.secondary} />
               <Text style={styles.copyButtonText}>Sao chép mã</Text>
             </TouchableOpacity>
           </View>
@@ -222,7 +227,7 @@ const QRScreen: React.FC = () => {
         <ScrollView contentContainerStyle={styles.enterCodeContent}>
           <View style={styles.enterCodeCard}>
             <View style={styles.enterCodeIcon}>
-              <Ionicons name="enter-outline" size={36} color={COLORS.secondary} />
+              <Ionicons name="enter-outline" size={36} color={colors.secondary} />
             </View>
             <Text style={styles.enterCodeTitle}>Nhập mã kết nối</Text>
             <Text style={styles.enterCodeHint}>
@@ -233,7 +238,7 @@ const QRScreen: React.FC = () => {
               <TextInput
                 style={styles.codeInput}
                 placeholder="Dán hoặc nhập mã kết nối..."
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 value={manualCode}
                 onChangeText={(v) => { setManualCode(v); setScanResult(null); }}
                 autoCapitalize="none"
@@ -246,9 +251,9 @@ const QRScreen: React.FC = () => {
                 disabled={!manualCode.trim() || isProcessing}
               >
                 {isProcessing ? (
-                  <ActivityIndicator size={18} color={COLORS.white} />
+                  <ActivityIndicator size={18} color={colors.white} />
                 ) : (
-                  <Ionicons name="search" size={20} color={COLORS.white} />
+                  <Ionicons name="search" size={20} color={colors.white} />
                 )}
               </TouchableOpacity>
             </View>
@@ -257,7 +262,7 @@ const QRScreen: React.FC = () => {
             {scanResult && (
               <View style={styles.scanResultCard}>
                 <View style={styles.scanResultIcon}>
-                  <Ionicons name="checkmark-circle" size={40} color={COLORS.success} />
+                  <Ionicons name="checkmark-circle" size={40} color={colors.success} />
                 </View>
                 <Text style={styles.scanResultTitle}>Đã tìm thấy!</Text>
 
@@ -283,13 +288,13 @@ const QRScreen: React.FC = () => {
 
                   {scanResult.connectionStatus === 'accepted' && (
                     <View style={styles.alreadyConnectedBadge}>
-                      <Ionicons name="checkmark-circle" size={16} color={COLORS.success} />
+                      <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                       <Text style={styles.alreadyConnectedText}>Đã kết nối</Text>
                     </View>
                   )}
                   {scanResult.connectionStatus === 'pending' && (
                     <View style={styles.pendingBadge}>
-                      <Ionicons name="time-outline" size={16} color={COLORS.warning} />
+                      <Ionicons name="time-outline" size={16} color={colors.warning} />
                       <Text style={styles.pendingBadgeText}>Đang chờ xác nhận</Text>
                     </View>
                   )}
@@ -302,10 +307,10 @@ const QRScreen: React.FC = () => {
                     disabled={isSendingRequest}
                   >
                     {isSendingRequest ? (
-                      <ActivityIndicator color={COLORS.white} size="small" />
+                      <ActivityIndicator color={colors.white} size="small" />
                     ) : (
                       <>
-                        <Ionicons name="person-add" size={20} color={COLORS.white} />
+                        <Ionicons name="person-add" size={20} color={colors.white} />
                         <Text style={styles.connectButtonText}>Gửi lời mời kết nối</Text>
                       </>
                     )}
@@ -324,10 +329,10 @@ export default QRScreen;
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -335,9 +340,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   backBtn: {
     width: 40,
@@ -345,23 +350,23 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   modeTabs: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     padding: 4,
     marginHorizontal: 16,
     marginVertical: 12,
     borderRadius: 14,
     gap: 4,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   modeTab: {
     flex: 1,
@@ -373,16 +378,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   modeTabActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   modeTabText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
   modeTabTextActive: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
   },
   // My QR
   qrContent: {
@@ -392,12 +397,12 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   qrCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 28,
     alignItems: 'center',
     width: '100%',
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
   },
   qrLoadingText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   qrImage: {
     width: 240,
@@ -420,18 +425,18 @@ const styles = StyleSheet.create({
   },
   qrName: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginTop: 4,
   },
   qrEmail: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   qrIdRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -439,22 +444,22 @@ const styles = StyleSheet.create({
   },
   qrIdLabel: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   qrIdValue: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   qrError: {
-    color: COLORS.error,
+    color: colors.error,
     fontSize: 14,
     paddingVertical: 20,
   },
   qrHint: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -469,13 +474,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: COLORS.secondary,
+    backgroundColor: colors.secondary,
     paddingVertical: 14,
     borderRadius: 28,
   },
   shareButtonText: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
   copyButton: {
@@ -484,15 +489,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: COLORS.secondary + '18',
+    backgroundColor: colors.secondary + '18',
     paddingVertical: 14,
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: COLORS.secondary + '40',
+    borderColor: colors.secondary + '40',
   },
   copyButtonText: {
-    color: COLORS.secondary,
-    fontWeight: '600',
+    color: colors.secondary,
+    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
   // Manual code entry
@@ -501,13 +506,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   enterCodeCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 24,
     alignItems: 'center',
     width: '100%',
     gap: 14,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -517,18 +522,18 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: COLORS.secondary + '18',
+    backgroundColor: colors.secondary + '18',
     alignItems: 'center',
     justifyContent: 'center',
   },
   enterCodeTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   enterCodeHint: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -539,35 +544,35 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   lookupBtn: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lookupBtnDisabled: {
-    backgroundColor: COLORS.textLight,
+    backgroundColor: colors.textLight,
   },
   // Lookup result (reused for both modes)
   scanResultCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 28,
     alignItems: 'center',
     width: '100%',
     gap: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 1,
     shadowRadius: 8,
@@ -578,8 +583,8 @@ const styles = StyleSheet.create({
   },
   scanResultTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   scanResultUser: {
     alignItems: 'center',
@@ -593,57 +598,57 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   scanResultAvatarText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 26,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   scanResultName: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   scanResultEmail: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   alreadyConnectedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: COLORS.success + '18',
+    backgroundColor: colors.success + '18',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
   alreadyConnectedText: {
-    color: COLORS.success,
+    color: colors.success,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   pendingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: COLORS.warning + '18',
+    backgroundColor: colors.warning + '18',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
   pendingBadgeText: {
-    color: COLORS.warning,
+    color: colors.warning,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   connectButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 28,
@@ -652,16 +657,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   connectButtonText: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
   scanAgainButton: {
     paddingVertical: 10,
   },
   scanAgainText: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
-});
+}));

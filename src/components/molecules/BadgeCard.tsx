@@ -5,6 +5,8 @@ import { BadgeDefinition, Achievement } from '../../types';
 import { COLORS } from '@themes/colors';
 import { getBadgeDefinition } from '@services/streak.service';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface BadgeCardProps {
   achievement?: Achievement;
@@ -21,6 +23,9 @@ const BadgeCard: React.FC<BadgeCardProps> = ({
   size = 'medium',
   onPress,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   // Get badge definition from achievement or use provided
   const badge = badgeDefinition || (achievement && getBadgeDefinition(achievement.badgeType));
 
@@ -69,17 +74,17 @@ const BadgeCard: React.FC<BadgeCardProps> = ({
         style={[
           styles.iconContainer,
           sizeStyles.iconContainer,
-          { backgroundColor: isEarned ? `${badge.color}15` : `${COLORS.textSecondary}10` },
+          { backgroundColor: isEarned ? `${badge.color}15` : `${colors.textSecondary}10` },
         ]}
       >
         <Ionicons
           name={badge.icon as any}
           size={sizeStyles.iconSize}
-          color={isEarned ? badge.color : COLORS.textSecondary}
+          color={isEarned ? badge.color : colors.textSecondary}
         />
         {!isEarned && (
           <View style={styles.lockOverlay}>
-            <Ionicons name="lock-closed" size={20} color={COLORS.textSecondary} />
+            <Ionicons name="lock-closed" size={20} color={colors.textSecondary} />
           </View>
         )}
       </View>
@@ -111,15 +116,15 @@ const BadgeCard: React.FC<BadgeCardProps> = ({
   return <View style={cardStyle}>{content}</View>;
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -163,7 +168,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 4,
   },
@@ -171,8 +176,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   nameSmall: {
@@ -185,7 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   description: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   descriptionSmall: {
     fontSize: 11,
@@ -197,14 +202,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   textLocked: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   earnedDate: {
     fontSize: 11,
-    color: COLORS.success,
+    color: colors.success,
     marginTop: 4,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
-});
-
-export default BadgeCard;
+}));export default BadgeCard;

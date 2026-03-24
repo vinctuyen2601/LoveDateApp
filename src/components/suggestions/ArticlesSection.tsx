@@ -12,6 +12,8 @@ import { COLORS } from '@themes/colors';
 import { Article, filterArticlesByCategory } from "../../data/articles";
 import { LoadingState } from '@components/atoms/LoadingState';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const ARTICLE_CATEGORIES = [
   { id: "all", name: "Tất cả", icon: "apps" as const, color: COLORS.primary },
@@ -39,6 +41,9 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
   onArticlePress,
   onViewAll,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const MAX_DISPLAY = 12;
 
   const filteredArticles = useMemo(
@@ -84,14 +89,14 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
             <Ionicons
               name={cat.icon}
               size={14}
-              color={selectedCategory === cat.id ? COLORS.white : cat.color}
+              color={selectedCategory === cat.id ? colors.white : cat.color}
             />
             <Text
               style={[
                 styles.categoryChipText,
                 {
                   color:
-                    selectedCategory === cat.id ? COLORS.white : cat.color,
+                    selectedCategory === cat.id ? colors.white : cat.color,
                 },
               ]}
             >
@@ -105,7 +110,7 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
         <LoadingState variant="skeleton" skeletonType="card" skeletonCount={2} />
       ) : filteredArticles.length === 0 ? (
         <View style={styles.emptyArticles}>
-          <Ionicons name="newspaper-outline" size={36} color={COLORS.textSecondary} />
+          <Ionicons name="newspaper-outline" size={36} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>Chưa có bài viết</Text>
           <Text style={styles.emptyText}>
             {selectedCategory === 'all'
@@ -134,7 +139,7 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                     resizeMode="cover"
                   />
                 ) : (
-                  <Ionicons name={article.icon} size={28} color="rgba(255,255,255,0.85)" />
+                  <Ionicons name={article.icon as keyof typeof Ionicons.glyphMap} size={28} color="rgba(255,255,255,0.85)" />
                 )}
               </View>
               <View style={styles.articleBody}>
@@ -156,7 +161,7 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
                     <Ionicons
                       name="time-outline"
                       size={11}
-                      color={COLORS.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.articleTimeText}>
                       {article.readTime || 5} phút
@@ -172,7 +177,7 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   section: {
     marginTop: 24,
   },
@@ -185,13 +190,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   viewAllText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   horizontalScroll: {
     paddingHorizontal: 16,
@@ -208,22 +213,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     gap: 4,
   },
   categoryChipText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   articleCard: {
     width: 200,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     overflow: "hidden",
     marginRight: 12,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
@@ -246,8 +251,8 @@ const styles = StyleSheet.create({
   },
   articleTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 20,
     marginBottom: 10,
   },
@@ -263,8 +268,8 @@ const styles = StyleSheet.create({
   },
   articleCategoryText: {
     fontSize: 10,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   articleTime: {
     flexDirection: "row",
@@ -273,7 +278,7 @@ const styles = StyleSheet.create({
   },
   articleTimeText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   emptyArticles: {
     paddingVertical: 32,
@@ -283,15 +288,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginTop: 4,
   },
   emptyText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
-});
-
-export default React.memo(ArticlesSection);
+}));export default React.memo(ArticlesSection);

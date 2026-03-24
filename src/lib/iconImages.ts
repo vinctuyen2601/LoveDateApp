@@ -53,6 +53,34 @@ export const ACTIVITY_IMAGES: Record<string, ImageSourcePropType> = {
   art:        require('../../assets/icons/activities/art.png'),
 };
 
+// MBTI group icons — assets/icons/mbti/
+export const MBTI_GROUP_IMAGES: Record<string, ImageSourcePropType> = {
+  analyst:  require('../../assets/icons/mbti/analysts.png'),
+  diplomat: require('../../assets/icons/mbti/diplomats.png'),
+  sentinel: require('../../assets/icons/mbti/sentinels.png'),
+  explorer: require('../../assets/icons/mbti/explorers.png'),
+};
+
+// MBTI type icons — assets/icons/mbti/
+export const MBTI_TYPE_IMAGES: Record<string, ImageSourcePropType> = {
+  INTJ: require('../../assets/icons/mbti/intj.png'),
+  INTP: require('../../assets/icons/mbti/intp.png'),
+  ENTJ: require('../../assets/icons/mbti/entj.png'),
+  ENTP: require('../../assets/icons/mbti/entp.png'),
+  INFJ: require('../../assets/icons/mbti/infj.png'),
+  INFP: require('../../assets/icons/mbti/infp.png'),
+  ENFJ: require('../../assets/icons/mbti/enfj.png'),
+  ENFP: require('../../assets/icons/mbti/enfp.png'),
+  ISTJ: require('../../assets/icons/mbti/istj.png'),
+  ISFJ: require('../../assets/icons/mbti/isfj.png'),
+  ESTJ: require('../../assets/icons/mbti/estj.png'),
+  ESFJ: require('../../assets/icons/mbti/esfj.png'),
+  ISTP: require('../../assets/icons/mbti/istp.png'),
+  ISFP: require('../../assets/icons/mbti/isfp.png'),
+  ESTP: require('../../assets/icons/mbti/estp.png'),
+  ESFP: require('../../assets/icons/mbti/esfp.png'),
+};
+
 export const getTagImage = (tagValue: string): ImageSourcePropType =>
   TAG_IMAGES[tagValue] ?? TAG_IMAGES.other;
 
@@ -61,3 +89,9 @@ export const getSpecialDateImage = (id: string): ImageSourcePropType =>
 
 export const getActivityImage = (activityType: string): ImageSourcePropType =>
   ACTIVITY_IMAGES[activityType] ?? TAG_IMAGES.other;
+
+export const getMBTIGroupImage = (groupId: string): ImageSourcePropType =>
+  MBTI_GROUP_IMAGES[groupId] ?? MBTI_GROUP_IMAGES.analyst;
+
+export const getMBTITypeImage = (typeCode: string): ImageSourcePropType =>
+  MBTI_TYPE_IMAGES[typeCode.toUpperCase()] ?? MBTI_GROUP_IMAGES.analyst;

@@ -23,7 +23,7 @@ import { useSync } from "@contexts/SyncContext";
 import { useNotification } from "@contexts/NotificationContext";
 import { Event, getTagColor, getTagLabel } from "../types";
 import { COLORS } from "@themes/colors";
-import { CALENDAR_THEME } from "@themes/calendarTheme";
+import { getCalendarTheme } from "@themes/calendarTheme";
 import { useNavigation } from "@react-navigation/native";
 import { getFeaturedArticles } from "../data/articles";
 import { getArticles } from "../services/articleService";
@@ -50,6 +50,8 @@ import {
   snoozeSuggestion,
 } from "@lib/holidaySuggestionHelper";
 import { HolidaySuggestion } from "@constants/holidaySuggestions";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -62,6 +64,10 @@ const CATEGORY_NAMES: Record<string, string> = {
 };
 
 const HomeScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+  const calendarTheme = useMemo(() => getCalendarTheme(colors), [colors]);
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { events, isLoading, refreshEvents, addEvent } = useEvents();
@@ -237,11 +243,11 @@ const HomeScreen: React.FC = () => {
 
     if (marked[selectedDate]) {
       marked[selectedDate].selected = true;
-      marked[selectedDate].selectedColor = COLORS.primary;
+      marked[selectedDate].selectedColor = colors.primary;
     } else {
       marked[selectedDate] = {
         selected: true,
-        selectedColor: COLORS.primary,
+        selectedColor: colors.primary,
       };
     }
     return marked;
@@ -524,7 +530,7 @@ const HomeScreen: React.FC = () => {
             <Ionicons
               name="chevron-forward"
               size={18}
-              color={COLORS.textLight}
+              color={colors.textLight}
             />
           </View>
           {(event.isRecurring || event.isNotificationEnabled === false) && (
@@ -534,7 +540,7 @@ const HomeScreen: React.FC = () => {
                   <Ionicons
                     name="repeat"
                     size={12}
-                    color={COLORS.textSecondary}
+                    color={colors.textSecondary}
                   />
                   <Text style={styles.calEventBadgeText}>Hàng năm</Text>
                 </View>
@@ -544,12 +550,12 @@ const HomeScreen: React.FC = () => {
                   <Ionicons
                     name="notifications-off-outline"
                     size={12}
-                    color={COLORS.textLight}
+                    color={colors.textLight}
                   />
                   <Text
                     style={[
                       styles.calEventBadgeText,
-                      { color: COLORS.textLight },
+                      { color: colors.textLight },
                     ]}
                   >
                     Tắt TB
@@ -570,7 +576,7 @@ const HomeScreen: React.FC = () => {
       icon: "heart-circle" as const,
       title: "Khảo sát\ntính cách",
       subtitle: "Gợi ý quà phù hợp với nửa kia",
-      color: COLORS.primary,
+      color: colors.primary,
       onPress: handleSurveyPress,
     },
     {
@@ -586,7 +592,7 @@ const HomeScreen: React.FC = () => {
       icon: "map-outline" as const,
       title: "Gợi ý\nhoạt động",
       subtitle: "Ý tưởng hẹn hò, nhà hàng, spa...",
-      color: COLORS.secondary,
+      color: colors.secondary,
       onPress: () =>
         navigation.navigate("ActivitySuggestions", {
           event: upcomingEvents[0] ?? events[0] ?? undefined,
@@ -631,7 +637,7 @@ const HomeScreen: React.FC = () => {
                 const title = isEvent
                   ? eventObj?.title ?? ""
                   : prepTarget.sd.name;
-                const emoji = isEvent ? null : prepTarget.sd.emoji;
+                const sdIcon = isEvent ? null : prepTarget.sd.icon;
                 const daysLeft = prepTarget.daysLeft;
 
                 return (
@@ -650,7 +656,7 @@ const HomeScreen: React.FC = () => {
                             size={36}
                           />
                         ) : (
-                          <Text style={{ fontSize: 36 }}>{emoji}</Text>
+                          <Ionicons name={sdIcon as any} size={36} color={tagColor} />
                         )}
                       </View>
                       <View
@@ -692,7 +698,7 @@ const HomeScreen: React.FC = () => {
                         end={{ x: 1, y: 0 }}
                         style={styles.prepModalBtn}
                       >
-                        <Ionicons name="sparkles" size={18} color="#fff" />
+                        <Ionicons name="sparkles" size={18} color={colors.white} />
                         <Text style={styles.prepModalBtnText}>
                           Chuẩn bị ngay
                         </Text>
@@ -719,8 +725,8 @@ const HomeScreen: React.FC = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
@@ -735,7 +741,7 @@ const HomeScreen: React.FC = () => {
             else { label = "Buổi tối bình an"; iconName = "moon-outline"; }
             return (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Ionicons name={iconName} size={20} color={COLORS.primary} />
+                <Ionicons name={iconName} size={20} color={colors.primary} />
                 <Text style={styles.greetingText}>{label}</Text>
               </View>
             );
@@ -760,7 +766,7 @@ const HomeScreen: React.FC = () => {
               onPress={handleAddEvent}
               activeOpacity={0.85}
             >
-              <Ionicons name="add-circle" size={20} color={COLORS.white} />
+              <Ionicons name="add-circle" size={20} color={colors.white} />
               <Text style={styles.heroEmptyBtnText}>Thêm sự kiện đặc biệt</Text>
             </TouchableOpacity>
           </View>
@@ -774,7 +780,7 @@ const HomeScreen: React.FC = () => {
                 <Ionicons
                   name="alarm-outline"
                   size={20}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
                 <Text style={styles.sectionTitle}>Sự kiện sắp tới</Text>
                 <View style={styles.badge}>
@@ -825,7 +831,7 @@ const HomeScreen: React.FC = () => {
                 },
                 done: {
                   icon: "checkmark-circle" as const,
-                  color: COLORS.success,
+                  color: colors.success,
                   text: "Đã được chuẩn bị",
                 },
               }[prepState];
@@ -852,7 +858,7 @@ const HomeScreen: React.FC = () => {
                       <Ionicons
                         name="calendar-outline"
                         size={12}
-                        color={COLORS.textSecondary}
+                        color={colors.textSecondary}
                       />
                       <Text style={styles.upcomingDateText}>
                         {format(eventDate, "EEEE, d/MM", { locale: vi })}
@@ -930,7 +936,7 @@ const HomeScreen: React.FC = () => {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[COLORS.primary + "18", "#C850C015"]}
+              colors={[colors.primary + "18", "#C850C015"]}
               style={styles.shopBannerGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -938,7 +944,7 @@ const HomeScreen: React.FC = () => {
               <Ionicons
                 name="flower-outline"
                 size={32}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <View style={styles.shopBannerText}>
                 <Text style={styles.shopBannerTitle}>
@@ -951,7 +957,7 @@ const HomeScreen: React.FC = () => {
               <Ionicons
                 name="chevron-forward"
                 size={20}
-                color={COLORS.primary}
+                color={colors.primary}
               />
             </LinearGradient>
           </TouchableOpacity>
@@ -964,7 +970,7 @@ const HomeScreen: React.FC = () => {
               <Ionicons
                 name="calendar-outline"
                 size={20}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.sectionTitle}>Lịch sự kiện</Text>
             </View>
@@ -979,7 +985,7 @@ const HomeScreen: React.FC = () => {
               onDayPress={handleDayPress}
               onMonthChange={handleMonthChange}
               markedDates={markedDates}
-              theme={CALENDAR_THEME}
+              theme={calendarTheme}
               enableSwipeMonths={true}
               hideExtraDays={false}
               firstDay={1}
@@ -989,7 +995,7 @@ const HomeScreen: React.FC = () => {
                     direction === "left" ? "chevron-back" : "chevron-forward"
                   }
                   size={20}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
               )}
               dayComponent={({ date, state, marking }: any) => {
@@ -1143,7 +1149,7 @@ const HomeScreen: React.FC = () => {
                               <Ionicons
                                 name="chevron-forward"
                                 size={18}
-                                color={COLORS.textLight}
+                                color={colors.textLight}
                               />
                             )}
                           </View>
@@ -1178,7 +1184,7 @@ const HomeScreen: React.FC = () => {
                 <Ionicons
                   name="flash-outline"
                   size={20}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
                 <Text style={styles.sectionTitle}>Khám phá</Text>
               </View>
@@ -1246,7 +1252,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderLeft}>
-              <Ionicons name="book-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="book-outline" size={20} color={colors.primary} />
               <Text style={styles.sectionTitle}>Bài viết nổi bật</Text>
             </View>
             <TouchableOpacity
@@ -1379,7 +1385,7 @@ const HomeScreen: React.FC = () => {
                     <Ionicons
                       name="time-outline"
                       size={11}
-                      color={COLORS.textSecondary}
+                      color={colors.textSecondary}
                     />
                     <Text style={styles.articleReadTime}>
                       {article.readTime ?? 5} phút
@@ -1396,7 +1402,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionHeaderLeft}>
-                <Ionicons name="trending-up" size={20} color={COLORS.primary} />
+                <Ionicons name="trending-up" size={20} color={colors.primary} />
                 <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
               </View>
               <TouchableOpacity
@@ -1452,17 +1458,17 @@ const HomeScreen: React.FC = () => {
           onPress={handleAddEvent}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={28} color={COLORS.white} />
+          <Ionicons name="add" size={28} color={colors.white} />
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingTop: 0,
@@ -1474,8 +1480,8 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   // Shop banner (gradient)
   shopBanner: {
@@ -1485,7 +1491,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
     elevation: 2,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -1497,7 +1503,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.primary + "25",
+    borderColor: colors.primary + "25",
     borderRadius: 14,
   },
   shopBannerText: {
@@ -1505,24 +1511,24 @@ const styles = StyleSheet.create({
   },
   shopBannerTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   shopBannerSub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   // Selected date panel
   selectedDateContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 4,
     marginTop: 8,
     marginBottom: 4,
     borderRadius: 14,
     overflow: "hidden",
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -1534,7 +1540,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   selectedDateLeft: {
     flex: 1,
@@ -1543,31 +1549,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   todayBadge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   todayBadgeText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   selectedDateText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   eventCountBadge: {
-    backgroundColor: COLORS.primary + "12",
+    backgroundColor: colors.primary + "12",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
   eventCountBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   eventsList: {
     padding: 8,
@@ -1575,7 +1581,7 @@ const styles = StyleSheet.create({
   },
   calEventCard: {
     flexDirection: "row",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -1606,8 +1612,8 @@ const styles = StyleSheet.create({
   },
   calEventTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 3,
   },
   calEventMeta: {
@@ -1617,13 +1623,13 @@ const styles = StyleSheet.create({
   },
   calEventDate: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   calEventDot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: COLORS.textLight,
+    backgroundColor: colors.textLight,
   },
   calEventTag: {
     paddingHorizontal: 6,
@@ -1632,7 +1638,7 @@ const styles = StyleSheet.create({
   },
   calEventTagText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   calEventBadges: {
     flexDirection: "row",
@@ -1647,23 +1653,23 @@ const styles = StyleSheet.create({
   },
   calEventBadgeText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   heroEmpty: {
     marginHorizontal: 12,
     marginTop: 16,
     marginBottom: 4,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 28,
     alignItems: "center",
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 3,
     borderWidth: 1,
-    borderColor: COLORS.primary + "15",
+    borderColor: colors.primary + "15",
   },
   heroEmptyIcon: {
     width: 72,
@@ -1672,13 +1678,13 @@ const styles = StyleSheet.create({
   },
   heroEmptyTitle: {
     fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   heroEmptySub: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 21,
     marginBottom: 24,
@@ -1688,11 +1694,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 14,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1700,8 +1706,8 @@ const styles = StyleSheet.create({
   },
   heroEmptyBtnText: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
 
   // Sections
@@ -1723,11 +1729,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   badge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 10,
     minWidth: 22,
     height: 22,
@@ -1737,24 +1743,24 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   viewAllText: {
     fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Event Card
   eventCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1775,8 +1781,8 @@ const styles = StyleSheet.create({
   },
   eventCardTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 4,
     lineHeight: 20,
   },
@@ -1787,7 +1793,7 @@ const styles = StyleSheet.create({
   },
   eventCardDate: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textTransform: "capitalize",
   },
 
@@ -1795,12 +1801,12 @@ const styles = StyleSheet.create({
   upcomingCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
     gap: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 5,
@@ -1820,8 +1826,8 @@ const styles = StyleSheet.create({
   },
   upcomingTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   upcomingDateRow: {
     flexDirection: "row",
@@ -1830,7 +1836,7 @@ const styles = StyleSheet.create({
   },
   upcomingDateText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textTransform: "capitalize",
   },
   prepBadge: {
@@ -1845,7 +1851,7 @@ const styles = StyleSheet.create({
   },
   prepBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   countdownCircle: {
     width: 54,
@@ -1857,12 +1863,12 @@ const styles = StyleSheet.create({
   },
   countdownNum: {
     fontSize: 20,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
     lineHeight: 24,
   },
   countdownLabel: {
     fontSize: 10,
-    fontWeight: "500",
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 13,
   },
   countdownToday: {
@@ -1886,27 +1892,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayNumberSelected: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   dayNumberToday: {
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   dayNumberText: {
     fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: "400",
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_400Regular',
   },
   dayTextToday: {
-    color: COLORS.primary,
-    fontWeight: "700",
+    color: colors.primary,
+    fontFamily: 'Manrope_700Bold',
   },
   dayTextSelected: {
-    color: COLORS.white,
-    fontWeight: "700",
+    color: colors.white,
+    fontFamily: 'Manrope_700Bold',
   },
   dayTextDisabled: {
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   dayDotsRow: {
     flexDirection: "row",
@@ -1920,10 +1926,10 @@ const styles = StyleSheet.create({
 
   // Calendar
   calendarContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1937,19 +1943,19 @@ const styles = StyleSheet.create({
   },
   selectedDateTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   specialDateCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderLeftWidth: 4,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1967,12 +1973,12 @@ const styles = StyleSheet.create({
   specialDateContent: { flex: 1 },
   specialDateName: {
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
     marginBottom: 3,
   },
   specialDateHint: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Quick Actions — full-color cards
@@ -2011,8 +2017,8 @@ const styles = StyleSheet.create({
   },
   qaTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     lineHeight: 20,
     marginBottom: 4,
   },
@@ -2075,13 +2081,13 @@ const styles = StyleSheet.create({
   },
   featuredCatText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   featuredTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     lineHeight: 24,
     marginBottom: 12,
   },
@@ -2099,14 +2105,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   featuredReadBtnText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   productsScroll: {
     paddingHorizontal: 4,
@@ -2128,10 +2134,10 @@ const styles = StyleSheet.create({
   },
   articleCard: {
     width: 148,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.07,
     shadowRadius: 3,
@@ -2155,8 +2161,8 @@ const styles = StyleSheet.create({
   },
   articleTitle: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 17,
     marginBottom: 7,
   },
@@ -2167,7 +2173,7 @@ const styles = StyleSheet.create({
   },
   articleReadTime: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // FAB
@@ -2184,16 +2190,16 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -2209,7 +2215,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   prepModalCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 24,
@@ -2239,17 +2245,17 @@ const styles = StyleSheet.create({
   },
   prepModalDaysText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   prepModalTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   prepModalSub: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   prepModalBtn: {
@@ -2263,8 +2269,8 @@ const styles = StyleSheet.create({
   },
   prepModalBtnText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   prepModalSkip: {
     alignItems: "center",
@@ -2272,8 +2278,6 @@ const styles = StyleSheet.create({
   },
   prepModalSkipText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
-});
-
-export default HomeScreen;
+}));export default HomeScreen;

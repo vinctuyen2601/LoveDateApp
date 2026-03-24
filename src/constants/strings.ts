@@ -41,7 +41,7 @@ export const STRINGS = {
   events_edit: "Sửa sự kiện",
   events_delete: "Xóa sự kiện",
   events_delete_confirm: "Bạn có chắc muốn xóa sự kiện này?",
-  events_no_events: "Chưa có sự kiện nào",
+  events_no_events: "Tạo sự kiện đầu tiên",
   events_upcoming: "Sắp tới",
   events_past: "Đã qua",
   events_all: "Tất cả",

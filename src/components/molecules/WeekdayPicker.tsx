@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
 
 interface WeekdayPickerProps {
   value: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
@@ -18,6 +19,9 @@ const WEEKDAYS = [
 ];
 
 const WeekdayPicker: React.FC<WeekdayPickerProps> = ({ value, onChange }) => {
+  const styles = useStyles();
+
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Chọn thứ trong tuần</Text>
@@ -45,14 +49,14 @@ const WeekdayPicker: React.FC<WeekdayPickerProps> = ({ value, onChange }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     gap: 12,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   daysContainer: {
@@ -64,30 +68,28 @@ const styles = StyleSheet.create({
     flex: 1,
     aspectRatio: 1,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayButtonSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   dayTextSelected: {
-    color: COLORS.white,
+    color: colors.white,
   },
   selectedText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
   },
-});
-
-export default WeekdayPicker;
+}));export default WeekdayPicker;

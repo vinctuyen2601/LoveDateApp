@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { REMIND_OPTIONS } from '../../types';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ReminderSettingsProps {
   selectedDays: number[];
@@ -17,6 +19,9 @@ const ReminderSettings: React.FC<ReminderSettingsProps> = ({
   eventDate,
   isRecurring,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const getValidOptions = () => {
     // For recurring events, all options are valid
     if (isRecurring !== false || !eventDate) return REMIND_OPTIONS;
@@ -55,7 +60,7 @@ const ReminderSettings: React.FC<ReminderSettingsProps> = ({
               <Ionicons
                 name={isSelected ? 'checkbox' : 'square-outline'}
                 size={22}
-                color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                color={isSelected ? colors.primary : colors.textSecondary}
               />
               <Text
                 style={[
@@ -72,7 +77,7 @@ const ReminderSettings: React.FC<ReminderSettingsProps> = ({
 
       {hiddenCount > 0 && (
         <View style={styles.hiddenInfo}>
-          <Ionicons name="information-circle-outline" size={14} color={COLORS.textSecondary} />
+          <Ionicons name="information-circle-outline" size={14} color={colors.textSecondary} />
           <Text style={styles.hiddenInfoText}>
             {hiddenCount} tùy chọn không khả dụng vì ngày sự kiện quá gần
           </Text>
@@ -86,14 +91,14 @@ const ReminderSettings: React.FC<ReminderSettingsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   optionsContainer: {
@@ -105,22 +110,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 12,
   },
   optionSelected: {
-    backgroundColor: COLORS.primary + '10',
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary + '10',
+    borderColor: colors.primary,
   },
   optionText: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   optionTextSelected: {
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   hiddenInfo: {
     flexDirection: 'row',
@@ -130,15 +135,13 @@ const styles = StyleSheet.create({
   },
   hiddenInfoText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
   hint: {
     fontSize: 13,
-    color: COLORS.warning,
+    color: colors.warning,
     marginTop: 8,
     fontStyle: 'italic',
   },
-});
-
-export default ReminderSettings;
+}));export default ReminderSettings;

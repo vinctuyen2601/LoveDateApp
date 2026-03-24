@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -24,6 +26,10 @@ const AiRateLimitModal: React.FC<Props> = ({
   onClose,
   onSignUp,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
+
   return (
     <Modal
       visible={visible}
@@ -35,7 +41,7 @@ const AiRateLimitModal: React.FC<Props> = ({
         <View style={styles.sheet}>
           {/* Icon */}
           <View style={styles.iconWrap}>
-            <Ionicons name="sparkles" size={32} color={COLORS.primary} />
+            <Ionicons name="sparkles" size={32} color={colors.primary} />
           </View>
 
           <Text style={styles.title}>Hết lượt AI hôm nay</Text>
@@ -47,7 +53,7 @@ const AiRateLimitModal: React.FC<Props> = ({
                 <Text style={styles.closeBtnText}>Để sau</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.primaryBtn} onPress={onSignUp}>
-                <Ionicons name="person-add-outline" size={18} color="#fff" />
+                <Ionicons name="person-add-outline" size={18} color={colors.white} />
                 <Text style={styles.primaryBtnText}>Đăng ký ngay</Text>
               </TouchableOpacity>
             </View>
@@ -62,7 +68,7 @@ const AiRateLimitModal: React.FC<Props> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',
@@ -71,7 +77,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     paddingTop: 28,
     paddingHorizontal: 24,
@@ -83,20 +89,20 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   message: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 21,
     marginBottom: 24,
@@ -112,12 +118,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   closeBtnText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   primaryBtn: {
     flex: 1,
@@ -126,13 +132,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     gap: 6,
   },
   primaryBtnText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   singleCloseBtn: {
     width: '100%',
@@ -140,8 +146,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
-});
-
-export default AiRateLimitModal;
+}));export default AiRateLimitModal;

@@ -6,6 +6,8 @@ import { AffiliateProduct } from '../../types';
 import { COLORS } from '@themes/colors';
 import { SERVICE_CATEGORIES } from '../../data/affiliateProducts';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const stripHtml = (html: string): string =>
   html?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
@@ -15,6 +17,9 @@ interface ExperienceCardProps {
 }
 
 const ExperienceCard: React.FC<ExperienceCardProps> = ({ product }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const navigation = useNavigation<any>();
   const categoryInfo = SERVICE_CATEGORIES.find((c) => c.id === product.category);
 
@@ -42,7 +47,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ product }) => {
 
       {/* Category badge */}
       <View style={[styles.categoryBadge, { backgroundColor: (categoryInfo?.color || product.color) + 'EE' }]}>
-        <Ionicons name={(categoryInfo?.icon || product.icon) as any} size={11} color={COLORS.white} />
+        <Ionicons name={(categoryInfo?.icon || product.icon) as any} size={11} color={colors.white} />
         <Text style={styles.categoryText}>{categoryInfo?.name || product.category}</Text>
       </View>
 
@@ -55,7 +60,7 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ product }) => {
           <Text style={styles.price}>{product.priceRange || 'Liên hệ'}</Text>
           <View style={[styles.ctaButton, { backgroundColor: categoryInfo?.color || product.color }]}>
             <Text style={styles.ctaText}>Khám phá</Text>
-            <Ionicons name="arrow-forward" size={12} color={COLORS.white} />
+            <Ionicons name="arrow-forward" size={12} color={colors.white} />
           </View>
         </View>
       </View>
@@ -63,15 +68,15 @@ const ExperienceCard: React.FC<ExperienceCardProps> = ({ product }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   card: {
     width: 220,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     overflow: 'hidden',
     marginRight: 14,
     elevation: 3,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 5,
@@ -106,21 +111,21 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   content: {
     padding: 12,
   },
   name: {
     fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   description: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 17,
     marginBottom: 10,
   },
@@ -131,8 +136,8 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     flex: 1,
   },
   ctaButton: {
@@ -145,9 +150,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
-});
-
-export default React.memo(ExperienceCard);
+}));export default React.memo(ExperienceCard);

@@ -28,10 +28,15 @@ import {
 } from '../services/affiliateProductService';
 import { logProductView, logProductClick } from '../services/analyticsService';
 import ProductCard from '../components/suggestions/ProductCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const ProductDetailScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -127,13 +132,13 @@ const ProductDetailScreen: React.FC = () => {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Chi tiết sản phẩm</Text>
 
         <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
-          <Ionicons name="share-outline" size={24} color={COLORS.primary} />
+          <Ionicons name="share-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -192,7 +197,7 @@ const ProductDetailScreen: React.FC = () => {
             style={styles.heroGradient}
           >
             <View style={styles.heroIconCircle}>
-              <Ionicons name={product.icon as any} size={64} color={COLORS.white} />
+              <Ionicons name={product.icon as any} size={64} color={colors.white} />
             </View>
             {discountPercent > 0 && (
               <View style={styles.heroBadge}>
@@ -224,7 +229,7 @@ const ProductDetailScreen: React.FC = () => {
           </View>
           {savings > 0 && (
             <View style={styles.savingsBadge}>
-              <Ionicons name="pricetag" size={13} color={COLORS.success} />
+              <Ionicons name="pricetag" size={13} color={colors.success} />
               <Text style={styles.savingsText}>
                 Tiết kiệm {formatPrice(savings)}
               </Text>
@@ -247,7 +252,7 @@ const ProductDetailScreen: React.FC = () => {
             <Ionicons
               name="information-circle-outline"
               size={20}
-              color={COLORS.primary}
+              color={colors.primary}
             />
             <Text style={styles.cardHeaderText}>Mô tả</Text>
           </View>
@@ -255,22 +260,24 @@ const ProductDetailScreen: React.FC = () => {
             contentWidth={screenWidth - 64}
             source={{ html: product.description }}
             tagsStyles={htmlStyles}
+            baseStyle={{ fontFamily: 'Manrope_400Regular' }}
+            systemFonts={['Manrope_400Regular', 'Manrope_500Medium', 'Manrope_600SemiBold', 'Manrope_700Bold', 'Manrope_800ExtraBold']}
           />
         </View>
 
         {/* Details Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="list-outline" size={20} color={COLORS.primary} />
+            <Ionicons name="list-outline" size={20} color={colors.primary} />
             <Text style={styles.cardHeaderText}>Thông tin chi tiết</Text>
           </View>
 
           <View style={styles.detailRow}>
-            <View style={[styles.detailIconWrap, { backgroundColor: (categoryInfo?.color || COLORS.primary) + '15' }]}>
+            <View style={[styles.detailIconWrap, { backgroundColor: (categoryInfo?.color || colors.primary) + '15' }]}>
               <Ionicons
                 name={(categoryInfo?.icon || 'pricetag-outline') as any}
                 size={18}
-                color={categoryInfo?.color || COLORS.primary}
+                color={categoryInfo?.color || colors.primary}
               />
             </View>
             <Text style={styles.detailLabel}>Danh mục</Text>
@@ -280,8 +287,8 @@ const ProductDetailScreen: React.FC = () => {
           </View>
 
           <View style={styles.detailRow}>
-            <View style={[styles.detailIconWrap, { backgroundColor: COLORS.success + '15' }]}>
-              <Ionicons name="cash-outline" size={18} color={COLORS.success} />
+            <View style={[styles.detailIconWrap, { backgroundColor: colors.success + '15' }]}>
+              <Ionicons name="cash-outline" size={18} color={colors.success} />
             </View>
             <Text style={styles.detailLabel}>Khoảng giá</Text>
             <Text style={styles.detailValue}>{product.priceRange}</Text>
@@ -289,8 +296,8 @@ const ProductDetailScreen: React.FC = () => {
 
           {product.affiliatePartner && (
             <View style={styles.detailRow}>
-              <View style={[styles.detailIconWrap, { backgroundColor: COLORS.info + '15' }]}>
-                <Ionicons name="storefront-outline" size={18} color={COLORS.info} />
+              <View style={[styles.detailIconWrap, { backgroundColor: colors.info + '15' }]}>
+                <Ionicons name="storefront-outline" size={18} color={colors.info} />
               </View>
               <Text style={styles.detailLabel}>Đối tác</Text>
               <Text style={styles.detailValue}>
@@ -307,7 +314,7 @@ const ProductDetailScreen: React.FC = () => {
               <Ionicons
                 name="calendar-outline"
                 size={20}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.cardHeaderText}>Phù hợp cho dịp</Text>
             </View>
@@ -341,7 +348,7 @@ const ProductDetailScreen: React.FC = () => {
               <Ionicons
                 name="pricetags-outline"
                 size={20}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.cardHeaderText}>Thẻ</Text>
             </View>
@@ -359,7 +366,7 @@ const ProductDetailScreen: React.FC = () => {
         {similarProducts.length > 0 && (
           <View style={styles.similarSection}>
             <View style={styles.cardHeader}>
-              <Ionicons name="grid-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="grid-outline" size={20} color={colors.primary} />
               <Text style={styles.cardHeaderText}>Sản phẩm tương tự</Text>
             </View>
             <ScrollView
@@ -386,7 +393,7 @@ const ProductDetailScreen: React.FC = () => {
           <LinearGradient
             colors={
               isDisabled
-                ? [COLORS.textLight, COLORS.textLight]
+                ? [colors.textLight, colors.textLight]
                 : [product.color, product.color + 'DD']
             }
             start={{ x: 0, y: 0 }}
@@ -396,7 +403,7 @@ const ProductDetailScreen: React.FC = () => {
             <Ionicons
               name={isDisabled ? 'time-outline' : 'bag-handle-outline'}
               size={22}
-              color={COLORS.white}
+              color={colors.white}
             />
             <Text style={styles.ctaText}>
               {isDisabled
@@ -406,7 +413,7 @@ const ProductDetailScreen: React.FC = () => {
                 : 'Xem tại cửa hàng'}
             </Text>
             {!isDisabled && (
-              <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+              <Ionicons name="arrow-forward" size={18} color={colors.white} />
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -415,10 +422,10 @@ const ProductDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -427,17 +434,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingTop: 0,
     paddingBottom: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   headerButton: {
     padding: 8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   scrollView: {
     flex: 1,
@@ -495,42 +502,42 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
-    backgroundColor: COLORS.error,
+    backgroundColor: colors.error,
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   heroBadgeText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
 
   // Info Card
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: -20,
     borderRadius: 16,
     padding: 20,
     elevation: 3,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
   },
   subcategoryLabel: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   productName: {
     fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     lineHeight: 30,
     marginBottom: 12,
   },
@@ -542,19 +549,19 @@ const styles = StyleSheet.create({
   },
   currentPrice: {
     fontSize: 28,
-    fontWeight: '800',
-    color: COLORS.success,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.success,
   },
   originalPrice: {
     fontSize: 16,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textDecorationLine: 'line-through',
   },
   savingsBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: COLORS.success + '15',
+    backgroundColor: colors.success + '15',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -563,8 +570,8 @@ const styles = StyleSheet.create({
   },
   savingsText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.success,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.success,
   },
   ratingSection: {
     flexDirection: 'row',
@@ -578,23 +585,23 @@ const styles = StyleSheet.create({
   },
   ratingNumber: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   reviewCount: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Generic Card
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 12,
     padding: 16,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -607,8 +614,8 @@ const styles = StyleSheet.create({
   },
   cardHeaderText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   // Detail Rows
   detailRow: {
@@ -616,7 +623,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   detailIconWrap: {
     width: 36,
@@ -628,13 +635,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
 
   // Occasions
@@ -654,7 +661,7 @@ const styles = StyleSheet.create({
   },
   occasionText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Tags
@@ -664,15 +671,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagPill: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   tagText: {
     fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
 
   // Similar Products
@@ -693,9 +700,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: colors.border,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
@@ -718,9 +725,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
-});
-
-export default ProductDetailScreen;
+}));export default ProductDetailScreen;

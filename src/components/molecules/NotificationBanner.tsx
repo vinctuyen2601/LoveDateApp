@@ -10,6 +10,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@themes/colors";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface NotificationBannerProps {
   message: string;
@@ -24,6 +26,9 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
   dismissible = true,
   onDismiss,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const [isDismissed, setIsDismissed] = useState(false);
   const slideAnim = useRef(new Animated.Value(-120)).current;
@@ -70,14 +75,14 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
           style={styles.dismissButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={16} color={COLORS.white} />
+          <Ionicons name="close" size={16} color={colors.white} />
         </TouchableOpacity>
       )}
     </Animated.View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   banner: {
     position: "absolute",
     top: 0,
@@ -85,7 +90,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingBottom: 10,
     gap: 10,
@@ -105,8 +110,8 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.white,
-    fontWeight: "500",
+    color: colors.white,
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 18,
     display: "flex",
   },
@@ -119,6 +124,4 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginTop: 1,
   },
-});
-
-export default NotificationBanner;
+}));export default NotificationBanner;

@@ -21,10 +21,15 @@ import { COLORS } from "@themes/colors";
 import { STRINGS } from "../constants/strings";
 import { ValidationUtils } from "@lib/validation.utils";
 import { logLogin, logSignUp } from "../services/analyticsService";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const APP_LOGO = require("../../assets/icon.png");
 
 const AuthScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { login, register, isAnonymous } = useAuth();
@@ -254,17 +259,17 @@ const AuthScreen: React.FC = () => {
             size={20}
             color={
               hasError
-                ? COLORS.error
+                ? colors.error
                 : valid
-                ? COLORS.success
-                : COLORS.textSecondary
+                ? colors.success
+                : colors.textSecondary
             }
           />
           <TextInput
             ref={options?.ref}
             style={styles.input}
             placeholder={options?.placeholder}
-            placeholderTextColor={`${COLORS.textSecondary}99`}
+            placeholderTextColor={`${colors.textSecondary}99`}
             value={value}
             onChangeText={(v) => handleFieldChange(field, v, setter)}
             onBlur={() => {
@@ -284,7 +289,7 @@ const AuthScreen: React.FC = () => {
             <Ionicons
               name="checkmark-circle"
               size={20}
-              color={COLORS.success}
+              color={colors.success}
             />
           )}
           {options?.renderRight}
@@ -365,13 +370,13 @@ const AuthScreen: React.FC = () => {
           {/* Error banner */}
           {formError && (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={20} color={COLORS.error} />
+              <Ionicons name="alert-circle" size={20} color={colors.error} />
               <Text style={styles.errorBannerText}>{formError}</Text>
               <TouchableOpacity
                 onPress={() => setFormError(null)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons name="close" size={18} color={COLORS.error} />
+                <Ionicons name="close" size={18} color={colors.error} />
               </TouchableOpacity>
             </View>
           )}
@@ -424,7 +429,7 @@ const AuthScreen: React.FC = () => {
                   <Ionicons
                     name={showPassword ? "eye-outline" : "eye-off-outline"}
                     size={20}
-                    color={COLORS.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               ),
@@ -492,13 +497,13 @@ const AuthScreen: React.FC = () => {
             activeOpacity={0.8}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={COLORS.white} />
+              <ActivityIndicator size="small" color={colors.white} />
             ) : (
               <>
                 <Ionicons
                   name={isLogin ? "log-in-outline" : "person-add-outline"}
                   size={20}
-                  color={COLORS.white}
+                  color={colors.white}
                 />
                 <Text style={styles.submitButtonText}>
                   {isLogin ? STRINGS.auth_login : STRINGS.auth_register}
@@ -540,14 +545,14 @@ const AuthScreen: React.FC = () => {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
             <View style={styles.modalIconWrap}>
-              <Ionicons name="checkmark-circle" size={40} color={COLORS.primary} />
+              <Ionicons name="checkmark-circle" size={40} color={colors.primary} />
             </View>
             <Text style={styles.modalTitle}>Đăng ký thành công!</Text>
             <Text style={styles.modalSub}>
               Chào mừng <Text style={styles.modalHighlight}>{displayName}</Text> đến với Love Date!
             </Text>
             <View style={styles.modalEmailBox}>
-              <Ionicons name="mail-outline" size={18} color={COLORS.primary} />
+              <Ionicons name="mail-outline" size={18} color={colors.primary} />
               <Text style={styles.modalEmailText}>
                 Chúng tôi đã gửi email xác thực đến{"\n"}
                 <Text style={styles.modalEmailAddr}>{registeredEmail.current}</Text>
@@ -575,7 +580,7 @@ const AuthScreen: React.FC = () => {
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>
               {isLogin ? "Đang đăng nhập..." : "Đang tạo tài khoản..."}
             </Text>
@@ -586,10 +591,10 @@ const AuthScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -608,14 +613,14 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 26,
-    fontWeight: "800",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.primary,
     marginTop: 12,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 6,
     textAlign: "center",
   },
@@ -633,14 +638,14 @@ const styles = StyleSheet.create({
   },
   miniAppName: {
     fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
 
   // ── Tab ──
   tabRow: {
     flexDirection: "row",
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 4,
     marginBottom: 24,
@@ -652,7 +657,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabActive: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -661,36 +666,36 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   tabTextActive: {
-    color: COLORS.primary,
+    color: colors.primary,
   },
 
   // ── Error banner ──
   errorBanner: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    backgroundColor: `${COLORS.error}10`,
+    backgroundColor: `${colors.error}10`,
     borderRadius: 12,
     padding: 12,
     gap: 10,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: `${COLORS.error}25`,
+    borderColor: `${colors.error}25`,
   },
   errorBannerText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.error,
+    color: colors.error,
     lineHeight: 19,
-    fontWeight: "500" as const,
+    fontFamily: 'Manrope_500Medium',
   },
 
   // ── Form ──
   form: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 20,
     shadowColor: "#000",
@@ -704,15 +709,15 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 6,
     marginLeft: 4,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
@@ -721,32 +726,32 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   inputError: {
-    borderColor: COLORS.error,
-    backgroundColor: `${COLORS.error}08`,
+    borderColor: colors.error,
+    backgroundColor: `${colors.error}08`,
   },
   inputValid: {
-    borderColor: `${COLORS.success}40`,
+    borderColor: `${colors.success}40`,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     padding: 0,
   },
   fieldError: {
-    color: COLORS.error,
+    color: colors.error,
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
   },
   fieldHint: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
     marginLeft: 4,
   },
   fieldHintValid: {
-    color: COLORS.success,
+    color: colors.success,
   },
   fieldHintWarn: {
     color: "#F59E0B",
@@ -755,14 +760,14 @@ const styles = StyleSheet.create({
   // ── Submit ──
   submitButton: {
     flexDirection: "row",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     marginTop: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -772,9 +777,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
 
   // ── Toggle ──
@@ -785,13 +790,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   toggleText: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
   },
   toggleLink: {
-    color: COLORS.primary,
+    color: colors.primary,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // ── Register Success Modal ──
@@ -803,7 +808,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 28,
     width: '100%',
@@ -818,74 +823,74 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: colors.primary + '12',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.textPrimary,
     marginBottom: 6,
     textAlign: 'center',
   },
   modalSub: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 20,
   },
   modalHighlight: {
-    color: COLORS.primary,
-    fontWeight: '700',
+    color: colors.primary,
+    fontFamily: 'Manrope_700Bold',
   },
   modalEmailBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: `${COLORS.primary}0D`,
+    backgroundColor: `${colors.primary}0D`,
     borderRadius: 12,
     padding: 14,
     width: '100%',
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: `${COLORS.primary}20`,
+    borderColor: `${colors.primary}20`,
   },
   modalEmailText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     lineHeight: 20,
   },
   modalEmailAddr: {
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   modalHint: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: 24,
     paddingHorizontal: 4,
   },
   modalBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 40,
     alignItems: 'center',
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   modalBtnText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
 
   // ── Other ──
@@ -900,7 +905,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   loadingCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 32,
     alignItems: "center",
@@ -913,9 +918,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
-});
-
-export default AuthScreen;
+}));export default AuthScreen;

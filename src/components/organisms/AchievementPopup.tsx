@@ -12,6 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Achievement } from '../../types';
 import { COLORS } from '@themes/colors';
 import { getBadgeDefinition } from '@services/streak.service';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -26,6 +28,9 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
   visible,
   onClose,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -102,10 +107,10 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
           >
             {/* Confetti effect */}
             <View style={styles.confettiContainer}>
-              <Ionicons name="ribbon" size={22} color="#FF6B6B" style={styles.confetti} />
-              <Ionicons name="sparkles" size={22} color="#FFD700" style={styles.confetti} />
-              <Ionicons name="sparkles" size={18} color="#FF69B4" style={styles.confetti} />
-              <Ionicons name="star" size={18} color="#FFA500" style={styles.confetti} />
+              <Ionicons name="ribbon" size={22} color={colors.error} style={styles.confetti} />
+              <Ionicons name="sparkles" size={22} color={colors.warning} style={styles.confetti} />
+              <Ionicons name="sparkles" size={18} color={colors.primary} style={styles.confetti} />
+              <Ionicons name="star" size={18} color={colors.warning} style={styles.confetti} />
             </View>
 
             {/* Badge Icon */}
@@ -138,7 +143,7 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -153,7 +158,7 @@ const styles = StyleSheet.create({
   },
   container: {
     width: SCREEN_WIDTH - 64,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 32,
     alignItems: 'center',
@@ -186,25 +191,25 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   badgeName: {
     fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
     marginBottom: 8,
   },
   description: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
   },
   closeButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,
@@ -213,9 +218,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
-});
-
-export default AchievementPopup;
+}));export default AchievementPopup;

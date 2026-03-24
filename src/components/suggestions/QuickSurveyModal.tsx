@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "@themes/colors";
 import { filterSuggestions, Suggestion } from "../../data/suggestions";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -189,6 +191,9 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
   onClose,
   onComplete,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -324,7 +329,7 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
       <TextInput
         style={styles.textInput}
         placeholder="VD: bạn gái, mẹ, bạn thân..."
-        placeholderTextColor={COLORS.textSecondary}
+        placeholderTextColor={colors.textSecondary}
         value={recipientText}
         onChangeText={setRecipientText}
         autoFocus
@@ -361,7 +366,7 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
           onPress={() => handleGenderSelect(g.label)}
           activeOpacity={0.8}
         >
-          <Ionicons name={g.icon} size={30} color={COLORS.textPrimary} />
+          <Ionicons name={g.icon} size={30} color={colors.textPrimary} />
           <Text style={styles.emojiCardLabel}>{g.label}</Text>
         </TouchableOpacity>
       ))}
@@ -377,7 +382,7 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
           onPress={() => handleRelationshipSelect(rel.value)}
           activeOpacity={0.8}
         >
-          <Ionicons name={rel.icon} size={30} color={COLORS.textPrimary} />
+          <Ionicons name={rel.icon} size={30} color={colors.textPrimary} />
           <Text style={[styles.emojiCardLabel, { textAlign: "center" }]}>{rel.label}</Text>
         </TouchableOpacity>
       ))}
@@ -398,14 +403,14 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
             <Ionicons
               name={item.icon}
               size={16}
-              color={selected ? COLORS.primary : COLORS.textSecondary}
+              color={selected ? colors.primary : colors.textSecondary}
             />
             <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
               {item.label}
             </Text>
             {selected && (
               <View style={styles.chipCheck}>
-                <Ionicons name="checkmark" size={10} color="#fff" />
+                <Ionicons name="checkmark" size={10} color={colors.white} />
               </View>
             )}
           </TouchableOpacity>
@@ -428,14 +433,14 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
             <Ionicons
               name={item.icon}
               size={16}
-              color={selected ? COLORS.primary : COLORS.textSecondary}
+              color={selected ? colors.primary : colors.textSecondary}
             />
             <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
               {item.label}
             </Text>
             {selected && (
               <View style={styles.chipCheck}>
-                <Ionicons name="checkmark" size={10} color="#fff" />
+                <Ionicons name="checkmark" size={10} color={colors.white} />
               </View>
             )}
           </TouchableOpacity>
@@ -453,7 +458,7 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
           onPress={() => handleBudgetSelect(item.label)}
           activeOpacity={0.8}
         >
-          <Ionicons name={item.icon} size={24} color={COLORS.primary} />
+          <Ionicons name={item.icon} size={24} color={colors.primary} />
           <Text style={styles.budgetLabel}>{item.short}</Text>
         </TouchableOpacity>
       ))}
@@ -477,7 +482,7 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
       <View style={[styles.sheet, { paddingTop: insets.top }]}>
 
         {/* ── Hero gradient header ─────────────────────────────── */}
-        <LinearGradient colors={["#FF6B6B", "#FF8E53"]} style={styles.hero}>
+        <LinearGradient colors={[colors.gradientStart, colors.gradientEnd]} style={styles.hero}>
           {/* Top bar */}
           <View style={styles.heroBar}>
             <TouchableOpacity onPress={handleBack} style={styles.heroBtn}>
@@ -548,7 +553,7 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
               <Ionicons
                 name="arrow-forward"
                 size={18}
-                color={footerNextDisabled ? COLORS.textSecondary : "#fff"}
+                color={footerNextDisabled ? colors.textSecondary : colors.white }
               />
             </TouchableOpacity>
           </View>
@@ -560,8 +565,8 @@ const QuickSurveyModal: React.FC<QuickSurveyModalProps> = ({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: COLORS.background },
+const useStyles = makeStyles((colors) => ({
+  sheet: { flex: 1, backgroundColor: colors.background },
 
   // ── Hero ──────────────────────────────────────────────────
   hero: {
@@ -586,12 +591,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.35)",
   },
   dotDone: { backgroundColor: "rgba(255,255,255,0.6)" },
-  dotActive: { width: 20, height: 6, borderRadius: 3, backgroundColor: "#fff" },
+  dotActive: { width: 20, height: 6, borderRadius: 3, backgroundColor: colors.white },
   heroIcon: { marginBottom: 12 },
   heroQuestion: {
     fontSize: 20,
-    fontWeight: "800",
-    color: "#fff",
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.white,
     textAlign: "center",
     lineHeight: 28,
     marginBottom: 6,
@@ -612,19 +617,19 @@ const styles = StyleSheet.create({
 
   // ── Recipient step ────────────────────────────────────────
   textInput: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderRadius: 14,
     padding: 14,
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 20,
   },
   tagsLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textSecondary,
     marginBottom: 10,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -638,12 +643,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  tagSelected: { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}12` },
-  tagText: { fontSize: 13, color: COLORS.textPrimary, fontWeight: "500" },
-  tagTextSelected: { color: COLORS.primary, fontWeight: "700" },
+  tagSelected: { borderColor: colors.primary, backgroundColor: `${colors.primary}12` },
+  tagText: { fontSize: 13, color: colors.textPrimary, fontFamily: 'Manrope_500Medium'},
+  tagTextSelected: { color: colors.primary, fontFamily: 'Manrope_700Bold'},
 
   // ── Emoji card grid (gender / relationship) ───────────────
   cardGrid3: { flexDirection: "row", gap: 12 },
@@ -651,14 +656,14 @@ const styles = StyleSheet.create({
   emojiCard: {
     flex: 1,
     minWidth: "40%",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 8,
     alignItems: "center",
     gap: 8,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -667,8 +672,8 @@ const styles = StyleSheet.create({
   },
   emojiCardLabel: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     textAlign: "center",
     lineHeight: 18,
   },
@@ -683,20 +688,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   chipSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: `${COLORS.primary}12`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}12`,
   },
-  chipText: { fontSize: 13, color: COLORS.textPrimary, fontWeight: "500", flexShrink: 1 },
-  chipTextSelected: { color: COLORS.primary, fontWeight: "700" },
+  chipText: { fontSize: 13, color: colors.textPrimary, fontFamily: 'Manrope_500Medium', flexShrink: 1 },
+  chipTextSelected: { color: colors.primary, fontFamily: 'Manrope_700Bold'},
   chipCheck: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -707,19 +712,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 18,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
   },
-  budgetLabel: { fontSize: 15, fontWeight: "600", color: COLORS.textPrimary, flex: 1 },
+  budgetLabel: { fontSize: 15, fontFamily: 'Manrope_600SemiBold', color: colors.textPrimary, flex: 1 },
 
   // ── Footer ────────────────────────────────────────────────
   footer: {
@@ -728,32 +733,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
   skipBtn: {
     paddingVertical: 15,
     paddingHorizontal: 18,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  skipBtnText: { fontSize: 14, color: COLORS.textSecondary, fontWeight: "500" },
+  skipBtnText: { fontSize: 14, color: colors.textSecondary, fontFamily: 'Manrope_500Medium'},
   nextBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 15,
   },
-  nextBtnDisabled: { backgroundColor: COLORS.border },
-  nextBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
-  nextBtnTextDisabled: { color: COLORS.textSecondary },
-});
-
-export default React.memo(QuickSurveyModal);
+  nextBtnDisabled: { backgroundColor: colors.border },
+  nextBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
+  nextBtnTextDisabled: { color: colors.textSecondary },
+}));export default React.memo(QuickSurveyModal);

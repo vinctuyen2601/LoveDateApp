@@ -1,22 +1,27 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { useNotification } from '@contexts/NotificationContext';
 import { COLORS } from '@themes/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 /**
  * Example screen demonstrating how to use NotificationContext
  * You can access notification data from any screen in your app
  */
 const ExampleNotificationScreen: React.FC = () => {
-  const { message, icon, upcomingEventsCount, hasUpcomingEvents } = useNotification();
+  const styles = useStyles();
+  const colors = useColors();
+
+  const { message, image, upcomingEventsCount, hasUpcomingEvents } = useNotification();
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Notification Context Demo</Text>
 
       <View style={styles.card}>
-        <Ionicons name={icon} size={32} color={COLORS.primary} />
+        <Image source={image} style={{ width: 32, height: 32 }} />
         <Text style={styles.message}>{message}</Text>
       </View>
 
@@ -37,66 +42,64 @@ const ExampleNotificationScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 12,
     marginBottom: 16,
     alignItems: 'center',
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   message: {
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     textAlign: 'center',
     marginTop: 12,
   },
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
   infoLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   infoValue: {
     fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: 'bold',
+    color: colors.primary,
+    fontFamily: 'Manrope_700Bold',
   },
   note: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontStyle: 'italic',
     marginTop: 20,
     textAlign: 'center',
   },
-});
-
-export default ExampleNotificationScreen;
+}));export default ExampleNotificationScreen;

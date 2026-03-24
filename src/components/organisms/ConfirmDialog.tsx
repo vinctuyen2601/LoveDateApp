@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -36,6 +38,9 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const scaleValue = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
@@ -108,7 +113,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -123,13 +128,13 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   dialog: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     width: width - 64,
     maxWidth: 400,
     padding: 24,
     elevation: 10,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
@@ -148,14 +153,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     textAlign: 'center',
     marginBottom: 12,
   },
   message: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -171,21 +176,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   confirmButton: {
-    backgroundColor: COLORS.error,
+    backgroundColor: colors.error,
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   confirmButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
-});
-
-export default ConfirmDialog;
+}));export default ConfirmDialog;

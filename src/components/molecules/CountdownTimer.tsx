@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { DateUtils } from "@lib/date.utils";
 import { COLORS } from "@themes/colors";
 import { CountdownInfo } from "../../types";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface CountdownTimerProps {
   targetDate: string | Date;
@@ -16,6 +18,9 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
   compact = false,
   showSeconds = false,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [countdown, setCountdown] = useState<CountdownInfo>(
     DateUtils.getCountdown(targetDate)
   );
@@ -63,8 +68,8 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
       ]}
     >
       <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-        {isToday && <Ionicons name="ribbon" size={13} color={COLORS.primary} />}
-        {isUrgent && !isToday && <Ionicons name="alert-circle-outline" size={13} color={COLORS.error} />}
+        {isToday && <Ionicons name="ribbon" size={13} color={colors.primary} />}
+        {isUrgent && !isToday && <Ionicons name="alert-circle-outline" size={13} color={colors.error} />}
         <Text style={[styles.label, isUrgent && !isToday && styles.urgentLabel]}>
           {countdown.isPast ? "Đã qua" : isToday ? "Hôm nay" : "Còn lại"}
         </Text>
@@ -121,57 +126,57 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   compactContainer: {
     paddingVertical: 4,
   },
   compactText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   pastText: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   todayText: {
-    color: COLORS.success,
+    color: colors.success,
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   urgentText: {
-    color: COLORS.error,
+    color: colors.error,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   warningText: {
-    color: COLORS.warning,
+    color: colors.warning,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   container: {
     alignItems: "center",
     paddingVertical: 12,
   },
   urgentContainer: {
-    backgroundColor: `${COLORS.error}10`,
+    backgroundColor: `${colors.error}10`,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 12,
   },
   warningContainer: {
-    backgroundColor: `${COLORS.warning}10`,
+    backgroundColor: `${colors.warning}10`,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 12,
   },
   label: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   urgentLabel: {
-    color: COLORS.error,
-    fontWeight: "700",
+    color: colors.error,
+    fontFamily: 'Manrope_700Bold',
     fontSize: 15,
   },
   timeContainer: {
@@ -184,20 +189,18 @@ const styles = StyleSheet.create({
   },
   timeValue: {
     fontSize: 32,
-    fontWeight: "bold",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   urgentTimeValue: {
-    color: COLORS.error,
+    color: colors.error,
   },
   todayTimeValue: {
-    color: COLORS.success,
+    color: colors.success,
   },
   timeUnit: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
   },
-});
-
-export default CountdownTimer;
+}));export default CountdownTimer;

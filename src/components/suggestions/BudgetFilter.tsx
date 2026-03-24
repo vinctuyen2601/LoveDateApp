@@ -5,8 +5,13 @@ import { BUDGET_OPTIONS } from '../../data/affiliateProducts';
 import { getProductsByBudget } from '../../services/affiliateProductService';
 import { AffiliateProduct } from '../../types';
 import ProductCard from './ProductCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const BudgetFilter: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [selectedBudget, setSelectedBudget] = useState<string>(BUDGET_OPTIONS[1]); // 200k-500k default
   const [filteredProducts, setFilteredProducts] = useState<AffiliateProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +70,7 @@ const BudgetFilter: React.FC = () => {
       <View style={styles.productsList}>
         {loading ? (
           <View style={styles.empty}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
+            <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
@@ -81,14 +86,14 @@ const BudgetFilter: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginTop: 24,
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginHorizontal: 16,
     marginBottom: 14,
   },
@@ -101,21 +106,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   chipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   chipTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
   productsList: {
     paddingHorizontal: 16,
@@ -126,8 +131,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
-});
-
-export default React.memo(BudgetFilter);
+}));export default React.memo(BudgetFilter);

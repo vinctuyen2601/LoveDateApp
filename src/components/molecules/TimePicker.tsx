@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface TimePickerProps {
   selectedTime: { hour: number; minute: number };
@@ -10,6 +12,9 @@ interface TimePickerProps {
 }
 
 const TimePicker: React.FC<TimePickerProps> = ({ selectedTime, onTimeChange, minTime }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [showModal, setShowModal] = useState(false);
   const [tempHour, setTempHour] = useState(selectedTime.hour);
   const [tempMinute, setTempMinute] = useState(selectedTime.minute);
@@ -97,17 +102,17 @@ const TimePicker: React.FC<TimePickerProps> = ({ selectedTime, onTimeChange, min
         style={styles.timeButton}
         onPress={() => setShowModal(true)}
       >
-        <Ionicons name="time-outline" size={22} color={COLORS.primary} />
+        <Ionicons name="time-outline" size={22} color={colors.primary} />
         <Text style={styles.timeText}>
           {formatTime(selectedTime.hour, selectedTime.minute)}
         </Text>
         {minTime && (
           <View style={styles.timeWarningBadge}>
-            <Ionicons name="alert-circle" size={16} color={COLORS.warning} />
+            <Ionicons name="alert-circle" size={16} color={colors.warning} />
             <Text style={styles.timeWarningBadgeText}>Chạm để đổi</Text>
           </View>
         )}
-        <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} style={styles.chevron} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} style={styles.chevron} />
       </TouchableOpacity>
 
       {minTime && (
@@ -127,13 +132,13 @@ const TimePicker: React.FC<TimePickerProps> = ({ selectedTime, onTimeChange, min
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Chọn giờ thông báo</Text>
               <TouchableOpacity onPress={handleCancel}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             {isSelectionInvalid && (
               <View style={styles.warningBanner}>
-                <Ionicons name="warning-outline" size={16} color={COLORS.warning} />
+                <Ionicons name="warning-outline" size={16} color={colors.warning} />
                 <Text style={styles.warningText}>
                   Giờ đã chọn đã qua, vui lòng chọn sau {formatTime(minTime!.hour, minTime!.minute)}
                 </Text>
@@ -256,52 +261,52 @@ const TimePicker: React.FC<TimePickerProps> = ({ selectedTime, onTimeChange, min
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   timeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 16,
     gap: 10,
   },
   timeText: {
     fontSize: 20,
-    color: COLORS.textPrimary,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_700Bold',
     flex: 1,
   },
   timeWarningBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: COLORS.warning + '20',
+    backgroundColor: colors.warning + '20',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   timeWarningBadgeText: {
     fontSize: 11,
-    color: COLORS.warning,
-    fontWeight: '600',
+    color: colors.warning,
+    fontFamily: 'Manrope_600SemiBold',
   },
   chevron: {
     marginLeft: 'auto',
   },
   minTimeHint: {
     fontSize: 12,
-    color: COLORS.warning,
+    color: colors.warning,
     marginTop: 6,
     fontStyle: 'italic',
   },
@@ -313,13 +318,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     width: '100%',
     maxWidth: 400,
     overflow: 'hidden',
     elevation: 5,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -331,28 +336,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: COLORS.warning + '15',
+    backgroundColor: colors.warning + '15',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.warning + '30',
+    borderBottomColor: colors.warning + '30',
   },
   warningText: {
     fontSize: 13,
-    color: COLORS.warning,
+    color: colors.warning,
     flex: 1,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   pickerContainer: {
     flexDirection: 'row',
@@ -366,8 +371,8 @@ const styles = StyleSheet.create({
   },
   pickerLabel: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textSecondary,
     marginBottom: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -376,7 +381,7 @@ const styles = StyleSheet.create({
     height: 264,
     width: 96,
     borderRadius: 12,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   pickerItem: {
     height: 52,
@@ -387,27 +392,27 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   pickerItemSelected: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   pickerItemDisabled: {
     opacity: 0.3,
   },
   pickerItemText: {
     fontSize: 20,
-    color: COLORS.textPrimary,
-    fontWeight: '500',
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_500Medium',
   },
   pickerItemTextSelected: {
-    color: COLORS.white,
-    fontWeight: '700',
+    color: colors.white,
+    fontFamily: 'Manrope_700Bold',
   },
   pickerItemTextDisabled: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   separator: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginTop: 34,
   },
   modalFooter: {
@@ -415,7 +420,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: colors.border,
   },
   button: {
     flex: 1,
@@ -424,26 +429,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   confirmButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   confirmButtonDisabled: {
-    backgroundColor: COLORS.textLight,
+    backgroundColor: colors.textLight,
   },
   confirmButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
-});
-
-export default TimePicker;
+}));export default TimePicker;

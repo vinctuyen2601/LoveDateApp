@@ -24,6 +24,10 @@ import { COLORS } from "@themes/colors";
 import { Article } from "../data/articles";
 import { suggestArticlesForSurvey } from "../services/articleService";
 import { MBTI_TYPES } from "../data/mbtiTypes";
+import IconImage from "@components/atoms/IconImage";
+import { getMBTITypeImage } from "@lib/iconImages";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const MBTI_COLORS: [string, string] = ["#0EA5E9", "#6366F1"];
 
@@ -66,6 +70,9 @@ interface MBTIResult {
 }
 
 const MBTISurveyScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const navigation = useNavigation<any>();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, MBTIDimension>>({});
@@ -575,11 +582,11 @@ const MBTISurveyScreen: React.FC = () => {
               style={styles.introCloseBtn}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="close" size={24} color="#fff" />
+              <Ionicons name="close" size={24} color={colors.white} />
             </TouchableOpacity>
 
             <View style={styles.introBadge}>
-              <Text style={styles.introBadgeText}>🧠 Trắc nghiệm MBTI</Text>
+              <Text style={styles.introBadgeText}>Trắc nghiệm MBTI</Text>
             </View>
 
             <View style={styles.introIconWrap}>
@@ -620,7 +627,7 @@ const MBTISurveyScreen: React.FC = () => {
               onPress={() => navigation.navigate("MBTIGuide")}
               activeOpacity={0.8}
             >
-              <Ionicons name="book-outline" size={16} color="#fff" />
+              <Ionicons name="book-outline" size={16} color={colors.white} />
               <Text style={styles.introGuideBtnText}>
                 Tìm hiểu 16 nhóm tính cách
               </Text>
@@ -647,7 +654,7 @@ const MBTISurveyScreen: React.FC = () => {
                     { backgroundColor: "rgba(255,255,255,0.15)" },
                   ]}
                 >
-                  <Ionicons name="person" size={32} color="#fff" />
+                  <Ionicons name="person" size={32} color={colors.white} />
                 </View>
                 <Text style={styles.introCardTitle}>Cho bản thân</Text>
                 <Text style={styles.introCardDesc}>
@@ -666,7 +673,7 @@ const MBTISurveyScreen: React.FC = () => {
                     { backgroundColor: "rgba(255,255,255,0.15)" },
                   ]}
                 >
-                  <Ionicons name="heart" size={32} color="#fff" />
+                  <Ionicons name="heart" size={32} color={colors.white} />
                 </View>
                 <Text style={styles.introCardTitle}>Cho người thương</Text>
                 <Text style={styles.introCardDesc}>
@@ -699,7 +706,7 @@ const MBTISurveyScreen: React.FC = () => {
                 style={styles.resultCloseBtn}
                 onPress={() => navigation.goBack()}
               >
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.white} />
               </TouchableOpacity>
               <View style={styles.resultHeaderInner}>
                 <Ionicons name="trophy" size={48} color="#FFD700" />
@@ -716,7 +723,7 @@ const MBTISurveyScreen: React.FC = () => {
           <View style={styles.resultBody}>
             <View style={styles.resultSection}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
-                <Ionicons name="barbell-outline" size={18} color={COLORS.textPrimary} />
+                <Ionicons name="barbell-outline" size={18} color={colors.textPrimary} />
                 <Text style={[styles.sectionTitle,{marginBottom:0}]}>Điểm mạnh</Text>
               </View>
               {result.strengths.map((strength, index) => (
@@ -724,7 +731,7 @@ const MBTISurveyScreen: React.FC = () => {
                   <Ionicons
                     name="checkmark-circle"
                     size={20}
-                    color={COLORS.success}
+                    color={colors.success}
                   />
                   <Text style={styles.listText}>{strength}</Text>
                 </View>
@@ -733,7 +740,7 @@ const MBTISurveyScreen: React.FC = () => {
 
             <View style={styles.resultSection}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
-                <Ionicons name="flag-outline" size={18} color={COLORS.textPrimary} />
+                <Ionicons name="flag-outline" size={18} color={colors.textPrimary} />
                 <Text style={[styles.sectionTitle,{marginBottom:0}]}>Điểm cần phát triển</Text>
               </View>
               {result.weaknesses.map((weakness, index) => (
@@ -741,7 +748,7 @@ const MBTISurveyScreen: React.FC = () => {
                   <Ionicons
                     name="alert-circle"
                     size={20}
-                    color={COLORS.warning}
+                    color={colors.warning}
                   />
                   <Text style={styles.listText}>{weakness}</Text>
                 </View>
@@ -750,7 +757,7 @@ const MBTISurveyScreen: React.FC = () => {
 
             <View style={styles.resultSection}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
-                <Ionicons name="heart" size={18} color={COLORS.primary} />
+                <Ionicons name="heart" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle,{marginBottom:0}]}>Phong cách yêu</Text>
               </View>
               <Text style={styles.loveStyleText}>{result.loveStyle}</Text>
@@ -758,12 +765,12 @@ const MBTISurveyScreen: React.FC = () => {
 
             <View style={styles.resultSection}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
-                <Ionicons name="gift-outline" size={18} color={COLORS.textPrimary} />
+                <Ionicons name="gift-outline" size={18} color={colors.textPrimary} />
                 <Text style={[styles.sectionTitle,{marginBottom:0}]}>Gợi ý quà tặng</Text>
               </View>
               {result.giftIdeas.map((gift, index) => (
                 <View key={index} style={styles.giftItem}>
-                  <Ionicons name="gift" size={18} color={COLORS.primary} />
+                  <Ionicons name="gift" size={18} color={colors.primary} />
                   <Text style={styles.giftText}>{gift}</Text>
                 </View>
               ))}
@@ -771,7 +778,7 @@ const MBTISurveyScreen: React.FC = () => {
 
             <View style={styles.resultSection}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:16}}>
-                <Ionicons name="people-outline" size={18} color={COLORS.textPrimary} />
+                <Ionicons name="people-outline" size={18} color={colors.textPrimary} />
                 <Text style={[styles.sectionTitle,{marginBottom:0}]}>Độ tương thích</Text>
               </View>
 
@@ -781,9 +788,7 @@ const MBTISurveyScreen: React.FC = () => {
                   const info = MBTI_TYPES[t];
                   return (
                     <View key={t} style={styles.compatItem}>
-                      <Text style={styles.compatEmoji}>
-                        {info?.emoji || "❓"}
-                      </Text>
+                      <IconImage source={getMBTITypeImage(t)} size={24} />
                       <Text style={styles.compatName}>
                         {t} — {info?.name || ""}
                       </Text>
@@ -793,14 +798,12 @@ const MBTISurveyScreen: React.FC = () => {
               </View>
 
               <View style={styles.compatibilityCard}>
-                <Text style={styles.compatibilityTitle}>Tốt 👍</Text>
+                <Text style={styles.compatibilityTitle}>Tốt</Text>
                 {result.compatibility.good.map((t) => {
                   const info = MBTI_TYPES[t];
                   return (
                     <View key={t} style={styles.compatItem}>
-                      <Text style={styles.compatEmoji}>
-                        {info?.emoji || "❓"}
-                      </Text>
+                      <IconImage source={getMBTITypeImage(t)} size={24} />
                       <Text style={styles.compatName}>
                         {t} — {info?.name || ""}
                       </Text>
@@ -810,14 +813,12 @@ const MBTISurveyScreen: React.FC = () => {
               </View>
 
               <View style={styles.compatibilityCard}>
-                <Text style={styles.compatibilityTitle}>Cần nỗ lực 💪</Text>
+                <Text style={styles.compatibilityTitle}>Cần nỗ lực</Text>
                 {result.compatibility.challenging.map((t) => {
                   const info = MBTI_TYPES[t];
                   return (
                     <View key={t} style={styles.compatItem}>
-                      <Text style={styles.compatEmoji}>
-                        {info?.emoji || "❓"}
-                      </Text>
+                      <IconImage source={getMBTITypeImage(t)} size={24} />
                       <Text style={styles.compatName}>
                         {t} — {info?.name || ""}
                       </Text>
@@ -835,7 +836,7 @@ const MBTISurveyScreen: React.FC = () => {
               <Ionicons
                 name="share-social-outline"
                 size={20}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.shareButtonText}>Chia sẻ kết quả</Text>
             </TouchableOpacity>
@@ -844,7 +845,7 @@ const MBTISurveyScreen: React.FC = () => {
               style={styles.restartButton}
               onPress={handleRestart}
             >
-              <Ionicons name="refresh" size={20} color={COLORS.white} />
+              <Ionicons name="refresh" size={20} color={colors.white} />
               <Text style={styles.restartButtonText}>Làm lại bài test</Text>
             </TouchableOpacity>
 
@@ -903,7 +904,7 @@ const MBTISurveyScreen: React.FC = () => {
                     <Ionicons
                       name="chevron-forward"
                       size={16}
-                      color={COLORS.textSecondary}
+                      color={colors.textSecondary}
                     />
                   </TouchableOpacity>
                 ))}
@@ -956,12 +957,12 @@ const MBTISurveyScreen: React.FC = () => {
                   disabled={isSharing}
                 >
                   {isSharing ? (
-                    <ActivityIndicator size="small" color={COLORS.white} />
+                    <ActivityIndicator size="small" color={colors.white} />
                   ) : (
                     <Ionicons
                       name="share-social"
                       size={20}
-                      color={COLORS.white}
+                      color={colors.white}
                     />
                   )}
                   <Text style={styles.shareActionText}>
@@ -980,13 +981,13 @@ const MBTISurveyScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerText}>
           Câu {currentStep + 1}/{mbtiQuestions.length}
         </Text>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -1000,10 +1001,10 @@ const MBTISurveyScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.categoryBadge,{flexDirection:'row',alignItems:'center',gap:5}]}>
-          {currentQuestion.category === "EI" && <><Ionicons name="chatbubble-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Năng lượng</Text></>}
-          {currentQuestion.category === "SN" && <><Ionicons name="bulb-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Thu nhận thông tin</Text></>}
-          {currentQuestion.category === "TF" && <><Ionicons name="heart-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Ra quyết định</Text></>}
-          {currentQuestion.category === "JP" && <><Ionicons name="calendar-outline" size={13} color={COLORS.primary} /><Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>Lối sống</Text></>}
+          {currentQuestion.category === "EI" && <><Ionicons name="chatbubble-outline" size={13} color={colors.primary} /><Text style={{fontSize:13,color:colors.primary,fontFamily: 'Manrope_600SemiBold'}}>Năng lượng</Text></>}
+          {currentQuestion.category === "SN" && <><Ionicons name="bulb-outline" size={13} color={colors.primary} /><Text style={{fontSize:13,color:colors.primary,fontFamily: 'Manrope_600SemiBold'}}>Thu nhận thông tin</Text></>}
+          {currentQuestion.category === "TF" && <><Ionicons name="heart-outline" size={13} color={colors.primary} /><Text style={{fontSize:13,color:colors.primary,fontFamily: 'Manrope_600SemiBold'}}>Ra quyết định</Text></>}
+          {currentQuestion.category === "JP" && <><Ionicons name="calendar-outline" size={13} color={colors.primary} /><Text style={{fontSize:13,color:colors.primary,fontFamily: 'Manrope_600SemiBold'}}>Lối sống</Text></>}
         </View>
 
         <Text style={styles.question}>{currentQuestion.question}</Text>
@@ -1080,11 +1081,11 @@ const MBTISurveyScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
 
   // ── Intro (gradient) ──
@@ -1107,7 +1108,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginBottom: 24,
   },
-  introBadgeText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  introBadgeText: { color: colors.white, fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   introIconWrap: {
     width: 110,
     height: 110,
@@ -1119,8 +1120,8 @@ const styles = StyleSheet.create({
   },
   introTitle: {
     fontSize: 26,
-    fontWeight: "800",
-    color: "#fff",
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.white,
     textAlign: "center",
     lineHeight: 34,
     marginBottom: 12,
@@ -1137,7 +1138,7 @@ const styles = StyleSheet.create({
   introStatText: {
     fontSize: 11,
     color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    fontFamily: 'Manrope_500Medium',
   },
   introGuideBtn: {
     flexDirection: "row",
@@ -1151,13 +1152,13 @@ const styles = StyleSheet.create({
   },
   introGuideBtnText: {
     fontSize: 13,
-    color: "#fff",
-    fontWeight: "600",
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
   },
   introChooseLabel: {
     fontSize: 13,
     color: "rgba(255,255,255,0.75)",
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
     marginBottom: 14,
     letterSpacing: 0.5,
     textTransform: "uppercase",
@@ -1182,8 +1183,8 @@ const styles = StyleSheet.create({
   },
   introCardTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     marginBottom: 4,
   },
   introCardDesc: {
@@ -1204,24 +1205,24 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${COLORS.info}15`,
+    backgroundColor: `${colors.info}15`,
     padding: 16,
     borderRadius: 12,
     gap: 10,
   },
-  infoText: { flex: 1, fontSize: 13, color: COLORS.info, lineHeight: 18 },
+  infoText: { flex: 1, fontSize: 13, color: colors.info, lineHeight: 18 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
-  headerText: { fontSize: 14, fontWeight: "600", color: COLORS.textSecondary },
+  headerText: { fontSize: 14, fontFamily: 'Manrope_600SemiBold', color: colors.textSecondary },
   progressBarContainer: {
     height: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginHorizontal: 16,
     borderRadius: 2,
     marginBottom: 4,
@@ -1235,7 +1236,7 @@ const styles = StyleSheet.create({
   categoryBadge: {
     alignSelf: "flex-start",
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
     color: "#6366F1",
     backgroundColor: "#6366F115",
     borderRadius: 20,
@@ -1245,18 +1246,18 @@ const styles = StyleSheet.create({
   },
   question: {
     fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     lineHeight: 30,
     marginBottom: 24,
   },
   optionsContainer: { gap: 12 },
   optionButton: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   optionButtonSelected: {
     borderColor: "#6366F1",
@@ -1268,7 +1269,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 1,
@@ -1284,10 +1285,10 @@ const styles = StyleSheet.create({
   optionText: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     lineHeight: 22,
   },
-  optionTextSelected: { color: "#6366F1", fontWeight: "600" },
+  optionTextSelected: { color: "#6366F1", fontFamily: 'Manrope_600SemiBold'},
 
   // ── Result ──
   resultContainer: { paddingBottom: 24 },
@@ -1301,7 +1302,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginBottom: 12,
   },
-  resultType: { fontSize: 22, fontWeight: "800", color: "#fff" },
+  resultType: { fontSize: 22, fontFamily: 'Manrope_800ExtraBold', color: colors.white },
   resultDescription: {
     fontSize: 14,
     color: "rgba(255,255,255,0.88)",
@@ -1312,15 +1313,15 @@ const styles = StyleSheet.create({
   resultBody: { padding: 16, gap: 12 },
   resultHeader: { alignItems: "center", marginBottom: 32, marginTop: 20 },
   resultSection: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   listItem: {
@@ -1332,12 +1333,12 @@ const styles = StyleSheet.create({
   listText: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
   },
   loveStyleText: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 24,
   },
   giftItem: {
@@ -1347,24 +1348,24 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: `${COLORS.primary}08`,
+    backgroundColor: `${colors.primary}08`,
     borderRadius: 8,
   },
   giftText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
   },
   compatibilityCard: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
   },
   compatibilityTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 10,
   },
   compatItem: {
@@ -1382,7 +1383,7 @@ const styles = StyleSheet.create({
   },
   compatName: {
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
     lineHeight: 20,
   },
@@ -1390,7 +1391,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 12,
     gap: 8,
@@ -1398,8 +1399,8 @@ const styles = StyleSheet.create({
   },
   restartButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
 
   // Share button (trên restartButton)
@@ -1408,7 +1409,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1417,8 +1418,8 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
 
   // Share Modal
@@ -1428,7 +1429,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalSheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
@@ -1440,18 +1441,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginBottom: 16,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   modalSubtitle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 16,
   },
   cardWrapper: {
@@ -1476,19 +1477,19 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   modalCloseBtnText: {
     fontSize: 15,
-    color: COLORS.textPrimary,
-    fontWeight: "600",
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   shareActionBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 14,
     gap: 8,
@@ -1499,22 +1500,22 @@ const styles = StyleSheet.create({
   shareActionText: {
     flex: 0.5,
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
 
   // Related articles
   articlesSection: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   articlesSectionTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   articleCard: {
@@ -1523,19 +1524,19 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 10,
   },
-  articleCardBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  articleCardBorder: { borderTopWidth: 1, borderTopColor: colors.border },
   articleImage: {
     width: 72,
     height: 52,
     borderRadius: 10,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     flexShrink: 0,
   },
   articleIconBox: {
     width: 72,
     height: 52,
     borderRadius: 10,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: colors.info + '12',
     alignItems: "center" as const,
     justifyContent: "center" as const,
     flexShrink: 0,
@@ -1544,12 +1545,10 @@ const styles = StyleSheet.create({
   articleInfo: { flex: 1 },
   articleTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 20,
     marginBottom: 3,
   },
-  articleMeta: { fontSize: 12, color: COLORS.textSecondary },
-});
-
-export default MBTISurveyScreen;
+  articleMeta: { fontSize: 12, color: colors.textSecondary },
+}));export default MBTISurveyScreen;

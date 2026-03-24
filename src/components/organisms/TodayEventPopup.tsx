@@ -19,10 +19,10 @@ import { ImageSourcePropType } from "react-native";
 import {
   SPECIAL_DATES,
   resolveSpecialDateForYear,
-  SpecialDate,
 } from "../../constants/specialDates";
-import { COLORS } from "@themes/colors";
 import { DateUtils } from "@lib/date.utils";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const TODAY_POPUP_KEY = "@today_event_popup_date";
 
@@ -36,6 +36,9 @@ interface TodayItem {
 }
 
 const TodayEventPopup: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const { events } = useEvents();
   const [visible, setVisible] = useState(false);
   const [items, setItems] = useState<TodayItem[]>([]);
@@ -185,30 +188,30 @@ const TodayEventPopup: React.FC = () => {
     ? {
         emoji: "flame-outline",
         title: "Nhắc nhở hôm nay",
-        headerBg: "#F3E8FF",
-        headerTitleColor: "#6B21A8",
-        headerDateColor: "#7C3AED",
-        buttonBg: "#7C3AED",
-        buttonShadow: "#7C3AED",
+        headerBg: colors.info + '20',
+        headerTitleColor: colors.info,
+        headerDateColor: colors.info,
+        buttonBg: colors.info,
+        buttonShadow: colors.info,
       }
     : allBirthday
     ? {
         emoji: "gift-outline",
         title: "Chúc mừng sinh nhật!",
-        headerBg: "#FFF1F2",
-        headerTitleColor: "#E11D48",
-        headerDateColor: "#FB7185",
-        buttonBg: "#E11D48",
-        buttonShadow: "#E11D48",
+        headerBg: colors.error + '15',
+        headerTitleColor: colors.error,
+        headerDateColor: colors.primary,
+        buttonBg: colors.error,
+        buttonShadow: colors.error,
       }
     : {
         emoji: "ribbon-outline",
         title: "Hôm nay có gì?",
-        headerBg: "#FFF7ED",
-        headerTitleColor: COLORS.textPrimary,
-        headerDateColor: COLORS.textSecondary,
-        buttonBg: COLORS.primary,
-        buttonShadow: COLORS.primary,
+        headerBg: colors.warning + '15',
+        headerTitleColor: colors.textPrimary,
+        headerDateColor: colors.textSecondary,
+        buttonBg: colors.primary,
+        buttonShadow: colors.primary,
       };
 
   return (
@@ -296,7 +299,7 @@ const TodayEventPopup: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -305,7 +308,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 20,
     width: "100%",
     maxWidth: 400,
@@ -329,7 +332,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   headerEmoji: {
     fontSize: 40,
@@ -337,13 +340,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   headerDate: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   listContainer: {
     paddingHorizontal: 16,
@@ -355,7 +358,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   itemIcon: {
     width: 44,
@@ -374,13 +377,13 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   itemSubtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 16,
   },
   itemBadge: {
@@ -390,7 +393,7 @@ const styles = StyleSheet.create({
   },
   itemBadgeText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   closeButton: {
     marginHorizontal: 16,
@@ -411,10 +414,8 @@ const styles = StyleSheet.create({
     }),
   },
   closeButtonText: {
-    color: "#fff",
+    color: colors.white,
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
-});
-
-export default TodayEventPopup;
+}));export default TodayEventPopup;

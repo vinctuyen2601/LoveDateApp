@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Event, getTagEmoji } from "../types";
+import { Event, getTagIcon } from "../types";
 import { lunarService } from "./lunar.service";
 import { SPECIAL_DATES, resolveSpecialDateForYear } from "../constants/specialDates";
 
@@ -168,8 +168,8 @@ function getOccurrencesInWindow(
 
 function getIcon(tags: string[]): string {
   const primaryTag = tags[0];
-  if (primaryTag) return getTagEmoji(primaryTag);
-  return "📅";
+  if (primaryTag) return getTagIcon(primaryTag);
+  return "calendar-outline";
 }
 
 function getChannelId(daysBefore: number): string {
@@ -235,7 +235,7 @@ async function collectSystemNotifications(
           date: notifDate,
           source: "system",
           content: {
-            title: `${sd.emoji} Ngày đặc biệt`,
+            title: `Ngày đặc biệt: ${sd.name}`,
             body: buildSystemBody(sd.name, daysBefore, sd.hint),
             data: { systemDateId: sd.id, eventTitle: sd.name, daysBefore },
             sound: "default",

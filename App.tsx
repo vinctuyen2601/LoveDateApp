@@ -3,7 +3,16 @@ import "react-native-gesture-handler"; // Must be before any navigation imports
 import React, { useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus, Text, TextInput } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts,
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from "@expo-google-fonts/manrope";
 import * as Notifications from "expo-notifications";
 import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -13,6 +22,7 @@ import { EventsProvider } from "./src/contexts/EventsContext";
 import { SyncProvider } from "./src/contexts/SyncContext";
 import { NotificationProvider } from "./src/contexts/NotificationContext";
 import { ToastProvider } from "./src/contexts/ToastContext";
+import { ThemeProvider } from "./src/contexts/ThemeContext";
 import AppNavigator, { navigate } from "./src/navigation/AppNavigator";
 import { PermissionModal } from "./src/components/organisms/PermissionModal";
 import TodayEventPopup from "./src/components/organisms/TodayEventPopup";
@@ -23,6 +33,13 @@ import * as DB from "./src/services/database.service";
 import { dataSeedService } from "./src/services/dataSeed.service";
 import { backgroundTaskService } from "./src/services/backgroundTask.service";
 import "./src/lib/calendar.locale";
+
+// Hold splash screen until fonts are ready
+SplashScreen.preventAutoHideAsync();
+
+// Apply Manrope as the default font for all Text and TextInput components
+(Text as any).defaultProps = { ...(Text as any).defaultProps, style: { fontFamily: "Manrope_400Regular" } };
+(TextInput as any).defaultProps = { ...(TextInput as any).defaultProps, style: { fontFamily: "Manrope_400Regular" } };
 
 // Configure how notifications are presented when app is in foreground
 Notifications.setNotificationHandler({
@@ -147,6 +164,7 @@ function AppContent() {
   };
 
   return (
+    <ThemeProvider>
     <SafeAreaProvider>
       <ToastProvider>
         <MasterDataProvider>
@@ -169,10 +187,27 @@ function AppContent() {
         </MasterDataProvider>
       </ToastProvider>
     </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
   return (
     <SQLiteProvider databaseName={DB.DB_NAME}>
       <AppContent />

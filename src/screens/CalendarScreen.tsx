@@ -17,7 +17,9 @@ import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "@contexts/SyncContext";
 import { Event, getTagColor, getTagLabel } from "../types";
 import { COLORS } from "@themes/colors";
-import { CALENDAR_THEME } from "@themes/calendarTheme";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors, useTheme } from '@contexts/ThemeContext';
+import { getCalendarTheme } from "@themes/calendarTheme";
 import { STRINGS } from "../constants/strings";
 import { DateUtils } from "@lib/date.utils";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -28,6 +30,11 @@ import {
 } from "../constants/specialDates";
 
 const CalendarScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+  const { themeName } = useTheme();
+  const calendarTheme = useMemo(() => getCalendarTheme(colors), [colors]);
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -140,9 +147,9 @@ const CalendarScreen: React.FC = () => {
     // Highlight selected date
     if (marked[selectedDate]) {
       marked[selectedDate].selected = true;
-      marked[selectedDate].selectedColor = COLORS.primary;
+      marked[selectedDate].selectedColor = colors.primary;
     } else {
-      marked[selectedDate] = { selected: true, selectedColor: COLORS.primary };
+      marked[selectedDate] = { selected: true, selectedColor: colors.primary };
     }
 
     return marked;
@@ -351,7 +358,7 @@ const CalendarScreen: React.FC = () => {
                 setCurrentMonth(DateUtils.getTodayString());
               }}
             >
-              <Ionicons name="today" size={16} color={COLORS.white} />
+              <Ionicons name="today" size={16} color={colors.white} />
               <Text style={styles.todayButtonText}>Hôm nay</Text>
             </TouchableOpacity>
           </View> */}
@@ -374,7 +381,7 @@ const CalendarScreen: React.FC = () => {
               <Ionicons
                 name="chevron-forward"
                 size={14}
-                color={COLORS.primary}
+                color={colors.primary}
               />
             </TouchableOpacity>
           </View>
@@ -394,7 +401,7 @@ const CalendarScreen: React.FC = () => {
               <Ionicons
                 name="calendar-outline"
                 size={14}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.statChipValue}>{monthStats.total}</Text>
               <Text style={styles.statChipLabel}>trong tháng</Text>
@@ -413,9 +420,9 @@ const CalendarScreen: React.FC = () => {
               <Ionicons
                 name="arrow-up-circle-outline"
                 size={14}
-                color={COLORS.success}
+                color={colors.success}
               />
-              <Text style={[styles.statChipValue, { color: COLORS.success }]}>
+              <Text style={[styles.statChipValue, { color: colors.success }]}>
                 {monthStats.upcoming}
               </Text>
               <Text style={styles.statChipLabel}>sắp tới</Text>
@@ -434,10 +441,10 @@ const CalendarScreen: React.FC = () => {
               <Ionicons
                 name="time-outline"
                 size={14}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text
-                style={[styles.statChipValue, { color: COLORS.textSecondary }]}
+                style={[styles.statChipValue, { color: colors.textSecondary }]}
               >
                 {monthStats.past}
               </Text>
@@ -555,7 +562,7 @@ const CalendarScreen: React.FC = () => {
                               <Ionicons
                                 name="chevron-forward"
                                 size={18}
-                                color={COLORS.textLight}
+                                color={colors.textLight}
                               />
                             )}
                           </View>
@@ -634,7 +641,7 @@ const CalendarScreen: React.FC = () => {
                           <Ionicons
                             name="chevron-forward"
                             size={18}
-                            color={COLORS.textLight}
+                            color={colors.textLight}
                           />
                         </View>
                         {/* Bottom row: badges */}
@@ -644,7 +651,7 @@ const CalendarScreen: React.FC = () => {
                               <Ionicons
                                 name="repeat"
                                 size={12}
-                                color={COLORS.textSecondary}
+                                color={colors.textSecondary}
                               />
                               <Text style={styles.calEventBadgeText}>
                                 Hàng năm
@@ -656,12 +663,12 @@ const CalendarScreen: React.FC = () => {
                               <Ionicons
                                 name="notifications-off-outline"
                                 size={12}
-                                color={COLORS.textLight}
+                                color={colors.textLight}
                               />
                               <Text
                                 style={[
                                   styles.calEventBadgeText,
-                                  { color: COLORS.textLight },
+                                  { color: colors.textLight },
                                 ]}
                               >
                                 Tắt TB
@@ -679,9 +686,9 @@ const CalendarScreen: React.FC = () => {
                 <Ionicons
                   name="calendar-outline"
                   size={40}
-                  color={COLORS.textLight}
+                  color={colors.textLight}
                 />
-                <Text style={styles.emptyDateText}>Chưa có sự kiện</Text>
+                <Text style={styles.emptyDateText}>Tạo sự kiện đầu tiên</Text>
                 <TouchableOpacity
                   style={styles.emptyDateAction}
                   onPress={() =>
@@ -690,7 +697,7 @@ const CalendarScreen: React.FC = () => {
                     })
                   }
                 >
-                  <Ionicons name="add" size={16} color={COLORS.primary} />
+                  <Ionicons name="add" size={16} color={colors.primary} />
                   <Text style={styles.emptyDateActionText}>Thêm sự kiện</Text>
                 </TouchableOpacity>
               </View>
@@ -700,11 +707,12 @@ const CalendarScreen: React.FC = () => {
           {/* Calendar */}
           <View style={styles.calendarContainer}>
             <Calendar
+              key={themeName}
               current={currentMonth}
               onDayPress={handleDayPress}
               onMonthChange={handleMonthChange}
               markedDates={markedDates}
-              theme={CALENDAR_THEME}
+              theme={calendarTheme}
               enableSwipeMonths={true}
               hideExtraDays={false}
               firstDay={1}
@@ -714,7 +722,7 @@ const CalendarScreen: React.FC = () => {
                     direction === "left" ? "chevron-back" : "chevron-forward"
                   }
                   size={20}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
               )}
               dayComponent={({ date, state, marking }: any) => {
@@ -793,8 +801,8 @@ const CalendarScreen: React.FC = () => {
                     resizeMode="cover"
                   />
                 ) : (
-                  <View style={[styles.articleImage, { backgroundColor: COLORS.border, justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="heart-outline" size={48} color={COLORS.textSecondary} />
+                  <View style={[styles.articleImage, { backgroundColor: colors.border, justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="heart-outline" size={48} color={colors.textSecondary} />
                   </View>
                 )}
                 <View style={styles.articleOverlay}>
@@ -807,7 +815,7 @@ const CalendarScreen: React.FC = () => {
                     <Ionicons
                       name={article.icon}
                       size={12}
-                      color={COLORS.white}
+                      color={colors.white}
                     />
                   </View>
                   <Text style={styles.articleTitle} numberOfLines={2}>
@@ -833,26 +841,26 @@ const CalendarScreen: React.FC = () => {
         onPress={() => navigation.navigate("AddEvent")}
         activeOpacity={0.8}
       >
-        <Ionicons name="add" size={28} color={COLORS.white} />
+        <Ionicons name="add" size={28} color={colors.white} />
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: COLORS.primary + "10",
+    backgroundColor: colors.primary + "10",
     paddingTop: 0,
     paddingBottom: 16,
     borderBottomWidth: 1,
     marginBottom: 5,
     borderWidth: 1,
     borderRadius: 10,
-    borderColor: COLORS.primary + "50",
+    borderColor: colors.primary + "50",
   },
   headerWithBanner: {
     paddingTop: 0,
@@ -870,22 +878,22 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginLeft: 12,
   },
   todayButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
   todayButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
     marginLeft: 4,
   },
   sectionHeader: {
@@ -897,8 +905,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   viewAllLink: {
     flexDirection: "row",
@@ -907,8 +915,8 @@ const styles = StyleSheet.create({
   },
   viewAllLinkText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   statsChips: {
     flexDirection: "row",
@@ -922,32 +930,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   statChipValue: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   statChipLabel: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   content: {
     flex: 1,
   },
   calendarContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginTop: 8,
     marginHorizontal: 4,
     borderRadius: 14,
     overflow: "hidden",
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -968,27 +976,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayNumberSelected: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   dayNumberToday: {
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   dayNumberText: {
     fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: "400",
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_400Regular',
   },
   dayTextToday: {
-    color: COLORS.primary,
-    fontWeight: "700",
+    color: colors.primary,
+    fontFamily: 'Manrope_700Bold',
   },
   dayTextSelected: {
-    color: COLORS.white,
-    fontWeight: "700",
+    color: colors.white,
+    fontFamily: 'Manrope_700Bold',
   },
   dayTextDisabled: {
-    color: COLORS.textLight,
+    color: colors.textLight,
   },
   dayDotsRow: {
     flexDirection: "row",
@@ -1000,14 +1008,14 @@ const styles = StyleSheet.create({
     height: 12,
   },
   selectedDateContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 4,
     marginTop: 8,
     marginBottom: 16,
     borderRadius: 14,
     overflow: "hidden",
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -1019,7 +1027,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   selectedDateLeft: {
     flex: 1,
@@ -1028,31 +1036,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   todayBadge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   todayBadgeText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: 'Manrope_700Bold',
   },
   selectedDateText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   eventCountBadge: {
-    backgroundColor: COLORS.primary + "12",
+    backgroundColor: colors.primary + "12",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
   },
   eventCountBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   eventsList: {
     padding: 8,
@@ -1060,7 +1068,7 @@ const styles = StyleSheet.create({
   },
   calEventCard: {
     flexDirection: "row",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -1091,8 +1099,8 @@ const styles = StyleSheet.create({
   },
   calEventTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 3,
   },
   calEventMeta: {
@@ -1102,13 +1110,13 @@ const styles = StyleSheet.create({
   },
   calEventDate: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   calEventDot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: COLORS.textLight,
+    backgroundColor: colors.textLight,
   },
   calEventTag: {
     paddingHorizontal: 6,
@@ -1117,7 +1125,7 @@ const styles = StyleSheet.create({
   },
   calEventTagText: {
     fontSize: 11,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   calEventBadges: {
     flexDirection: "row",
@@ -1132,7 +1140,7 @@ const styles = StyleSheet.create({
   },
   calEventBadgeText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   emptyDateState: {
     alignItems: "center",
@@ -1141,7 +1149,7 @@ const styles = StyleSheet.create({
   },
   emptyDateText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   emptyDateAction: {
     flexDirection: "row",
@@ -1151,12 +1159,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.primary + "12",
+    backgroundColor: colors.primary + "12",
   },
   emptyDateActionText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   emptyContainer: {
     alignItems: "center",
@@ -1165,13 +1173,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: 8,
     textAlign: "center",
   },
@@ -1179,7 +1187,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.infoLight,
+    backgroundColor: colors.infoLight,
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 12,
@@ -1187,7 +1195,7 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 13,
-    color: COLORS.info,
+    color: colors.info,
     marginLeft: 8,
   },
   // Featured Articles
@@ -1204,13 +1212,13 @@ const styles = StyleSheet.create({
   },
   articlesSectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   articlesViewAllText: {
     fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   articlesScroll: {
     paddingHorizontal: 16,
@@ -1222,7 +1230,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1248,14 +1256,14 @@ const styles = StyleSheet.create({
   },
   articleTitle: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     marginBottom: 4,
     lineHeight: 18,
   },
   articleReadTime: {
     fontSize: 11,
-    color: COLORS.white,
+    color: colors.white,
   },
   fab: {
     position: "absolute",
@@ -1264,15 +1272,13 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     elevation: 6,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
-});
-
-export default CalendarScreen;
+}));export default CalendarScreen;

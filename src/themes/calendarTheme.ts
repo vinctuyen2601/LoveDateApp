@@ -1,19 +1,19 @@
-import { COLORS } from './colors';
+import { ColorScheme } from '@contexts/ThemeContext';
 
-export const CALENDAR_THEME = {
-  backgroundColor: COLORS.white,
-  calendarBackground: COLORS.white,
-  textSectionTitleColor: COLORS.textSecondary,
-  selectedDayBackgroundColor: COLORS.primary,
-  selectedDayTextColor: COLORS.white,
-  todayTextColor: COLORS.primary,
-  dayTextColor: COLORS.textPrimary,
-  textDisabledColor: COLORS.textLight,
-  dotColor: COLORS.primary,
-  selectedDotColor: COLORS.white,
-  arrowColor: COLORS.primary,
-  monthTextColor: COLORS.textPrimary,
-  indicatorColor: COLORS.primary,
+export const getCalendarTheme = (colors: ColorScheme) => ({
+  backgroundColor: colors.surface,
+  calendarBackground: colors.surface,
+  textSectionTitleColor: colors.textSecondary,
+  selectedDayBackgroundColor: colors.primary,
+  selectedDayTextColor: colors.white,
+  todayTextColor: colors.primary,
+  dayTextColor: colors.textPrimary,
+  textDisabledColor: colors.textLight,
+  dotColor: colors.primary,
+  selectedDotColor: colors.white,
+  arrowColor: colors.primary,
+  monthTextColor: colors.textPrimary,
+  indicatorColor: colors.primary,
   textDayFontFamily: 'System',
   textMonthFontFamily: 'System',
   textDayHeaderFontFamily: 'System',
@@ -23,4 +23,4 @@ export const CALENDAR_THEME = {
   textDayFontSize: 14,
   textMonthFontSize: 16,
   textDayHeaderFontSize: 12,
-} as const;
+});

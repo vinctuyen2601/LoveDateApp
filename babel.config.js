@@ -21,6 +21,7 @@ module.exports = function(api) {
             '@styles': './src/styles',
             '@lib': './src/lib',
             '@schemas': './src/schemas',
+            '@utils': './src/utils',
           },
         },
       ],

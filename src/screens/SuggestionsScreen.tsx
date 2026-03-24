@@ -28,6 +28,8 @@ import { LoadingState } from "@components/atoms/LoadingState";
 import HeroBanner from "../components/suggestions/HeroBanner";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
 import ProductCard from "../components/suggestions/ProductCard";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 // import ExperienceCard from "../components/suggestions/ExperienceCard"; // tạm ẩn
 // import OccasionCards from "../components/suggestions/OccasionCard"; // tạm ẩn
 import { useMasterData } from "../contexts/MasterDataContext";
@@ -41,7 +43,10 @@ import {
 import ResultsModal from "../components/suggestions/ResultsModal";
 import PressableCard from "@components/atoms/PressableCard";
 
-const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation }) => (
+const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation }) => {
+  const styles = useStyles();
+  const colors = useColors();
+  return (
   <View style={styles.section}>
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>Trắc nghiệm & Khám phá</Text>
@@ -56,7 +61,7 @@ const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation
       removeClippedSubviews={false}
     >
       <PressableCard
-        style={[styles.toolCard, { backgroundColor: COLORS.primary }]}
+        style={[styles.toolCard, { backgroundColor: colors.primary }]}
         onPress={() => navigation.navigate("PersonalitySurvey")}
       >
         <View style={styles.toolTop}>
@@ -80,12 +85,12 @@ const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation
         </View>
         <View style={styles.toolCta}>
           <Text style={styles.toolCtaText}>Khám phá</Text>
-          <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
+          <Ionicons name="arrow-forward" size={13} color={colors.white} />
         </View>
       </PressableCard>
 
       <PressableCard
-        style={[styles.toolCard, { backgroundColor: "#1A9E6E" }]}
+        style={[styles.toolCard, { backgroundColor: colors.success }]}
         onPress={() => navigation.navigate("MBTISurvey")}
       >
         <View style={styles.toolTop}>
@@ -109,12 +114,12 @@ const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation
         </View>
         <View style={styles.toolCta}>
           <Text style={styles.toolCtaText}>Bắt đầu</Text>
-          <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
+          <Ionicons name="arrow-forward" size={13} color={colors.white} />
         </View>
       </PressableCard>
 
       <PressableCard
-        style={[styles.toolCard, { backgroundColor: COLORS.secondary }]}
+        style={[styles.toolCard, { backgroundColor: colors.secondary }]}
         onPress={() => navigation.navigate("ActivitySuggestions", {})}
       >
         <View style={styles.toolTop}>
@@ -138,14 +143,18 @@ const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation
         </View>
         <View style={styles.toolCta}>
           <Text style={styles.toolCtaText}>Khám phá</Text>
-          <Ionicons name="arrow-forward" size={13} color={COLORS.white} />
+          <Ionicons name="arrow-forward" size={13} color={colors.white} />
         </View>
       </PressableCard>
     </ScrollView>
   </View>
-));
+  );
+});
 
 const SuggestionsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -315,7 +324,7 @@ const SuggestionsScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[COLORS.primary]}
+            colors={[colors.primary]}
           />
         }
       >
@@ -362,7 +371,7 @@ const SuggestionsScreen: React.FC = () => {
               <Ionicons
                 name="wifi-outline"
                 size={20}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.offlineBannerText}>{productsError}</Text>
             </View>
@@ -371,7 +380,7 @@ const SuggestionsScreen: React.FC = () => {
               <Ionicons
                 name="gift-outline"
                 size={20}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.offlineBannerText}>
                 Chưa có sản phẩm nào
@@ -433,10 +442,10 @@ const SuggestionsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingTop: 0,
@@ -453,8 +462,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   sectionTitlePadded: {
     marginHorizontal: 16,
@@ -462,8 +471,8 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   horizontalScroll: {
     paddingHorizontal: 16,
@@ -477,15 +486,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionBadge: {
-    backgroundColor: COLORS.primary + "18",
+    backgroundColor: colors.primary + "18",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   sectionBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   toolCard: {
     width: Math.round((SCREEN_WIDTH - 32 - 12) * 0.45),
@@ -516,8 +525,8 @@ const styles = StyleSheet.create({
   },
   toolTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     lineHeight: 21,
     minHeight: 42,
     marginBottom: 6,
@@ -544,7 +553,7 @@ const styles = StyleSheet.create({
   },
   toolPillText: {
     fontSize: 10,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
     color: "rgba(255,255,255,0.95)",
   },
   toolCta: {
@@ -558,8 +567,8 @@ const styles = StyleSheet.create({
   },
   toolCtaText: {
     fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
 
   // Offline / empty state banner
@@ -570,19 +579,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   offlineBannerText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   verticalProductList: {
     paddingHorizontal: 16,
   },
-});
-
-export default SuggestionsScreen;
+}));export default SuggestionsScreen;

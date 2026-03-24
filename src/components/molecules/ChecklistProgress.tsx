@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ChecklistProgressProps {
   completed: number;
@@ -14,6 +16,9 @@ const ChecklistProgress: React.FC<ChecklistProgressProps> = ({
   total,
   compact = false,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   if (total === 0) {
     return null; // Don't show if no checklist items
   }
@@ -28,7 +33,7 @@ const ChecklistProgress: React.FC<ChecklistProgressProps> = ({
         <Ionicons
           name={isComplete ? "checkmark-circle" : "checkmark-circle-outline"}
           size={16}
-          color={isComplete ? COLORS.success : COLORS.textSecondary}
+          color={isComplete ? colors.success : colors.textSecondary}
         />
         <Text
           style={[
@@ -43,6 +48,7 @@ const ChecklistProgress: React.FC<ChecklistProgressProps> = ({
   }
 
   // Full version with progress bar
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -77,7 +83,7 @@ const ChecklistProgress: React.FC<ChecklistProgressProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   // Compact version styles
   compactContainer: {
     flexDirection: "row",
@@ -87,11 +93,11 @@ const styles = StyleSheet.create({
   },
   compactText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   compactTextComplete: {
-    color: COLORS.success,
-    fontWeight: "600",
+    color: colors.success,
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Full version styles
@@ -106,46 +112,40 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   percentage: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   percentageComplete: {
-    color: COLORS.success,
+    color: colors.success,
   },
   progressBar: {
     height: 8,
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     borderRadius: 4,
     overflow: "hidden",
     marginBottom: 8,
   },
   progressFill: {
     height: "100%",
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 4,
   },
   progressFillComplete: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
   },
   statusText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   statusComplete: {
-    color: COLORS.success,
-    fontWeight: "600",
+    color: colors.success,
+    fontFamily: 'Manrope_600SemiBold',
   },
-});
-
-// Add success color if not defined
-const SUCCESS_COLOR = "#10B981"; // Green
-if (!COLORS.success) {
-  (COLORS as any).success = SUCCESS_COLOR;
-}
+}));
 
 export default ChecklistProgress;

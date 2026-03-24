@@ -18,6 +18,8 @@ import EventCard from '@components/molecules/EventCard';
 import IconImage from '@components/atoms/IconImage';
 import { getSpecialDatesForMonth } from '../constants/specialDates';
 import { getSpecialDateImage } from '@lib/iconImages';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 type FilterType = 'all' | 'upcoming' | 'past' | 'birthday' | 'anniversary' | 'holiday' | 'other';
 
@@ -28,6 +30,9 @@ interface RouteParams {
 }
 
 const EventsListScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -276,7 +281,7 @@ const EventsListScreen: React.FC = () => {
           style={styles.headerButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>{screenTitle}</Text>
@@ -285,7 +290,7 @@ const EventsListScreen: React.FC = () => {
           style={styles.headerButton}
           onPress={() => navigation.navigate('AddEvent')}
         >
-          <Ionicons name="add-circle" size={28} color={COLORS.primary} />
+          <Ionicons name="add-circle" size={28} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -308,7 +313,7 @@ const EventsListScreen: React.FC = () => {
               <Ionicons
                 name={getFilterIcon(filter)}
                 size={18}
-                color={selectedFilter === filter ? COLORS.white : COLORS.textSecondary}
+                color={selectedFilter === filter ? colors.white : colors.textSecondary}
               />
               <Text
                 style={[
@@ -326,7 +331,7 @@ const EventsListScreen: React.FC = () => {
       {/* Stats & Sort */}
       <View style={styles.controlsContainer}>
         <View style={styles.statsRow}>
-          <Ionicons name="list" size={16} color={COLORS.textSecondary} />
+          <Ionicons name="list" size={16} color={colors.textSecondary} />
           <Text style={styles.statsText}>
             {filteredEvents.length} sự kiện
           </Text>
@@ -339,12 +344,12 @@ const EventsListScreen: React.FC = () => {
           <Ionicons
             name={sortBy === 'date' ? 'calendar' : 'text'}
             size={16}
-            color={COLORS.white}
+            color={colors.white}
           />
           <Text style={styles.sortButtonText}>
             {sortBy === 'date' ? 'Ngày' : 'Tên'}
           </Text>
-          <Ionicons name="swap-vertical" size={16} color={COLORS.white} />
+          <Ionicons name="swap-vertical" size={16} color={colors.white} />
         </TouchableOpacity>
       </View>
 
@@ -380,7 +385,7 @@ const EventsListScreen: React.FC = () => {
             <Ionicons
               name="calendar-outline"
               size={80}
-              color={COLORS.textLight}
+              color={colors.textLight}
             />
             <Text style={styles.emptyText}>Không có sự kiện nào</Text>
             <Text style={styles.emptySubtext}>
@@ -392,7 +397,7 @@ const EventsListScreen: React.FC = () => {
               style={styles.addButton}
               onPress={() => navigation.navigate('AddEvent')}
             >
-              <Ionicons name="add-circle" size={20} color={COLORS.white} />
+              <Ionicons name="add-circle" size={20} color={colors.white} />
               <Text style={styles.addButtonText}>Thêm sự kiện</Text>
             </TouchableOpacity>
           </View>
@@ -407,7 +412,7 @@ const EventsListScreen: React.FC = () => {
         message={confirmDialog.message}
         confirmText="Xóa"
         icon="trash-outline"
-        iconColor={COLORS.error}
+        iconColor={colors.error}
         onConfirm={confirmDialog.onConfirm}
         onCancel={closeConfirm}
       />
@@ -415,10 +420,10 @@ const EventsListScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -427,11 +432,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 0,
     paddingBottom: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -441,13 +446,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   filtersContainer: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   filtersScroll: {
     paddingHorizontal: 12,
@@ -460,23 +465,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 6,
   },
   filterTabActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterTabText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
   filterTabTextActive: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
   },
   controlsContainer: {
     flexDirection: 'row',
@@ -484,9 +489,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   statsRow: {
     flexDirection: 'row',
@@ -495,8 +500,8 @@ const styles = StyleSheet.create({
   },
   statsText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   sortButton: {
     flexDirection: 'row',
@@ -504,13 +509,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     gap: 4,
   },
   sortButtonText: {
     fontSize: 13,
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
   },
   content: {
     flex: 1,
@@ -526,46 +531,46 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginTop: 20,
   },
   emptySubtext: {
     fontSize: 14,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: 8,
     textAlign: 'center',
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
     marginTop: 24,
     gap: 8,
     elevation: 2,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   addButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   specialDateCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     marginHorizontal: 8,
     marginVertical: 4,
     padding: 12,
     gap: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
@@ -585,14 +590,12 @@ const styles = StyleSheet.create({
   },
   specialDateName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   specialDateSub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
-});
-
-export default EventsListScreen;
+}));export default EventsListScreen;

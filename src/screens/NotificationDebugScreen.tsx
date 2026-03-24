@@ -15,8 +15,13 @@ import { notificationEnhancedService } from '../services/notificationEnhanced.se
 import * as DB from '../services/database.service';
 import { backgroundTaskService } from '../services/backgroundTask.service';
 import { NotificationUtils } from '@lib/notification.utils';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const NotificationDebugScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const db = useSQLiteContext();
   const [scheduledCount, setScheduledCount] = useState(0);
   const [dbCount, setDbCount] = useState(0);
@@ -78,7 +83,7 @@ const NotificationDebugScreen: React.FC = () => {
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🧪 Test Notification',
+          title: 'Test Notification',
           body: 'This is a test notification from debug screen',
           data: { test: true },
         },
@@ -173,7 +178,7 @@ const NotificationDebugScreen: React.FC = () => {
 
         {/* Status Cards */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 Status Overview</Text>
+          <Text style={styles.cardTitle}>Status Overview</Text>
 
           <View style={styles.statRow}>
             <Text style={styles.statLabel}>System Scheduled:</Text>
@@ -223,7 +228,7 @@ const NotificationDebugScreen: React.FC = () => {
 
         {/* Test Actions */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🧪 Test Actions</Text>
+          <Text style={styles.cardTitle}>Test Actions</Text>
 
           {!canScheduleExact && (
             <TouchableOpacity
@@ -234,7 +239,7 @@ const NotificationDebugScreen: React.FC = () => {
               }}
               disabled={loading}
             >
-              <Ionicons name="alarm-outline" size={20} color={COLORS.white} />
+              <Ionicons name="alarm-outline" size={20} color={colors.white} />
               <Text style={styles.buttonText}>Request Exact Alarm Permission</Text>
             </TouchableOpacity>
           )}
@@ -244,7 +249,7 @@ const NotificationDebugScreen: React.FC = () => {
             onPress={handleTestNotification}
             disabled={loading}
           >
-            <Ionicons name="notifications-outline" size={20} color={COLORS.white} />
+            <Ionicons name="notifications-outline" size={20} color={colors.white} />
             <Text style={styles.buttonText}>Send Test Notification (5s)</Text>
           </TouchableOpacity>
 
@@ -253,7 +258,7 @@ const NotificationDebugScreen: React.FC = () => {
             onPress={handleViewScheduled}
             disabled={loading}
           >
-            <Ionicons name="list-outline" size={20} color={COLORS.primary} />
+            <Ionicons name="list-outline" size={20} color={colors.primary} />
             <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
               View Scheduled
             </Text>
@@ -262,14 +267,14 @@ const NotificationDebugScreen: React.FC = () => {
 
         {/* Management Actions */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>⚙️ Management</Text>
+          <Text style={styles.cardTitle}>Management</Text>
 
           <TouchableOpacity
             style={[styles.button, styles.buttonInfo]}
             onPress={handleRescheduleAll}
             disabled={loading}
           >
-            <Ionicons name="refresh-outline" size={20} color={COLORS.white} />
+            <Ionicons name="refresh-outline" size={20} color={colors.white} />
             <Text style={styles.buttonText}>Reschedule All</Text>
           </TouchableOpacity>
 
@@ -278,7 +283,7 @@ const NotificationDebugScreen: React.FC = () => {
             onPress={handleReregisterTask}
             disabled={loading}
           >
-            <Ionicons name="construct-outline" size={20} color={COLORS.white} />
+            <Ionicons name="construct-outline" size={20} color={colors.white} />
             <Text style={styles.buttonText}>Re-register Background Task</Text>
           </TouchableOpacity>
 
@@ -287,7 +292,7 @@ const NotificationDebugScreen: React.FC = () => {
             onPress={handleClearAll}
             disabled={loading}
           >
-            <Ionicons name="trash-outline" size={20} color={COLORS.white} />
+            <Ionicons name="trash-outline" size={20} color={colors.white} />
             <Text style={styles.buttonText}>Clear All Notifications</Text>
           </TouchableOpacity>
         </View>
@@ -298,7 +303,7 @@ const NotificationDebugScreen: React.FC = () => {
           onPress={loadDebugInfo}
           disabled={loading}
         >
-          <Ionicons name="reload-outline" size={20} color={COLORS.primary} />
+          <Ionicons name="reload-outline" size={20} color={colors.primary} />
           <Text style={[styles.buttonText, styles.buttonTextSecondary]}>
             {loading ? 'Loading...' : 'Refresh Info'}
           </Text>
@@ -308,10 +313,10 @@ const NotificationDebugScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   content: {
     padding: 20,
@@ -319,16 +324,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 24,
   },
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -336,8 +341,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   statRow: {
@@ -346,63 +351,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   statLabel: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   statValue: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   statusSuccess: {
-    color: COLORS.success || '#4CAF50',
+    color: colors.success || '#4CAF50',
   },
   statusWarning: {
-    color: COLORS.warning || '#FF9800',
+    color: colors.warning || '#FF9800',
   },
   statusError: {
-    color: COLORS.error,
+    color: colors.error,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     padding: 16,
     borderRadius: 12,
     marginTop: 12,
     gap: 8,
   },
   buttonSecondary: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   buttonInfo: {
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.info,
   },
   buttonWarning: {
-    backgroundColor: '#FF9800',
+    backgroundColor: colors.warning,
   },
   buttonDanger: {
-    backgroundColor: COLORS.error,
+    backgroundColor: colors.error,
   },
   buttonOutline: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   buttonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   buttonTextSecondary: {
-    color: COLORS.primary,
+    color: colors.primary,
   },
-});
-
-export default NotificationDebugScreen;
+}));export default NotificationDebugScreen;
