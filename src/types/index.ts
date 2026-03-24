@@ -214,6 +214,13 @@ export interface SyncStatus {
   error?: string;
 }
 
+export interface SyncStatusUpdate {
+  isSyncing?: boolean;
+  error?: string | null;
+  lastSyncAt?: string;
+  conflicts?: SyncConflict[];
+}
+
 // ==================== NOTIFICATION TYPES ====================
 
 export interface ScheduledNotification {
@@ -510,6 +517,7 @@ export interface EventsContextValue {
 
 export interface SyncContextValue {
   syncStatus: SyncStatus;
+  conflicts: SyncConflict[];
   sync: () => Promise<void>;
   resolveConflict: (
     conflict: SyncConflict,

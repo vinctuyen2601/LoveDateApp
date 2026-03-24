@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -97,7 +97,7 @@ const AddEventScreen: React.FC = () => {
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
   const [isSyncingForShare, setIsSyncingForShare] = useState(false);
   const [selectedConnIds, setSelectedConnIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [isSharing, setIsSharing] = useState(false);
 
@@ -251,19 +251,22 @@ const AddEventScreen: React.FC = () => {
           .then(setConnections)
           .catch(() => setConnections([]))
           .finally(() => setIsLoadingConnections(false));
-        sync()
-          .then(async () => {
-            // Read serverId from DB directly after sync
+        // Sync then poll DB until serverId appears (avoids race with background sync)
+        const waitForServerId = async () => {
+          await sync().catch(console.warn);
+          for (let i = 0; i < 10; i++) {
             const fresh = await DB.getEventById(db, newEvent.id);
-            console.log(999999, fresh);
+
             if (fresh?.serverId) {
               setCreatedEvent((prev) =>
-                prev ? { ...prev, serverId: fresh.serverId } : prev,
+                prev ? { ...prev, serverId: fresh.serverId } : prev
               );
+              return;
             }
-          })
-          .catch(console.warn)
-          .finally(() => setIsSyncingForShare(false));
+            await new Promise((r) => setTimeout(r, 500));
+          }
+        };
+        waitForServerId().finally(() => setIsSyncingForShare(false));
         return; // Don't navigate yet; share modal handles navigation
       }
 
@@ -273,9 +276,7 @@ const AddEventScreen: React.FC = () => {
     } catch (error: any) {
       showError(
         error.message ||
-          (isEditMode
-            ? "Không thể cập nhật sự kiện"
-            : "Không thể thêm sự kiện"),
+          (isEditMode ? "Không thể cập nhật sự kiện" : "Không thể thêm sự kiện")
       );
     } finally {
       setIsSubmitting(false);
@@ -335,18 +336,17 @@ const AddEventScreen: React.FC = () => {
   };
 
   // ── Share modal handlers ──────────────────────────────────────────────────
-
   const handleShareDone = async (skip: boolean) => {
     if (!skip && selectedConnIds.size > 0) {
       if (!createdEvent?.serverId) {
         showError(
-          "Sự kiện chưa đồng bộ xong. Vui lòng thử lại sau từ chi tiết sự kiện.",
+          "Sự kiện chưa đồng bộ xong. Vui lòng thử lại sau từ chi tiết sự kiện."
         );
         return;
       }
       setIsSharing(true);
       try {
-        await shareEvent(createdEvent.serverId, Array.from(selectedConnIds));
+        await shareEvent(createdEvent?.serverId, Array.from(selectedConnIds));
         showSuccess(`Đã chia sẻ với ${selectedConnIds.size} người!`);
       } catch (e: any) {
         showError(e.message || "Không thể chia sẻ");
@@ -393,8 +393,8 @@ const AddEventScreen: React.FC = () => {
                     backgroundColor: isActive
                       ? colors.primary
                       : isDone
-                        ? colors.primary + "60"
-                        : colors.primary + "25",
+                      ? colors.primary + "60"
+                      : colors.primary + "25",
                   },
                 ]}
               >
@@ -606,7 +606,7 @@ const AddEventScreen: React.FC = () => {
                             {dayShort}
                           </Text>
                         </TouchableOpacity>
-                      ),
+                      )
                     )}
                   </View>
                   <Text style={styles.selectedInfoText}>
@@ -805,7 +805,7 @@ const AddEventScreen: React.FC = () => {
                           12,
                           0,
                           0,
-                          0,
+                          0
                         );
                         setFormData({ ...formData, eventDate: selectedDate });
                       }}
@@ -969,8 +969,8 @@ const AddEventScreen: React.FC = () => {
                 {isSubmitting
                   ? "Đang lưu..."
                   : isEditMode
-                    ? "Cập nhật"
-                    : STRINGS.save}
+                  ? "Cập nhật"
+                  : STRINGS.save}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -1117,11 +1117,15 @@ const AddEventScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.shareModalSendBtn,
-                  (selectedConnIds.size === 0 || isSharing) &&
+                  (selectedConnIds.size === 0 ||
+                    isSharing ||
+                    isSyncingForShare) &&
                     styles.shareModalSendBtnDisabled,
                 ]}
                 onPress={() => handleShareDone(false)}
-                disabled={selectedConnIds.size === 0 || isSharing}
+                disabled={
+                  selectedConnIds.size === 0 || isSharing || isSyncingForShare
+                }
               >
                 {isSharing || isSyncingForShare ? (
                   <ActivityIndicator size="small" color={colors.white} />

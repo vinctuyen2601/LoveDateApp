@@ -20,6 +20,8 @@ import {
 } from "../services/connections.service";
 import type { SharedEvent } from "../types/connections";
 import { getTagIcon } from "../types";
+import { useEvents } from "../contexts/EventsContext";
+import { useSync } from "../contexts/SyncContext";
 import { makeStyles } from "@utils/makeStyles";
 import { useColors } from "@contexts/ThemeContext";
 
@@ -122,6 +124,8 @@ const SharedInboxScreen: React.FC = () => {
   const colors = useColors();
   const { showSuccess, showError } = useToast();
 
+  const { events } = useEvents();
+  const { sync } = useSync();
   const [activeTab, setActiveTab] = useState<TabKey>("inbox");
   const [inbox, setInbox] = useState<SharedEvent[]>([]);
   const [outbox, setOutbox] = useState<SharedEvent[]>([]);
@@ -147,6 +151,7 @@ const SharedInboxScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
+      sync().catch(() => {});
       loadData();
     }, []),
   );
@@ -163,9 +168,14 @@ const SharedInboxScreen: React.FC = () => {
     const tags = eventSnapshot.tags || [];
     const firstTag = tags[0];
     const tagIcon = firstTag ? getTagIcon(firstTag) : "calendar-outline";
+    const localEvent = events.find((e) => e.sourceSharedEventId === event.id);
 
     return (
-      <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => localEvent && navigation.navigate("EventDetail", { eventId: localEvent.id })}
+        activeOpacity={localEvent ? 0.7 : 1}
+      >
         {/* Sender */}
         <View style={styles.cardSender}>
           <View
@@ -235,7 +245,7 @@ const SharedInboxScreen: React.FC = () => {
             )}
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -247,9 +257,14 @@ const SharedInboxScreen: React.FC = () => {
     const tags = eventSnapshot.tags || [];
     const firstTag = tags[0];
     const tagIcon = firstTag ? getTagIcon(firstTag) : "calendar-outline";
+    const localEvent = events.find((e) => e.serverId === event.originalEventId);
 
     return (
-      <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => localEvent && navigation.navigate("EventDetail", { eventId: localEvent.id })}
+        activeOpacity={localEvent ? 0.7 : 1}
+      >
         <View style={styles.cardSender}>
           <View
             style={[
@@ -296,7 +311,7 @@ const SharedInboxScreen: React.FC = () => {
             </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 

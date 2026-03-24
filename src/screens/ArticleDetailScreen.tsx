@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,29 +9,34 @@ import {
   Share,
   Dimensions,
   Image,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import RenderHTML from 'react-native-render-html';
-import { COLORS } from '@themes/colors';
-import { htmlStyles } from '@styles/htmlStyles';
-import { WEB_BASE_URL } from '../constants/config';
-import { logArticleView, logArticleShare } from '../services/analyticsService';
-import { Article, getRelatedArticles, ARTICLE_CATEGORIES } from '../data/articles';
-import { getRelatedProductsForArticleAsync } from '../services/affiliateProductService';
-import { getArticles } from '../services/articleService';
-import { AffiliateProduct } from '../types';
-import ProductCard from '../components/suggestions/ProductCard';
-import PressableCard from '@components/atoms/PressableCard';
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import RenderHTML from "react-native-render-html";
+import { COLORS } from "@themes/colors";
+import { htmlStyles } from "@styles/htmlStyles";
+import { WEB_BASE_URL } from "../constants/config";
+import { logArticleView, logArticleShare } from "../services/analyticsService";
+import {
+  Article,
+  getRelatedArticles,
+  ARTICLE_CATEGORIES,
+} from "../data/articles";
+import { getRelatedProductsForArticleAsync } from "../services/affiliateProductService";
+import { getArticles } from "../services/articleService";
+import { AffiliateProduct } from "../types";
+import ProductCard from "../components/suggestions/ProductCard";
+import PressableCard from "@components/atoms/PressableCard";
+import { makeStyles } from "@utils/makeStyles";
+import { useColors, useTheme } from "@contexts/ThemeContext";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 const ArticleDetailScreen: React.FC = () => {
   const styles = useStyles();
   const colors = useColors();
+  const { themeName } = useTheme();
 
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
@@ -41,10 +46,16 @@ const ArticleDetailScreen: React.FC = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(article.likes || 0);
   const [allArticles, setAllArticles] = useState<Article[]>([]);
-  const [relatedProducts, setRelatedProducts] = useState<AffiliateProduct[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<AffiliateProduct[]>(
+    []
+  );
 
   useEffect(() => {
-    logArticleView({ id: article.id, title: article.title, category: article.category });
+    logArticleView({
+      id: article.id,
+      title: article.title,
+      category: article.category,
+    });
     loadArticles();
     loadRelatedProducts();
   }, []);
@@ -67,7 +78,9 @@ const ArticleDetailScreen: React.FC = () => {
     }
   };
 
-  const categoryInfo = ARTICLE_CATEGORIES.find((c) => c.id === article.category);
+  const categoryInfo = ARTICLE_CATEGORIES.find(
+    (c) => c.id === article.category
+  );
 
   const relatedArticles = useMemo(
     () => getRelatedArticles(article, allArticles, 3),
@@ -95,16 +108,23 @@ const ArticleDetailScreen: React.FC = () => {
   };
 
   const handleRelatedArticle = (relatedArticle: Article) => {
-    navigation.replace('ArticleDetail', { article: relatedArticle });
+    navigation.replace("ArticleDetail", { article: relatedArticle });
   };
 
   const heroPaddingTop = insets.top + 8;
 
   return (
     <View style={styles.container}>
-      <StatusBar translucent barStyle="light-content" backgroundColor="transparent" />
+      <StatusBar
+        translucent
+        barStyle="light-content"
+        backgroundColor="transparent"
+      />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── Hero Image ── */}
         <View style={styles.heroWrapper}>
           {article.imageUrl ? (
@@ -114,8 +134,21 @@ const ArticleDetailScreen: React.FC = () => {
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.heroImage, { backgroundColor: article.color, alignItems: 'center', justifyContent: 'center' }]}>
-              <Ionicons name={article.icon as any} size={88} color="rgba(255,255,255,0.2)" />
+            <View
+              style={[
+                styles.heroImage,
+                {
+                  backgroundColor: article.color,
+                  alignItems: "center",
+                  justifyContent: "center",
+                },
+              ]}
+            >
+              <Ionicons
+                name={article.icon as any}
+                size={88}
+                color="rgba(255,255,255,0.2)"
+              />
             </View>
           )}
 
@@ -132,12 +165,15 @@ const ArticleDetailScreen: React.FC = () => {
 
           {/* Floating share + like */}
           <View style={[styles.heroActionRow, { top: heroPaddingTop }]}>
-            <TouchableOpacity style={styles.heroActionBtn} onPress={handleShare}>
+            <TouchableOpacity
+              style={styles.heroActionBtn}
+              onPress={handleShare}
+            >
               <Ionicons name="share-outline" size={20} color={colors.white} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.heroActionBtn} onPress={handleLike}>
               <Ionicons
-                name={isLiked ? 'heart' : 'heart-outline'}
+                name={isLiked ? "heart" : "heart-outline"}
                 size={20}
                 color={isLiked ? colors.primary : colors.white}
               />
@@ -147,35 +183,62 @@ const ArticleDetailScreen: React.FC = () => {
           {/* Category badge + title at bottom */}
           <View style={styles.heroContent}>
             {categoryInfo && (
-              <View style={[styles.heroCatBadge, { backgroundColor: article.color }]}>
-                <Ionicons name={article.icon as any} size={11} color={colors.white} />
+              <View
+                style={[
+                  styles.heroCatBadge,
+                  { backgroundColor: article.color },
+                ]}
+              >
+                <Ionicons
+                  name={article.icon as any}
+                  size={11}
+                  color={colors.white}
+                />
                 <Text style={styles.heroCatText}>{categoryInfo.name}</Text>
               </View>
             )}
-            <Text style={styles.heroTitle} numberOfLines={3}>{article.title}</Text>
+            <Text style={styles.heroTitle} numberOfLines={3}>
+              {article.title}
+            </Text>
           </View>
         </View>
 
         {/* Metadata Bar */}
         <View style={styles.metadataCard}>
           <View style={styles.metaItem}>
-            <Ionicons name="person-outline" size={14} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{article.author || 'Love Date App'}</Text>
+            <Ionicons
+              name="person-outline"
+              size={14}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.metaText}>
+              {article.author || "Love Date App"}
+            </Text>
           </View>
           <View style={styles.metaDivider} />
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{article.readTime || 5} phút đọc</Text>
+            <Ionicons
+              name="time-outline"
+              size={14}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.metaText}>
+              {article.readTime || 5} phút đọc
+            </Text>
           </View>
           <View style={styles.metaDivider} />
           <View style={styles.metaItem}>
-            <Ionicons name="eye-outline" size={14} color={colors.textSecondary} />
+            <Ionicons
+              name="eye-outline"
+              size={14}
+              color={colors.textSecondary}
+            />
             <Text style={styles.metaText}>{article.views || 0}</Text>
           </View>
           <View style={styles.metaDivider} />
           <View style={styles.metaItem}>
             <Ionicons
-              name={isLiked ? 'heart' : 'heart-outline'}
+              name={isLiked ? "heart" : "heart-outline"}
               size={14}
               color={isLiked ? colors.error : colors.textSecondary}
             />
@@ -188,9 +251,15 @@ const ArticleDetailScreen: React.FC = () => {
           <RenderHTML
             contentWidth={screenWidth - 72}
             source={{ html: article.content }}
-            tagsStyles={htmlStyles}
-            baseStyle={{ fontFamily: 'Manrope_400Regular' }}
-            systemFonts={['Manrope_400Regular', 'Manrope_500Medium', 'Manrope_600SemiBold', 'Manrope_700Bold', 'Manrope_800ExtraBold']}
+            tagsStyles={htmlStyles(themeName)}
+            baseStyle={{ fontFamily: "Manrope_400Regular" }}
+            systemFonts={[
+              "Manrope_400Regular",
+              "Manrope_500Medium",
+              "Manrope_600SemiBold",
+              "Manrope_700Bold",
+              "Manrope_800ExtraBold",
+            ]}
           />
         </View>
 
@@ -198,7 +267,11 @@ const ArticleDetailScreen: React.FC = () => {
         {article.tags && article.tags.length > 0 && (
           <View style={styles.tagsSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="pricetags-outline" size={18} color={colors.textSecondary} />
+              <Ionicons
+                name="pricetags-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
               <Text style={styles.sectionHeaderText}>Thẻ</Text>
             </View>
             <View style={styles.tagsWrap}>
@@ -208,12 +281,14 @@ const ArticleDetailScreen: React.FC = () => {
                   style={[
                     styles.tagPill,
                     {
-                      backgroundColor: article.color + '15',
-                      borderColor: article.color + '30',
+                      backgroundColor: article.color + "15",
+                      borderColor: article.color + "30",
                     },
                   ]}
                 >
-                  <Text style={[styles.tagText, { color: article.color }]}>{tag}</Text>
+                  <Text style={[styles.tagText, { color: article.color }]}>
+                    {tag}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -243,11 +318,17 @@ const ArticleDetailScreen: React.FC = () => {
         {relatedArticles.length > 0 && (
           <View style={styles.relatedSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="newspaper-outline" size={18} color={colors.primary} />
+              <Ionicons
+                name="newspaper-outline"
+                size={18}
+                color={colors.primary}
+              />
               <Text style={styles.sectionHeaderText}>Bài viết tương tự</Text>
             </View>
             {relatedArticles.map((relArticle) => {
-              const relCat = ARTICLE_CATEGORIES.find((c) => c.id === relArticle.category);
+              const relCat = ARTICLE_CATEGORIES.find(
+                (c) => c.id === relArticle.category
+              );
               return (
                 <PressableCard
                   key={relArticle.id}
@@ -257,7 +338,7 @@ const ArticleDetailScreen: React.FC = () => {
                   <View
                     style={[
                       styles.relatedArticleIcon,
-                      { backgroundColor: relArticle.color + '20' },
+                      { backgroundColor: relArticle.color + "20" },
                     ]}
                   >
                     <Ionicons
@@ -315,56 +396,56 @@ const useStyles = makeStyles((colors) => ({
   // ── Hero image ──────────────────────────────────────────────────────────────
   heroWrapper: {
     height: 260,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   heroImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
+    width: "100%",
+    height: "100%",
+    position: "absolute",
   },
   heroGradient: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     height: 160,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
   heroBack: {
-    position: 'absolute',
+    position: "absolute",
     left: 12,
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   heroActionRow: {
-    position: 'absolute',
+    position: "absolute",
     right: 12,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   heroActionBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   heroContent: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     right: 16,
     bottom: 16,
   },
   heroCatBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -372,21 +453,21 @@ const useStyles = makeStyles((colors) => ({
   },
   heroCatText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   heroTitle: {
     fontSize: 20,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
     lineHeight: 27,
   },
 
   // Metadata
   metadataCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: -8,
@@ -399,14 +480,14 @@ const useStyles = makeStyles((colors) => ({
     shadowRadius: 4,
   },
   metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   metaText: {
     fontSize: 12,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   metaDivider: {
     width: 1,
@@ -434,19 +515,19 @@ const useStyles = makeStyles((colors) => ({
     marginBottom: 8,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 12,
   },
   sectionHeaderText: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   tagsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   tagPill: {
@@ -457,7 +538,7 @@ const useStyles = makeStyles((colors) => ({
   },
   tagText: {
     fontSize: 13,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
 
   // Related Sections
@@ -472,8 +553,8 @@ const useStyles = makeStyles((colors) => ({
 
   // Related Article Card
   relatedArticleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
@@ -488,8 +569,8 @@ const useStyles = makeStyles((colors) => ({
     width: 44,
     height: 44,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   relatedArticleContent: {
@@ -498,22 +579,23 @@ const useStyles = makeStyles((colors) => ({
   },
   relatedArticleTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     lineHeight: 20,
     marginBottom: 4,
   },
   relatedArticleMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   relatedArticleCat: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
   relatedArticleTime: {
     fontSize: 12,
     color: colors.textSecondary,
   },
-}));export default ArticleDetailScreen;
+}));
+export default ArticleDetailScreen;

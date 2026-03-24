@@ -108,10 +108,8 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   };
 
   const value: SyncContextValue = {
-    syncStatus: {
-      ...syncStatus,
-      conflicts,
-    } as any,
+    syncStatus,
+    conflicts,
     sync,
     resolveConflict,
   };

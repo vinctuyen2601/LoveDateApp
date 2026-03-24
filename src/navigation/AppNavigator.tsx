@@ -1,4 +1,5 @@
 import React, { createRef, useRef, useState, useEffect } from "react";
+import { DeviceEventEmitter } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useAuth } from "@contexts/AuthContext";
@@ -245,7 +246,10 @@ const AppNavigator: React.FC = () => {
       </NavigationContainer>
       {showOnboarding === true && (
         <OnboardingOverlay
-          onComplete={() => setShowOnboarding(false)}
+          onComplete={() => {
+            setShowOnboarding(false);
+            DeviceEventEmitter.emit("onboardingComplete");
+          }}
           onRegister={() => {
             setShowOnboarding(false);
             navigate("Auth");

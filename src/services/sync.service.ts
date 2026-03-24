@@ -1,5 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
-import { Event, SyncPayload, SyncResponse, SyncConflict, SyncError } from '../types';
+import { Event, SyncPayload, SyncResponse, SyncConflict, SyncError, SyncStatusUpdate } from '../types';
 import { databaseService } from './database.service';
 import { apiService } from './api.service';
 import { contentSyncService } from './contentSync.service';
@@ -8,7 +8,7 @@ import { SYNC_INTERVAL } from '../constants/config';
 class SyncService {
   private isSyncing = false;
   private syncInterval: NodeJS.Timeout | null = null;
-  private listeners: Array<(status: any) => void> = [];
+  private listeners: Array<(status: SyncStatusUpdate) => void> = [];
 
   /**
    * Start auto-sync
@@ -116,11 +116,11 @@ class SyncService {
         error: null,
         lastSyncAt: new Date().toISOString(),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sync error:', error);
       this.notifyListeners({
         isSyncing: false,
-        error: error.message || 'Sync failed',
+        error: error instanceof Error ? error.message : 'Sync failed',
       });
       throw new SyncError('Sync failed', error);
     } finally {
@@ -236,7 +236,7 @@ class SyncService {
   /**
    * Add sync status listener
    */
-  addListener(listener: (status: any) => void): () => void {
+  addListener(listener: (status: SyncStatusUpdate) => void): () => void {
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
@@ -246,7 +246,7 @@ class SyncService {
   /**
    * Notify all listeners
    */
-  private notifyListeners(status: any): void {
+  private notifyListeners(status: SyncStatusUpdate): void {
     this.listeners.forEach(listener => {
       try {
         listener(status);

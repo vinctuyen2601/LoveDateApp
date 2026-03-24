@@ -1,13 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS } from '@themes/colors';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { COLORS } from "@themes/colors";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 export type ColorScheme = Record<keyof typeof COLORS, string>;
 
-export type ThemeName = 'light' | 'dark' | 'rose' | 'ocean' | 'forest';
+export type ThemeName = "light" | "dark" | "rose" | "ocean" | "forest";
 
 export interface ThemeInfo {
   name: ThemeName;
@@ -33,68 +39,70 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
   light: COLORS,
 
   dark: buildTheme({
-    background:    '#0F172A',  // slate-900
-    surface:       '#1E293B',  // slate-800
-    textPrimary:   '#F8FAFC',  // slate-50
-    textSecondary: '#94A3B8',  // slate-400
-    textLight:     '#475569',  // slate-600
-    textDisabled:  '#334155',  // slate-700
-    border:        '#334155',  // slate-700
-    borderLight:   '#1E293B',  // slate-800
-    shadow:        '#000000' + '40',
-    overlay:       '#000000' + 'A0',
+    background: "#0F172A", // slate-900
+    surface: "#1E293B", // slate-800
+    textPrimary: "#F8FAFC", // slate-50
+    textSecondary: "#94A3B8", // slate-400
+    textLight: "#475569", // slate-600
+    textDisabled: "#334155", // slate-700
+    border: "#334155", // slate-700
+    borderLight: "#1E293B", // slate-800
+    shadow: "#000000" + "40",
+    overlay: "#000000" + "A0",
   }),
 
   rose: buildTheme({
-    primary:      '#F43F5E',  // rose-500
-    primaryLight: '#FB7185',  // rose-400
-    secondary:    '#FB923C',  // orange-400
-    gradientStart: '#F43F5E',
-    gradientEnd:   '#FB923C',
+    primary: "#F43F5E", // rose-500
+    primaryLight: "#FB7185", // rose-400
+    secondary: "#FB923C", // orange-400
+    gradientStart: "#F43F5E",
+    gradientEnd: "#FB923C",
   }),
 
   ocean: buildTheme({
-    primary:      '#0EA5E9',  // sky-500
-    primaryLight: '#38BDF8',  // sky-400
-    secondary:    '#06B6D4',  // cyan-500
-    gradientStart: '#0EA5E9',
-    gradientEnd:   '#06B6D4',
+    primary: "#0EA5E9", // sky-500
+    primaryLight: "#38BDF8", // sky-400
+    secondary: "#06B6D4", // cyan-500
+    gradientStart: "#0EA5E9",
+    gradientEnd: "#06B6D4",
   }),
 
   forest: buildTheme({
-    primary:      '#22C55E',  // green-500
-    primaryLight: '#4ADE80',  // green-400
-    secondary:    '#14B8A6',  // teal-500
-    gradientStart: '#22C55E',
-    gradientEnd:   '#14B8A6',
+    primary: "#22C55E", // green-500
+    primaryLight: "#4ADE80", // green-400
+    secondary: "#14B8A6", // teal-500
+    gradientStart: "#22C55E",
+    gradientEnd: "#14B8A6",
   }),
 };
 
 export const THEME_LIST: ThemeInfo[] = [
-  { name: 'light',  label: 'Mặc định',   preview: THEMES.light.primary },
-  { name: 'rose',   label: 'Hồng Rose',  preview: THEMES.rose.primary },
-  { name: 'ocean',  label: 'Đại dương',  preview: THEMES.ocean.primary },
-  { name: 'forest', label: 'Rừng xanh',  preview: THEMES.forest.primary },
-  { name: 'dark',   label: 'Tối',        preview: '#1E293B' },
+  { name: "light", label: "Cam", preview: THEMES.light.primary },
+  { name: "rose", label: "Hồng", preview: THEMES.rose.primary },
+  // { name: 'ocean',  label: 'Đại dương',  preview: THEMES.ocean.primary },
+  { name: "forest", label: "Xanh", preview: THEMES.forest.primary },
+  { name: "dark", label: "Xanh Đêm", preview: "#1E293B" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Context
 // ─────────────────────────────────────────────────────────────────────────────
-const STORAGE_KEY = '@app_theme';
+const STORAGE_KEY = "@app_theme";
 
 const ThemeContext = createContext<ThemeContextValue>({
-  colors:    COLORS,
-  themeName: 'light',
-  setTheme:  () => {},
+  colors: COLORS,
+  themeName: "light",
+  setTheme: () => {},
 });
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('light');
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [themeName, setThemeName] = useState<ThemeName>("light");
 
   // Load saved theme on mount
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(saved => {
+    AsyncStorage.getItem(STORAGE_KEY).then((saved) => {
       if (saved && saved in THEMES) {
         setThemeName(saved as ThemeName);
       }
@@ -107,7 +115,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ colors: THEMES[themeName], themeName, setTheme }}>
+    <ThemeContext.Provider
+      value={{ colors: THEMES[themeName], themeName, setTheme }}
+    >
       {children}
     </ThemeContext.Provider>
   );

@@ -23,8 +23,8 @@ import CalendarScreen from "../screens/CalendarScreen";
 import SuggestionsScreen from "../screens/SuggestionsScreen";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SCREEN_W = Dimensions.get("window").width;
@@ -157,18 +157,6 @@ type TabConfig = {
 
 const TAB_CONFIGS: TabConfig[] = [
   {
-    name: "Home",
-    label: "Trang chủ",
-    icon: "home-outline",
-    iconFocused: "home",
-  },
-  {
-    name: "Calendar",
-    label: "Lịch",
-    icon: "calendar-outline",
-    iconFocused: "calendar",
-  },
-  {
     name: "Suggestions",
     label: "Khám phá",
     icon: "bulb-outline",
@@ -180,6 +168,19 @@ const TAB_CONFIGS: TabConfig[] = [
     icon: "people-outline",
     iconFocused: "people",
   },
+  {
+    name: "Home",
+    label: "Trang chủ",
+    icon: "home-outline",
+    iconFocused: "home",
+  },
+  {
+    name: "Calendar",
+    label: "Lịch",
+    icon: "calendar-outline",
+    iconFocused: "calendar",
+  },
+
   {
     name: "Settings",
     label: "Cài đặt",
@@ -232,10 +233,10 @@ const TabNavigator: React.FC = () => (
     tabBar={(props) => <CustomTabBar {...props} />}
     screenOptions={{ headerShown: false }}
   >
-    <Tab.Screen name="Home" component={HomeScreen} />
-    <Tab.Screen name="Calendar" component={CalendarScreen} />
     <Tab.Screen name="Suggestions" component={SuggestionsScreen} />
     <Tab.Screen name="Connections" component={ConnectionsScreen} />
+    <Tab.Screen name="Home" component={HomeScreen} />
+    <Tab.Screen name="Calendar" component={CalendarScreen} />
     <Tab.Screen name="Settings" component={SettingsScreen} />
   </Tab.Navigator>
 );
@@ -273,15 +274,15 @@ const useStyles = makeStyles((colors) => ({
     justifyContent: "center",
   },
   iconWrapActive: {
-    backgroundColor: colors.primary + '18',
+    backgroundColor: colors.primary + "18",
   },
   label: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
   },
   labelActive: {
     color: colors.primary,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 }));

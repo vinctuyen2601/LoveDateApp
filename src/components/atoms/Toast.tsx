@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   Animated,
   StyleSheet,
@@ -6,15 +6,15 @@ import {
   View,
   Dimensions,
   TouchableOpacity,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@themes/colors';
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS } from "@themes/colors";
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+export type ToastType = "success" | "error" | "info" | "warning";
 
 export interface ToastProps {
   message: string;
@@ -25,7 +25,7 @@ export interface ToastProps {
 
 const Toast: React.FC<ToastProps> = ({
   message,
-  type = 'success',
+  type = "success",
   duration = 3000,
   onHide,
 }) => {
@@ -80,35 +80,35 @@ const Toast: React.FC<ToastProps> = ({
 
   const getToastConfig = () => {
     switch (type) {
-      case 'success':
+      case "success":
         return {
-          icon: 'checkmark-circle' as const,
+          icon: "checkmark-circle" as const,
           color: colors.success,
-          backgroundColor: colors.success + '20',
+          backgroundColor: colors.success,
         };
-      case 'error':
+      case "error":
         return {
-          icon: 'close-circle' as const,
+          icon: "close-circle" as const,
           color: colors.error,
-          backgroundColor: colors.error + '18',
+          backgroundColor: colors.error,
         };
-      case 'warning':
+      case "warning":
         return {
-          icon: 'warning' as const,
+          icon: "warning" as const,
           color: colors.warning,
-          backgroundColor: colors.warning + '18',
+          backgroundColor: colors.warning,
         };
-      case 'info':
+      case "info":
         return {
-          icon: 'information-circle' as const,
+          icon: "information-circle" as const,
           color: colors.info,
-          backgroundColor: colors.info + '18',
+          backgroundColor: colors.info,
         };
       default:
         return {
-          icon: 'checkmark-circle' as const,
+          icon: "checkmark-circle" as const,
           color: colors.success,
-          backgroundColor: colors.success + '20',
+          backgroundColor: colors.success,
         };
     }
   };
@@ -144,7 +144,7 @@ const Toast: React.FC<ToastProps> = ({
 
 const useStyles = makeStyles((colors) => ({
   container: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     left: 16,
     right: 16,
@@ -152,8 +152,8 @@ const useStyles = makeStyles((colors) => ({
     elevation: 9999,
   },
   toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -167,10 +167,11 @@ const useStyles = makeStyles((colors) => ({
   message: {
     flex: 1,
     fontSize: 15,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     lineHeight: 20,
   },
   closeButton: {
     padding: 4,
   },
-}));export default Toast;
+}));
+export default Toast;

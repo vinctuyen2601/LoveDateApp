@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,78 +10,91 @@ import {
   Linking,
   Dimensions,
   Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import RenderHTML from 'react-native-render-html';
-import { AffiliateProduct } from '../types';
-import { COLORS } from '@themes/colors';
-import { htmlStyles } from '../styles/htmlStyles';
-import { SERVICE_CATEGORIES } from '../data/affiliateProducts';
-import { useMasterData } from '../contexts/MasterDataContext';
-import { trackAffiliateClick, getExperienceProducts } from '../services/affiliateProductService';
-import ExperienceCard from '../components/suggestions/ExperienceCard';
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import RenderHTML from "react-native-render-html";
+import { AffiliateProduct } from "../types";
+import { COLORS } from "@themes/colors";
+import { htmlStyles } from "../styles/htmlStyles";
+import { SERVICE_CATEGORIES } from "../data/affiliateProducts";
+import { useMasterData } from "../contexts/MasterDataContext";
+import {
+  trackAffiliateClick,
+  getExperienceProducts,
+} from "../services/affiliateProductService";
+import ExperienceCard from "../components/suggestions/ExperienceCard";
+import { makeStyles } from "@utils/makeStyles";
+import { useColors, useTheme } from "@contexts/ThemeContext";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 // Category màu và icon cho từng loại trải nghiệm
-const EXPERIENCE_CATEGORY_META: Record<string, { label: string; icon: string; color: string; highlight: string }> = {
+const EXPERIENCE_CATEGORY_META: Record<
+  string,
+  { label: string; icon: string; color: string; highlight: string }
+> = {
   restaurant: {
-    label: 'Nhà hàng',
-    icon: 'restaurant',
-    color: '#FF8C00',
-    highlight: 'Ẩm thực',
+    label: "Nhà hàng",
+    icon: "restaurant",
+    color: "#FF8C00",
+    highlight: "Ẩm thực",
   },
   hotel: {
-    label: 'Khách sạn',
-    icon: 'bed',
-    color: '#9B59B6',
-    highlight: 'Lưu trú',
+    label: "Khách sạn",
+    icon: "bed",
+    color: "#9B59B6",
+    highlight: "Lưu trú",
   },
   spa: {
-    label: 'Spa & Wellness',
-    icon: 'leaf',
-    color: '#2ECC71',
-    highlight: 'Thư giãn',
+    label: "Spa & Wellness",
+    icon: "leaf",
+    color: "#2ECC71",
+    highlight: "Thư giãn",
   },
   travel: {
-    label: 'Du lịch',
-    icon: 'airplane',
-    color: '#3498DB',
-    highlight: 'Khám phá',
+    label: "Du lịch",
+    icon: "airplane",
+    color: "#3498DB",
+    highlight: "Khám phá",
   },
 };
 
 const ExperienceDetailScreen: React.FC = () => {
   const styles = useStyles();
   const colors = useColors();
+  const { themeName } = useTheme();
 
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { product } = route.params as { product: AffiliateProduct };
 
-  const [similarExperiences, setSimilarExperiences] = useState<AffiliateProduct[]>([]);
+  const [similarExperiences, setSimilarExperiences] = useState<
+    AffiliateProduct[]
+  >([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const { occasions } = useMasterData();
 
   const meta = EXPERIENCE_CATEGORY_META[product.category] || {
     label: product.category,
-    icon: 'star',
+    icon: "star",
     color: product.color,
-    highlight: 'Trải nghiệm',
+    highlight: "Trải nghiệm",
   };
 
-  const categoryInfo = SERVICE_CATEGORIES.find((c) => c.id === product.category);
+  const categoryInfo = SERVICE_CATEGORIES.find(
+    (c) => c.id === product.category
+  );
 
   useEffect(() => {
     const loadSimilar = async () => {
       try {
         const all = await getExperienceProducts(10);
-        setSimilarExperiences(all.filter((p) => p.id !== product.id).slice(0, 5));
+        setSimilarExperiences(
+          all.filter((p) => p.id !== product.id).slice(0, 5)
+        );
       } catch {
         // ignore
       }
@@ -95,15 +108,17 @@ const ExperienceDetailScreen: React.FC = () => {
   }, [product.occasion, occasions]);
 
   const highlights = useMemo(() => {
-    return product.tags && product.tags.length > 0 ? product.tags.slice(0, 6) : [];
+    return product.tags && product.tags.length > 0
+      ? product.tags.slice(0, 6)
+      : [];
   }, [product.tags]);
 
   const handleBook = () => {
     const url = product.affiliateUrl;
-    if (!url || url === '#') return;
+    if (!url || url === "#") return;
     trackAffiliateClick(product.id);
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank', 'noopener,noreferrer');
+    if (Platform.OS === "web") {
+      window.open(url, "_blank", "noopener,noreferrer");
     } else {
       Linking.openURL(url);
     }
@@ -112,20 +127,25 @@ const ExperienceDetailScreen: React.FC = () => {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `${product.name} — ${product.priceRange || 'Liên hệ'} | Love Date App`,
+        message: `${product.name} — ${
+          product.priceRange || "Liên hệ"
+        } | Love Date App`,
       });
     } catch {
       // cancelled
     }
   };
 
-  const isBookable = product.affiliateUrl && product.affiliateUrl !== '#';
+  const isBookable = product.affiliateUrl && product.affiliateUrl !== "#";
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -152,11 +172,18 @@ const ExperienceDetailScreen: React.FC = () => {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={(e) => {
-                setGalleryIndex(Math.round(e.nativeEvent.contentOffset.x / screenWidth));
+                setGalleryIndex(
+                  Math.round(e.nativeEvent.contentOffset.x / screenWidth)
+                );
               }}
             >
               {product.galleryUrls.filter(Boolean).map((url, i) => (
-                <Image key={i} source={{ uri: url }} style={styles.heroImage} resizeMode="cover" />
+                <Image
+                  key={i}
+                  source={{ uri: url }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
               ))}
             </ScrollView>
             {/* Dot indicators */}
@@ -171,11 +198,19 @@ const ExperienceDetailScreen: React.FC = () => {
           </View>
         ) : product.imageUrl ? (
           <View style={styles.heroContainer}>
-            <Image source={{ uri: product.imageUrl }} style={styles.heroImage} resizeMode="cover" />
+            <Image
+              source={{ uri: product.imageUrl }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
           </View>
         ) : (
           <View style={[styles.heroFallback, { backgroundColor: meta.color }]}>
-            <Ionicons name={meta.icon as any} size={72} color="rgba(255,255,255,0.8)" />
+            <Ionicons
+              name={meta.icon as any}
+              size={72}
+              color="rgba(255,255,255,0.8)"
+            />
             <Text style={styles.heroFallbackLabel}>{meta.highlight}</Text>
           </View>
         )}
@@ -186,16 +221,27 @@ const ExperienceDetailScreen: React.FC = () => {
 
           {/* Price + Partner row */}
           <View style={styles.metaRow}>
-            <View style={[styles.priceChip, { backgroundColor: meta.color + '18' }]}>
+            <View
+              style={[styles.priceChip, { backgroundColor: meta.color + "18" }]}
+            >
               <Ionicons name="pricetag" size={14} color={meta.color} />
               <Text style={[styles.priceText, { color: meta.color }]}>
-                {product.priceRange || (product.price ? `${(product.price / 1000).toFixed(0)}k` : 'Liên hệ')}
+                {product.priceRange ||
+                  (product.price
+                    ? `${(product.price / 1000).toFixed(0)}k`
+                    : "Liên hệ")}
               </Text>
             </View>
             {product.affiliatePartner && (
               <View style={styles.partnerChip}>
-                <Ionicons name="storefront-outline" size={13} color={colors.textSecondary} />
-                <Text style={styles.partnerText}>{product.affiliatePartner}</Text>
+                <Ionicons
+                  name="storefront-outline"
+                  size={13}
+                  color={colors.textSecondary}
+                />
+                <Text style={styles.partnerText}>
+                  {product.affiliatePartner}
+                </Text>
               </View>
             )}
           </View>
@@ -208,17 +254,19 @@ const ExperienceDetailScreen: React.FC = () => {
                   key={star}
                   name={
                     star <= Math.floor(product.rating)
-                      ? 'star'
+                      ? "star"
                       : star - 0.5 <= product.rating
-                      ? 'star-half'
-                      : 'star-outline'
+                      ? "star-half"
+                      : "star-outline"
                   }
                   size={16}
                   color="#FFB300"
                 />
               ))}
               <Text style={styles.ratingNum}>{product.rating}</Text>
-              <Text style={styles.reviewCount}>({product.reviewCount} đánh giá)</Text>
+              <Text style={styles.reviewCount}>
+                ({product.reviewCount} đánh giá)
+              </Text>
             </View>
           )}
         </View>
@@ -232,9 +280,24 @@ const ExperienceDetailScreen: React.FC = () => {
             </View>
             <View style={styles.tagsWrap}>
               {highlights.map((tag, i) => (
-                <View key={i} style={[styles.highlightChip, { borderColor: meta.color + '40', backgroundColor: meta.color + '10' }]}>
-                  <Ionicons name="checkmark-circle" size={13} color={meta.color} />
-                  <Text style={[styles.highlightText, { color: meta.color }]}>{tag}</Text>
+                <View
+                  key={i}
+                  style={[
+                    styles.highlightChip,
+                    {
+                      borderColor: meta.color + "40",
+                      backgroundColor: meta.color + "10",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={13}
+                    color={meta.color}
+                  />
+                  <Text style={[styles.highlightText, { color: meta.color }]}>
+                    {tag}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -244,15 +307,25 @@ const ExperienceDetailScreen: React.FC = () => {
         {/* Giới thiệu */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="information-circle-outline" size={18} color={meta.color} />
+            <Ionicons
+              name="information-circle-outline"
+              size={18}
+              color={meta.color}
+            />
             <Text style={styles.cardTitle}>Giới thiệu</Text>
           </View>
           <RenderHTML
             contentWidth={screenWidth - 64}
             source={{ html: product.description }}
-            tagsStyles={htmlStyles}
-            baseStyle={{ fontFamily: 'Manrope_400Regular' }}
-            systemFonts={['Manrope_400Regular', 'Manrope_500Medium', 'Manrope_600SemiBold', 'Manrope_700Bold', 'Manrope_800ExtraBold']}
+            tagsStyles={htmlStyles(themeName)}
+            baseStyle={{ fontFamily: "Manrope_400Regular" }}
+            systemFonts={[
+              "Manrope_400Regular",
+              "Manrope_500Medium",
+              "Manrope_600SemiBold",
+              "Manrope_700Bold",
+              "Manrope_800ExtraBold",
+            ]}
           />
         </View>
 
@@ -264,7 +337,12 @@ const ExperienceDetailScreen: React.FC = () => {
           </View>
 
           <View style={styles.infoRow}>
-            <View style={[styles.infoIconWrap, { backgroundColor: meta.color + '15' }]}>
+            <View
+              style={[
+                styles.infoIconWrap,
+                { backgroundColor: meta.color + "15" },
+              ]}
+            >
               <Ionicons name={meta.icon as any} size={16} color={meta.color} />
             </View>
             <Text style={styles.infoLabel}>Loại</Text>
@@ -272,17 +350,33 @@ const ExperienceDetailScreen: React.FC = () => {
           </View>
 
           <View style={styles.infoRow}>
-            <View style={[styles.infoIconWrap, { backgroundColor: meta.color + '15' }]}>
+            <View
+              style={[
+                styles.infoIconWrap,
+                { backgroundColor: meta.color + "15" },
+              ]}
+            >
               <Ionicons name="cash-outline" size={16} color={meta.color} />
             </View>
             <Text style={styles.infoLabel}>Mức giá</Text>
-            <Text style={styles.infoValue}>{product.priceRange || 'Liên hệ'}</Text>
+            <Text style={styles.infoValue}>
+              {product.priceRange || "Liên hệ"}
+            </Text>
           </View>
 
           {product.affiliatePartner && (
             <View style={styles.infoRow}>
-              <View style={[styles.infoIconWrap, { backgroundColor: meta.color + '15' }]}>
-                <Ionicons name="storefront-outline" size={16} color={meta.color} />
+              <View
+                style={[
+                  styles.infoIconWrap,
+                  { backgroundColor: meta.color + "15" },
+                ]}
+              >
+                <Ionicons
+                  name="storefront-outline"
+                  size={16}
+                  color={meta.color}
+                />
               </View>
               <Text style={styles.infoLabel}>Đối tác</Text>
               <Text style={styles.infoValue}>{product.affiliatePartner}</Text>
@@ -290,8 +384,17 @@ const ExperienceDetailScreen: React.FC = () => {
           )}
 
           <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-            <View style={[styles.infoIconWrap, { backgroundColor: meta.color + '15' }]}>
-              <Ionicons name="shield-checkmark-outline" size={16} color={meta.color} />
+            <View
+              style={[
+                styles.infoIconWrap,
+                { backgroundColor: meta.color + "15" },
+              ]}
+            >
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={16}
+                color={meta.color}
+              />
             </View>
             <Text style={styles.infoLabel}>Đặt cọc</Text>
             <Text style={styles.infoValue}>Qua đối tác</Text>
@@ -309,10 +412,24 @@ const ExperienceDetailScreen: React.FC = () => {
               {productOccasions.map((occasion) => (
                 <View
                   key={occasion.id}
-                  style={[styles.occasionPill, { backgroundColor: occasion.color + '15', borderColor: occasion.color + '30' }]}
+                  style={[
+                    styles.occasionPill,
+                    {
+                      backgroundColor: occasion.color + "15",
+                      borderColor: occasion.color + "30",
+                    },
+                  ]}
                 >
-                  <Ionicons name={occasion.icon as any} size={13} color={occasion.color} />
-                  <Text style={[styles.occasionText, { color: occasion.color }]}>{occasion.name}</Text>
+                  <Ionicons
+                    name={occasion.icon as any}
+                    size={13}
+                    color={occasion.color}
+                  />
+                  <Text
+                    style={[styles.occasionText, { color: occasion.color }]}
+                  >
+                    {occasion.name}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -342,22 +459,29 @@ const ExperienceDetailScreen: React.FC = () => {
       {/* Sticky CTA */}
       <View style={styles.ctaContainer}>
         <TouchableOpacity
-          style={[styles.ctaButton, { backgroundColor: isBookable ? meta.color : colors.textLight }]}
+          style={[
+            styles.ctaButton,
+            { backgroundColor: isBookable ? meta.color : colors.textLight },
+          ]}
           onPress={handleBook}
           disabled={!isBookable}
           activeOpacity={0.85}
         >
           <Ionicons
-            name={isBookable ? 'calendar' : 'time-outline'}
+            name={isBookable ? "calendar" : "time-outline"}
             size={22}
             color={colors.white}
           />
           <Text style={styles.ctaText}>
             {isBookable
-              ? `Đặt trải nghiệm${product.priceRange ? ` — ${product.priceRange}` : ''}`
-              : 'Sắp có lịch'}
+              ? `Đặt trải nghiệm${
+                  product.priceRange ? ` — ${product.priceRange}` : ""
+                }`
+              : "Sắp có lịch"}
           </Text>
-          {isBookable && <Ionicons name="arrow-forward" size={18} color={colors.white} />}
+          {isBookable && (
+            <Ionicons name="arrow-forward" size={18} color={colors.white} />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -372,9 +496,9 @@ const useStyles = makeStyles((colors) => ({
 
   // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 8,
     paddingTop: 0,
     paddingBottom: 12,
@@ -387,11 +511,11 @@ const useStyles = makeStyles((colors) => ({
   },
   headerCenter: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   categoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -399,7 +523,7 @@ const useStyles = makeStyles((colors) => ({
   },
   categoryBadgeText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
 
@@ -411,7 +535,7 @@ const useStyles = makeStyles((colors) => ({
   // Hero
   heroContainer: {
     height: 260,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   heroImage: {
     width: screenWidth,
@@ -419,30 +543,30 @@ const useStyles = makeStyles((colors) => ({
   },
   heroFallback: {
     height: 220,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
   heroFallbackLabel: {
     fontSize: 18,
-    fontFamily: 'Manrope_700Bold',
-    color: 'rgba(255,255,255,0.9)',
+    fontFamily: "Manrope_700Bold",
+    color: "rgba(255,255,255,0.9)",
     letterSpacing: 1,
   },
   galleryDots: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 12,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 6,
   },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: "rgba(255,255,255,0.5)",
   },
   dotActive: {
     backgroundColor: colors.surface,
@@ -464,21 +588,21 @@ const useStyles = makeStyles((colors) => ({
   },
   experienceName: {
     fontSize: 22,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.textPrimary,
     lineHeight: 30,
     marginBottom: 10,
   },
   metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 10,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   priceChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -486,11 +610,11 @@ const useStyles = makeStyles((colors) => ({
   },
   priceText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
   partnerChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -500,17 +624,17 @@ const useStyles = makeStyles((colors) => ({
   partnerText: {
     fontSize: 13,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     marginTop: 4,
   },
   ratingNum: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
     marginLeft: 4,
   },
@@ -533,26 +657,26 @@ const useStyles = makeStyles((colors) => ({
     shadowRadius: 3,
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 12,
   },
   cardTitle: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
 
   // Highlights
   tagsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   highlightChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -561,13 +685,13 @@ const useStyles = makeStyles((colors) => ({
   },
   highlightText: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // Booking info rows
   infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -576,8 +700,8 @@ const useStyles = makeStyles((colors) => ({
     width: 34,
     height: 34,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   infoLabel: {
@@ -587,14 +711,14 @@ const useStyles = makeStyles((colors) => ({
   },
   infoValue: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
 
   // Occasions
   occasionPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -603,7 +727,7 @@ const useStyles = makeStyles((colors) => ({
   },
   occasionText: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // Similar
@@ -614,32 +738,33 @@ const useStyles = makeStyles((colors) => ({
 
   // Sticky CTA
   ctaContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
+    paddingBottom: Platform.OS === "ios" ? 32 : 16,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
   },
   ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 14,
     paddingVertical: 16,
     gap: 10,
   },
   ctaText: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
-}));export default ExperienceDetailScreen;
+}));
+export default ExperienceDetailScreen;

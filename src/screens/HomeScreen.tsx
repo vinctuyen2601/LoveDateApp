@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import {
   View,
   Text,
@@ -10,6 +16,7 @@ import {
   Dimensions,
   Animated,
   Modal,
+  DeviceEventEmitter,
 } from "react-native";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,8 +57,8 @@ import {
   snoozeSuggestion,
 } from "@lib/holidaySuggestionHelper";
 import { HolidaySuggestion } from "@constants/holidaySuggestions";
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+import { makeStyles } from "@utils/makeStyles";
+import { useColors, useTheme } from "@contexts/ThemeContext";
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -63,9 +70,56 @@ const CATEGORY_NAMES: Record<string, string> = {
   personality: "Tính cách",
 };
 
+// Tạo ngoài HomeScreen để tránh re-create mỗi render
+const CalendarDay = React.memo(
+  ({ date, state, marking, onPress, styles, colors }: any) => {
+    const isSelected = !!marking?.selected;
+    const isToday = state === "today";
+    const isDisabled = state === "disabled";
+    const dots: { color: string; image: any }[] = marking?.dots ?? [];
+
+    return (
+      <TouchableOpacity
+        onPress={() => date && onPress(date)}
+        activeOpacity={0.7}
+        style={styles.dayCell}
+      >
+        <View
+          style={[
+            styles.dayNumberWrap,
+            isSelected && styles.dayNumberSelected,
+            isToday && !isSelected && styles.dayNumberToday,
+          ]}
+        >
+          <Text
+            style={[
+              styles.dayNumberText,
+              isToday && !isSelected && styles.dayTextToday,
+              isSelected && styles.dayTextSelected,
+              isDisabled && styles.dayTextDisabled,
+            ]}
+          >
+            {date?.day}
+          </Text>
+        </View>
+        {dots.length > 0 ? (
+          <View style={styles.dayDotsRow}>
+            {dots.slice(0, 2).map((dot: any, i: number) => (
+              <IconImage key={i} source={dot.image} size={12} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.dayPlaceholder} />
+        )}
+      </TouchableOpacity>
+    );
+  }
+);
+
 const HomeScreen: React.FC = () => {
   const styles = useStyles();
   const colors = useColors();
+  const { themeName } = useTheme();
   const calendarTheme = useMemo(() => getCalendarTheme(colors), [colors]);
 
   const insets = useSafeAreaInsets();
@@ -191,9 +245,71 @@ const HomeScreen: React.FC = () => {
     return nearest;
   }, []);
 
-  const markedDates = useMemo(() => {
+  // const markedDates = useMemo(() => {
+  //   const marked: any = {};
+  //   // Lấy năm hiện tại trên calendar để hiển thị recurring events đúng năm
+  //   const calYear = parseInt(currentMonth.slice(0, 4), 10);
+
+  //   events.forEach((event) => {
+  //     if (!event.eventDate) return;
+  //     const date = new Date(event.eventDate);
+  //     if (isNaN(date.getTime())) return;
+
+  //     let markDate: string;
+  //     if (event.isRecurring) {
+  //       // Recurring (sinh nhật, kỷ niệm...): đánh dấu đúng ngày MM-DD
+  //       // nhưng theo năm đang hiển thị trên calendar
+  //       const mm = String(date.getMonth() + 1).padStart(2, "0");
+  //       const dd = String(date.getDate()).padStart(2, "0");
+  //       markDate = `${calYear}-${mm}-${dd}`;
+  //     } else {
+  //       markDate = DateUtils.toLocalDateString(date);
+  //     }
+
+  //     if (!marked[markDate]) {
+  //       marked[markDate] = { marked: true, dots: [] };
+  //     }
+  //     const primaryTag = event.tags[0] || "other";
+  //     marked[markDate].dots.push({
+  //       color: getTagColor(primaryTag),
+  //       image: getTagImage(primaryTag),
+  //     });
+  //   });
+
+  //   // Merge ngày đặc biệt (bao gồm âm lịch, nth-weekday) — dùng emoji
+  //   const calMonth = parseInt(currentMonth.slice(5, 7), 10);
+  //   const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
+  //   resolvedSpecials.forEach((sd) => {
+  //     const mm = String(sd.solarMonth).padStart(2, "0");
+  //     const dd = String(sd.solarDay).padStart(2, "0");
+  //     const dateKey = `${calYear}-${mm}-${dd}`;
+  //     if (!marked[dateKey]) {
+  //       marked[dateKey] = { dots: [] };
+  //     }
+  //     if (!marked[dateKey].dots) {
+  //       marked[dateKey].dots = [];
+  //     }
+  //     marked[dateKey].dots.unshift({
+  //       color: sd.color,
+  //       image: getSpecialDateImage(sd.id),
+  //     });
+  //   });
+
+  //   if (marked[selectedDate]) {
+  //     marked[selectedDate].selected = true;
+  //     marked[selectedDate].selectedColor = colors.primary;
+  //   } else {
+  //     marked[selectedDate] = {
+  //       selected: true,
+  //       selectedColor: colors.primary,
+  //     };
+  //   }
+  //   return marked;
+  // }, [events, selectedDate, currentMonth]);
+
+  // Chỉ tính dots từ events + specials — KHÔNG phụ thuộc selectedDate
+  const baseMarkedDates = useMemo(() => {
     const marked: any = {};
-    // Lấy năm hiện tại trên calendar để hiển thị recurring events đúng năm
     const calYear = parseInt(currentMonth.slice(0, 4), 10);
 
     events.forEach((event) => {
@@ -222,7 +338,6 @@ const HomeScreen: React.FC = () => {
       });
     });
 
-    // Merge ngày đặc biệt (bao gồm âm lịch, nth-weekday) — dùng emoji
     const calMonth = parseInt(currentMonth.slice(5, 7), 10);
     const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
     resolvedSpecials.forEach((sd) => {
@@ -241,17 +356,23 @@ const HomeScreen: React.FC = () => {
       });
     });
 
+    return marked;
+  }, [events, currentMonth]); // ← bỏ selectedDate khỏi deps
+
+  // Chỉ merge selectedDate highlight — O(1), không duyệt events
+  const markedDates = useMemo(() => {
+    const marked = { ...baseMarkedDates };
     if (marked[selectedDate]) {
-      marked[selectedDate].selected = true;
-      marked[selectedDate].selectedColor = colors.primary;
-    } else {
       marked[selectedDate] = {
+        ...marked[selectedDate],
         selected: true,
         selectedColor: colors.primary,
       };
+    } else {
+      marked[selectedDate] = { selected: true, selectedColor: colors.primary };
     }
     return marked;
-  }, [events, selectedDate, currentMonth]);
+  }, [baseMarkedDates, selectedDate, colors.primary]);
 
   // Ngày đặc biệt trùng với ngày đang chọn
   const selectedDateSpecials = useMemo(() => {
@@ -278,10 +399,13 @@ const HomeScreen: React.FC = () => {
     });
   }, [events, selectedDate]);
 
-  const handleDayPress = (day: DateData) => setSelectedDate(day.dateString);
-  const handleMonthChange = (month: DateData) =>
-    setCurrentMonth(month.dateString);
+  const handleDayPress = useCallback((day: DateData) => {
+    setSelectedDate(day.dateString);
+  }, []);
 
+  const handleMonthChange = useCallback((month: DateData) => {
+    setCurrentMonth(month.dateString);
+  }, []);
   const [articles, setArticles] = useState<
     ReturnType<typeof getFeaturedArticles>
   >([]);
@@ -328,14 +452,14 @@ const HomeScreen: React.FC = () => {
     checkOnboardingComplete()
       .then(setIsOnboardingDone)
       .catch(() => setIsOnboardingDone(false));
+
+    const sub = DeviceEventEmitter.addListener("onboardingComplete", () => {
+      setIsOnboardingDone(true);
+    });
+    return () => sub.remove();
   }, []);
 
-  // Cho hiện popup nếu:
-  // - Đã hoàn tất onboarding (isOnboardingDone = true), HOẶC
-  // - Là user cũ có sự kiện nhưng chưa từng set ONBOARDING_KEY (isOnboardingDone = false && events.length > 0)
-  const canShowPrepModal =
-    isOnboardingDone === true ||
-    (isOnboardingDone === false && events.length > 0);
+  const canShowPrepModal = isOnboardingDone === true;
 
   useEffect(() => {
     if (isOnboardingDone === null) return; // đang load AsyncStorage, chờ
@@ -570,35 +694,52 @@ const HomeScreen: React.FC = () => {
   };
 
   // ===== QUICK ACTIONS =====
-  const quickActions = [
-    {
-      id: "survey",
-      icon: "heart-circle" as const,
-      title: "Khảo sát\ntính cách",
-      subtitle: "Gợi ý quà phù hợp với nửa kia",
-      color: colors.primary,
-      onPress: handleSurveyPress,
-    },
-    {
-      id: "mbti",
-      icon: "people" as const,
-      title: "Trắc nghiệm\nMBTI",
-      subtitle: "Khám phá 16 loại tính cách",
-      color: "#1A9E6E",
-      onPress: () => navigation.navigate("MBTISurvey"),
-    },
-    {
-      id: "activities",
-      icon: "map-outline" as const,
-      title: "Gợi ý\nhoạt động",
-      subtitle: "Ý tưởng hẹn hò, nhà hàng, spa...",
-      color: colors.secondary,
-      onPress: () =>
-        navigation.navigate("ActivitySuggestions", {
-          event: upcomingEvents[0] ?? events[0] ?? undefined,
-        }),
-    },
-  ];
+  const quickActions = useMemo(
+    () => [
+      {
+        id: "survey",
+        icon: "heart-circle" as const,
+        title: "Khảo sát\ntính cách",
+        subtitle: "Gợi ý quà phù hợp với nửa kia",
+        color: colors.primary,
+        onPress: handleSurveyPress,
+      },
+      {
+        id: "mbti",
+        icon: "people" as const,
+        title: "Trắc nghiệm\nMBTI",
+        subtitle: "Khám phá 16 loại tính cách",
+        color: "#1A9E6E",
+        onPress: () => navigation.navigate("MBTISurvey"),
+      },
+      {
+        id: "activities",
+        icon: "map-outline" as const,
+        title: "Gợi ý\nhoạt động",
+        subtitle: "Ý tưởng hẹn hò, nhà hàng, spa...",
+        color: colors.secondary,
+        onPress: () =>
+          navigation.navigate("ActivitySuggestions", {
+            event: upcomingEvents[0] ?? events[0] ?? undefined,
+          }),
+      },
+    ],
+    [colors.primary, handleSurveyPress, navigation]
+  );
+
+  const renderDay = useCallback(
+    ({ date, state, marking }: any) => (
+      <CalendarDay
+        date={date}
+        state={state}
+        marking={marking}
+        onPress={handleDayPress}
+        styles={styles}
+        colors={colors}
+      />
+    ),
+    [handleDayPress, styles, colors]
+  );
 
   return (
     <View style={styles.container}>
@@ -656,7 +797,11 @@ const HomeScreen: React.FC = () => {
                             size={36}
                           />
                         ) : (
-                          <Ionicons name={sdIcon as any} size={36} color={tagColor} />
+                          <Ionicons
+                            name={sdIcon as any}
+                            size={36}
+                            color={tagColor}
+                          />
                         )}
                       </View>
                       <View
@@ -698,7 +843,11 @@ const HomeScreen: React.FC = () => {
                         end={{ x: 1, y: 0 }}
                         style={styles.prepModalBtn}
                       >
-                        <Ionicons name="sparkles" size={18} color={colors.white} />
+                        <Ionicons
+                          name="sparkles"
+                          size={18}
+                          color={colors.white}
+                        />
                         <Text style={styles.prepModalBtnText}>
                           Chuẩn bị ngay
                         </Text>
@@ -736,11 +885,20 @@ const HomeScreen: React.FC = () => {
             const h = new Date().getHours();
             let label: string;
             let iconName: keyof typeof Ionicons.glyphMap;
-            if (h < 12) { label = "Buổi sáng tốt lành"; iconName = "sunny-outline"; }
-            else if (h < 18) { label = "Buổi chiều vui vẻ"; iconName = "partly-sunny-outline"; }
-            else { label = "Buổi tối bình an"; iconName = "moon-outline"; }
+            if (h < 12) {
+              label = "Buổi sáng tốt lành";
+              iconName = "sunny-outline";
+            } else if (h < 18) {
+              label = "Buổi chiều vui vẻ";
+              iconName = "partly-sunny-outline";
+            } else {
+              label = "Buổi tối bình an";
+              iconName = "moon-outline";
+            }
             return (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+              >
                 <Ionicons name={iconName} size={20} color={colors.primary} />
                 <Text style={styles.greetingText}>{label}</Text>
               </View>
@@ -981,6 +1139,7 @@ const HomeScreen: React.FC = () => {
 
           <View style={styles.calendarContainer}>
             <Calendar
+              key={themeName}
               current={currentMonth}
               onDayPress={handleDayPress}
               onMonthChange={handleMonthChange}
@@ -998,50 +1157,7 @@ const HomeScreen: React.FC = () => {
                   color={colors.primary}
                 />
               )}
-              dayComponent={({ date, state, marking }: any) => {
-                const isSelected = !!marking?.selected;
-                const isToday = state === "today";
-                const isDisabled = state === "disabled";
-                const dots: { color: string; image: any }[] =
-                  marking?.dots ?? [];
-
-                return (
-                  <TouchableOpacity
-                    onPress={() => date && handleDayPress(date)}
-                    activeOpacity={0.7}
-                    style={styles.dayCell}
-                  >
-                    <View
-                      style={[
-                        styles.dayNumberWrap,
-                        isSelected && styles.dayNumberSelected,
-                        isToday && !isSelected && styles.dayNumberToday,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dayNumberText,
-                          isToday && !isSelected && styles.dayTextToday,
-                          isSelected && styles.dayTextSelected,
-                          isDisabled && styles.dayTextDisabled,
-                        ]}
-                      >
-                        {date?.day}
-                      </Text>
-                    </View>
-
-                    {dots.length > 0 ? (
-                      <View style={styles.dayDotsRow}>
-                        {dots.slice(0, 2).map((dot, i) => (
-                          <IconImage key={i} source={dot.image} size={12} />
-                        ))}
-                      </View>
-                    ) : (
-                      <View style={styles.dayPlaceholder} />
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
+              dayComponent={renderDay}
             />
           </View>
 
@@ -1480,7 +1596,7 @@ const useStyles = makeStyles((colors) => ({
   },
   greetingText: {
     fontSize: 20,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   // Shop banner (gradient)
@@ -1511,7 +1627,7 @@ const useStyles = makeStyles((colors) => ({
   },
   shopBannerTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   shopBannerSub: {
@@ -1557,11 +1673,11 @@ const useStyles = makeStyles((colors) => ({
   todayBadgeText: {
     color: colors.white,
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
   selectedDateText: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
   eventCountBadge: {
@@ -1572,7 +1688,7 @@ const useStyles = makeStyles((colors) => ({
   },
   eventCountBadgeText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
   },
   eventsList: {
@@ -1612,7 +1728,7 @@ const useStyles = makeStyles((colors) => ({
   },
   calEventTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     marginBottom: 3,
   },
@@ -1638,7 +1754,7 @@ const useStyles = makeStyles((colors) => ({
   },
   calEventTagText: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
   calEventBadges: {
     flexDirection: "row",
@@ -1678,7 +1794,7 @@ const useStyles = makeStyles((colors) => ({
   },
   heroEmptyTitle: {
     fontSize: 22,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
     marginBottom: 8,
   },
@@ -1706,7 +1822,7 @@ const useStyles = makeStyles((colors) => ({
   },
   heroEmptyBtnText: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
 
@@ -1729,7 +1845,7 @@ const useStyles = makeStyles((colors) => ({
   },
   sectionTitle: {
     fontSize: 17,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   badge: {
@@ -1743,13 +1859,13 @@ const useStyles = makeStyles((colors) => ({
   },
   badgeText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   viewAllText: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // Event Card
@@ -1781,7 +1897,7 @@ const useStyles = makeStyles((colors) => ({
   },
   eventCardTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     marginBottom: 4,
     lineHeight: 20,
@@ -1826,7 +1942,7 @@ const useStyles = makeStyles((colors) => ({
   },
   upcomingTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
   upcomingDateRow: {
@@ -1851,7 +1967,7 @@ const useStyles = makeStyles((colors) => ({
   },
   prepBadgeText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
   countdownCircle: {
     width: 54,
@@ -1863,12 +1979,12 @@ const useStyles = makeStyles((colors) => ({
   },
   countdownNum: {
     fontSize: 20,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     lineHeight: 24,
   },
   countdownLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     lineHeight: 13,
   },
   countdownToday: {
@@ -1901,15 +2017,15 @@ const useStyles = makeStyles((colors) => ({
   dayNumberText: {
     fontSize: 14,
     color: colors.textPrimary,
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: "Manrope_400Regular",
   },
   dayTextToday: {
     color: colors.primary,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
   dayTextSelected: {
     color: colors.white,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
   dayTextDisabled: {
     color: colors.textLight,
@@ -1943,7 +2059,7 @@ const useStyles = makeStyles((colors) => ({
   },
   selectedDateTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
   specialDateCard: {
@@ -1973,7 +2089,7 @@ const useStyles = makeStyles((colors) => ({
   specialDateContent: { flex: 1 },
   specialDateName: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     marginBottom: 3,
   },
   specialDateHint: {
@@ -2017,7 +2133,7 @@ const useStyles = makeStyles((colors) => ({
   },
   qaTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
     lineHeight: 20,
     marginBottom: 4,
@@ -2037,7 +2153,7 @@ const useStyles = makeStyles((colors) => ({
   featuredArticle: {
     marginHorizontal: 4,
     borderRadius: 18,
-    height: 168,
+    height: 220,
     overflow: "hidden",
     marginBottom: 14,
     elevation: 4,
@@ -2081,12 +2197,12 @@ const useStyles = makeStyles((colors) => ({
   },
   featuredCatText: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.white,
   },
   featuredTitle: {
     fontSize: 17,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
     lineHeight: 24,
     marginBottom: 12,
@@ -2112,7 +2228,7 @@ const useStyles = makeStyles((colors) => ({
   },
   featuredReadBtnText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
   productsScroll: {
     paddingHorizontal: 4,
@@ -2133,7 +2249,7 @@ const useStyles = makeStyles((colors) => ({
     gap: 12,
   },
   articleCard: {
-    width: 148,
+    width: 160,
     backgroundColor: colors.surface,
     borderRadius: 14,
     overflow: "hidden",
@@ -2144,7 +2260,7 @@ const useStyles = makeStyles((colors) => ({
     elevation: 2,
   },
   articleCardTop: {
-    height: 60,
+    height: 100,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -2161,7 +2277,7 @@ const useStyles = makeStyles((colors) => ({
   },
   articleTitle: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     lineHeight: 17,
     marginBottom: 7,
@@ -2245,12 +2361,12 @@ const useStyles = makeStyles((colors) => ({
   },
   prepModalDaysText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   prepModalTitle: {
     fontSize: 20,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   prepModalSub: {
@@ -2269,7 +2385,7 @@ const useStyles = makeStyles((colors) => ({
   },
   prepModalBtnText: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   prepModalSkip: {
@@ -2280,4 +2396,5 @@ const useStyles = makeStyles((colors) => ({
     fontSize: 14,
     color: colors.textSecondary,
   },
-}));export default HomeScreen;
+}));
+export default HomeScreen;

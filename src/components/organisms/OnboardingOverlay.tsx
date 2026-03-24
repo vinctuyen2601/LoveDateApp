@@ -16,11 +16,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Calendar, DateData } from "react-native-calendars";
 import { EventFormData } from "../../types";
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 
 export const ONBOARDING_KEY = "@onboarding_v2_completed";
-
 
 interface Props {
   onComplete: () => void;
@@ -149,7 +148,9 @@ const OnboardingOverlay: React.FC<Props> = ({
           month: birthdayDate.getMonth() + 1,
           day: birthdayDate.getDate(),
         },
-      }).catch((e: unknown) => console.warn("Onboarding: failed to create event", e));
+      }).catch((e: unknown) =>
+        console.warn("Onboarding: failed to create event", e)
+      );
     }
   };
 
@@ -248,7 +249,11 @@ const OnboardingOverlay: React.FC<Props> = ({
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.primaryBtnText}>Bắt đầu nào</Text>
-                  <Ionicons name="arrow-forward" size={18} color={colors.white} />
+                  <Ionicons
+                    name="arrow-forward"
+                    size={18}
+                    color={colors.white}
+                  />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -375,7 +380,11 @@ const OnboardingOverlay: React.FC<Props> = ({
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={dateSelected ? [colors.gradientStart, colors.gradientEnd] : [colors.border, colors.textLight]}
+                  colors={
+                    dateSelected
+                      ? [colors.gradientStart, colors.gradientEnd]
+                      : [colors.border, colors.textLight]
+                  }
                   style={styles.primaryBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -436,7 +445,11 @@ const OnboardingOverlay: React.FC<Props> = ({
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.primaryBtnText}>Tiếp tục</Text>
-                  <Ionicons name="arrow-forward" size={18} color={colors.white} />
+                  <Ionicons
+                    name="arrow-forward"
+                    size={18}
+                    color={colors.white}
+                  />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -511,7 +524,7 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.background,
     zIndex: 9999,
     elevation: 9999,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   flex: {
     flex: 1,
@@ -553,7 +566,7 @@ const useStyles = makeStyles((colors) => ({
   skipText: {
     fontSize: 14,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   stepContainer: {
     flex: 1,
@@ -620,7 +633,7 @@ const useStyles = makeStyles((colors) => ({
   },
   title: {
     fontSize: 20,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
     textAlign: "center",
     lineHeight: 28,
@@ -640,7 +653,7 @@ const useStyles = makeStyles((colors) => ({
   },
   inputLabel: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
     marginBottom: 8,
   },
@@ -671,7 +684,7 @@ const useStyles = makeStyles((colors) => ({
   dateSelectedLabel: {
     fontSize: 14,
     color: colors.primary,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     marginTop: 4,
     textAlign: "center",
   },
@@ -683,14 +696,14 @@ const useStyles = makeStyles((colors) => ({
   },
   countdownNumber: {
     fontSize: 72,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.primary,
     lineHeight: 80,
   },
   countdownLabel: {
     fontSize: 16,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     marginTop: 2,
   },
   // Confirmation screen
@@ -711,7 +724,7 @@ const useStyles = makeStyles((colors) => ({
     lineHeight: 22,
   },
   confirmName: {
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.primary,
   },
   confirmDivider: {
@@ -749,7 +762,7 @@ const useStyles = makeStyles((colors) => ({
   featureText: {
     fontSize: 14,
     color: colors.textPrimary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   // Bottom
   bottomArea: {
@@ -779,7 +792,7 @@ const useStyles = makeStyles((colors) => ({
   },
   primaryBtnText: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   ghostBtn: {
@@ -789,6 +802,7 @@ const useStyles = makeStyles((colors) => ({
   ghostBtnText: {
     fontSize: 15,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
-}));export default OnboardingOverlay;
+}));
+export default OnboardingOverlay;

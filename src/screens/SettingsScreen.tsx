@@ -34,8 +34,8 @@ import {
   scheduleUpcomingNotifications,
 } from "../services/notificationScheduler.service";
 import { useEvents } from "@contexts/EventsContext";
-import { makeStyles } from '@utils/makeStyles';
-import { useColors, useTheme, THEME_LIST } from '@contexts/ThemeContext';
+import { makeStyles } from "@utils/makeStyles";
+import { useColors, useTheme, THEME_LIST } from "@contexts/ThemeContext";
 
 const AVATAR_COLOR_KEY = "@user_avatar_color";
 const AVATAR_PHOTO_KEY = "@user_avatar_photo";
@@ -216,7 +216,7 @@ const SettingsScreen: React.FC = () => {
         setAvatarPhotoUri(null);
       }
       setShowEditModal(false);
-      showSuccess("Đã cập nhật hồ sơ thành công!");
+      // showSuccess("Đã cập nhật hồ sơ thành công!");
     } catch (error: any) {
       showError(error.message || "Không thể cập nhật hồ sơ");
     } finally {
@@ -437,14 +437,22 @@ const SettingsScreen: React.FC = () => {
               end={{ x: 1, y: 0 }}
             >
               <View style={styles.authCardContent}>
-                <Ionicons name="person-circle-outline" size={36} color={colors.white} />
+                <Ionicons
+                  name="person-circle-outline"
+                  size={36}
+                  color={colors.white}
+                />
                 <View style={styles.authCardText}>
                   <Text style={styles.authCardTitle}>Đăng nhập / Đăng ký</Text>
                   <Text style={styles.authCardSubtitle}>
                     Backup dữ liệu và đồng bộ nhiều thiết bị
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.white} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.white}
+                />
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -465,7 +473,7 @@ const SettingsScreen: React.FC = () => {
       */}
 
       {/* Connections Section — only for registered users */}
-      {!isAnonymous && (
+      {/* {!isAnonymous && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Kết nối</Text>
           <TouchableOpacity
@@ -487,7 +495,7 @@ const SettingsScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
-      )}
+      )} */}
 
       {/* Notification Settings */}
       <View style={styles.section}>
@@ -582,7 +590,10 @@ const SettingsScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.themeLabel,
-                    isActive && { color: colors.primary, fontFamily: 'Manrope_600SemiBold'},
+                    isActive && {
+                      color: colors.primary,
+                      fontFamily: "Manrope_600SemiBold",
+                    },
                   ]}
                 >
                   {theme.label}
@@ -918,7 +929,7 @@ const useStyles = makeStyles((colors) => ({
   },
   screenHeaderTitle: {
     fontSize: 28,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   section: {
@@ -927,7 +938,7 @@ const useStyles = makeStyles((colors) => ({
   },
   sectionTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
     textTransform: "uppercase",
     marginBottom: 12,
@@ -955,7 +966,7 @@ const useStyles = makeStyles((colors) => ({
   },
   userName: {
     fontSize: 18,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     marginBottom: 4,
   },
@@ -971,7 +982,7 @@ const useStyles = makeStyles((colors) => ({
   anonymousText: {
     fontSize: 12,
     color: colors.warning,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   warningCard: {
     flexDirection: "row",
@@ -987,7 +998,7 @@ const useStyles = makeStyles((colors) => ({
   },
   warningTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.warning,
     marginBottom: 4,
   },
@@ -1030,7 +1041,7 @@ const useStyles = makeStyles((colors) => ({
   },
   settingTitle: {
     fontSize: 16,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     color: colors.textPrimary,
     marginBottom: 2,
   },
@@ -1040,7 +1051,7 @@ const useStyles = makeStyles((colors) => ({
   },
   settingSubtitleLinked: {
     color: colors.success,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   specialDatesContainer: {
     paddingHorizontal: 16,
@@ -1084,7 +1095,7 @@ const useStyles = makeStyles((colors) => ({
   badgeText: {
     color: colors.white,
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
   deleteButton: {
     flexDirection: "row",
@@ -1099,7 +1110,7 @@ const useStyles = makeStyles((colors) => ({
   },
   deleteText: {
     fontSize: 16,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.error,
   },
   logoutButton: {
@@ -1117,7 +1128,7 @@ const useStyles = makeStyles((colors) => ({
   },
   logoutText: {
     fontSize: 16,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.error,
   },
   modalOverlay: {
@@ -1141,7 +1152,7 @@ const useStyles = makeStyles((colors) => ({
   },
   modalTitle: {
     fontSize: 20,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
   modalDescription: {
@@ -1173,7 +1184,7 @@ const useStyles = makeStyles((colors) => ({
   linkButtonText: {
     color: colors.white,
     fontSize: 16,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
   // Avatar & Edit Profile
   avatarWrap: {
@@ -1182,7 +1193,7 @@ const useStyles = makeStyles((colors) => ({
   },
   initialsText: {
     fontSize: 22,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   editAvatarBtn: {
@@ -1217,12 +1228,12 @@ const useStyles = makeStyles((colors) => ({
   },
   initialsTextLarge: {
     fontSize: 32,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   fieldLabel: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
     marginBottom: 10,
     marginTop: 4,
@@ -1242,7 +1253,7 @@ const useStyles = makeStyles((colors) => ({
   },
   colorDotSelected: {
     borderWidth: 2.5,
-    borderColor: colors.textPrimary,
+    borderColor: colors.secondaryLight,
     transform: [{ scale: 1.18 }],
   },
   colorDotUnselected: {
@@ -1289,7 +1300,7 @@ const useStyles = makeStyles((colors) => ({
   removePhotoBtnText: {
     fontSize: 12,
     color: colors.error,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   verifyCard: {
     flexDirection: "row",
@@ -1306,7 +1317,7 @@ const useStyles = makeStyles((colors) => ({
   },
   verifyTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
     marginBottom: 4,
   },
@@ -1325,7 +1336,7 @@ const useStyles = makeStyles((colors) => ({
   },
   resendBtnText: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.white,
   },
   authCard: {
@@ -1351,7 +1362,7 @@ const useStyles = makeStyles((colors) => ({
   },
   authCardTitle: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
     marginBottom: 2,
   },
@@ -1361,23 +1372,23 @@ const useStyles = makeStyles((colors) => ({
     opacity: 0.85,
   },
   themeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
     paddingVertical: 4,
   },
   themeItem: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 6,
   },
   themeSwatch: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   themeSwatchActive: {
     borderColor: colors.primary,
@@ -1391,4 +1402,5 @@ const useStyles = makeStyles((colors) => ({
     fontSize: 11,
     color: colors.textSecondary,
   },
-}));export default SettingsScreen;
+}));
+export default SettingsScreen;
