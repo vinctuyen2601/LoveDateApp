@@ -22,6 +22,8 @@ import { SERVICE_CATEGORIES } from '../data/affiliateProducts';
 import { useMasterData } from '../contexts/MasterDataContext';
 import { trackAffiliateClick, getExperienceProducts } from '../services/affiliateProductService';
 import ExperienceCard from '../components/suggestions/ExperienceCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -54,6 +56,9 @@ const EXPERIENCE_CATEGORY_META: Record<string, { label: string; icon: string; co
 };
 
 const ExperienceDetailScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -121,11 +126,11 @@ const ExperienceDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={[styles.categoryBadge, { backgroundColor: meta.color }]}>
-            <Ionicons name={meta.icon as any} size={13} color={COLORS.white} />
+            <Ionicons name={meta.icon as any} size={13} color={colors.white} />
             <Text style={styles.categoryBadgeText}>{meta.label}</Text>
           </View>
         </View>
@@ -189,7 +194,7 @@ const ExperienceDetailScreen: React.FC = () => {
             </View>
             {product.affiliatePartner && (
               <View style={styles.partnerChip}>
-                <Ionicons name="storefront-outline" size={13} color={COLORS.textSecondary} />
+                <Ionicons name="storefront-outline" size={13} color={colors.textSecondary} />
                 <Text style={styles.partnerText}>{product.affiliatePartner}</Text>
               </View>
             )}
@@ -246,6 +251,8 @@ const ExperienceDetailScreen: React.FC = () => {
             contentWidth={screenWidth - 64}
             source={{ html: product.description }}
             tagsStyles={htmlStyles}
+            baseStyle={{ fontFamily: 'Manrope_400Regular' }}
+            systemFonts={['Manrope_400Regular', 'Manrope_500Medium', 'Manrope_600SemiBold', 'Manrope_700Bold', 'Manrope_800ExtraBold']}
           />
         </View>
 
@@ -335,7 +342,7 @@ const ExperienceDetailScreen: React.FC = () => {
       {/* Sticky CTA */}
       <View style={styles.ctaContainer}>
         <TouchableOpacity
-          style={[styles.ctaButton, { backgroundColor: isBookable ? meta.color : COLORS.textLight }]}
+          style={[styles.ctaButton, { backgroundColor: isBookable ? meta.color : colors.textLight }]}
           onPress={handleBook}
           disabled={!isBookable}
           activeOpacity={0.85}
@@ -343,24 +350,24 @@ const ExperienceDetailScreen: React.FC = () => {
           <Ionicons
             name={isBookable ? 'calendar' : 'time-outline'}
             size={22}
-            color={COLORS.white}
+            color={colors.white}
           />
           <Text style={styles.ctaText}>
             {isBookable
               ? `Đặt trải nghiệm${product.priceRange ? ` — ${product.priceRange}` : ''}`
               : 'Sắp có lịch'}
           </Text>
-          {isBookable && <Ionicons name="arrow-forward" size={18} color={COLORS.white} />}
+          {isBookable && <Ionicons name="arrow-forward" size={18} color={colors.white} />}
         </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
 
   // Header
@@ -371,9 +378,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingTop: 0,
     paddingBottom: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   headerBtn: {
     padding: 8,
@@ -392,8 +399,8 @@ const styles = StyleSheet.create({
   },
   categoryBadgeText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
 
   // Scroll
@@ -418,7 +425,7 @@ const styles = StyleSheet.create({
   },
   heroFallbackLabel: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: 'rgba(255,255,255,0.9)',
     letterSpacing: 1,
   },
@@ -438,27 +445,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.5)',
   },
   dotActive: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     width: 18,
   },
 
   // Info card
   infoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: -20,
     borderRadius: 16,
     padding: 18,
     elevation: 4,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.14,
     shadowRadius: 6,
   },
   experienceName: {
     fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.textPrimary,
     lineHeight: 30,
     marginBottom: 10,
   },
@@ -479,7 +486,7 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   partnerChip: {
     flexDirection: 'row',
@@ -488,12 +495,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   partnerText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   ratingRow: {
     flexDirection: 'row',
@@ -503,24 +510,24 @@ const styles = StyleSheet.create({
   },
   ratingNum: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginLeft: 4,
   },
   reviewCount: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Generic card
   card: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: 14,
     borderRadius: 14,
     padding: 16,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -533,8 +540,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
 
   // Highlights
@@ -554,7 +561,7 @@ const styles = StyleSheet.create({
   },
   highlightText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Booking info rows
@@ -563,7 +570,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
+    borderBottomColor: colors.borderLight,
   },
   infoIconWrap: {
     width: 34,
@@ -575,13 +582,13 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   infoValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
 
   // Occasions
@@ -596,7 +603,7 @@ const styles = StyleSheet.create({
   },
   occasionText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Similar
@@ -613,9 +620,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: colors.border,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
@@ -632,9 +639,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
-});
-
-export default ExperienceDetailScreen;
+}));export default ExperienceDetailScreen;

@@ -38,24 +38,29 @@ import GiftSuggestionCard from "@components/molecules/GiftSuggestionCard";
 import { useToast } from "../contexts/ToastContext";
 import { useAiRateLimit } from "../hooks/useAiRateLimit";
 import AiRateLimitModal from "@components/molecules/AiRateLimitModal";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
 
 const AI_QUICK_IDEAS = [
-  "🌹 Quà sinh nhật bạn gái",
-  "💍 Quà kỷ niệm tình yêu",
-  "🎁 Quà tặng cho mẹ",
-  "🏃 Người thích thể thao",
-  "📚 Người thích đọc sách",
-  "💄 Quà làm đẹp",
-  "🍫 Quà ngọt ngào",
-  "🌸 Quà ngày 8/3",
+  "Quà sinh nhật bạn gái",
+  "Quà kỷ niệm tình yêu",
+  "Quà tặng cho mẹ",
+  "Người thích thể thao",
+  "Người thích đọc sách",
+  "Quà làm đẹp",
+  "Quà ngọt ngào",
+  "Quà ngày 8/3",
 ];
 
 // ─── Skeleton card ─────────────────────────────────────────────────────────────
 
 const SkeletonCard: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const anim = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
     Animated.loop(
@@ -141,6 +146,9 @@ const SORT_PARAMS: Record<
 
 const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(
   ({ product }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
     const navigation = useNavigation<any>();
 
     const handleCardPress = () =>
@@ -171,7 +179,7 @@ const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(
             <Ionicons
               name={product.icon as any}
               size={28}
-              color={COLORS.white}
+              color={colors.white}
             />
           </View>
         )}
@@ -235,6 +243,9 @@ const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 const AllProductsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -354,7 +365,7 @@ const AllProductsScreen: React.FC = () => {
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tìm quà tặng</Text>
         {activeFilterCount > 0 ? (
@@ -375,7 +386,7 @@ const AllProductsScreen: React.FC = () => {
           <Ionicons
             name="grid-outline"
             size={14}
-            color={!aiMode ? COLORS.white : COLORS.textSecondary}
+            color={!aiMode ? colors.white : colors.textSecondary}
           />
           <Text
             style={[styles.modeBtnText, !aiMode && styles.modeBtnTextActive]}
@@ -390,7 +401,7 @@ const AllProductsScreen: React.FC = () => {
           <Ionicons
             name="sparkles"
             size={14}
-            color={aiMode ? COLORS.white : "#D97706"}
+            color={aiMode ? colors.white : "#D97706"}
           />
           <Text
             style={[styles.modeBtnText, aiMode && styles.modeBtnAiTextActive]}
@@ -408,13 +419,13 @@ const AllProductsScreen: React.FC = () => {
             <Ionicons
               name="search-outline"
               size={18}
-              color={COLORS.textSecondary}
+              color={colors.textSecondary}
               style={styles.searchIcon}
             />
             <TextInput
               style={styles.searchInput}
               placeholder="Tìm kiếm sản phẩm..."
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
@@ -425,7 +436,7 @@ const AllProductsScreen: React.FC = () => {
                 <Ionicons
                   name="close-circle"
                   size={18}
-                  color={COLORS.textSecondary}
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
             )}
@@ -467,7 +478,7 @@ const AllProductsScreen: React.FC = () => {
                   <Ionicons
                     name={cat.icon as any}
                     size={14}
-                    color={categoryId === cat.id ? COLORS.white : cat.color}
+                    color={categoryId === cat.id ? colors.white : cat.color}
                   />
                   <Text
                     style={[
@@ -513,7 +524,7 @@ const AllProductsScreen: React.FC = () => {
               <Ionicons
                 name="funnel-outline"
                 size={15}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.sortBtnText} numberOfLines={1}>
                 {sort === "popular" ? "Sắp xếp" : activeSortLabel}
@@ -545,7 +556,7 @@ const AllProductsScreen: React.FC = () => {
             <Ionicons
               name="flower-outline"
               size={28}
-              color={COLORS.primary}
+              color={colors.primary}
               style={styles.shopPromoEmoji}
             />
             <View style={styles.shopPromoText}>
@@ -557,13 +568,13 @@ const AllProductsScreen: React.FC = () => {
               </Text>
             </View>
             <View style={styles.shopPromoArrow}>
-              <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
+              <Ionicons name="arrow-forward" size={16} color={colors.white} />
             </View>
           </TouchableOpacity>
 
           {loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text style={styles.stateText}>Đang tải sản phẩm...</Text>
             </View>
           ) : error ? (
@@ -571,7 +582,7 @@ const AllProductsScreen: React.FC = () => {
               <Ionicons
                 name="wifi-outline"
                 size={44}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.stateText}>{error}</Text>
               <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
@@ -583,7 +594,7 @@ const AllProductsScreen: React.FC = () => {
               <Ionicons
                 name="search-outline"
                 size={44}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.stateText}>
                 {activeFilterCount > 0
@@ -614,7 +625,7 @@ const AllProductsScreen: React.FC = () => {
                 loadingMore ? (
                   <ActivityIndicator
                     style={{ marginVertical: 16 }}
-                    color={COLORS.primary}
+                    color={colors.primary}
                   />
                 ) : !hasMore && items.length > 0 ? (
                   <Text style={styles.footerEnd}>
@@ -638,7 +649,7 @@ const AllProductsScreen: React.FC = () => {
           {/* AI input card */}
           <View style={styles.aiCard}>
             <View style={styles.aiCardTitle}>
-              <Ionicons name="gift-outline" size={20} color={COLORS.primary} />
+              <Ionicons name="gift-outline" size={20} color={colors.primary} />
               <Text style={styles.aiCardLabel}>Bạn muốn tìm quà gì?</Text>
             </View>
             <View style={styles.inputWrap}>
@@ -649,7 +660,7 @@ const AllProductsScreen: React.FC = () => {
                 multiline
                 numberOfLines={2}
                 placeholder="VD: quà sinh nhật bạn gái thích yoga, ngân sách 500k..."
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 textAlignVertical="top"
               />
               {aiPrompt.length > 0 && (
@@ -660,7 +671,7 @@ const AllProductsScreen: React.FC = () => {
                   <Ionicons
                     name="close-circle-outline"
                     size={16}
-                    color={COLORS.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               )}
@@ -689,7 +700,7 @@ const AllProductsScreen: React.FC = () => {
               disabled={aiLoading || !aiPrompt.trim()}
               activeOpacity={0.85}
             >
-              <Ionicons name="sparkles" size={18} color={COLORS.white} />
+              <Ionicons name="sparkles" size={18} color={colors.white} />
               <Text style={styles.generateBtnText}>
                 {aiLoading ? "Đang tìm..." : "Tìm quà với AI"}
               </Text>
@@ -699,7 +710,7 @@ const AllProductsScreen: React.FC = () => {
           {/* Reasoning banner */}
           {aiReasoning ? (
             <View style={styles.reasoningBanner}>
-              <Text style={styles.reasoningIcon}>🤖</Text>
+              <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
               <Text style={styles.reasoningText}>{aiReasoning}</Text>
               <TouchableOpacity
                 onPress={() => {
@@ -786,7 +797,7 @@ const AllProductsScreen: React.FC = () => {
                   name={option.icon as any}
                   size={20}
                   color={
-                    sort === option.key ? COLORS.primary : COLORS.textSecondary
+                    sort === option.key ? colors.primary : colors.textSecondary
                   }
                 />
                 <Text
@@ -798,7 +809,7 @@ const AllProductsScreen: React.FC = () => {
                   {option.label}
                 </Text>
                 {sort === option.key && (
-                  <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -812,10 +823,10 @@ const AllProductsScreen: React.FC = () => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
 
   // Header
@@ -826,9 +837,9 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 10,
     paddingHorizontal: 12,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   iconBtn: {
     width: 40,
@@ -838,31 +849,31 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   clearBadge: {
-    backgroundColor: COLORS.primary + "18",
+    backgroundColor: colors.primary + "18",
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   clearBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
 
   // Search bar
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 12,
     marginVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === "ios" ? 10 : 4,
   },
@@ -872,22 +883,22 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
   },
 
   // Category + filter bars
   categoryBar: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     paddingVertical: 8,
   },
   filterRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     paddingVertical: 8,
   },
   chipsRow: {
@@ -901,23 +912,23 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     gap: 4,
   },
   chipWithIcon: {},
   chipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipText: {
     fontSize: 13,
-    fontWeight: "500",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
   chipTextActive: {
-    color: COLORS.white,
-    fontWeight: "700",
+    color: colors.white,
+    fontFamily: 'Manrope_700Bold',
   },
   sortBtn: {
     flexDirection: "row",
@@ -926,14 +937,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderLeftWidth: 1,
-    borderLeftColor: COLORS.border,
+    borderLeftColor: colors.border,
     minWidth: 90,
     maxWidth: 115,
     flexShrink: 0,
   },
   sortBtnText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     flexShrink: 1,
   },
 
@@ -947,13 +958,13 @@ const styles = StyleSheet.create({
   },
   resultsCount: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   clearText: {
     fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Empty / loading states
@@ -966,7 +977,7 @@ const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
   },
   retryBtn: {
@@ -974,12 +985,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   retryBtnText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
 
   // Grid
@@ -994,17 +1005,17 @@ const styles = StyleSheet.create({
   footerEnd: {
     textAlign: "center",
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     paddingVertical: 20,
   },
 
   // Grid card
   gridCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     overflow: "hidden",
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -1023,15 +1034,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 6,
     right: 6,
-    backgroundColor: COLORS.error,
+    backgroundColor: colors.error,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   discountText: {
     fontSize: 10,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   gridBody: {
     padding: 10,
@@ -1039,8 +1050,8 @@ const styles = StyleSheet.create({
   },
   gridName: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 18,
     minHeight: 36,
   },
@@ -1051,12 +1062,12 @@ const styles = StyleSheet.create({
   },
   gridRatingText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   gridReviews: {
     fontSize: 10,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   gridPriceRow: {
     flexDirection: "row",
@@ -1066,17 +1077,17 @@ const styles = StyleSheet.create({
   },
   gridPrice: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.success,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.success,
   },
   gridOriginal: {
     fontSize: 11,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textDecorationLine: "line-through",
   },
   gridPriceRange: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   gridCta: {
     marginTop: 4,
@@ -1086,8 +1097,8 @@ const styles = StyleSheet.create({
   },
   gridCtaText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
 
   // Sort sheet
@@ -1097,7 +1108,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 32,
@@ -1107,14 +1118,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     alignSelf: "center",
     marginBottom: 16,
   },
   sheetTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
@@ -1127,20 +1138,20 @@ const styles = StyleSheet.create({
   },
   sheetRowText: {
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
   },
   sheetRowActive: {
-    color: COLORS.primary,
-    fontWeight: "700",
+    color: colors.primary,
+    fontFamily: 'Manrope_700Bold',
   },
 
   // Mode toggle
   modeToggle: {
     flexDirection: "row",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     padding: 8,
     gap: 8,
     paddingHorizontal: 12,
@@ -1154,27 +1165,27 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.background,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
   },
   modeBtnActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   modeBtnAiActive: {
-    backgroundColor: "#D97706",
-    borderColor: "#D97706",
+    backgroundColor: colors.warning,
+    borderColor: colors.warning,
   },
   modeBtnText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   modeBtnTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
   modeBtnAiTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
 
   // AI mode scroll
@@ -1183,13 +1194,13 @@ const styles = StyleSheet.create({
 
   // AI input card
   aiCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#D97706" + "30",
-    shadowColor: "#D97706",
+    borderColor: colors.warning + "30",
+    shadowColor: colors.warning,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -1202,12 +1213,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   aiSparkle: { fontSize: 18 },
-  aiCardLabel: { fontSize: 15, fontWeight: "700", color: COLORS.textPrimary },
+  aiCardLabel: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
   inputWrap: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 8,
@@ -1215,7 +1226,7 @@ const styles = StyleSheet.create({
   },
   aiInput: {
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     minHeight: 52,
     lineHeight: 20,
   },
@@ -1225,50 +1236,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
-  ideaChipText: { fontSize: 12, color: COLORS.textSecondary },
+  ideaChipText: { fontSize: 12, color: colors.textSecondary },
   generateBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#D97706",
+    backgroundColor: colors.warning,
     paddingVertical: 14,
     borderRadius: 14,
   },
   generateBtnDisabled: { opacity: 0.6 },
-  generateBtnText: { fontSize: 15, fontWeight: "700", color: COLORS.white },
+  generateBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
 
   // Reasoning banner
   reasoningBanner: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 8,
-    backgroundColor: "#D97706" + "12",
+    backgroundColor: colors.warning + "20",
     borderRadius: 12,
     padding: 12,
     marginBottom: 14,
     borderLeftWidth: 3,
-    borderLeftColor: "#D97706",
+    borderLeftColor: colors.warning,
   },
   reasoningIcon: { fontSize: 15, marginTop: 1 },
   reasoningText: {
     flex: 1,
     fontSize: 13,
     lineHeight: 19,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     fontStyle: "italic",
   },
-  reasoningDismiss: { fontSize: 14, color: COLORS.textSecondary, padding: 2 },
+  reasoningDismiss: { fontSize: 14, color: colors.textSecondary, padding: 2 },
 
   // AI results
   aiResultCount: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
     marginBottom: 10,
     paddingHorizontal: 2,
   },
@@ -1282,13 +1293,13 @@ const styles = StyleSheet.create({
   aiEmptyIcon: { fontSize: 52, marginBottom: 16 },
   aiEmptyTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   aiEmptyText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     paddingHorizontal: 28,
     lineHeight: 21,
@@ -1296,12 +1307,12 @@ const styles = StyleSheet.create({
 
   // Skeleton
   skeletonCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     marginBottom: 14,
     overflow: "hidden",
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -1309,19 +1320,19 @@ const styles = StyleSheet.create({
   skeletonImage: {
     width: "100%",
     height: 140,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
   },
   skeletonContent: { padding: 14 },
   skeletonLine: {
     height: 12,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: colors.borderLight,
     borderRadius: 6,
   },
 
   aiDefaultHeader: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginBottom: 10,
     paddingHorizontal: 2,
   },
@@ -1330,7 +1341,7 @@ const styles = StyleSheet.create({
   shopPromoCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.primary + "12",
+    backgroundColor: colors.primary + "12",
     marginHorizontal: 12,
     marginBottom: 12,
     borderRadius: 14,
@@ -1338,7 +1349,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.primary + "30",
+    borderColor: colors.primary + "30",
   },
   shopPromoEmoji: {
     fontSize: 22,
@@ -1348,22 +1359,20 @@ const styles = StyleSheet.create({
   },
   shopPromoTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   shopPromoSub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   shopPromoArrow: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
-});
-
-export default AllProductsScreen;
+}));export default AllProductsScreen;

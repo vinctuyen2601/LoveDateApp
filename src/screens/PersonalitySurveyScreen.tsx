@@ -19,6 +19,8 @@ import { suggestArticlesForSurvey } from '../services/articleService';
 import { apiService } from '../services/api.service';
 import { useAiRateLimit } from '../hooks/useAiRateLimit';
 import AiRateLimitModal from '../components/molecules/AiRateLimitModal';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -156,6 +158,9 @@ const LOVE_LANGUAGE_MAP: Record<string, { label: string; icon: string; desc: str
 const AV_SCORE: Record<string, number> = { a: 10, b: 90, c: 20, d: 35 };
 const AX_SCORE: Record<string, number> = { a: 10, b: 90, c: 40, d: 70 };
 function deriveQuadrant(avoidance: string, anxiety: string): string {
+  const styles = useStyles();
+  const colors = useColors();
+
   const av = AV_SCORE[avoidance] ?? 35;
   const ax = AX_SCORE[anxiety]   ?? 35;
   if (av < 45 && ax < 45) return 'a'; // Gắn bó an toàn
@@ -164,11 +169,11 @@ function deriveQuadrant(avoidance: string, anxiety: string): string {
   return 'd';                           // Né tránh — lo âu (phức tạp)
 }
 
-const PERSONALITY_MAP: Record<string, { label: string; color: string; emoji: string }> = {
-  a: { label: "Gắn bó an toàn",     color: "#059669", emoji: "💞" },
-  b: { label: "Né tránh gắn bó",    color: "#7C3AED", emoji: "🦋" },
-  c: { label: "Lo lắng gắn bó",     color: "#D97706", emoji: "💖" },
-  d: { label: "Né tránh — lo âu",   color: "#DC2626", emoji: "🌀" },
+const PERSONALITY_MAP: Record<string, { label: string; color: string; ionIcon: string }> = {
+  a: { label: "Gắn bó an toàn",     color: "#059669", ionIcon: "heart-circle-outline" },
+  b: { label: "Né tránh gắn bó",    color: "#7C3AED", ionIcon: "walk-outline" },
+  c: { label: "Lo lắng gắn bó",     color: "#D97706", ionIcon: "alert-circle-outline" },
+  d: { label: "Né tránh — lo âu",   color: "#DC2626", ionIcon: "refresh-circle-outline" },
 };
 
 const DATE_SUGGESTIONS: Record<string, string[]> = {
@@ -216,6 +221,8 @@ interface AIPersonalityResult {
 
 const PersonalitySurveyScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const styles = useStyles();
+  const colors = useColors();
   const [phase, setPhase] = useState<"intro" | "survey" | "result">("intro");
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -307,7 +314,7 @@ const PersonalitySurveyScreen: React.FC = () => {
         <LinearGradient colors={["#7C3AED", "#C026D3"]} style={styles.flex}>
           <SafeAreaView style={[styles.flex, styles.introWrap]}>
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-              <Ionicons name="close" size={24} color="#fff" />
+              <Ionicons name="close" size={24} color={colors.white} />
             </TouchableOpacity>
 
             <View style={styles.introBadge}>
@@ -353,7 +360,7 @@ const PersonalitySurveyScreen: React.FC = () => {
     const ai = aiResult;
 
     // Derive display data: prefer AI, fallback to local
-    const displayEmoji = ai?.emoji || result.personality.emoji;
+    const displayIonIcon = result.personality.ionIcon;
     const displayLabel = ai?.personalityType || result.personality.label;
     const displaySummary = ai?.summary;
     const displayLLReceiving = ai
@@ -377,10 +384,10 @@ const PersonalitySurveyScreen: React.FC = () => {
           <LinearGradient colors={["#7C3AED", "#C026D3"]} style={styles.resultHeader}>
             <SafeAreaView>
               <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.white} />
               </TouchableOpacity>
               <View style={styles.resultBadgeWrap}>
-                <Text style={styles.resultEmoji}>{displayEmoji}</Text>
+                <Ionicons name={displayIonIcon as any} size={40} color={colors.white} />
                 <View style={styles.resultPersonalityBadge}>
                   <Text style={styles.resultPersonalityLabel}>{displayLabel}</Text>
                 </View>
@@ -408,7 +415,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             {displaySummary && (
               <View style={[styles.resultCard, styles.summaryCard]}>
                 <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-                  <Ionicons name="sparkles" size={15} color={COLORS.primary} />
+                  <Ionicons name="sparkles" size={15} color={colors.primary} />
                   <Text style={styles.resultSectionTitle}>Tổng quan</Text>
                 </View>
                 <Text style={styles.resultCardDesc}>{displaySummary}</Text>
@@ -418,7 +425,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* Love language receiving */}
             <View style={styles.resultCard}>
               <View style={styles.resultCardHeader}>
-                <View style={[styles.resultCardIcon, { backgroundColor: "#FEF3C7" }]}>
+                <View style={[styles.resultCardIcon, { backgroundColor: colors.warning + '15' }]}>
                   <Ionicons name={ai ? "heart" : result.ll.icon as any} size={22} color="#D97706" />
                 </View>
                 <View style={styles.resultCardInfo}>
@@ -433,7 +440,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             {displayLLGiving.label !== displayLLReceiving.label && (
               <View style={styles.resultCard}>
                 <View style={styles.resultCardHeader}>
-                  <View style={[styles.resultCardIcon, { backgroundColor: "#FCE7F3" }]}>
+                  <View style={[styles.resultCardIcon, { backgroundColor: colors.primary + '12' }]}>
                     <Ionicons name={ai ? "gift" : result.giving.icon as any} size={22} color="#DB2777" />
                   </View>
                   <View style={styles.resultCardInfo}>
@@ -447,7 +454,7 @@ const PersonalitySurveyScreen: React.FC = () => {
 
             {/* Strengths */}
             <View style={styles.resultCard}>
-              <Text style={styles.resultSectionTitle}>💪 Điểm mạnh trong tình yêu</Text>
+              <Text style={styles.resultSectionTitle}>Điểm mạnh trong tình yêu</Text>
               {displayStrengths.map((s, i) => (
                 <View style={styles.strengthRow} key={i}>
                   <View style={styles.strengthDot} />
@@ -459,7 +466,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* Growth areas (AI only) */}
             {displayGrowthAreas && displayGrowthAreas.length > 0 && (
               <View style={styles.resultCard}>
-                <Text style={styles.resultSectionTitle}>🌱 Điều cần phát triển</Text>
+                <Text style={styles.resultSectionTitle}>Điều cần phát triển</Text>
                 {displayGrowthAreas.map((s, i) => (
                   <View style={styles.strengthRow} key={i}>
                     <View style={[styles.strengthDot, { backgroundColor: "#D97706" }]} />
@@ -473,7 +480,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             {displayIdealPartner && (
               <View style={styles.resultCard}>
                 <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-                  <Ionicons name="heart" size={15} color={COLORS.primary} />
+                  <Ionicons name="heart" size={15} color={colors.primary} />
                   <Text style={styles.resultSectionTitle}>Người phù hợp với bạn</Text>
                 </View>
                 <Text style={styles.resultCardDesc}>{displayIdealPartner}</Text>
@@ -483,12 +490,12 @@ const PersonalitySurveyScreen: React.FC = () => {
             {/* Date suggestions */}
             <View style={styles.resultCard}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-                <Ionicons name="calendar-outline" size={15} color={COLORS.primary} />
+                <Ionicons name="calendar-outline" size={15} color={colors.primary} />
                 <Text style={styles.resultSectionTitle}>Gợi ý hẹn hò cho bạn</Text>
               </View>
               {displayDateSuggs.map((s, i) => (
                 <View style={styles.dateRow} key={i}>
-                  <Ionicons name="checkmark-circle" size={16} color={COLORS.primary} />
+                  <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
                   <Text style={styles.dateText}>{s}</Text>
                 </View>
               ))}
@@ -498,7 +505,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             {displayAdvice && (
               <View style={[styles.resultCard, styles.adviceCard]}>
                 <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-                  <Ionicons name="mail-outline" size={15} color={COLORS.primary} />
+                  <Ionicons name="mail-outline" size={15} color={colors.primary} />
                   <Text style={styles.resultSectionTitle}>Lời nhắn cho người yêu bạn</Text>
                 </View>
                 <Text style={styles.resultCardDesc}>{displayAdvice}</Text>
@@ -511,12 +518,12 @@ const PersonalitySurveyScreen: React.FC = () => {
               onPress={() => navigation.navigate("Suggestions", { openSurvey: true })}
               activeOpacity={0.85}
             >
-              <Ionicons name="gift-outline" size={18} color="#fff" />
+              <Ionicons name="gift-outline" size={18} color={colors.white} />
               <Text style={styles.primaryBtnText}>Tìm quà phù hợp với tính cách này</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryBtn} onPress={handleRetake}>
-              <Ionicons name="refresh-outline" size={16} color={COLORS.textSecondary} />
+              <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
               <Text style={styles.secondaryBtnText}>Làm lại khảo sát</Text>
             </TouchableOpacity>
 
@@ -543,7 +550,7 @@ const PersonalitySurveyScreen: React.FC = () => {
                         {CATEGORY_LABELS[article.category] ?? article.category} · {article.readTime ?? 5} phút đọc
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                    <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -563,17 +570,17 @@ const PersonalitySurveyScreen: React.FC = () => {
   const selectedOption = answers[q.id];
 
   return (
-    <View style={[styles.flex, { backgroundColor: COLORS.background }]}>
+    <View style={[styles.flex, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.flex}>
         {/* Header */}
         <View style={styles.surveyHeader}>
           <TouchableOpacity onPress={handleBack} style={styles.surveyBackBtn}>
-            <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.surveyProgress}>Câu {currentQ + 1}/{total}</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.surveyBackBtn}>
-            <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -589,7 +596,7 @@ const PersonalitySurveyScreen: React.FC = () => {
         >
           {/* Question */}
           <View style={styles.questionIconWrap}>
-            <Ionicons name={q.icon} size={28} color={COLORS.primary} />
+            <Ionicons name={q.icon} size={28} color={colors.primary} />
           </View>
           <Text style={styles.questionText}>{q.question}</Text>
           <Text style={styles.questionHint}>{q.hint}</Text>
@@ -631,7 +638,7 @@ const PersonalitySurveyScreen: React.FC = () => {
             <Ionicons
               name={currentQ < total - 1 ? "arrow-forward" : "sparkles"}
               size={18}
-              color={selectedOption ? "#fff" : COLORS.textSecondary}
+              color={selectedOption ? colors.white : colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -642,7 +649,7 @@ const PersonalitySurveyScreen: React.FC = () => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   flex: { flex: 1 },
 
   // Intro
@@ -652,14 +659,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20,
     paddingHorizontal: 16, paddingVertical: 6, marginBottom: 32,
   },
-  introBadgeText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  introBadgeText: { color: colors.white, fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   introIconWrap: {
     width: 120, height: 120, borderRadius: 60,
     backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center", justifyContent: "center", marginBottom: 24,
   },
   introTitle: {
-    fontSize: 28, fontWeight: "800", color: "#fff",
+    fontSize: 28, fontFamily: 'Manrope_800ExtraBold', color: colors.white,
     textAlign: "center", lineHeight: 36, marginBottom: 14,
   },
   introSub: {
@@ -668,13 +675,13 @@ const styles = StyleSheet.create({
   },
   introStats: { flexDirection: "row", gap: 20, marginBottom: 40 },
   introStat: { alignItems: "center", gap: 6 },
-  introStatText: { fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: "500" },
+  introStatText: { fontSize: 12, color: "rgba(255,255,255,0.85)", fontFamily: 'Manrope_500Medium'},
   introCta: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#fff", paddingHorizontal: 32, paddingVertical: 16,
+    backgroundColor: colors.surface, paddingHorizontal: 32, paddingVertical: 16,
     borderRadius: 30, width: "100%", justifyContent: "center",
   },
-  introCtaText: { fontSize: 17, fontWeight: "700", color: "#7C3AED" },
+  introCtaText: { fontSize: 17, fontFamily: 'Manrope_700Bold', color: "#7C3AED" },
 
   // Survey
   surveyHeader: {
@@ -682,9 +689,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   surveyBackBtn: { padding: 6 },
-  surveyProgress: { fontSize: 14, fontWeight: "600", color: COLORS.textSecondary },
+  surveyProgress: { fontSize: 14, fontFamily: 'Manrope_600SemiBold', color: colors.textSecondary },
   progressTrack: {
-    height: 4, backgroundColor: COLORS.border,
+    height: 4, backgroundColor: colors.border,
     marginHorizontal: 16, borderRadius: 2, marginBottom: 8,
   },
   progressFill: {
@@ -694,28 +701,28 @@ const styles = StyleSheet.create({
   surveyContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
   questionIconWrap: {
     width: 56, height: 56, borderRadius: 16,
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     alignItems: "center", justifyContent: "center", marginBottom: 16,
   },
   questionText: {
-    fontSize: 20, fontWeight: "700", color: COLORS.textPrimary,
+    fontSize: 20, fontFamily: 'Manrope_700Bold', color: colors.textPrimary,
     lineHeight: 28, marginBottom: 8,
   },
   questionHint: {
-    fontSize: 13, color: COLORS.textSecondary, marginBottom: 24,
+    fontSize: 13, color: colors.textSecondary, marginBottom: 24,
   },
   optionsWrap: { gap: 10 },
   optionBtn: {
     flexDirection: "row", alignItems: "flex-start", gap: 12,
-    backgroundColor: COLORS.surface, borderRadius: 14, padding: 16,
-    borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: colors.surface, borderRadius: 14, padding: 16,
+    borderWidth: 1.5, borderColor: colors.border,
   },
   optionBtnSelected: {
     borderColor: "#7C3AED", backgroundColor: "#7C3AED10",
   },
   optionRadio: {
     width: 20, height: 20, borderRadius: 10, borderWidth: 2,
-    borderColor: COLORS.border, alignItems: "center", justifyContent: "center",
+    borderColor: colors.border, alignItems: "center", justifyContent: "center",
     marginTop: 1, flexShrink: 0,
   },
   optionRadioSelected: { borderColor: "#7C3AED" },
@@ -723,19 +730,19 @@ const styles = StyleSheet.create({
     width: 10, height: 10, borderRadius: 5, backgroundColor: "#7C3AED",
   },
   optionText: {
-    flex: 1, fontSize: 14, color: COLORS.textPrimary, lineHeight: 20,
+    flex: 1, fontSize: 14, color: colors.textPrimary, lineHeight: 20,
   },
-  optionTextSelected: { color: "#7C3AED", fontWeight: "600" },
+  optionTextSelected: { color: "#7C3AED", fontFamily: 'Manrope_600SemiBold'},
   surveyFooter: {
     paddingHorizontal: 20, paddingVertical: 16,
-    borderTopWidth: 1, borderTopColor: COLORS.border,
+    borderTopWidth: 1, borderTopColor: colors.border,
   },
   nextBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: "#7C3AED", borderRadius: 14, paddingVertical: 16,
   },
-  nextBtnDisabled: { backgroundColor: COLORS.border },
-  nextBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  nextBtnDisabled: { backgroundColor: colors.border },
+  nextBtnText: { fontSize: 16, fontFamily: 'Manrope_700Bold', color: colors.white },
 
   // Result
   resultHeader: { paddingHorizontal: 24, paddingBottom: 32 },
@@ -745,15 +752,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 20,
     paddingHorizontal: 16, paddingVertical: 6,
   },
-  resultPersonalityLabel: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  resultPersonalityLabel: { color: colors.white, fontFamily: 'Manrope_700Bold', fontSize: 15 },
   resultTitle: {
-    fontSize: 24, fontWeight: "800", color: "#fff",
+    fontSize: 24, fontFamily: 'Manrope_800ExtraBold', color: colors.white,
     textAlign: "center", lineHeight: 32, marginTop: 12,
   },
   resultBody: { padding: 16, gap: 12 },
   resultCard: {
-    backgroundColor: COLORS.surface, borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: colors.surface, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: colors.border,
   },
   resultCardHeader: { flexDirection: "row", gap: 12, alignItems: "flex-start", marginBottom: 10 },
   resultCardIcon: {
@@ -761,59 +768,57 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   resultCardInfo: { flex: 1 },
-  resultCardLabel: { fontSize: 11, color: COLORS.textSecondary, fontWeight: "500", marginBottom: 2 },
-  resultCardTitle: { fontSize: 16, fontWeight: "700", color: COLORS.textPrimary },
-  resultCardDesc: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
-  resultSectionTitle: { fontSize: 15, fontWeight: "700", color: COLORS.textPrimary, marginBottom: 12 },
+  resultCardLabel: { fontSize: 11, color: colors.textSecondary, fontFamily: 'Manrope_500Medium', marginBottom: 2 },
+  resultCardTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
+  resultCardDesc: { fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
+  resultSectionTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary, marginBottom: 12 },
   strengthRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 8 },
   strengthDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#7C3AED", marginTop: 6 },
-  strengthText: { flex: 1, fontSize: 14, color: COLORS.textSecondary, lineHeight: 20 },
+  strengthText: { flex: 1, fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
   dateRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 },
-  dateText: { flex: 1, fontSize: 14, color: COLORS.textSecondary, lineHeight: 20 },
+  dateText: { flex: 1, fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
   primaryBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 16, marginTop: 4,
+    backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 16, marginTop: 4,
   },
-  primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  primaryBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
   secondaryBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     paddingVertical: 12,
   },
-  secondaryBtnText: { fontSize: 14, color: COLORS.textSecondary },
+  secondaryBtnText: { fontSize: 14, color: colors.textSecondary },
 
   // Related articles
   articlesSection: {
-    backgroundColor: COLORS.surface, borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: colors.surface, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: colors.border,
   },
-  articlesSectionTitle: { fontSize: 15, fontWeight: "700", color: COLORS.textPrimary, marginBottom: 4 },
+  articlesSectionTitle: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary, marginBottom: 4 },
   articleCard: {
     flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10,
   },
-  articleCardBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  articleCardBorder: { borderTopWidth: 1, borderTopColor: colors.border },
   articleIconBox: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: "#F3E8FF", alignItems: "center", justifyContent: "center", flexShrink: 0,
+    backgroundColor: colors.info + '12', alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   articleEmoji: { fontSize: 22 },
   articleInfo: { flex: 1 },
-  articleTitle: { fontSize: 14, fontWeight: "600", color: COLORS.textPrimary, lineHeight: 20, marginBottom: 3 },
-  articleMeta: { fontSize: 12, color: COLORS.textSecondary },
+  articleTitle: { fontSize: 14, fontFamily: 'Manrope_600SemiBold', color: colors.textPrimary, lineHeight: 20, marginBottom: 3 },
+  articleMeta: { fontSize: 12, color: colors.textSecondary },
 
   // AI result
   aiBadge: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "#F3E8FF", borderRadius: 12,
+    backgroundColor: colors.info + '12', borderRadius: 12,
     paddingHorizontal: 10, paddingVertical: 4, marginTop: 8,
   },
-  aiBadgeText: { fontSize: 11, fontWeight: "600", color: "#7C3AED" },
+  aiBadgeText: { fontSize: 11, fontFamily: 'Manrope_600SemiBold', color: "#7C3AED" },
   aiLoadingCard: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#F3E8FF", borderRadius: 14, padding: 14,
+    backgroundColor: colors.info + '12', borderRadius: 14, padding: 14,
   },
-  aiLoadingText: { fontSize: 13, color: "#7C3AED", fontWeight: "500" },
-  summaryCard: { borderColor: "#7C3AED30", backgroundColor: "#FAF5FF" },
-  adviceCard: { borderColor: "#EC489930", backgroundColor: "#FFF1F2" },
-});
-
-export default PersonalitySurveyScreen;
+  aiLoadingText: { fontSize: 13, color: "#7C3AED", fontFamily: 'Manrope_500Medium'},
+  summaryCard: { borderColor: "#7C3AED30", backgroundColor: '#7C3AED18' },
+  adviceCard: { borderColor: "#EC489930", backgroundColor: colors.primary + '12' },
+}));export default PersonalitySurveyScreen;

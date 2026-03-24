@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
 
 interface MonthDayPickerProps {
   value: number; // 1-31
@@ -8,6 +9,8 @@ interface MonthDayPickerProps {
 }
 
 const MonthDayPicker: React.FC<MonthDayPickerProps> = ({ value, onChange }) => {
+  const styles = useStyles();
+
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
   return (
@@ -41,14 +44,14 @@ const MonthDayPicker: React.FC<MonthDayPickerProps> = ({ value, onChange }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     gap: 12,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   daysContainer: {
@@ -60,30 +63,28 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dayButtonSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   dayTextSelected: {
-    color: COLORS.white,
+    color: colors.white,
   },
   selectedText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
   },
-});
-
-export default MonthDayPicker;
+}));export default MonthDayPicker;

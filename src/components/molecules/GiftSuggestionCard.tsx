@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   Linking,
   Alert,
@@ -12,9 +11,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { AffiliateProduct } from "../../types";
-import { COLORS } from "@themes/colors";
 import { logProductClick } from "../../services/analyticsService";
 import { useEvents } from "../../contexts/EventsContext";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const CATEGORY_VI: Record<string, string> = {
   gift: "Quà tặng",
@@ -24,14 +24,6 @@ const CATEGORY_VI: Record<string, string> = {
   travel: "Du lịch",
 };
 
-// Gradient fallback colors per category
-const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
-  gift: ["#FF6B6B", "#FF8E53"],
-  spa: ["#A18CD1", "#FBC2EB"],
-  restaurant: ["#F093FB", "#F5576C"],
-  hotel: ["#4FACFE", "#00F2FE"],
-  travel: ["#43E97B", "#38F9D7"],
-};
 
 const stripHtml = (html: string): string =>
   html
@@ -63,6 +55,8 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   showSaveButton = true,
   eventId,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
   const navigation = useNavigation<any>();
   const { upsertEventNote } = useEvents();
   const [imageError, setImageError] = useState(false);
@@ -122,10 +116,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
       : 0;
 
   const showImage = product.imageUrl && !imageError;
-  const gradientColors = CATEGORY_GRADIENTS[product.category] ?? [
-    "#FF6B6B",
-    "#4ECDC4",
-  ];
+  const gradientColors: [string, string] = [colors.gradientStart, colors.gradientEnd];
 
   return (
     <TouchableOpacity
@@ -171,18 +162,18 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
               <View
                 style={[
                   styles.overlayBadge,
-                  { backgroundColor: COLORS.primary },
+                  { backgroundColor: colors.primary },
                 ]}
               >
-                <Ionicons name="star" size={11} color="#fff" />
+                <Ionicons name="star" size={11} color={colors.white} />
                 <Text style={styles.overlayBadgeText}> Nổi bật</Text>
               </View>
             )}
             {product.isPopular && (
               <View
-                style={[styles.overlayBadge, { backgroundColor: "#D97706" }]}
+                style={[styles.overlayBadge, { backgroundColor: colors.warning }]}
               >
-                <Ionicons name="flame" size={11} color="#fff" />
+                <Ionicons name="flame" size={11} color={colors.white} />
                 <Text style={styles.overlayBadgeText}> Phổ biến</Text>
               </View>
             )}
@@ -224,7 +215,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
           {/* Rating (right-aligned) */}
           {product.rating != null && Number(product.rating) > 0 && (
             <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={12} color="#F59E0B" />
+              <Ionicons name="star" size={12} color={colors.warning} />
               <Text style={styles.ratingText}>
                 {Number(product.rating).toFixed(1)}
               </Text>
@@ -245,7 +236,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
         {/* AI Reason callout */}
         {product.reason ? (
           <View style={styles.reasonBox}>
-            <Text style={styles.reasonIcon}>💡</Text>
+            <Ionicons name="bulb-outline" size={16} color={colors.warning} />
             <Text style={styles.reasonText}>{product.reason}</Text>
           </View>
         ) : null}
@@ -260,7 +251,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
               <Ionicons
                 name={giftSaved ? "checkmark-circle-outline" : "gift-outline"}
                 size={16}
-                color={COLORS.white}
+                color={colors.white}
               />
               <Text style={styles.buyButtonText}>
                 {giftSaved ? "Đã chọn" : "Chọn quà & Mua"}
@@ -268,7 +259,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.buyButton} onPress={handleOpenLink}>
-              <Ionicons name="cart-outline" size={16} color={COLORS.white} />
+              <Ionicons name="cart-outline" size={16} color={colors.white} />
               <Text style={styles.buyButtonText}>Mua ngay</Text>
             </TouchableOpacity>
           )}
@@ -281,7 +272,7 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
               <Ionicons
                 name="bookmark-outline"
                 size={16}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.saveButtonText}>Lưu</Text>
             </TouchableOpacity>
@@ -292,9 +283,9 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     marginBottom: 14,
     overflow: "hidden",
@@ -330,15 +321,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: "#DC2626",
+    backgroundColor: colors.error,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
   discountOverlayText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   featuredOverlay: {
     position: "absolute",
@@ -355,8 +346,8 @@ const styles = StyleSheet.create({
   },
   overlayBadgeText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   categoryOverlay: {
     position: "absolute",
@@ -369,8 +360,8 @@ const styles = StyleSheet.create({
   },
   categoryOverlayText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
 
   // Content below image
@@ -379,8 +370,8 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     lineHeight: 21,
     marginBottom: 6,
   },
@@ -393,12 +384,12 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   originalPrice: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textDecorationLine: "line-through",
   },
   ratingBadge: {
@@ -406,24 +397,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
     marginLeft: "auto",
-    backgroundColor: "#FFFBEB",
+    backgroundColor: colors.warning + '18',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 8,
   },
   ratingText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#92400E",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.warning,
   },
   reviewCount: {
     fontSize: 11,
-    color: "#B45309",
+    color: colors.warning,
   },
   description: {
     fontSize: 13,
     lineHeight: 18,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 10,
   },
   actions: {
@@ -439,15 +430,15 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   buyButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   buyButtonSaved: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
   },
   saveButton: {
     flexDirection: "row",
@@ -458,13 +449,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.white,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
   },
   saveButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
 
   // AI reason callout
@@ -472,9 +463,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 6,
-    backgroundColor: "#F0FDF4",
+    backgroundColor: colors.success + '12',
     borderLeftWidth: 3,
-    borderLeftColor: COLORS.success,
+    borderLeftColor: colors.success,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -488,9 +479,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
-    color: "#166534",
+    color: colors.success,
     fontStyle: "italic",
   },
-});
+}));
 
 export default GiftSuggestionCard;

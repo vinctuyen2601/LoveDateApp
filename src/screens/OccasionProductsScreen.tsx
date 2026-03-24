@@ -18,6 +18,8 @@ import { fetchProductsByOccasionPaginated } from '../services/affiliateProductSe
 import { useInfiniteList } from '../hooks/useInfiniteList';
 import ProductCard from '../components/suggestions/ProductCard';
 import { useEvents } from '@contexts/EventsContext';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 type OccasionProductsRouteProp = RouteProp<
   { OccasionProducts: { occasionId: string; occasionName: string; occasionColor?: string; eventId?: string } },
@@ -65,10 +67,13 @@ const SORT_PARAMS: Record<SortKey, { sortBy: string; sortOrder: 'ASC' | 'DESC' }
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 const OccasionProductsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const route = useRoute<OccasionProductsRouteProp>();
   const navigation = useNavigation<any>();
-  const { occasionId, occasionName, occasionColor = COLORS.primary, eventId } = route.params;
+  const { occasionId, occasionName, occasionColor = colors.primary, eventId } = route.params;
   const { upsertEventNote } = useEvents();
 
   const [budget, setBudget] = useState<BudgetKey>('all');
@@ -120,7 +125,7 @@ const OccasionProductsScreen: React.FC = () => {
       {/* ── Header ── */}
       <View style={[styles.header, { backgroundColor: occasionColor, paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{occasionName}</Text>
@@ -164,7 +169,7 @@ const OccasionProductsScreen: React.FC = () => {
           style={styles.sortBtn}
           onPress={() => setShowSortSheet(true)}
         >
-          <Ionicons name="funnel-outline" size={16} color={COLORS.textSecondary} />
+          <Ionicons name="funnel-outline" size={16} color={colors.textSecondary} />
           <Text style={styles.sortBtnText} numberOfLines={1}>
             {sort === 'default' ? 'Sắp xếp' : activeSortLabel}
           </Text>
@@ -178,7 +183,7 @@ const OccasionProductsScreen: React.FC = () => {
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Ionicons name="wifi-outline" size={44} color={COLORS.textSecondary} />
+          <Ionicons name="wifi-outline" size={44} color={colors.textSecondary} />
           <Text style={styles.stateText}>{error}</Text>
           <TouchableOpacity
             style={[styles.resetBtn, { borderColor: occasionColor }]}
@@ -189,7 +194,7 @@ const OccasionProductsScreen: React.FC = () => {
         </View>
       ) : items.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="search-outline" size={44} color={COLORS.textSecondary} />
+          <Ionicons name="search-outline" size={44} color={colors.textSecondary} />
           <Text style={styles.stateText}>Không có sản phẩm phù hợp</Text>
           <TouchableOpacity
             style={[styles.resetBtn, { borderColor: occasionColor }]}
@@ -249,12 +254,12 @@ const OccasionProductsScreen: React.FC = () => {
                 <Ionicons
                   name={option.icon as any}
                   size={20}
-                  color={sort === option.key ? occasionColor : COLORS.textSecondary}
+                  color={sort === option.key ? occasionColor : colors.textSecondary}
                 />
                 <Text
                   style={[
                     styles.sheetRowText,
-                    sort === option.key && { color: occasionColor, fontWeight: '700' },
+                    sort === option.key && { color: occasionColor, fontFamily: 'Manrope_700Bold'},
                   ]}
                 >
                   {option.label}
@@ -273,10 +278,10 @@ const OccasionProductsScreen: React.FC = () => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
 
   // Header
@@ -299,8 +304,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   headerCount: {
     fontSize: 12,
@@ -312,9 +317,9 @@ const styles = StyleSheet.create({
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     paddingVertical: 10,
   },
   chipsRow: {
@@ -327,17 +332,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
   chipTextActive: {
-    color: COLORS.white,
-    fontWeight: '700',
+    color: colors.white,
+    fontFamily: 'Manrope_700Bold',
   },
   sortBtn: {
     flexDirection: 'row',
@@ -346,13 +351,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderLeftWidth: 1,
-    borderLeftColor: COLORS.border,
+    borderLeftColor: colors.border,
     minWidth: 90,
     maxWidth: 110,
   },
   sortBtnText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     flexShrink: 1,
   },
 
@@ -366,7 +371,7 @@ const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   resetBtn: {
@@ -378,7 +383,7 @@ const styles = StyleSheet.create({
   },
   resetBtnText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // List
@@ -390,7 +395,7 @@ const styles = StyleSheet.create({
   footerEnd: {
     textAlign: 'center',
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     paddingVertical: 20,
   },
 
@@ -401,7 +406,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 32,
@@ -411,14 +416,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 16,
   },
   sheetTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
@@ -431,9 +436,7 @@ const styles = StyleSheet.create({
   },
   sheetRowText: {
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
   },
-});
-
-export default OccasionProductsScreen;
+}));export default OccasionProductsScreen;

@@ -19,6 +19,8 @@ import { COLORS } from '@themes/colors';
 import { DateUtils } from '@lib/date.utils';
 import { EventFormData } from '../../types';
 import TimePicker from '@components/molecules/TimePicker';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface QuickEventModalProps {
   visible: boolean;
@@ -83,6 +85,9 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const now = new Date();
   // Create default date at 12:00 to avoid timezone issues
   const defaultDate = new Date();
@@ -146,7 +151,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
 
       // Show success message
       Alert.alert(
-        '✅ Thành công!',
+        'Thành công!',
         `Sự kiện "${eventName.trim()}" đã được tạo và sẽ tự động nhắc bạn hàng năm.`,
         [{ text: 'OK', style: 'default' }]
       );
@@ -189,7 +194,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
             <TouchableOpacity onPress={step > 1 ? handleBack : handleClose} style={styles.backButton}>
-              <Ionicons name={step > 1 ? "arrow-back" : "close"} size={24} color={COLORS.text} />
+              <Ionicons name={step > 1 ? "arrow-back" : "close"} size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Tạo sự kiện mới</Text>
             <View style={styles.stepIndicator}>
@@ -206,7 +211,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
             {/* Step 1: Event Name */}
             {step === 1 && (
               <View style={styles.stepContainer}>
-                <Ionicons name="heart" size={48} color={COLORS.primary} style={styles.stepIcon} />
+                <Ionicons name="heart" size={48} color={colors.primary} style={styles.stepIcon} />
                 <Text style={styles.questionTitle}>Sự kiện quan trọng của bạn là gì?</Text>
                 <Text style={styles.questionSubtitle}>
                   Hãy cho tôi biết, tôi sẽ giúp bạn không bao giờ quên 💝
@@ -215,7 +220,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
                 <TextInput
                   style={styles.input}
                   placeholder="Ví dụ: Sinh nhật vợ, Kỷ niệm ngày cưới..."
-                  placeholderTextColor={COLORS.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={eventName}
                   onChangeText={setEventName}
                   autoFocus
@@ -231,7 +236,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
             {/* Step 2: Event Date */}
             {step === 2 && (
               <View style={styles.stepContainer}>
-                <Ionicons name="calendar" size={48} color={COLORS.primary} style={styles.stepIcon} />
+                <Ionicons name="calendar" size={48} color={colors.primary} style={styles.stepIcon} />
                 <Text style={styles.questionTitle}>"{eventName}" diễn ra khi nào?</Text>
                 <Text style={styles.questionSubtitle}>
                   Tôi sẽ tự động nhắc bạn hàng năm 🗓️
@@ -249,23 +254,23 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
                     markedDates={{
                       [DateUtils.toLocalDateString(eventDate)]: {
                         selected: true,
-                        selectedColor: COLORS.primary,
+                        selectedColor: colors.primary,
                       },
                     }}
                     theme={{
                       backgroundColor: 'transparent',
                       calendarBackground: 'transparent',
-                      textSectionTitleColor: COLORS.textSecondary,
-                      selectedDayBackgroundColor: COLORS.primary,
-                      selectedDayTextColor: COLORS.white,
-                      todayTextColor: COLORS.primary,
-                      dayTextColor: COLORS.textPrimary,
-                      textDisabledColor: COLORS.textLight,
-                      dotColor: COLORS.primary,
-                      selectedDotColor: COLORS.white,
-                      arrowColor: COLORS.primary,
-                      monthTextColor: COLORS.textPrimary,
-                      indicatorColor: COLORS.primary,
+                      textSectionTitleColor: colors.textSecondary,
+                      selectedDayBackgroundColor: colors.primary,
+                      selectedDayTextColor: colors.white,
+                      todayTextColor: colors.primary,
+                      dayTextColor: colors.textPrimary,
+                      textDisabledColor: colors.textLight,
+                      dotColor: colors.primary,
+                      selectedDotColor: colors.white,
+                      arrowColor: colors.primary,
+                      monthTextColor: colors.textPrimary,
+                      indicatorColor: colors.primary,
                       textDayFontFamily: 'System',
                       textMonthFontFamily: 'System',
                       textDayHeaderFontFamily: 'System',
@@ -283,7 +288,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
                       <Ionicons
                         name={direction === 'left' ? 'chevron-back' : 'chevron-forward'}
                         size={24}
-                        color={COLORS.primary}
+                        color={colors.primary}
                       />
                     )}
                   />
@@ -300,7 +305,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
                 </Text>
 
                 <View style={styles.infoCard}>
-                  <Ionicons name="repeat" size={20} color={COLORS.primary} />
+                  <Ionicons name="repeat" size={20} color={colors.primary} />
                   <Text style={styles.infoCardText}>
                     Sự kiện này sẽ lặp lại hàng năm vào {eventDate.getDate()} tháng {eventDate.getMonth() + 1}
                   </Text>
@@ -311,7 +316,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
             {/* Step 3: Reminder Settings */}
             {step === 3 && (
               <View style={styles.stepContainer}>
-                <Ionicons name="notifications" size={48} color={COLORS.primary} style={styles.stepIcon} />
+                <Ionicons name="notifications" size={48} color={colors.primary} style={styles.stepIcon} />
                 <Text style={styles.questionTitle}>Khi nào bạn muốn được nhắc nhở?</Text>
                 <Text style={styles.questionSubtitle}>
                   Chọn thời gian để tôi nhắc bạn trước ngày diễn ra 🔔
@@ -338,7 +343,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
                         <Ionicons
                           name={isSelected ? 'checkbox' : 'square-outline'}
                           size={22}
-                          color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                          color={isSelected ? colors.primary : colors.textSecondary}
                         />
                         <Text
                           style={[
@@ -378,7 +383,7 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
                   <Text style={styles.buttonText}>
                     {step === 3 ? 'Hoàn tất' : 'Tiếp tục'}
                   </Text>
-                  <Ionicons name={step === 3 ? "checkmark" : "arrow-forward"} size={20} color={COLORS.white} />
+                  <Ionicons name={step === 3 ? "checkmark" : "arrow-forward"} size={20} color={colors.white} />
                 </>
               )}
             </TouchableOpacity>
@@ -390,18 +395,18 @@ export const QuickEventModal: React.FC<QuickEventModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   modalContent: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   header: {
     flexDirection: 'row',
@@ -418,28 +423,28 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.text,
   },
   stepIndicator: {
-    backgroundColor: COLORS.primaryLight + '30',
+    backgroundColor: colors.primaryLight + '30',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
   stepText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   progressContainer: {
     height: 3,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginHorizontal: 20,
   },
   progressBar: {
     height: '100%',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 3,
   },
   content: {
@@ -455,49 +460,49 @@ const styles = StyleSheet.create({
   },
   questionTitle: {
     fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.text,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   questionSubtitle: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 22,
   },
   input: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 16,
     padding: 16,
     fontSize: 16,
-    color: COLORS.text,
+    color: colors.text,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   helperText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 12,
     textAlign: 'center',
   },
   calendarCard: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 12,
   },
   selectedInfoText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 16,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primaryLight + '15',
+    backgroundColor: colors.primaryLight + '15',
     borderRadius: 12,
     padding: 16,
     marginTop: 20,
@@ -506,7 +511,7 @@ const styles = StyleSheet.create({
   infoCardText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.text,
+    color: colors.text,
     lineHeight: 20,
   },
   reminderOptions: {
@@ -518,22 +523,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 12,
   },
   reminderOptionSelected: {
-    backgroundColor: COLORS.primary + '10',
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary + '10',
+    borderColor: colors.primary,
   },
   reminderOptionText: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   reminderOptionTextSelected: {
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   timePickerSection: {
     marginTop: 24,
@@ -542,7 +547,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: colors.border,
   },
   button: {
     flexDirection: 'row',
@@ -553,11 +558,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonPrimary: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
-});
+}));

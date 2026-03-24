@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 import { useAuth } from '@contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import {
@@ -54,6 +56,9 @@ const getAvatarColor = (id: string) =>
 const UserAvatar: React.FC<{ photoUrl?: string; name?: string; email?: string; size?: number }> = ({
   photoUrl, name, email, size = 44,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   if (photoUrl) {
     return (
       <Image
@@ -74,6 +79,8 @@ const UserAvatar: React.FC<{ photoUrl?: string; name?: string; email?: string; s
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 const ConnectionsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { isAnonymous } = useAuth();
@@ -92,7 +99,7 @@ const ConnectionsScreen: React.FC = () => {
     visible: boolean; title: string; message: string;
     confirmText: string; icon: any; iconColor: string;
     onConfirm: () => void;
-  }>({ visible: false, title: '', message: '', confirmText: 'Xác nhận', icon: 'alert-circle', iconColor: COLORS.error, onConfirm: () => {} });
+  }>({ visible: false, title: '', message: '', confirmText: 'Xác nhận', icon: 'alert-circle', iconColor: colors.error, onConfirm: () => {} });
   const closeConfirm = () => setConfirmDialog((d) => ({ ...d, visible: false }));
 
   // Add connection modal
@@ -204,7 +211,7 @@ const ConnectionsScreen: React.FC = () => {
       message: `Bạn có chắc muốn xoá kết nối với ${partner.displayName || partner.email}?`,
       confirmText: 'Xoá',
       icon: 'person-remove-outline',
-      iconColor: COLORS.error,
+      iconColor: colors.error,
       onConfirm: async () => {
         closeConfirm();
         setActionLoading(conn.id);
@@ -249,7 +256,7 @@ const ConnectionsScreen: React.FC = () => {
           <Text style={styles.headerTitle}>Kết nối</Text>
         </View>
         <View style={styles.emptyState}>
-          <Ionicons name="person-add-outline" size={64} color={COLORS.textLight} />
+          <Ionicons name="person-add-outline" size={64} color={colors.textLight} />
           <Text style={styles.emptyTitle}>Cần đăng nhập</Text>
           <Text style={styles.emptySubtitle}>
             Vui lòng đăng nhập để sử dụng tính năng kết nối với người thân
@@ -272,21 +279,21 @@ const ConnectionsScreen: React.FC = () => {
     return (
       <View style={styles.quotaBar}>
         <View style={styles.quotaItem}>
-          <Ionicons name="people-outline" size={16} color={COLORS.secondary} />
+          <Ionicons name="people-outline" size={16} color={colors.secondary} />
           <Text style={styles.quotaText}>
             {limits.connectionsUsed}/{limits.connectionsMax} kết nối
           </Text>
         </View>
         <View style={styles.quotaSep} />
         <View style={styles.quotaItem}>
-          <Ionicons name="share-outline" size={16} color={COLORS.primary} />
+          <Ionicons name="share-outline" size={16} color={colors.primary} />
           <Text style={styles.quotaText}>
             {limits.sharedOutUsed}/{limits.sharedOutMax} đã chia sẻ
           </Text>
         </View>
         <View style={styles.quotaSep} />
         <View style={styles.quotaItem}>
-          <Ionicons name="download-outline" size={16} color={COLORS.info} />
+          <Ionicons name="download-outline" size={16} color={colors.info} />
           <Text style={styles.quotaText}>
             {limits.sharedInUsed}/{limits.sharedInMax} đã nhận
           </Text>
@@ -315,9 +322,9 @@ const ConnectionsScreen: React.FC = () => {
           disabled={isActing}
         >
           {isActing ? (
-            <ActivityIndicator size={18} color={COLORS.error} />
+            <ActivityIndicator size={18} color={colors.error} />
           ) : (
-            <Ionicons name="person-remove-outline" size={20} color={COLORS.error} />
+            <Ionicons name="person-remove-outline" size={20} color={colors.error} />
           )}
         </TouchableOpacity>
       </View>
@@ -340,20 +347,20 @@ const ConnectionsScreen: React.FC = () => {
           <Text style={styles.cardBadge}>Muốn kết nối với bạn</Text>
         </View>
         {isActing ? (
-          <ActivityIndicator size={20} color={COLORS.primary} style={{ marginLeft: 8 }} />
+          <ActivityIndicator size={20} color={colors.primary} style={{ marginLeft: 8 }} />
         ) : (
           <View style={styles.requestActions}>
             <TouchableOpacity
               style={[styles.actionBtn, styles.acceptBtn]}
               onPress={() => handleAccept(conn)}
             >
-              <Ionicons name="checkmark" size={18} color={COLORS.white} />
+              <Ionicons name="checkmark" size={18} color={colors.white} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, styles.declineBtn]}
               onPress={() => handleDecline(conn)}
             >
-              <Ionicons name="close" size={18} color={COLORS.error} />
+              <Ionicons name="close" size={18} color={colors.error} />
             </TouchableOpacity>
           </View>
         )}
@@ -375,7 +382,7 @@ const ConnectionsScreen: React.FC = () => {
             style={styles.headerBtn}
             onPress={() => navigation.navigate('QRScreen')}
           >
-            <Ionicons name="qr-code-outline" size={24} color={COLORS.textPrimary} />
+            <Ionicons name="qr-code-outline" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.headerBtn, styles.addBtn]}
@@ -387,7 +394,7 @@ const ConnectionsScreen: React.FC = () => {
               setShowAddModal(true);
             }}
           >
-            <Ionicons name="person-add-outline" size={22} color={COLORS.white} />
+            <Ionicons name="person-add-outline" size={22} color={colors.white} />
           </TouchableOpacity>
         </View>
       </View>
@@ -418,7 +425,7 @@ const ConnectionsScreen: React.FC = () => {
             Lời mời
           </Text>
           {requests.length > 0 && (
-            <View style={[styles.tabBadge, { backgroundColor: COLORS.error }]}>
+            <View style={[styles.tabBadge, { backgroundColor: colors.error }]}>
               <Text style={styles.tabBadgeText}>{requests.length}</Text>
             </View>
           )}
@@ -428,7 +435,7 @@ const ConnectionsScreen: React.FC = () => {
       {/* Content */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Đang tải...</Text>
         </View>
       ) : (
@@ -436,14 +443,14 @@ const ConnectionsScreen: React.FC = () => {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
           }
         >
           {activeTab === 'connections' && (
             <>
               {connections.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="people-outline" size={56} color={COLORS.textLight} />
+                  <Ionicons name="people-outline" size={56} color={colors.textLight} />
                   <Text style={styles.emptyTitle}>Chưa có kết nối</Text>
                   <Text style={styles.emptySubtitle}>
                     Thêm người thân hoặc bạn bè để chia sẻ những ngày quan trọng cùng nhau
@@ -452,7 +459,7 @@ const ConnectionsScreen: React.FC = () => {
                     style={styles.primaryButton}
                     onPress={() => setShowAddModal(true)}
                   >
-                    <Ionicons name="person-add-outline" size={18} color={COLORS.white} style={{ marginRight: 6 }} />
+                    <Ionicons name="person-add-outline" size={18} color={colors.white} style={{ marginRight: 6 }} />
                     <Text style={styles.primaryButtonText}>Thêm kết nối</Text>
                   </TouchableOpacity>
                 </View>
@@ -466,7 +473,7 @@ const ConnectionsScreen: React.FC = () => {
             <>
               {requests.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="mail-open-outline" size={56} color={COLORS.textLight} />
+                  <Ionicons name="mail-open-outline" size={56} color={colors.textLight} />
                   <Text style={styles.emptyTitle}>Không có lời mời</Text>
                   <Text style={styles.emptySubtitle}>
                     Khi ai đó gửi lời mời kết nối đến bạn, họ sẽ xuất hiện ở đây
@@ -485,13 +492,13 @@ const ConnectionsScreen: React.FC = () => {
             activeOpacity={0.85}
           >
             <View style={styles.inboxBannerLeft}>
-              <Ionicons name="calendar-outline" size={22} color={COLORS.secondary} />
+              <Ionicons name="calendar-outline" size={22} color={colors.secondary} />
               <View style={{ marginLeft: 12 }}>
                 <Text style={styles.inboxBannerTitle}>Sự kiện được chia sẻ</Text>
                 <Text style={styles.inboxBannerSub}>Xem sự kiện người khác gửi cho bạn</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -508,7 +515,7 @@ const ConnectionsScreen: React.FC = () => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Thêm kết nối</Text>
             <TouchableOpacity onPress={handleCloseAddModal}>
-              <Ionicons name="close" size={26} color={COLORS.textPrimary} />
+              <Ionicons name="close" size={26} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -522,13 +529,13 @@ const ConnectionsScreen: React.FC = () => {
               }}
             >
               <View style={styles.qrOptionIcon}>
-                <Ionicons name="qr-code" size={28} color={COLORS.secondary} />
+                <Ionicons name="qr-code" size={28} color={colors.secondary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.qrOptionTitle}>Quét mã QR</Text>
                 <Text style={styles.qrOptionSub}>Quét mã QR từ điện thoại của họ để kết nối nhanh</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
 
             <View style={styles.dividerRow}>
@@ -542,7 +549,7 @@ const ConnectionsScreen: React.FC = () => {
               <TextInput
                 style={styles.searchInput}
                 placeholder="Nhập email người dùng..."
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={colors.textLight}
                 value={searchEmail}
                 onChangeText={setSearchEmail}
                 keyboardType="email-address"
@@ -557,9 +564,9 @@ const ConnectionsScreen: React.FC = () => {
                 disabled={!searchEmail.trim() || isSearching}
               >
                 {isSearching ? (
-                  <ActivityIndicator size={18} color={COLORS.white} />
+                  <ActivityIndicator size={18} color={colors.white} />
                 ) : (
-                  <Ionicons name="search" size={20} color={COLORS.white} />
+                  <Ionicons name="search" size={20} color={colors.white} />
                 )}
               </TouchableOpacity>
             </View>
@@ -593,10 +600,10 @@ const ConnectionsScreen: React.FC = () => {
                     disabled={isSendingRequest}
                   >
                     {isSendingRequest ? (
-                      <ActivityIndicator size={16} color={COLORS.white} />
+                      <ActivityIndicator size={16} color={colors.white} />
                     ) : (
                       <>
-                        <Ionicons name="person-add" size={16} color={COLORS.white} />
+                        <Ionicons name="person-add" size={16} color={colors.white} />
                         <Text style={styles.sendRequestText}>Kết nối</Text>
                       </>
                     )}
@@ -607,7 +614,7 @@ const ConnectionsScreen: React.FC = () => {
 
             {/* Tips */}
             <View style={styles.tipBox}>
-              <Ionicons name="information-circle-outline" size={18} color={COLORS.info} />
+              <Ionicons name="information-circle-outline" size={18} color={colors.info} />
               <Text style={styles.tipText}>
                 Mỗi tài khoản có thể kết nối tối đa {limits?.connectionsMax ?? 5} người. Cả hai bên đều cần chấp nhận để hoàn thành kết nối.
               </Text>
@@ -634,10 +641,10 @@ export default ConnectionsScreen;
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -645,14 +652,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   headerActions: {
     flexDirection: 'row',
@@ -665,19 +672,19 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   addBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   quotaBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   quotaItem: {
     flex: 1,
@@ -688,19 +695,19 @@ const styles = StyleSheet.create({
   },
   quotaText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   quotaSep: {
     width: 1,
     height: 16,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   tab: {
     flex: 1,
@@ -713,19 +720,19 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: COLORS.primary,
+    borderBottomColor: colors.primary,
   },
   tabLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
   tabLabelActive: {
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
   tabBadge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -733,9 +740,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBadgeText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
   },
   list: {
     flex: 1,
@@ -751,7 +758,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
   },
   emptyState: {
@@ -762,39 +769,39 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginTop: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
     marginTop: 8,
   },
   primaryButtonText: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginBottom: 10,
     borderRadius: 14,
     padding: 14,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 1,
     shadowRadius: 4,
@@ -805,8 +812,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitials: {
-    color: COLORS.white,
-    fontWeight: '700',
+    color: colors.white,
+    fontFamily: 'Manrope_700Bold',
   },
   cardInfo: {
     flex: 1,
@@ -814,19 +821,19 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   cardEmail: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   cardBadge: {
     fontSize: 12,
-    color: COLORS.secondary,
+    color: colors.secondary,
     marginTop: 3,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   removeBtn: {
     width: 36,
@@ -834,7 +841,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.error + '15',
+    backgroundColor: colors.error + '15',
   },
   requestActions: {
     flexDirection: 'row',
@@ -848,24 +855,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   acceptBtn: {
-    backgroundColor: COLORS.success,
+    backgroundColor: colors.success,
   },
   declineBtn: {
-    backgroundColor: COLORS.error + '18',
+    backgroundColor: colors.error + '18',
     borderWidth: 1,
-    borderColor: COLORS.error + '40',
+    borderColor: colors.error + '40',
   },
   inboxBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.secondary + '40',
+    borderColor: colors.secondary + '40',
   },
   inboxBannerLeft: {
     flexDirection: 'row',
@@ -874,18 +881,18 @@ const styles = StyleSheet.create({
   },
   inboxBannerTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   inboxBannerSub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -894,12 +901,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   modalBody: {
     flex: 1,
@@ -908,29 +915,29 @@ const styles = StyleSheet.create({
   qrOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 14,
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   qrOptionIcon: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: COLORS.secondary + '18',
+    backgroundColor: colors.secondary + '18',
     alignItems: 'center',
     justifyContent: 'center',
   },
   qrOptionTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   qrOptionSub: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
     lineHeight: 17,
   },
@@ -943,11 +950,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   dividerText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   searchRow: {
     flexDirection: 'row',
@@ -955,35 +962,35 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   searchBtn: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchBtnDisabled: {
-    backgroundColor: COLORS.textLight,
+    backgroundColor: colors.textLight,
   },
   searchResultCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 14,
     padding: 14,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 12,
   },
   searchResultInfo: {
@@ -991,44 +998,44 @@ const styles = StyleSheet.create({
   },
   searchResultName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   searchResultEmail: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   alreadyConnected: {
     fontSize: 12,
-    color: COLORS.success,
+    color: colors.success,
     marginTop: 3,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   pendingStatus: {
     fontSize: 12,
-    color: COLORS.warning,
+    color: colors.warning,
     marginTop: 3,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
   },
   sendRequestBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 20,
   },
   sendRequestText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   tipBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: COLORS.info + '12',
+    backgroundColor: colors.info + '12',
     borderRadius: 12,
     padding: 14,
     marginTop: 20,
@@ -1037,7 +1044,7 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 18,
   },
-});
+}));

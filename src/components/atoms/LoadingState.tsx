@@ -3,6 +3,8 @@ import { View, Text, ActivityIndicator, Animated, StyleSheet } from 'react-nativ
 import { COLORS } from '@themes/colors';
 import { TYPOGRAPHY } from '@themes/typography';
 import { SPACING, RADIUS } from '@themes/spacing';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface LoadingStateProps {
   variant?: 'spinner' | 'skeleton';
@@ -17,10 +19,13 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   skeletonCount = 3,
   skeletonType = 'card',
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   if (variant === 'spinner') {
     return (
       <View style={styles.spinnerContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>{text}</Text>
       </View>
     );
@@ -41,6 +46,7 @@ interface SkeletonCardProps {
 }
 
 const SkeletonCard: React.FC<SkeletonCardProps> = ({ type, delay }) => {
+  const styles = useStyles();
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -108,7 +114,7 @@ const SkeletonCard: React.FC<SkeletonCardProps> = ({ type, delay }) => {
 
 const SHIMMER_COLOR = COLORS.border;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   // Spinner variant
   spinnerContainer: {
     flex: 1,
@@ -118,7 +124,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...TYPOGRAPHY.bodyMedium,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: SPACING.md,
   },
 
@@ -133,7 +139,7 @@ const styles = StyleSheet.create({
   cardSkeleton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     gap: SPACING.md,
@@ -207,7 +213,7 @@ const styles = StyleSheet.create({
   statSkeleton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: RADIUS.md,
     padding: SPACING.lg,
     gap: SPACING.md,
@@ -234,4 +240,4 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: SHIMMER_COLOR,
   },
-});
+}));

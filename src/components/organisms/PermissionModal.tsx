@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NotificationUtils } from '@lib/notification.utils';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const PERMISSION_ASKED_KEY = '@notification_permission_asked';
 
@@ -21,6 +23,9 @@ interface PermissionModalProps {
 export const PermissionModal: React.FC<PermissionModalProps> = ({
   onPermissionResult,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -90,7 +95,7 @@ export const PermissionModal: React.FC<PermissionModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.iconContainer}>
-            <Ionicons name="notifications" size={40} color={COLORS.primary} />
+            <Ionicons name="notifications" size={40} color={colors.primary} />
           </View>
 
           <Text style={styles.title}>Cho phép thông báo</Text>
@@ -122,7 +127,7 @@ export const PermissionModal: React.FC<PermissionModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -131,7 +136,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -153,7 +158,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: colors.warning + '18',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -163,27 +168,27 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 12,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 8,
     lineHeight: 24,
   },
   subDescription: {
     fontSize: 14,
-    color: '#999',
+    color: colors.textLight,
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 20,
   },
   allowButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 32,
@@ -191,7 +196,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.primary,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
@@ -202,9 +207,9 @@ const styles = StyleSheet.create({
     }),
   },
   allowButtonText: {
-    color: '#fff',
+    color: colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'Manrope_700Bold',
     textAlign: 'center',
   },
   skipButton: {
@@ -212,8 +217,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   skipButtonText: {
-    color: '#999',
+    color: colors.textLight,
     fontSize: 14,
     textAlign: 'center',
   },
-});
+}));

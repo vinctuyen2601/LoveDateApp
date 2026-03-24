@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { AffiliateProduct } from '../../types';
-import { COLORS } from '@themes/colors';
 import { formatPrice } from '../../data/affiliateProducts';
 import PressableCard from '@components/atoms/PressableCard';
 import { trackAffiliateClick } from '../../services/affiliateProductService';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ProductCardProps {
   product: AffiliateProduct;
@@ -26,6 +27,9 @@ const getDiscountPercent = (price: number | string | undefined, originalPrice: n
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal', occasion, onSaveToEvent }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const navigation = useNavigation<any>();
   const discount = getDiscountPercent(product.price, product.originalPrice);
 
@@ -51,7 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           />
         ) : (
           <View style={[styles.verticalIcon, { backgroundColor: product.color }]}>
-            <Ionicons name={product.icon as any} size={24} color={COLORS.white} />
+            <Ionicons name={product.icon as any} size={24} color={colors.white} />
           </View>
         )}
         <View style={styles.verticalContent}>
@@ -67,7 +71,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           </TouchableOpacity>
           {onSaveToEvent && (
             <TouchableOpacity style={styles.verticalSave} onPress={() => onSaveToEvent(product)}>
-              <Ionicons name="bookmark-outline" size={16} color={COLORS.primary} />
+              <Ionicons name="bookmark-outline" size={16} color={colors.primary} />
             </TouchableOpacity>
           )}
           <Text style={styles.affiliateLabel}>AD</Text>
@@ -97,7 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
         </View>
       ) : (
         <View style={[styles.gradientHeader, { backgroundColor: product.color }]}>
-          <Ionicons name={product.icon as any} size={28} color={COLORS.white} />
+          <Ionicons name={product.icon as any} size={28} color={colors.white} />
           {discount !== null && (
             <View style={styles.discountBadge}>
               <Text style={styles.discountText}>-{discount}%</Text>
@@ -119,14 +123,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
         )}
 
         <View style={styles.ratingRow}>
-          <Ionicons name="star" size={12} color="#FFB300" />
+          <Ionicons name="star" size={12} color={colors.warning} />
           <Text style={styles.ratingText}>{product.rating}</Text>
           <Text style={styles.reviewCount}>({product.reviewCount})</Text>
         </View>
 
-        <TouchableOpacity style={[styles.ctaButton, { borderColor: product.color }]} onPress={handleBuyPress}>
-          <Text style={[styles.ctaText, { color: product.color }]}>Mua ngay</Text>
-          <Ionicons name="arrow-forward" size={14} color={product.color} />
+        <TouchableOpacity style={[styles.ctaButton, { borderColor: colors.primary }]} onPress={handleBuyPress}>
+          <Text style={[styles.ctaText, { color: colors.primary }]}>Mua ngay</Text>
+          <Ionicons name="arrow-forward" size={14} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.affiliateLabel}>* Liên kết affiliate</Text>
       </View>
@@ -134,11 +138,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   // Horizontal card (default)
   card: {
     width: 180,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 3,
@@ -165,23 +169,23 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 6,
-    backgroundColor: COLORS.error,
+    backgroundColor: colors.error,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   discountText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   cardBody: {
     padding: 12,
   },
   productName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 6,
     lineHeight: 19,
   },
@@ -193,12 +197,12 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.success,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.success,
   },
   originalPrice: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textDecorationLine: 'line-through',
   },
   ratingRow: {
@@ -209,12 +213,12 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   reviewCount: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   ctaButton: {
     flexDirection: 'row',
@@ -227,19 +231,19 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Vertical card (for budget filter list)
   verticalCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
@@ -264,13 +268,13 @@ const styles = StyleSheet.create({
   },
   verticalName: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   verticalDesc: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   verticalRight: {
     alignItems: 'flex-end',
@@ -278,22 +282,22 @@ const styles = StyleSheet.create({
   },
   verticalPrice: {
     fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.success,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.success,
   },
   verticalCta: {
-    backgroundColor: COLORS.primary + '15',
+    backgroundColor: colors.primary + '15',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   verticalCtaText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   verticalSave: {
-    backgroundColor: COLORS.primary + '15',
+    backgroundColor: colors.primary + '15',
     borderRadius: 8,
     padding: 4,
     alignItems: 'center',
@@ -301,10 +305,8 @@ const styles = StyleSheet.create({
   },
   affiliateLabel: {
     fontSize: 10,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     opacity: 0.6,
     marginTop: 4,
   },
-});
-
-export default React.memo(ProductCard);
+}));export default React.memo(ProductCard);

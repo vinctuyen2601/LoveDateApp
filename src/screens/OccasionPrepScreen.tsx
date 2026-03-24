@@ -23,6 +23,8 @@ import { useEvents } from "@contexts/EventsContext";
 import { useToast } from "../contexts/ToastContext";
 import { fetchArticlesPaginated } from "../services/articleService";
 import { Article } from "../types";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 // Map event tag → occasionId dùng cho OccasionProductsScreen
 const TAG_TO_OCCASION: Record<string, string> = {
@@ -44,11 +46,14 @@ const TAG_TO_OCCASION_COLOR: Record<string, string> = {
 };
 
 const getOccasionInfo = (tags: string[]) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const tag = tags.find((t) => TAG_TO_OCCASION[t]) || "birthday";
   return {
     occasionId: TAG_TO_OCCASION[tag] || "birthday",
     occasionName: TAG_TO_OCCASION_NAME[tag] || "Dịp đặc biệt",
-    occasionColor: TAG_TO_OCCASION_COLOR[tag] || COLORS.primary,
+    occasionColor: TAG_TO_OCCASION_COLOR[tag] || colors.primary,
     tag,
   };
 };
@@ -71,14 +76,18 @@ function formatCount(n: number): string {
 }
 
 const ArticleCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
-  const cat = ARTICLE_CATEGORIES[article.category] ?? { name: article.category, color: article.color || COLORS.primary };
+  const styles = useStyles();
+  const colors = useColors();
+
+  const cat = ARTICLE_CATEGORIES[article.category] ?? { name: article.category, color: article.color || colors.primary };
+
   return (
     <TouchableOpacity style={styles.articleCard} onPress={onPress} activeOpacity={0.8}>
       {article.imageUrl ? (
         <Image source={{ uri: article.imageUrl as string }} style={styles.articleThumb} resizeMode="cover" />
       ) : (
-        <View style={[styles.articleThumb, { backgroundColor: (article.color || COLORS.primary) + "20", alignItems: "center", justifyContent: "center" }]}>
-          <Ionicons name={(article.icon as any) || "document-text"} size={24} color={article.color || COLORS.primary} />
+        <View style={[styles.articleThumb, { backgroundColor: (article.color || colors.primary) + "20", alignItems: "center", justifyContent: "center" }]}>
+          <Ionicons name={(article.icon as any) || "document-text"} size={24} color={article.color || colors.primary} />
         </View>
       )}
       <View style={styles.articleInfo}>
@@ -88,7 +97,7 @@ const ArticleCard: React.FC<{ article: Article; onPress: () => void }> = ({ arti
           </View>
           {article.readTime ? (
             <View style={styles.articleReadTimeRow}>
-              <Ionicons name="time-outline" size={11} color={COLORS.textSecondary} />
+              <Ionicons name="time-outline" size={11} color={colors.textSecondary} />
               <Text style={styles.articleReadTime}>{article.readTime} phút</Text>
             </View>
           ) : null}
@@ -96,7 +105,7 @@ const ArticleCard: React.FC<{ article: Article; onPress: () => void }> = ({ arti
         <Text style={styles.articleTitle} numberOfLines={2}>{article.title}</Text>
         <View style={styles.articleStats}>
           <View style={styles.articleStat}>
-            <Ionicons name="eye-outline" size={12} color={COLORS.textSecondary} />
+            <Ionicons name="eye-outline" size={12} color={colors.textSecondary} />
             <Text style={styles.articleStatText}>{formatCount(article.views ?? 0)}</Text>
           </View>
           <View style={styles.articleStat}>
@@ -105,12 +114,15 @@ const ArticleCard: React.FC<{ article: Article; onPress: () => void }> = ({ arti
           </View>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={16} color={COLORS.border} />
+      <Ionicons name="chevron-forward" size={16} color={colors.border} />
     </TouchableOpacity>
   );
 };
 
 const OccasionPrepScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -297,7 +309,7 @@ const OccasionPrepScreen: React.FC = () => {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}>
         <View style={{ paddingTop: insets.top }} />
-        <Ionicons name="people-outline" size={56} color="#4ECDC4" />
+        <Ionicons name="people-outline" size={56} color={colors.secondary} />
         <Text style={[styles.headerTitle, { marginTop: 16, textAlign: 'center' }]}>
           Sự kiện được chia sẻ
         </Text>
@@ -305,10 +317,10 @@ const OccasionPrepScreen: React.FC = () => {
           Sự kiện này được chia sẻ từ người thân. Mỗi người tự chuẩn bị theo cách của mình — flow chuẩn bị quà không áp dụng cho sự kiện này.
         </Text>
         <TouchableOpacity
-          style={{ marginTop: 32, backgroundColor: '#4ECDC4', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32 }}
+          style={{ marginTop: 32, backgroundColor: colors.secondary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 32 }}
           onPress={() => navigation.goBack()}
         >
-          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Quay lại</Text>
+          <Text style={{ color: '#fff', fontFamily: 'Manrope_600SemiBold', fontSize: 15 }}>Quay lại</Text>
         </TouchableOpacity>
       </View>
     );
@@ -325,7 +337,7 @@ const OccasionPrepScreen: React.FC = () => {
             accessibilityLabel="Quay lại"
             accessibilityRole="button"
           >
-            <Ionicons name="chevron-back" size={26} color={COLORS.textPrimary} />
+            <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ghi lại kỷ niệm</Text>
           <View style={{ width: 40 }} />
@@ -381,13 +393,13 @@ const OccasionPrepScreen: React.FC = () => {
                   style={[
                     styles.stepDot,
                     i === step && { backgroundColor: occasionColor },
-                    stepDone[i] && { backgroundColor: COLORS.success },
+                    stepDone[i] && { backgroundColor: colors.success },
                     i < step &&
-                      !stepDone[i] && { backgroundColor: COLORS.border },
+                      !stepDone[i] && { backgroundColor: colors.border },
                   ]}
                 >
                   {stepDone[i] ? (
-                    <Ionicons name="checkmark" size={12} color="#fff" />
+                    <Ionicons name="checkmark" size={12} color={colors.white} />
                   ) : (
                     <Text style={styles.stepDotText}>{i + 1}</Text>
                   )}
@@ -395,8 +407,8 @@ const OccasionPrepScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.stepLabel,
-                    i === step && { color: occasionColor, fontWeight: "600" },
-                    stepDone[i] && i !== step && { color: COLORS.success },
+                    i === step && { color: occasionColor, fontFamily: 'Manrope_600SemiBold'},
+                    stepDone[i] && i !== step && { color: colors.success },
                   ]}
                 >
                   {label}
@@ -406,7 +418,7 @@ const OccasionPrepScreen: React.FC = () => {
                 <View
                   style={[
                     styles.stepLine,
-                    stepDone[i] && { backgroundColor: COLORS.success },
+                    stepDone[i] && { backgroundColor: colors.success },
                   ]}
                 />
               )}
@@ -440,9 +452,9 @@ const OccasionPrepScreen: React.FC = () => {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Ionicons name="gift" size={22} color="#fff" />
+                  <Ionicons name="gift" size={22} color={colors.white} />
                   <Text style={styles.actionBtnText}>Xem gợi ý quà tặng</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#fff" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.white} />
                 </LinearGradient>
               </TouchableOpacity>
             )}
@@ -469,13 +481,13 @@ const OccasionPrepScreen: React.FC = () => {
                       colors={[occasionColor, occasionColor + "CC"]}
                       style={styles.savedCardImage}
                     >
-                      <Ionicons name="gift" size={28} color="#fff" />
+                      <Ionicons name="gift" size={28} color={colors.white} />
                     </LinearGradient>
                   )}
                   <View style={styles.savedCardInfo}>
                     <View style={styles.savedCardTopRow}>
                       <View style={styles.savedCardDoneBadge}>
-                        <Ionicons name="checkmark-circle" size={13} color={COLORS.success} />
+                        <Ionicons name="checkmark-circle" size={13} color={colors.success} />
                         <Text style={styles.savedCardDoneLabel}>Quà đã chọn</Text>
                       </View>
                       <TouchableOpacity
@@ -484,7 +496,7 @@ const OccasionPrepScreen: React.FC = () => {
                         activeOpacity={0.7}
                         accessibilityLabel="Đổi quà tặng khác"
                       >
-                        <Ionicons name="refresh-outline" size={14} color={COLORS.textSecondary} />
+                        <Ionicons name="refresh-outline" size={14} color={colors.textSecondary} />
                         <Text style={styles.savedCardChangeBtnText}>Đổi quà</Text>
                       </TouchableOpacity>
                     </View>
@@ -520,7 +532,7 @@ const OccasionPrepScreen: React.FC = () => {
                       ) : null}
                       {savedGift.source === 'occasion_products' && (
                         <View style={styles.savedCardBadge}>
-                          <Ionicons name="sparkles-outline" size={11} color={COLORS.textSecondary} />
+                          <Ionicons name="sparkles-outline" size={11} color={colors.textSecondary} />
                           <Text style={styles.savedCardBadgeText}>Gợi ý AI</Text>
                         </View>
                       )}
@@ -553,7 +565,7 @@ const OccasionPrepScreen: React.FC = () => {
               onPress={() => setStep(1)}
             >
               <Text style={styles.nextBtnText}>Tiếp theo</Text>
-              <Ionicons name="arrow-forward" size={16} color="#fff" />
+              <Ionicons name="arrow-forward" size={16} color={colors.white} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.skipLink}
@@ -584,9 +596,9 @@ const OccasionPrepScreen: React.FC = () => {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Ionicons name="map" size={22} color="#fff" />
+                  <Ionicons name="map" size={22} color={colors.white} />
                   <Text style={styles.actionBtnText}>AI gợi ý lịch trình</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#fff" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.white} />
                 </LinearGradient>
               </TouchableOpacity>
             )}
@@ -609,7 +621,7 @@ const OccasionPrepScreen: React.FC = () => {
                   <View style={styles.savedCardInfo}>
                     <View style={styles.savedCardTopRow}>
                       <View style={styles.savedCardDoneBadge}>
-                        <Ionicons name="checkmark-circle" size={13} color={COLORS.success} />
+                        <Ionicons name="checkmark-circle" size={13} color={colors.success} />
                         <Text style={styles.savedCardDoneLabel}>Đã lên kế hoạch</Text>
                       </View>
                       <TouchableOpacity
@@ -618,7 +630,7 @@ const OccasionPrepScreen: React.FC = () => {
                         activeOpacity={0.7}
                         accessibilityLabel="Đổi lịch trình khác"
                       >
-                        <Ionicons name="refresh-outline" size={14} color={COLORS.textSecondary} />
+                        <Ionicons name="refresh-outline" size={14} color={colors.textSecondary} />
                         <Text style={styles.savedCardChangeBtnText}>Đổi</Text>
                       </TouchableOpacity>
                     </View>
@@ -635,7 +647,7 @@ const OccasionPrepScreen: React.FC = () => {
                         </View>
                       ) : null}
                       <View style={styles.savedCardBadge}>
-                        <Ionicons name="sparkles-outline" size={11} color={COLORS.textSecondary} />
+                        <Ionicons name="sparkles-outline" size={11} color={colors.textSecondary} />
                         <Text style={styles.savedCardBadgeText}>AI gợi ý</Text>
                       </View>
                     </View>
@@ -679,7 +691,7 @@ const OccasionPrepScreen: React.FC = () => {
               onPress={() => setStep(2)}
             >
               <Text style={styles.nextBtnText}>Tiếp theo</Text>
-              <Ionicons name="arrow-forward" size={16} color="#fff" />
+              <Ionicons name="arrow-forward" size={16} color={colors.white} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.skipLink}
@@ -711,7 +723,7 @@ const OccasionPrepScreen: React.FC = () => {
             ) : (
               <>
                 <View style={styles.noArticlesBanner}>
-                  <Ionicons name="information-circle-outline" size={16} color={COLORS.textSecondary} />
+                  <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
                   <Text style={styles.noArticlesText}>
                     Chưa có bài viết phù hợp với dịp này, tham khảo các bài viết khác nhé
                   </Text>
@@ -738,7 +750,7 @@ const OccasionPrepScreen: React.FC = () => {
               ]}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="checkmark" size={18} color="#fff" />
+              <Ionicons name="checkmark" size={18} color={colors.white} />
               <Text style={styles.nextBtnText}>Hoàn thành</Text>
             </TouchableOpacity>
           </View>
@@ -763,7 +775,7 @@ const OccasionPrepScreen: React.FC = () => {
                   <Ionicons
                     name={star <= rating ? "star" : "star-outline"}
                     size={40}
-                    color={star <= rating ? "#FFD700" : COLORS.border}
+                    color={star <= rating ? "#FFD700" : colors.border}
                   />
                 </TouchableOpacity>
               ))}
@@ -788,7 +800,7 @@ const OccasionPrepScreen: React.FC = () => {
             <TextInput
               style={styles.textInput}
               placeholder="Ví dụ: Hoa hồng, set mỹ phẩm..."
-              placeholderTextColor={COLORS.textSecondary + "80"}
+              placeholderTextColor={colors.textSecondary + "80"}
               value={giftNote}
               onChangeText={setGiftNote}
               maxLength={100}
@@ -799,7 +811,7 @@ const OccasionPrepScreen: React.FC = () => {
             <TextInput
               style={[styles.textInput, { height: 80 }]}
               placeholder="Ví dụ: Đi ăn tối nhà hàng, xem phim..."
-              placeholderTextColor={COLORS.textSecondary + "80"}
+              placeholderTextColor={colors.textSecondary + "80"}
               value={activityNote}
               onChangeText={setActivityNote}
               multiline
@@ -816,7 +828,7 @@ const OccasionPrepScreen: React.FC = () => {
               <Ionicons
                 name="camera-outline"
                 size={20}
-                color={COLORS.textSecondary}
+                color={colors.textSecondary}
               />
               <Text style={styles.photoBtnText}>
                 {photos.length > 0
@@ -832,12 +844,12 @@ const OccasionPrepScreen: React.FC = () => {
               activeOpacity={0.85}
             >
               <LinearGradient
-                colors={[COLORS.primary, "#C850C0"]}
+                colors={[colors.primary, "#C850C0"]}
                 style={styles.saveBtnGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Ionicons name="heart" size={18} color="#fff" />
+                <Ionicons name="heart" size={18} color={colors.white} />
                 <Text style={styles.saveBtnText}>
                   {isSaving ? "Đang lưu..." : "Lưu kỷ niệm"}
                 </Text>
@@ -850,8 +862,8 @@ const OccasionPrepScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const useStyles = makeStyles((colors) => ({
+  container: { flex: 1, backgroundColor: colors.background },
   // Plain header (post-event)
   headerPlain: {
     flexDirection: "row",
@@ -860,13 +872,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   backBtn: { width: 40, alignItems: "flex-start" },
   headerTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     flex: 1,
     textAlign: "center",
   },
@@ -882,8 +894,8 @@ const styles = StyleSheet.create({
   contextHeaderInfo: { flex: 1 },
   contextHeaderTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     marginBottom: 4,
   },
   contextHeaderMeta: {
@@ -899,22 +911,22 @@ const styles = StyleSheet.create({
   },
   contextTagText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: "#fff",
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   contextDays: {
     fontSize: 12,
     color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
+    fontFamily: 'Manrope_500Medium',
   },
   // Saved result card (gift + activity)
   savedCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 14,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     gap: 10,
     overflow: "hidden",
   },
@@ -951,20 +963,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: COLORS.success + "18",
+    backgroundColor: colors.success + "18",
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   savedCardDoneLabel: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.success,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.success,
   },
   savedCardName: {
     fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   savedCardMeta: {
@@ -976,17 +988,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   savedCardBadgeText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   savedCardRatingRow: {
     flexDirection: "row",
@@ -996,7 +1008,7 @@ const styles = StyleSheet.create({
   },
   savedCardReviewCount: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginLeft: 2,
   },
   savedCardReasonBox: {
@@ -1017,7 +1029,7 @@ const styles = StyleSheet.create({
   savedCardDescription: {
     fontSize: 13,
     lineHeight: 19,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     paddingTop: 2,
   },
   activityTimeline: {
@@ -1037,14 +1049,14 @@ const styles = StyleSheet.create({
   },
   activityTimelineTime: {
     fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textSecondary,
     width: 42,
   },
   activityTimelineAction: {
     flex: 1,
     fontSize: 12,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     lineHeight: 16,
   },
   savedCardLink: {
@@ -1059,7 +1071,7 @@ const styles = StyleSheet.create({
   },
   savedCardLinkText: {
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   savedCardChangeBtn: {
     flexDirection: "row",
@@ -1068,12 +1080,12 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 6,
     borderRadius: 6,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   savedCardChangeBtnText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   // Skip text link
   skipLink: {
@@ -1083,7 +1095,7 @@ const styles = StyleSheet.create({
   },
   skipLinkText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textDecorationLine: "underline",
   },
   // Step indicator
@@ -1092,23 +1104,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
   },
   stepItem: { alignItems: "center", gap: 4 },
   stepDot: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  stepDotText: { fontSize: 11, fontWeight: "700", color: "#fff" },
-  stepLabel: { fontSize: 11, color: COLORS.textSecondary },
+  stepDotText: { fontSize: 11, fontFamily: 'Manrope_700Bold', color: colors.white },
+  stepLabel: { fontSize: 11, color: colors.textSecondary },
   stepLine: {
     flex: 1,
     height: 2,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginBottom: 16,
   },
   // Scroll
@@ -1116,13 +1128,13 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 48 },
   stepTitle: {
     fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   stepSub: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 24,
     lineHeight: 20,
   },
@@ -1143,14 +1155,14 @@ const styles = StyleSheet.create({
     padding: 18,
     gap: 12,
   },
-  actionBtnText: { flex: 1, fontSize: 16, fontWeight: "600", color: "#fff" },
+  actionBtnText: { flex: 1, fontSize: 16, fontFamily: 'Manrope_600SemiBold', color: colors.white },
   doneHint: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     marginBottom: 12,
   },
-  doneHintText: { fontSize: 13, color: COLORS.success, fontWeight: "500" },
+  doneHintText: { fontSize: 13, color: colors.success, fontFamily: 'Manrope_500Medium'},
   nextBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -1159,10 +1171,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 10,
   },
-  nextBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
+  nextBtnText: { fontSize: 15, fontFamily: 'Manrope_600SemiBold', color: colors.white },
   // Articles
   emptyText: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     marginVertical: 20,
   },
@@ -1170,23 +1182,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 8,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   noArticlesText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 18,
   },
   articleCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 12,
     marginBottom: 8,
@@ -1217,8 +1229,8 @@ const styles = StyleSheet.create({
   },
   articleCatText: {
     fontSize: 10,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   articleReadTimeRow: {
     flexDirection: "row",
@@ -1227,12 +1239,12 @@ const styles = StyleSheet.create({
   },
   articleReadTime: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   articleTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 19,
   },
   articleStats: {
@@ -1246,7 +1258,7 @@ const styles = StyleSheet.create({
   },
   articleStatText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   // Post-event
   ratingRow: {
@@ -1258,45 +1270,45 @@ const styles = StyleSheet.create({
   ratingLabel: {
     textAlign: "center",
     fontSize: 15,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 20,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginBottom: 8,
     marginTop: 12,
   },
   textInput: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   photoBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderStyle: "dashed",
   },
-  photoBtnText: { fontSize: 14, color: COLORS.textSecondary },
+  photoBtnText: { fontSize: 14, color: colors.textSecondary },
   saveBtn: {
     borderRadius: 14,
     overflow: "hidden",
     marginTop: 28,
     elevation: 6,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -1308,7 +1320,5 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-  saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
-});
-
-export default OccasionPrepScreen;
+  saveBtnText: { fontSize: 16, fontFamily: 'Manrope_700Bold', color: colors.white },
+}));export default OccasionPrepScreen;

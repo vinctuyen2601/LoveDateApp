@@ -3,6 +3,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface StatCardProps {
   title: string;
@@ -25,6 +27,9 @@ const StatCard: React.FC<StatCardProps> = ({
   trendValue,
   onPress,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     if (trend === 'up') return 'trending-up';
     if (trend === 'down') return 'trending-down';
@@ -32,9 +37,9 @@ const StatCard: React.FC<StatCardProps> = ({
   };
 
   const getTrendColor = (): string => {
-    if (trend === 'up') return COLORS.success;
-    if (trend === 'down') return COLORS.error;
-    return COLORS.textSecondary;
+    if (trend === 'up') return colors.success;
+    if (trend === 'down') return colors.error;
+    return colors.textSecondary;
   };
 
   const content = (
@@ -58,7 +63,7 @@ const StatCard: React.FC<StatCardProps> = ({
         )}
       </View>
       {onPress && (
-        <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
       )}
     </>
   );
@@ -74,15 +79,15 @@ const StatCard: React.FC<StatCardProps> = ({
   return <View style={styles.card}>{content}</View>;
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -101,18 +106,18 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   value: {
     fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   subtitle: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   trendContainer: {
     flexDirection: 'row',
@@ -122,8 +127,6 @@ const styles = StyleSheet.create({
   },
   trendValue: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
-});
-
-export default StatCard;
+}));export default StatCard;

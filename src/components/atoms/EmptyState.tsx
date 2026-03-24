@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
 import { TYPOGRAPHY } from '@themes/typography';
 import { SPACING, RADIUS } from '@themes/spacing';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface EmptyStateProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -22,13 +24,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onAction,
   iconColor,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
+
   return (
     <View style={styles.container}>
       <View style={[styles.iconContainer, iconColor ? { backgroundColor: iconColor + '15' } : null]}>
         <Ionicons
           name={icon}
           size={48}
-          color={iconColor || COLORS.textLight}
+          color={iconColor || colors.textLight}
         />
       </View>
       <Text style={styles.title}>{title}</Text>
@@ -39,7 +45,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           onPress={onAction}
           activeOpacity={0.7}
         >
-          <Ionicons name="add-circle-outline" size={20} color={COLORS.white} />
+          <Ionicons name="add-circle-outline" size={20} color={colors.white} />
           <Text style={styles.actionText}>{actionLabel}</Text>
         </TouchableOpacity>
       )}
@@ -47,7 +53,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -58,20 +64,20 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
   },
   title: {
     ...TYPOGRAPHY.headingSmall,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
   },
   subtitle: {
     ...TYPOGRAPHY.bodySmall,
-    color: COLORS.textLight,
+    color: colors.textLight,
     textAlign: 'center',
     marginBottom: SPACING.xl,
     maxWidth: 280,
@@ -79,7 +85,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.md,
     borderRadius: RADIUS.full,
@@ -87,6 +93,6 @@ const styles = StyleSheet.create({
   },
   actionText: {
     ...TYPOGRAPHY.labelMedium,
-    color: COLORS.white,
+    color: colors.white,
   },
-});
+}));

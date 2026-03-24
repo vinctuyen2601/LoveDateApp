@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RecurrenceType } from '../../types';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface RecurrenceTypePickerProps {
   value: RecurrenceType;
@@ -17,6 +19,10 @@ const RECURRENCE_OPTIONS = [
 ];
 
 const RecurrenceTypePicker: React.FC<RecurrenceTypePickerProps> = ({ value, onChange }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
+
   return (
     <View style={styles.container}>
       {RECURRENCE_OPTIONS.map((option) => {
@@ -31,7 +37,7 @@ const RecurrenceTypePicker: React.FC<RecurrenceTypePickerProps> = ({ value, onCh
             <Ionicons
               name={option.icon as any}
               size={20}
-              color={isSelected ? COLORS.white : COLORS.textSecondary}
+              color={isSelected ? colors.white : colors.textSecondary}
             />
             <Text style={[styles.tabText, isSelected && styles.tabTextSelected]}>
               {option.label}
@@ -43,10 +49,10 @@ const RecurrenceTypePicker: React.FC<RecurrenceTypePickerProps> = ({ value, onCh
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flexDirection: 'row',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 4,
     gap: 4,
@@ -59,22 +65,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderRadius: 10,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     gap: 4,
   },
   tabSelected: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   tabText: {
     fontSize: 11,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   tabTextSelected: {
-    color: COLORS.white,
-    fontWeight: '600',
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
   },
-});
-
-export default RecurrenceTypePicker;
+}));export default RecurrenceTypePicker;

@@ -11,14 +11,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "@themes/colors";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 import {
   MBTI_GROUPS,
   MBTI_DIMENSIONS,
   MBTI_TYPES,
   MBTIGroup,
 } from "../data/mbtiTypes";
+import IconImage from "@components/atoms/IconImage";
+import { getMBTITypeImage } from "@lib/iconImages";
 
 const MBTIGuideScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
@@ -40,7 +47,7 @@ const MBTIGuideScreen: React.FC = () => {
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tìm hiểu MBTI</Text>
         <View style={{ width: 40 }} />
@@ -53,7 +60,7 @@ const MBTIGuideScreen: React.FC = () => {
       >
         {/* What is MBTI */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🧩 MBTI là gì?</Text>
+          <Text style={styles.sectionTitle}>MBTI là gì?</Text>
           <Text style={styles.paragraph}>
             MBTI (Myers-Briggs Type Indicator) là công cụ đánh giá tính cách
             phổ biến nhất thế giới, chia con người thành{" "}
@@ -68,7 +75,7 @@ const MBTIGuideScreen: React.FC = () => {
 
         {/* 4 Dimensions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📐 4 chiều tính cách</Text>
+          <Text style={styles.sectionTitle}>4 chiều tính cách</Text>
           {MBTI_DIMENSIONS.map((dim) => (
             <View key={dim.code} style={styles.dimensionCard}>
               <Text style={styles.dimensionName}>{dim.name}</Text>
@@ -93,7 +100,7 @@ const MBTIGuideScreen: React.FC = () => {
 
         {/* 4 Groups filter */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👥 4 nhóm tính cách</Text>
+          <Text style={styles.sectionTitle}>4 nhóm tính cách</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -135,10 +142,10 @@ const MBTIGuideScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.groupChipText,
-                    selectedGroup === group.id && { color: "#fff" },
+                    selectedGroup === group.id && { color: colors.white },
                   ]}
                 >
-                  {group.emoji} {group.name}
+                  {group.name}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -195,7 +202,7 @@ const MBTIGuideScreen: React.FC = () => {
                   />
                   <View style={styles.typeCardBody}>
                     <View style={styles.typeCardTop}>
-                      <Text style={styles.typeCardEmoji}>{typeInfo.emoji}</Text>
+                      <IconImage source={getMBTITypeImage(typeCode)} size={28} />
                       <View style={styles.typeCardInfo}>
                         <Text
                           style={[
@@ -212,7 +219,7 @@ const MBTIGuideScreen: React.FC = () => {
                       <Ionicons
                         name="chevron-forward"
                         size={18}
-                        color={COLORS.textLight}
+                        color={colors.textLight}
                       />
                     </View>
                     <Text style={styles.typeCardDesc} numberOfLines={2}>
@@ -236,7 +243,7 @@ const MBTIGuideScreen: React.FC = () => {
             end={{ x: 1, y: 0 }}
             style={styles.ctaGradient}
           >
-            <Ionicons name="sparkles" size={20} color="#fff" />
+            <Ionicons name="sparkles" size={20} color={colors.white} />
             <Text style={styles.ctaText}>Làm bài khảo sát MBTI</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -245,10 +252,10 @@ const MBTIGuideScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -267,8 +274,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   body: {
     flex: 1,
@@ -279,28 +286,28 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   paragraph: {
     fontSize: 14,
     lineHeight: 22,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   bold: {
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
 
   // Dimensions
   dimensionCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -308,8 +315,8 @@ const styles = StyleSheet.create({
   },
   dimensionName: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 10,
   },
@@ -323,30 +330,30 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dimensionLeft: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: colors.info + '12',
     marginRight: 4,
   },
   dimensionRight: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: colors.warning + '15',
     marginLeft: 4,
   },
   dimensionLetter: {
     fontSize: 24,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.textPrimary,
     textAlign: "center",
   },
   dimensionLabel: {
     fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     textAlign: "center",
     marginTop: 2,
     marginBottom: 6,
   },
   dimensionDesc: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 16,
     textAlign: "center",
   },
@@ -356,8 +363,8 @@ const styles = StyleSheet.create({
   },
   dimensionVsText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: COLORS.textLight,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textLight,
   },
 
   // Groups
@@ -369,20 +376,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   groupChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   groupChipText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   groupChipTextActive: {
-    color: "#fff",
+    color: colors.white,
   },
   groupDescCard: {
     borderLeftWidth: 3,
@@ -392,7 +399,7 @@ const styles = StyleSheet.create({
   },
   groupDescText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 20,
   },
 
@@ -402,10 +409,10 @@ const styles = StyleSheet.create({
   },
   typeCard: {
     flexDirection: "row",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     overflow: "hidden",
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -431,17 +438,17 @@ const styles = StyleSheet.create({
   },
   typeCardCode: {
     fontSize: 16,
-    fontWeight: "800",
+    fontFamily: 'Manrope_800ExtraBold',
     letterSpacing: 1,
   },
   typeCardName: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   typeCardDesc: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: colors.textLight,
     marginTop: 6,
     lineHeight: 17,
   },
@@ -462,9 +469,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
-});
-
-export default MBTIGuideScreen;
+}));export default MBTIGuideScreen;

@@ -15,11 +15,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 import StatCard from '@components/atoms/StatCard';
 import * as AnalyticsService from '../services/analytics.service';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 32;
 
 const AnalyticsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
 
@@ -66,7 +71,7 @@ const AnalyticsScreen: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Đang tải thống kê...</Text>
       </View>
     );
@@ -75,7 +80,7 @@ const AnalyticsScreen: React.FC = () => {
   if (!analytics) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="stats-chart-outline" size={64} color={COLORS.textSecondary} />
+        <Ionicons name="stats-chart-outline" size={64} color={colors.textSecondary} />
         <Text style={styles.emptyText}>Không có dữ liệu thống kê</Text>
       </View>
     );
@@ -89,8 +94,8 @@ const AnalyticsScreen: React.FC = () => {
         <RefreshControl
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
         />
       }
     >
@@ -103,7 +108,7 @@ const AnalyticsScreen: React.FC = () => {
       {/* Events Overview */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="calendar" size={20} color={COLORS.primary} />
+          <Ionicons name="calendar" size={20} color={colors.primary} />
           <Text style={styles.sectionTitle}>Sự kiện</Text>
         </View>
 
@@ -111,7 +116,7 @@ const AnalyticsScreen: React.FC = () => {
           title="Tổng số sự kiện"
           value={analytics.events.totalEvents}
           icon="calendar-outline"
-          iconColor={COLORS.primary}
+          iconColor={colors.primary}
         />
 
         <View style={styles.row}>
@@ -120,7 +125,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Sắp tới"
               value={analytics.events.upcomingEvents}
               icon="time-outline"
-              iconColor={COLORS.warning}
+              iconColor={colors.warning}
             />
           </View>
           <View style={styles.halfCard}>
@@ -128,7 +133,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Đã qua"
               value={analytics.events.pastEvents}
               icon="checkmark-circle-outline"
-              iconColor={COLORS.success}
+              iconColor={colors.success}
             />
           </View>
         </View>
@@ -139,7 +144,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Lặp lại"
               value={analytics.events.recurringEvents}
               icon="repeat-outline"
-              iconColor={COLORS.secondary}
+              iconColor={colors.secondary}
             />
           </View>
           <View style={styles.halfCard}>
@@ -147,7 +152,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Âm lịch"
               value={analytics.events.lunarCalendarEvents}
               icon="moon-outline"
-              iconColor={COLORS.categoryHoliday}
+              iconColor={colors.categoryHoliday}
             />
           </View>
         </View>
@@ -157,7 +162,7 @@ const AnalyticsScreen: React.FC = () => {
       {analytics.events.eventsByTag.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="pie-chart" size={20} color={COLORS.primary} />
+            <Ionicons name="pie-chart" size={20} color={colors.primary} />
             <Text style={styles.sectionTitle}>Phân loại sự kiện</Text>
           </View>
 
@@ -168,7 +173,7 @@ const AnalyticsScreen: React.FC = () => {
                   <View
                     style={[
                       styles.tagDot,
-                      { backgroundColor: getTagColor(item.tag, index) },
+                      { backgroundColor: getTagColor(item.tag, index, colors) },
                     ]}
                   />
                   <Text style={styles.tagName}>{getTagDisplay(item.tag)}</Text>
@@ -188,7 +193,7 @@ const AnalyticsScreen: React.FC = () => {
       {/* Gift Statistics */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="gift" size={20} color={COLORS.primary} />
+          <Ionicons name="gift" size={20} color={colors.primary} />
           <Text style={styles.sectionTitle}>Quà tặng</Text>
         </View>
 
@@ -197,7 +202,7 @@ const AnalyticsScreen: React.FC = () => {
           value={formatCurrency(analytics.gifts.totalSpent)}
           subtitle={`Trung bình: ${formatCurrency(analytics.gifts.averagePrice)}`}
           icon="wallet-outline"
-          iconColor={COLORS.success}
+          iconColor={colors.success}
         />
 
         <View style={styles.row}>
@@ -206,7 +211,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Tổng quà"
               value={analytics.gifts.totalGifts}
               icon="gift-outline"
-              iconColor={COLORS.categoryBirthday}
+              iconColor={colors.categoryBirthday}
             />
           </View>
           <View style={styles.halfCard}>
@@ -214,7 +219,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Đã mua"
               value={analytics.gifts.purchasedGifts}
               icon="cart-outline"
-              iconColor={COLORS.secondary}
+              iconColor={colors.secondary}
             />
           </View>
         </View>
@@ -225,7 +230,7 @@ const AnalyticsScreen: React.FC = () => {
             value={`${analytics.gifts.averageRating.toFixed(1)}/5.0`}
             subtitle="Mức độ hài lòng với quà tặng"
             icon="star-outline"
-            iconColor={COLORS.warning}
+            iconColor={colors.warning}
           />
         )}
       </View>
@@ -233,7 +238,7 @@ const AnalyticsScreen: React.FC = () => {
       {/* Checklist Statistics */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="checkmark-done" size={20} color={COLORS.primary} />
+          <Ionicons name="checkmark-done" size={20} color={colors.primary} />
           <Text style={styles.sectionTitle}>Checklist</Text>
         </View>
 
@@ -242,7 +247,7 @@ const AnalyticsScreen: React.FC = () => {
           value={formatPercentage(analytics.checklists.completionRate)}
           subtitle={`${analytics.checklists.completedItems}/${analytics.checklists.totalItems} việc`}
           icon="pie-chart-outline"
-          iconColor={COLORS.success}
+          iconColor={colors.success}
         />
 
         <View style={styles.row}>
@@ -251,7 +256,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Tổng checklist"
               value={analytics.checklists.totalChecklists}
               icon="list-outline"
-              iconColor={COLORS.primary}
+              iconColor={colors.primary}
             />
           </View>
           <View style={styles.halfCard}>
@@ -259,7 +264,7 @@ const AnalyticsScreen: React.FC = () => {
               title="Hoàn thành"
               value={analytics.checklists.fullyCompletedEvents}
               icon="checkmark-circle-outline"
-              iconColor={COLORS.success}
+              iconColor={colors.success}
             />
           </View>
         </View>
@@ -268,7 +273,7 @@ const AnalyticsScreen: React.FC = () => {
       {/* Notification Statistics */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Ionicons name="notifications" size={20} color={COLORS.primary} />
+          <Ionicons name="notifications" size={20} color={colors.primary} />
           <Text style={styles.sectionTitle}>Thông báo</Text>
         </View>
 
@@ -277,7 +282,7 @@ const AnalyticsScreen: React.FC = () => {
           value={formatPercentage(analytics.notifications.deliveryRate)}
           subtitle={`${analytics.notifications.totalDelivered}/${analytics.notifications.totalScheduled} thông báo`}
           icon="paper-plane-outline"
-          iconColor={COLORS.success}
+          iconColor={colors.success}
         />
 
         {analytics.notifications.totalFailed > 0 && (
@@ -286,7 +291,7 @@ const AnalyticsScreen: React.FC = () => {
             value={analytics.notifications.totalFailed}
             subtitle="Số thông báo không gửi được"
             icon="alert-circle-outline"
-            iconColor={COLORS.error}
+            iconColor={colors.error}
           />
         )}
       </View>
@@ -298,15 +303,15 @@ const AnalyticsScreen: React.FC = () => {
 };
 
 // Helper functions
-const getTagColor = (tag: string, index: number): string => {
-  const colors = [
-    COLORS.categoryBirthday,
-    COLORS.categoryAnniversary,
-    COLORS.categoryHoliday,
-    COLORS.primary,
-    COLORS.secondary,
+const getTagColor = (tag: string, index: number, colors: ReturnType<typeof useColors>): string => {
+  const palette = [
+    colors.categoryBirthday,
+    colors.categoryAnniversary,
+    colors.categoryHoliday,
+    colors.primary,
+    colors.secondary,
   ];
-  return colors[index % colors.length];
+  return palette[index % palette.length];
 };
 
 const getTagDisplay = (tag: string): string => {
@@ -326,10 +331,10 @@ const getTagDisplay = (tag: string): string => {
   return tagMap[tag] || tag;
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingBottom: 20,
@@ -338,40 +343,40 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   loadingText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 12,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     padding: 32,
   },
   emptyText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginTop: 16,
   },
   header: {
     paddingHorizontal: 16,
     paddingBottom: 20,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   section: {
     paddingHorizontal: 16,
@@ -385,8 +390,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   row: {
     flexDirection: 'row',
@@ -396,10 +401,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chartCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   tagInfo: {
     flexDirection: 'row',
@@ -426,8 +431,8 @@ const styles = StyleSheet.create({
   },
   tagName: {
     fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textPrimary,
   },
   tagStats: {
     flexDirection: 'row',
@@ -436,16 +441,14 @@ const styles = StyleSheet.create({
   },
   tagCount: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   tagPercentage: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     minWidth: 50,
     textAlign: 'right',
   },
-});
-
-export default AnalyticsScreen;
+}));export default AnalyticsScreen;

@@ -4,12 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
 import { AffiliateCategory } from '../../types';
 import { SERVICE_CATEGORIES } from '../../data/affiliateProducts';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ServiceCategoriesProps {
   onCategoryPress: (category: AffiliateCategory) => void;
 }
 
 const ServiceCategories: React.FC<ServiceCategoriesProps> = ({ onCategoryPress }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Khám phá theo danh mục</Text>
@@ -26,7 +32,7 @@ const ServiceCategories: React.FC<ServiceCategoriesProps> = ({ onCategoryPress }
             activeOpacity={0.7}
           >
             <View style={[styles.iconCircle, { backgroundColor: cat.color }]}>
-              <Ionicons name={cat.icon as any} size={26} color={COLORS.white} />
+              <Ionicons name={cat.icon as any} size={26} color={colors.white} />
             </View>
             <Text style={styles.label}>{cat.name}</Text>
           </TouchableOpacity>
@@ -36,14 +42,14 @@ const ServiceCategories: React.FC<ServiceCategoriesProps> = ({ onCategoryPress }
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginTop: 24,
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginHorizontal: 16,
     marginBottom: 14,
   },
@@ -70,10 +76,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     textAlign: 'center',
   },
-});
-
-export default React.memo(ServiceCategories);
+}));export default React.memo(ServiceCategories);

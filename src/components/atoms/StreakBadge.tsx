@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface StreakBadgeProps {
   currentStreak: number;
@@ -16,11 +18,14 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({
   size = 'medium',
   showLongest = false,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const getFlameColor = (): string => {
-    if (currentStreak === 0) return COLORS.textSecondary;
-    if (currentStreak < 7) return COLORS.warning;
-    if (currentStreak < 30) return COLORS.categoryBirthday;
-    return COLORS.success;
+    if (currentStreak === 0) return colors.textSecondary;
+    if (currentStreak < 7) return colors.warning;
+    if (currentStreak < 30) return colors.categoryBirthday;
+    return colors.success;
   };
 
   const getSizeStyles = () => {
@@ -91,14 +96,14 @@ const StreakBadge: React.FC<StreakBadgeProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -110,7 +115,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 4,
     paddingHorizontal: 10,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 20,
     shadowOpacity: 0,
     elevation: 0,
@@ -128,8 +133,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   number: {
-    fontWeight: '700',
-    color: COLORS.warning,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.warning,
   },
   numberSmall: {
     fontSize: 14,
@@ -141,7 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   label: {
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   labelSmall: {
@@ -155,9 +160,7 @@ const styles = StyleSheet.create({
   },
   longest: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
   },
-});
-
-export default StreakBadge;
+}));export default StreakBadge;

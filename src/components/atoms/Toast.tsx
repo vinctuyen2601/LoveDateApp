@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +29,9 @@ const Toast: React.FC<ToastProps> = ({
   duration = 3000,
   onHide,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(-100)).current;
 
@@ -78,32 +83,32 @@ const Toast: React.FC<ToastProps> = ({
       case 'success':
         return {
           icon: 'checkmark-circle' as const,
-          color: COLORS.success || '#4CAF50',
-          backgroundColor: '#E8F5E9',
+          color: colors.success,
+          backgroundColor: colors.success + '20',
         };
       case 'error':
         return {
           icon: 'close-circle' as const,
-          color: COLORS.error,
-          backgroundColor: '#FFEBEE',
+          color: colors.error,
+          backgroundColor: colors.error + '18',
         };
       case 'warning':
         return {
           icon: 'warning' as const,
-          color: COLORS.warning || '#FF9800',
-          backgroundColor: '#FFF3E0',
+          color: colors.warning,
+          backgroundColor: colors.warning + '18',
         };
       case 'info':
         return {
           icon: 'information-circle' as const,
-          color: '#2196F3',
-          backgroundColor: '#E3F2FD',
+          color: colors.info,
+          backgroundColor: colors.info + '18',
         };
       default:
         return {
           icon: 'checkmark-circle' as const,
-          color: COLORS.success || '#4CAF50',
-          backgroundColor: '#E8F5E9',
+          color: colors.success,
+          backgroundColor: colors.success + '20',
         };
     }
   };
@@ -126,18 +131,18 @@ const Toast: React.FC<ToastProps> = ({
         style={[styles.toast, { backgroundColor: config.backgroundColor }]}
       >
         <Ionicons name={config.icon} size={24} color={config.color} />
-        <Text style={[styles.message, { color: COLORS.textPrimary }]}>
+        <Text style={[styles.message, { color: colors.textPrimary }]}>
           {message}
         </Text>
         <TouchableOpacity onPress={handleHide} style={styles.closeButton}>
-          <Ionicons name="close" size={20} color={COLORS.textSecondary} />
+          <Ionicons name="close" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     position: 'absolute',
     top: 60,
@@ -152,7 +157,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -162,12 +167,10 @@ const styles = StyleSheet.create({
   message: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '500',
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 20,
   },
   closeButton: {
     padding: 4,
   },
-});
-
-export default Toast;
+}));export default Toast;

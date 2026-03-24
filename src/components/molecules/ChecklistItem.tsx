@@ -9,6 +9,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { ChecklistItem as ChecklistItemType } from "../../types";
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ChecklistItemProps {
   item: ChecklistItemType;
@@ -23,6 +25,9 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({
   onDelete,
   showDueDays = true,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const handleDelete = () => {
     if (onDelete) {
       Alert.alert(
@@ -54,7 +59,7 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({
           ]}
         >
           {item.isCompleted && (
-            <Ionicons name="checkmark" size={18} color={COLORS.white} />
+            <Ionicons name="checkmark" size={18} color={colors.white} />
           )}
         </View>
       </TouchableOpacity>
@@ -72,7 +77,7 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({
 
         {showDueDays && item.dueDaysBefore > 0 && (
           <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-            <Ionicons name="calendar-outline" size={12} color={COLORS.textSecondary} />
+            <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
             <Text style={styles.dueText}>{item.dueDaysBefore} ngày trước sự kiện</Text>
           </View>
         )}
@@ -87,7 +92,7 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({
           <Ionicons
             name="trash-outline"
             size={20}
-            color={COLORS.textSecondary}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
       )}
@@ -95,17 +100,17 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
     marginBottom: 8,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -118,37 +123,35 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   checkboxCompleted: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   content: {
     flex: 1,
   },
   title: {
     fontSize: 15,
-    color: COLORS.textPrimary,
-    fontWeight: "500",
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_500Medium',
     lineHeight: 20,
   },
   titleCompleted: {
     textDecorationLine: "line-through",
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   dueText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
   },
   deleteButton: {
     marginLeft: 8,
     padding: 4,
   },
-});
-
-export default ChecklistItem;
+}));export default ChecklistItem;

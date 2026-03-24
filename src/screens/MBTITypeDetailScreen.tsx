@@ -12,8 +12,15 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "@themes/colors";
 import { MBTI_TYPES, getGroupForType } from "../data/mbtiTypes";
+import IconImage from "@components/atoms/IconImage";
+import { getMBTITypeImage } from "@lib/iconImages";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const MBTITypeDetailScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -38,7 +45,7 @@ const MBTITypeDetailScreen: React.FC = () => {
   ) => (
     <View style={[styles.compatCard, { backgroundColor: bgColor }]}>
       <View style={{flexDirection:'row',alignItems:'center',gap:5,marginBottom:8}}>
-        <Ionicons name={icon} size={14} color={COLORS.textSecondary} />
+        <Ionicons name={icon} size={14} color={colors.textSecondary} />
         <Text style={[styles.compatLabel,{marginBottom:0}]}>{label}</Text>
       </View>
       <View style={styles.compatTypes}>
@@ -71,16 +78,16 @@ const MBTITypeDetailScreen: React.FC = () => {
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerEmoji}>{typeInfo.emoji}</Text>
+          <IconImage source={getMBTITypeImage(typeCode)} size={56} />
           <Text style={styles.headerCode}>{typeCode}</Text>
           <Text style={styles.headerName}>{typeInfo.name}</Text>
           <Text style={styles.headerNameEn}>{typeInfo.nameEn}</Text>
           <View style={styles.groupBadge}>
             <Text style={styles.groupBadgeText}>
-              {group.emoji} {group.name}
+              {group.name}
             </Text>
           </View>
         </View>
@@ -99,7 +106,7 @@ const MBTITypeDetailScreen: React.FC = () => {
 
         {/* Strengths */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💪 Điểm mạnh</Text>
+          <Text style={styles.sectionTitle}>Điểm mạnh</Text>
           {typeInfo.strengths.map((s, i) => (
             <View key={i} style={styles.listItem}>
               <Ionicons
@@ -135,7 +142,7 @@ const MBTITypeDetailScreen: React.FC = () => {
         {/* Love Style */}
         <View style={styles.section}>
           <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
-            <Ionicons name="heart" size={17} color={COLORS.primary} />
+            <Ionicons name="heart" size={17} color={colors.primary} />
             <Text style={[styles.sectionTitle,{marginBottom:0}]}>Phong cách yêu</Text>
           </View>
           <View style={styles.loveCard}>
@@ -159,7 +166,7 @@ const MBTITypeDetailScreen: React.FC = () => {
         {/* Gift Ideas */}
         <View style={styles.section}>
           <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
-            <Ionicons name="gift-outline" size={17} color={COLORS.textPrimary} />
+            <Ionicons name="gift-outline" size={17} color={colors.textPrimary} />
             <Text style={[styles.sectionTitle,{marginBottom:0}]}>Gợi ý quà tặng</Text>
           </View>
           <View style={styles.giftGrid}>
@@ -187,7 +194,7 @@ const MBTITypeDetailScreen: React.FC = () => {
         {/* Compatibility */}
         <View style={styles.section}>
           <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
-            <Ionicons name="people-outline" size={17} color={COLORS.textPrimary} />
+            <Ionicons name="people-outline" size={17} color={colors.textPrimary} />
             <Text style={[styles.sectionTitle,{marginBottom:0}]}>Độ tương thích</Text>
           </View>
           {renderCompatCard(
@@ -238,7 +245,7 @@ const MBTITypeDetailScreen: React.FC = () => {
             end={{ x: 1, y: 0 }}
             style={styles.ctaGradient}
           >
-            <Ionicons name="sparkles" size={20} color="#fff" />
+            <Ionicons name="sparkles" size={20} color={colors.white} />
             <Text style={styles.ctaText}>
               Bạn có phải {typeCode}? Làm khảo sát ngay!
             </Text>
@@ -249,10 +256,10 @@ const MBTITypeDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -279,13 +286,13 @@ const styles = StyleSheet.create({
   },
   headerCode: {
     fontSize: 32,
-    fontWeight: "900",
-    color: "#fff",
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.white,
     letterSpacing: 3,
   },
   headerName: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
     color: "rgba(255,255,255,0.95)",
     marginTop: 2,
   },
@@ -303,8 +310,8 @@ const styles = StyleSheet.create({
   },
   groupBadgeText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#fff",
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   body: {
     flex: 1,
@@ -315,14 +322,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 12,
   },
   descText: {
     fontSize: 15,
     lineHeight: 24,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Lists
@@ -338,13 +345,13 @@ const styles = StyleSheet.create({
   listText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     lineHeight: 20,
   },
 
   // Love style
   loveCard: {
-    backgroundColor: "#FDF2F8",
+    backgroundColor: colors.primary + '10',
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -365,7 +372,7 @@ const styles = StyleSheet.create({
   loveTraitText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 19,
   },
 
@@ -385,7 +392,7 @@ const styles = StyleSheet.create({
   },
   giftText: {
     fontSize: 13,
-    fontWeight: "500",
+    fontFamily: 'Manrope_500Medium',
   },
 
   // Compatibility
@@ -396,8 +403,8 @@ const styles = StyleSheet.create({
   },
   compatLabel: {
     fontSize: 14,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 10,
   },
   compatTypes: {
@@ -418,8 +425,8 @@ const styles = StyleSheet.create({
   },
   compatChipText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     flex: 1,
   },
 
@@ -430,17 +437,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   famousChip: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   famousText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
 
   // CTA
@@ -459,9 +466,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
-});
-
-export default MBTITypeDetailScreen;
+}));export default MBTITypeDetailScreen;

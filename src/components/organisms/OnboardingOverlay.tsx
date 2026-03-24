@@ -15,12 +15,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Calendar, DateData } from "react-native-calendars";
-import { COLORS } from "@themes/colors";
-import { EventFormData, PREDEFINED_TAGS } from "../../types";
+import { EventFormData } from "../../types";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 export const ONBOARDING_KEY = "@onboarding_v2_completed";
 
-const GRADIENT_WELCOME: [string, string] = ["#FF6B9D", "#FF8E53"];
 
 interface Props {
   onComplete: () => void;
@@ -48,6 +48,9 @@ const OnboardingOverlay: React.FC<Props> = ({
   onAddEvent,
   addEvent,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [step, setStep] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -239,13 +242,13 @@ const OnboardingOverlay: React.FC<Props> = ({
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={GRADIENT_WELCOME}
+                  colors={[colors.gradientStart, colors.gradientEnd]}
                   style={styles.primaryBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.primaryBtnText}>Bắt đầu nào</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Ionicons name="arrow-forward" size={18} color={colors.white} />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -278,7 +281,7 @@ const OnboardingOverlay: React.FC<Props> = ({
                 <TextInput
                   style={styles.textInput}
                   placeholder="Ví dụ: Minh, Anh, Em..."
-                  placeholderTextColor={COLORS.textSecondary + "80"}
+                  placeholderTextColor={colors.textSecondary + "80"}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -316,23 +319,23 @@ const OnboardingOverlay: React.FC<Props> = ({
                   }}
                   markedDates={{
                     [birthdayDate.toISOString().split("T")[0]]: dateSelected
-                      ? { selected: true, selectedColor: COLORS.primary }
+                      ? { selected: true, selectedColor: colors.primary }
                       : {},
                   }}
                   theme={{
                     backgroundColor: "transparent",
                     calendarBackground: "transparent",
-                    textSectionTitleColor: COLORS.textSecondary,
-                    selectedDayBackgroundColor: COLORS.primary,
-                    selectedDayTextColor: COLORS.white,
-                    todayTextColor: COLORS.primary,
-                    dayTextColor: COLORS.textPrimary,
-                    textDisabledColor: COLORS.textLight,
-                    dotColor: COLORS.primary,
-                    selectedDotColor: COLORS.white,
-                    arrowColor: COLORS.primary,
-                    monthTextColor: COLORS.textPrimary,
-                    indicatorColor: COLORS.primary,
+                    textSectionTitleColor: colors.textSecondary,
+                    selectedDayBackgroundColor: colors.primary,
+                    selectedDayTextColor: colors.white,
+                    todayTextColor: colors.primary,
+                    dayTextColor: colors.textPrimary,
+                    textDisabledColor: colors.textLight,
+                    dotColor: colors.primary,
+                    selectedDotColor: colors.white,
+                    arrowColor: colors.primary,
+                    monthTextColor: colors.textPrimary,
+                    indicatorColor: colors.primary,
                     textDayFontFamily: "System",
                     textMonthFontFamily: "System",
                     textDayHeaderFontFamily: "System",
@@ -354,7 +357,7 @@ const OnboardingOverlay: React.FC<Props> = ({
                           : "chevron-forward"
                       }
                       size={24}
-                      color={COLORS.primary}
+                      color={colors.primary}
                     />
                   )}
                 />
@@ -372,12 +375,12 @@ const OnboardingOverlay: React.FC<Props> = ({
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={dateSelected ? GRADIENT_WELCOME : ["#ccc", "#aaa"]}
+                  colors={dateSelected ? [colors.gradientStart, colors.gradientEnd] : [colors.border, colors.textLight]}
                   style={styles.primaryBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Ionicons name="heart" size={18} color="#fff" />
+                  <Ionicons name="heart" size={18} color={colors.white} />
                   <Text style={styles.primaryBtnText}>Lưu lại</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -427,13 +430,13 @@ const OnboardingOverlay: React.FC<Props> = ({
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={GRADIENT_WELCOME}
+                  colors={[colors.gradientStart, colors.gradientEnd]}
                   style={styles.primaryBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.primaryBtnText}>Tiếp tục</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Ionicons name="arrow-forward" size={18} color={colors.white} />
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -460,7 +463,7 @@ const OnboardingOverlay: React.FC<Props> = ({
                     <Ionicons
                       name={f.icon as any}
                       size={18}
-                      color={COLORS.primary}
+                      color={colors.primary}
                     />
                     <Text style={styles.featureText}>{f.text}</Text>
                   </View>
@@ -474,12 +477,12 @@ const OnboardingOverlay: React.FC<Props> = ({
                 activeOpacity={0.85}
               >
                 <LinearGradient
-                  colors={GRADIENT_WELCOME}
+                  colors={[colors.gradientStart, colors.gradientEnd]}
                   style={styles.primaryBtnGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Ionicons name="person-add" size={18} color="#fff" />
+                  <Ionicons name="person-add" size={18} color={colors.white} />
                   <Text style={styles.primaryBtnText}>Đăng ký tài khoản</Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -502,10 +505,10 @@ export const checkOnboardingComplete = async (): Promise<boolean> => {
   return value === "true";
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     zIndex: 9999,
     elevation: 9999,
     overflow: 'hidden',
@@ -530,14 +533,14 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   dotActive: {
     width: 22,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   dotDone: {
-    backgroundColor: COLORS.primary + "60",
+    backgroundColor: colors.primary + "60",
   },
   skipBtn: {
     position: "absolute",
@@ -545,12 +548,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: COLORS.border + "80",
+    backgroundColor: colors.border + "80",
   },
   skipText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   stepContainer: {
     flex: 1,
@@ -617,15 +620,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     textAlign: "center",
     lineHeight: 28,
     marginTop: 20,
   },
   subtitle: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 23,
     marginBottom: 8,
@@ -637,38 +640,38 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   calendarCard: {
     width: "100%",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     marginBottom: 4,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   dateSelectedLabel: {
     fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
     marginTop: 4,
     textAlign: "center",
   },
@@ -680,50 +683,50 @@ const styles = StyleSheet.create({
   },
   countdownNumber: {
     fontSize: 72,
-    fontWeight: "800",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.primary,
     lineHeight: 80,
   },
   countdownLabel: {
     fontSize: 16,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
     marginTop: 2,
   },
   // Confirmation screen
   confirmCard: {
     width: "100%",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: COLORS.primary + "20",
+    borderColor: colors.primary + "20",
     gap: 12,
   },
   confirmMain: {
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     textAlign: "center",
     lineHeight: 22,
   },
   confirmName: {
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   confirmDivider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
   },
   confirmRelax: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: 23,
   },
   confirmNote: {
     fontSize: 13,
-    color: COLORS.textSecondary + "aa",
+    color: colors.textSecondary + "aa",
     textAlign: "center",
     marginTop: 16,
     lineHeight: 19,
@@ -738,15 +741,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   featureText: {
     fontSize: 14,
-    color: COLORS.textPrimary,
-    fontWeight: "500",
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_500Medium',
   },
   // Bottom
   bottomArea: {
@@ -776,8 +779,8 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   ghostBtn: {
     alignItems: "center",
@@ -785,9 +788,7 @@ const styles = StyleSheet.create({
   },
   ghostBtnText: {
     fontSize: 15,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
-});
-
-export default OnboardingOverlay;
+}));export default OnboardingOverlay;

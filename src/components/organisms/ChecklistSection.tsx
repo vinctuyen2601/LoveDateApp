@@ -12,6 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ChecklistItem as ChecklistItemType } from "../../types";
 import { COLORS } from "@themes/colors";
 import ChecklistItem from "@components/molecules/ChecklistItem";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface ChecklistSectionProps {
   eventId: string;
@@ -34,6 +36,9 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
   allowAdd = true,
   allowDelete = true,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [isExpanded, setIsExpanded] = useState(true);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState("");
@@ -72,7 +77,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
           <Ionicons
             name="checkbox-outline"
             size={24}
-            color={progressPercentage === 100 ? COLORS.success : COLORS.primary}
+            color={progressPercentage === 100 ? colors.success : colors.primary}
           />
           <Text style={styles.headerTitle}>Việc cần làm</Text>
           {totalItems > 0 && (
@@ -80,7 +85,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
               style={[
                 styles.badge,
                 progressPercentage === 100 && {
-                  backgroundColor: COLORS.success,
+                  backgroundColor: colors.success,
                 },
               ]}
             >
@@ -94,7 +99,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
         <Ionicons
           name={isExpanded ? "chevron-up" : "chevron-down"}
           size={24}
-          color={COLORS.textSecondary}
+          color={colors.textSecondary}
         />
       </TouchableOpacity>
 
@@ -105,8 +110,8 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
             <LinearGradient
               colors={
                 progressPercentage === 100
-                  ? [COLORS.success, COLORS.success]
-                  : [COLORS.primary, "#C850C0"]
+                  ? [colors.success, colors.success]
+                  : [colors.primary, colors.secondary]
               }
               style={[styles.progressFill, { width: `${progressPercentage}%` }]}
               start={{ x: 0, y: 0 }}
@@ -116,10 +121,10 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
           <Text
             style={[
               styles.progressText,
-              progressPercentage === 100 && { color: COLORS.success },
+              progressPercentage === 100 && { color: colors.success },
             ]}
           >
-            {progressPercentage === 100 ? "🎉 100%" : `${progressPercentage}%`}
+            {`${progressPercentage}%`}
           </Text>
         </View>
       )}
@@ -154,7 +159,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
               <TextInput
                 style={styles.input}
                 placeholder="Nhập công việc cần làm..."
-                placeholderTextColor={`${COLORS.textSecondary}99`}
+                placeholderTextColor={`${colors.textSecondary}99`}
                 value={newItemTitle}
                 onChangeText={setNewItemTitle}
                 autoFocus
@@ -190,7 +195,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
               <Ionicons
                 name="add-circle-outline"
                 size={20}
-                color={COLORS.primary}
+                color={colors.primary}
               />
               <Text style={styles.addButtonText}>Thêm việc cần làm</Text>
             </TouchableOpacity>
@@ -201,15 +206,15 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   header: {
     flexDirection: "row",
@@ -224,19 +229,19 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   badge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   progressContainer: {
     flexDirection: "row",
@@ -247,7 +252,7 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 10,
-    backgroundColor: `${COLORS.primary}20`,
+    backgroundColor: `${colors.primary}20`,
     borderRadius: 5,
     overflow: "hidden",
   },
@@ -257,15 +262,15 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
     minWidth: 40,
     textAlign: "right",
   },
   completionText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.success,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.success,
     textAlign: "center",
     paddingVertical: 6,
     marginBottom: 4,
@@ -275,7 +280,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     paddingVertical: 20,
     fontStyle: "italic",
@@ -288,34 +293,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
     borderStyle: "dashed",
     marginTop: 8,
     gap: 8,
   },
   addButtonText: {
     fontSize: 15,
-    color: COLORS.primary,
-    fontWeight: "500",
+    color: colors.primary,
+    fontFamily: 'Manrope_500Medium',
   },
   addItemForm: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
     marginTop: 8,
     elevation: 2,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   input: {
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: 8,
     minHeight: 60,
     textAlignVertical: "top",
@@ -332,21 +337,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cancelButton: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   cancelButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   saveButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   saveButtonText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
-});
-
-export default ChecklistSection;
+}));export default ChecklistSection;

@@ -1,8 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '@themes/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface HeroBannerProps {
   onStartSurvey: () => void;
@@ -16,6 +17,9 @@ const FEATURES = [
 ];
 
 const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey, onStartDetailedSurvey }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
 
@@ -40,7 +44,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey, onStartDetailedS
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#FF6B6B', '#FF8E53']}
+        colors={[colors.gradientStart, colors.gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -76,9 +80,9 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey, onStartDetailedS
         {/* CTA button with pulse */}
         <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
           <TouchableOpacity style={styles.ctaButton} onPress={onStartSurvey} activeOpacity={0.85}>
-            <Ionicons name="flash" size={17} color="#FF6B6B" />
+            <Ionicons name="flash" size={17} color={colors.primary} />
             <Text style={styles.ctaText}>Khảo sát nhanh (3 câu)</Text>
-            <Ionicons name="arrow-forward" size={17} color="#FF6B6B" />
+            <Ionicons name="arrow-forward" size={17} color={colors.primary} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -91,14 +95,14 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ onStartSurvey, onStartDetailedS
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 24,
     overflow: 'hidden',
     elevation: 6,
-    shadowColor: '#FF6B6B',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
@@ -147,8 +151,8 @@ const styles = StyleSheet.create({
   // Text
   headline: {
     fontSize: 23,
-    fontWeight: '800',
-    color: COLORS.white,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.white,
     textAlign: 'center',
     lineHeight: 31,
     marginBottom: 10,
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
     color: 'rgba(255,255,255,0.95)',
   },
 
@@ -187,7 +191,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     paddingHorizontal: 26,
     paddingVertical: 15,
     borderRadius: 30,
@@ -200,8 +204,8 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FF6B6B',
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   detailedLink: {
     marginTop: 14,
@@ -212,6 +216,4 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.75)',
     textDecorationLine: 'underline',
   },
-});
-
-export default React.memo(HeroBanner);
+}));export default React.memo(HeroBanner);

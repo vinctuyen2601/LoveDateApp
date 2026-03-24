@@ -34,7 +34,8 @@ import {
   scheduleUpcomingNotifications,
 } from "../services/notificationScheduler.service";
 import { useEvents } from "@contexts/EventsContext";
-import { apiService } from "../services/api.service";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors, useTheme, THEME_LIST } from '@contexts/ThemeContext';
 
 const AVATAR_COLOR_KEY = "@user_avatar_color";
 const AVATAR_PHOTO_KEY = "@user_avatar_photo";
@@ -54,6 +55,7 @@ const getInitials = (name: string): string => {
   if (!name?.trim()) return "?";
   const words = name.trim().split(/\s+/);
   if (words.length === 1) return words[0][0].toUpperCase();
+
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 };
 
@@ -77,6 +79,10 @@ const formatMemberSince = (dateStr: string): string => {
   }
 };
 const SettingsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+  const { themeName, setTheme } = useTheme();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const {
@@ -210,7 +216,7 @@ const SettingsScreen: React.FC = () => {
         setAvatarPhotoUri(null);
       }
       setShowEditModal(false);
-      showSuccess("✅ Đã cập nhật hồ sơ thành công!");
+      showSuccess("Đã cập nhật hồ sơ thành công!");
     } catch (error: any) {
       showError(error.message || "Không thể cập nhật hồ sơ");
     } finally {
@@ -230,41 +236,22 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const confirmDeleteAccount = async () => {
-    try {
-      await apiService.delete("/users/me");
-      await AsyncStorage.removeItem("@onboarding_v2_completed");
-      await logout();
-    } catch (error: any) {
-      Alert.alert(
-        "Lỗi",
-        error.message || "Không thể xóa tài khoản. Vui lòng thử lại."
-      );
-    }
-  };
-
   const handleDeleteAccount = () => {
     Alert.alert(
       "Xóa tài khoản",
-      "Bạn có chắc muốn xóa tài khoản? Toàn bộ sự kiện và dữ liệu sẽ bị xóa vĩnh viễn.",
+      "Xóa toàn bộ dữ liệu trên thiết bị và đăng xuất?",
       [
         { text: "Hủy", style: "cancel" },
         {
-          text: "Xóa tài khoản",
+          text: "Xóa & Đăng xuất",
           style: "destructive",
-          onPress: () => {
-            Alert.alert(
-              "Xác nhận lần cuối",
-              "Hành động này không thể hoàn tác. Tài khoản và tất cả dữ liệu sẽ bị xóa.",
-              [
-                { text: "Hủy", style: "cancel" },
-                {
-                  text: "Xóa vĩnh viễn",
-                  style: "destructive",
-                  onPress: confirmDeleteAccount,
-                },
-              ]
-            );
+          onPress: async () => {
+            try {
+              await AsyncStorage.clear();
+              await logout();
+            } catch (error: any) {
+              Alert.alert("Lỗi", error.message || "Không thể xóa dữ liệu.");
+            }
           },
         },
       ]
@@ -313,7 +300,7 @@ const SettingsScreen: React.FC = () => {
       setLinkEmail("");
       setLinkPassword("");
       setLinkDisplayName("");
-      showSuccess("🎉 Tài khoản đã được liên kết với email thành công!");
+      showSuccess("Tài khoản đã được liên kết với email thành công!");
       // Sync local events lên server (background, không block UI)
       syncService
         .sync()
@@ -367,7 +354,7 @@ const SettingsScreen: React.FC = () => {
               )}
             </View>
             <View style={styles.editAvatarBtn}>
-              <Ionicons name="pencil" size={11} color={COLORS.white} />
+              <Ionicons name="pencil" size={11} color={colors.white} />
             </View>
           </View>
           <View style={styles.profileInfo}>
@@ -376,7 +363,7 @@ const SettingsScreen: React.FC = () => {
             </Text>
             {isAnonymous ? (
               <View style={styles.anonymousBadge}>
-                <Ionicons name="eye-off" size={12} color={COLORS.warning} />
+                <Ionicons name="eye-off" size={12} color={colors.warning} />
                 <Text style={styles.anonymousText}>Tài khoản ẩn danh</Text>
               </View>
             ) : (
@@ -391,14 +378,14 @@ const SettingsScreen: React.FC = () => {
           <Ionicons
             name="chevron-forward"
             size={16}
-            color={COLORS.textSecondary}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
 
         {/* Anonymous Warning */}
         {isAnonymous && (
           <View style={styles.warningCard}>
-            <Ionicons name="warning" size={24} color={COLORS.warning} />
+            <Ionicons name="warning" size={24} color={colors.warning} />
             <View style={styles.warningContent}>
               <Text style={styles.warningTitle}>
                 Liên kết tài khoản để backup!
@@ -414,7 +401,7 @@ const SettingsScreen: React.FC = () => {
         {/* Email Verification Banner */}
         {!isAnonymous && !isEmailVerified && (
           <View style={styles.verifyCard}>
-            <Ionicons name="mail-unread" size={24} color={COLORS.primary} />
+            <Ionicons name="mail-unread" size={24} color={colors.primary} />
             <View style={styles.verifyContent}>
               <Text style={styles.verifyTitle}>Xác thực email của bạn</Text>
               <Text style={styles.verifyText}>
@@ -444,20 +431,20 @@ const SettingsScreen: React.FC = () => {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[COLORS.primary, COLORS.primary + "CC"]}
+              colors={[colors.primary, colors.primary + "CC"]}
               style={styles.authCardGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
               <View style={styles.authCardContent}>
-                <Ionicons name="person-circle-outline" size={36} color="#fff" />
+                <Ionicons name="person-circle-outline" size={36} color={colors.white} />
                 <View style={styles.authCardText}>
                   <Text style={styles.authCardTitle}>Đăng nhập / Đăng ký</Text>
                   <Text style={styles.authCardSubtitle}>
                     Backup dữ liệu và đồng bộ nhiều thiết bị
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#fff" />
+                <Ionicons name="chevron-forward" size={20} color={colors.white} />
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -472,7 +459,7 @@ const SettingsScreen: React.FC = () => {
           title="Nâng cấp Premium"
           subtitle="Mở khóa tất cả tính năng cao cấp"
           onPress={() => navigation.navigate('Premium')}
-          color={COLORS.warning}
+          color={colors.warning}
         />
       </View>
       */}
@@ -487,7 +474,7 @@ const SettingsScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <View style={styles.settingLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: "#4ECDC415" }]}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.secondary + '15' }]}>
                 <Ionicons name="people-outline" size={22} color="#4ECDC4" />
               </View>
               <View style={styles.settingText}>
@@ -497,7 +484,7 @@ const SettingsScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       )}
@@ -516,7 +503,7 @@ const SettingsScreen: React.FC = () => {
               <Ionicons
                 name="notifications-outline"
                 size={22}
-                color={COLORS.primary}
+                color={colors.primary}
               />
             </View>
             <View style={styles.settingText}>
@@ -533,7 +520,7 @@ const SettingsScreen: React.FC = () => {
           <Ionicons
             name={showSpecialDates ? "chevron-up" : "chevron-down"}
             size={18}
-            color={COLORS.textSecondary}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
 
@@ -556,16 +543,54 @@ const SettingsScreen: React.FC = () => {
                     value={!isMuted}
                     onValueChange={() => handleToggleSpecialDate(sd.id)}
                     trackColor={{
-                      false: COLORS.border,
-                      true: COLORS.primary + "60",
+                      false: colors.border,
+                      true: colors.primary + "60",
                     }}
-                    thumbColor={!isMuted ? COLORS.primary : COLORS.textLight}
+                    thumbColor={!isMuted ? colors.primary : colors.textLight}
                   />
                 </View>
               );
             })}
           </View>
         )}
+      </View>
+
+      {/* Appearance */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Giao diện</Text>
+        <View style={styles.themeRow}>
+          {THEME_LIST.map((theme) => {
+            const isActive = themeName === theme.name;
+            return (
+              <TouchableOpacity
+                key={theme.name}
+                style={styles.themeItem}
+                onPress={() => setTheme(theme.name)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.themeSwatch,
+                    { backgroundColor: theme.preview },
+                    isActive && styles.themeSwatchActive,
+                  ]}
+                >
+                  {isActive && (
+                    <Ionicons name="checkmark" size={16} color={colors.white} />
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.themeLabel,
+                    isActive && { color: colors.primary, fontFamily: 'Manrope_600SemiBold'},
+                  ]}
+                >
+                  {theme.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* App Info */}
@@ -596,20 +621,18 @@ const SettingsScreen: React.FC = () => {
 
       {/* Logout */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+        <Ionicons name="log-out-outline" size={20} color={colors.error} />
         <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
 
-      {/* Delete Account — only for registered users */}
-      {!isAnonymous && (
-        <TouchableOpacity
-          style={[styles.deleteButton, { marginHorizontal: 16, marginTop: 12 }]}
-          onPress={handleDeleteAccount}
-        >
-          <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-          <Text style={styles.deleteText}>Xóa tài khoản</Text>
-        </TouchableOpacity>
-      )}
+      {/* Delete Account */}
+      <TouchableOpacity
+        style={[styles.deleteButton, { marginHorizontal: 16, marginTop: 12 }]}
+        onPress={handleDeleteAccount}
+      >
+        <Ionicons name="trash-outline" size={20} color={colors.error} />
+        <Text style={styles.deleteText}>Xóa tài khoản</Text>
+      </TouchableOpacity>
 
       {/* Edit Profile Modal */}
       <Modal
@@ -626,7 +649,7 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Chỉnh sửa hồ sơ</Text>
               <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -655,7 +678,7 @@ const SettingsScreen: React.FC = () => {
                   </View>
                 )}
                 <View style={styles.cameraOverlay}>
-                  <Ionicons name="camera" size={14} color={COLORS.white} />
+                  <Ionicons name="camera" size={14} color={colors.white} />
                 </View>
               </TouchableOpacity>
               <Text style={styles.pickImageHint}>Nhấn để chọn ảnh</Text>
@@ -667,7 +690,7 @@ const SettingsScreen: React.FC = () => {
                   <Ionicons
                     name="trash-outline"
                     size={13}
-                    color={COLORS.error}
+                    color={colors.error}
                   />
                   <Text style={styles.removePhotoBtnText}>Xóa ảnh</Text>
                 </TouchableOpacity>
@@ -698,7 +721,7 @@ const SettingsScreen: React.FC = () => {
                           <Ionicons
                             name="checkmark"
                             size={15}
-                            color={COLORS.white}
+                            color={colors.white}
                           />
                         )}
                       </TouchableOpacity>
@@ -713,7 +736,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Nhập tên của bạn"
-              placeholderTextColor={`${COLORS.textSecondary}99`}
+              placeholderTextColor={`${colors.textSecondary}99`}
               value={editName}
               onChangeText={setEditName}
               autoCapitalize="words"
@@ -745,7 +768,7 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Liên kết Email</Text>
               <TouchableOpacity onPress={() => setShowLinkEmailModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -757,7 +780,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Tên hiển thị"
-              placeholderTextColor={`${COLORS.textSecondary}99`}
+              placeholderTextColor={`${colors.textSecondary}99`}
               value={linkDisplayName}
               onChangeText={setLinkDisplayName}
               autoCapitalize="words"
@@ -766,7 +789,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor={`${COLORS.textSecondary}99`}
+              placeholderTextColor={`${colors.textSecondary}99`}
               value={linkEmail}
               onChangeText={setLinkEmail}
               keyboardType="email-address"
@@ -776,7 +799,7 @@ const SettingsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Mật khẩu (tối thiểu 6 ký tự)"
-              placeholderTextColor={`${COLORS.textSecondary}99`}
+              placeholderTextColor={`${colors.textSecondary}99`}
               value={linkPassword}
               onChangeText={setLinkPassword}
               secureTextEntry
@@ -825,6 +848,9 @@ const SettingItem: React.FC<SettingItemProps> = ({
   badgeText,
   color,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   return (
     <TouchableOpacity
       style={[styles.settingItem, disabled && styles.settingItemDisabled]}
@@ -839,7 +865,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
           <Ionicons
             name={icon}
             size={22}
-            color={color || (linked ? COLORS.success : COLORS.textSecondary)}
+            color={color || (linked ? colors.success : colors.textSecondary)}
           />
         </View>
         <View style={styles.settingText}>
@@ -863,13 +889,13 @@ const SettingItem: React.FC<SettingItemProps> = ({
           </View>
         )}
         {linked && (
-          <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+          <Ionicons name="checkmark-circle" size={20} color={colors.success} />
         )}
         {!disabled && !linked && (
           <Ionicons
             name="chevron-forward"
             size={20}
-            color={COLORS.textSecondary}
+            color={colors.textSecondary}
           />
         )}
       </View>
@@ -877,10 +903,10 @@ const SettingItem: React.FC<SettingItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   content: {
     paddingBottom: 40,
@@ -888,12 +914,12 @@ const styles = StyleSheet.create({
   screenHeader: {
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   screenHeaderTitle: {
     fontSize: 28,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   section: {
     marginTop: 20,
@@ -901,8 +927,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     textTransform: "uppercase",
     marginBottom: 12,
     letterSpacing: 0.5,
@@ -910,7 +936,7 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -919,7 +945,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: COLORS.primary + "20",
+    backgroundColor: colors.primary + "20",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
@@ -929,13 +955,13 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   anonymousBadge: {
     flexDirection: "row",
@@ -944,16 +970,16 @@ const styles = StyleSheet.create({
   },
   anonymousText: {
     fontSize: 12,
-    color: COLORS.warning,
-    fontWeight: "500",
+    color: colors.warning,
+    fontFamily: 'Manrope_500Medium',
   },
   warningCard: {
     flexDirection: "row",
-    backgroundColor: COLORS.warning + "10",
+    backgroundColor: colors.warning + "10",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.warning + "30",
+    borderColor: colors.warning + "30",
   },
   warningContent: {
     flex: 1,
@@ -961,20 +987,20 @@ const styles = StyleSheet.create({
   },
   warningTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.warning,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.warning,
     marginBottom: 4,
   },
   warningText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 18,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
@@ -991,30 +1017,30 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
   iconContainerLinked: {
-    backgroundColor: COLORS.success + "20",
+    backgroundColor: colors.success + "20",
   },
   settingText: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: "500",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   settingSubtitle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   settingSubtitleLinked: {
-    color: COLORS.success,
-    fontWeight: "500",
+    color: colors.success,
+    fontFamily: 'Manrope_500Medium',
   },
   specialDatesContainer: {
     paddingHorizontal: 16,
@@ -1025,7 +1051,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   specialDateIcon: {
     fontSize: 20,
@@ -1036,10 +1062,10 @@ const styles = StyleSheet.create({
   specialDateName: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
   },
   specialDateMuted: {
-    color: COLORS.textLight,
+    color: colors.textLight,
     textDecorationLine: "line-through",
   },
   settingRight: {
@@ -1048,7 +1074,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -1056,53 +1082,53 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   badgeText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   deleteButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.error + "30",
+    borderColor: colors.error + "30",
   },
   deleteText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.error,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.error,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
     marginTop: 20,
     gap: 8,
     borderWidth: 1,
-    borderColor: COLORS.error + "30",
+    borderColor: colors.error + "30",
   },
   logoutText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.error,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.error,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
   },
   modalContent: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 20,
     width: "100%",
@@ -1115,27 +1141,27 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   modalDescription: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 20,
     lineHeight: 20,
   },
   input: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   linkButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 10,
     padding: 16,
     alignItems: "center",
@@ -1145,9 +1171,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   linkButtonText: {
-    color: COLORS.white,
+    color: colors.white,
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: 'Manrope_600SemiBold',
   },
   // Avatar & Edit Profile
   avatarWrap: {
@@ -1156,8 +1182,8 @@ const styles = StyleSheet.create({
   },
   initialsText: {
     fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   editAvatarBtn: {
     position: "absolute",
@@ -1166,15 +1192,15 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: COLORS.surface,
+    borderColor: colors.surface,
   },
   memberSince: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 3,
   },
   // Edit Profile Modal
@@ -1191,13 +1217,13 @@ const styles = StyleSheet.create({
   },
   initialsTextLarge: {
     fontSize: 32,
-    fontWeight: "700",
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginBottom: 10,
     marginTop: 4,
   },
@@ -1216,7 +1242,7 @@ const styles = StyleSheet.create({
   },
   colorDotSelected: {
     borderWidth: 2.5,
-    borderColor: COLORS.textPrimary,
+    borderColor: colors.textPrimary,
     transform: [{ scale: 1.18 }],
   },
   colorDotUnselected: {
@@ -1239,15 +1265,15 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: COLORS.surface,
+    borderColor: colors.surface,
   },
   pickImageHint: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 8,
   },
   removePhotoBtn: {
@@ -1258,20 +1284,20 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 8,
-    backgroundColor: COLORS.error + "12",
+    backgroundColor: colors.error + "12",
   },
   removePhotoBtnText: {
     fontSize: 12,
-    color: COLORS.error,
-    fontWeight: "500",
+    color: colors.error,
+    fontFamily: 'Manrope_500Medium',
   },
   verifyCard: {
     flexDirection: "row",
-    backgroundColor: COLORS.primary + "10",
+    backgroundColor: colors.primary + "10",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.primary + "30",
+    borderColor: colors.primary + "30",
     marginTop: 12,
   },
   verifyContent: {
@@ -1280,13 +1306,13 @@ const styles = StyleSheet.create({
   },
   verifyTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
     marginBottom: 4,
   },
   verifyText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 18,
     marginBottom: 10,
   },
@@ -1295,17 +1321,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   resendBtnText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
   authCard: {
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -1325,15 +1351,44 @@ const styles = StyleSheet.create({
   },
   authCardTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     marginBottom: 2,
   },
   authCardSubtitle: {
     fontSize: 13,
-    color: "#fff",
+    color: colors.white,
     opacity: 0.85,
   },
-});
-
-export default SettingsScreen;
+  themeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  themeItem: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  themeSwatch: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeSwatchActive: {
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  themeLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+}));export default SettingsScreen;

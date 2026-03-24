@@ -10,12 +10,17 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const LAST_UPDATED = '06/03/2026';
 const APP_NAME = 'Ngày yêu thương';
 const CONTACT_EMAIL = 'support@ngayyeuthuong.com';
 
 const PrivacyPolicyScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
@@ -24,7 +29,7 @@ const PrivacyPolicyScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chính sách bảo mật</Text>
         <View style={{ width: 40 }} />
@@ -148,34 +153,42 @@ const PrivacyPolicyScreen: React.FC = () => {
 
 // ── Small helper components ───────────────────────────────────────────────────
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    {children}
-  </View>
-);
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+};
 
-const P: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Text style={styles.paragraph}>{children}</Text>
-);
+const P: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const styles = useStyles();
+  return <Text style={styles.paragraph}>{children}</Text>;
+};
 
-const Bullet: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <View style={styles.bulletRow}>
-    <Text style={styles.bulletDot}>•</Text>
-    <Text style={styles.bulletText}>{children}</Text>
-  </View>
-);
+const Bullet: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.bulletRow}>
+      <Text style={styles.bulletDot}>•</Text>
+      <Text style={styles.bulletText}>{children}</Text>
+    </View>
+  );
+};
 
-const B: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Text style={styles.bold}>{children}</Text>
-);
+const B: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const styles = useStyles();
+  return <Text style={styles.bold}>{children}</Text>;
+};
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -184,8 +197,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   backButton: {
     width: 40,
@@ -194,8 +207,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   scroll: {
     flex: 1,
@@ -206,7 +219,7 @@ const styles = StyleSheet.create({
   },
   updated: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 20,
     fontStyle: 'italic',
   },
@@ -215,13 +228,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 10,
   },
   paragraph: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: 8,
   },
@@ -232,32 +245,30 @@ const styles = StyleSheet.create({
   },
   bulletDot: {
     fontSize: 14,
-    color: COLORS.primary,
+    color: colors.primary,
     marginRight: 8,
     lineHeight: 22,
   },
   bulletText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 22,
   },
   bold: {
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginVertical: 20,
   },
   footer: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
     lineHeight: 20,
   },
-});
-
-export default PrivacyPolicyScreen;
+}));export default PrivacyPolicyScreen;

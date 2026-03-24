@@ -8,6 +8,8 @@ import { DateUtils } from '@lib/date.utils';
 import { COLORS } from '@themes/colors';
 import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import CountdownTimer from '@components/molecules/CountdownTimer';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 
 interface EventCardProps {
@@ -30,6 +32,9 @@ const EventCard: React.FC<EventCardProps> = ({
   checklistProgress,
   showCountdown = false
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const primaryTag = event.tags[0] || 'other';
   const tagColor = getTagColor(primaryTag);
   const tagLabel = getTagLabel(primaryTag);
@@ -58,7 +63,7 @@ const EventCard: React.FC<EventCardProps> = ({
             <View style={styles.content}>
               <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
               <View style={styles.metaRow}>
-                <Ionicons name="calendar-outline" size={13} color={COLORS.textSecondary} />
+                <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
                 <Text style={styles.dateText}>
                   {DateUtils.getEventDateDisplay(event.eventDate)}
                   {event.isLunarCalendar ? ' (ÂL)' : ''}
@@ -69,21 +74,21 @@ const EventCard: React.FC<EventCardProps> = ({
                 </View>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+            <Ionicons name="chevron-forward" size={18} color={colors.textLight} />
           </View>
 
           {/* Badges row */}
           <View style={styles.badgesRow}>
             {event.isRecurring && (
               <View style={styles.badge}>
-                <Ionicons name="repeat" size={12} color={COLORS.textSecondary} />
+                <Ionicons name="repeat" size={12} color={colors.textSecondary} />
                 <Text style={styles.badgeText}>Hàng năm</Text>
               </View>
             )}
             {event.isNotificationEnabled === false && (
               <View style={styles.badge}>
-                <Ionicons name="notifications-off-outline" size={12} color={COLORS.textLight} />
-                <Text style={[styles.badgeText, { color: COLORS.textLight }]}>Tắt thông báo</Text>
+                <Ionicons name="notifications-off-outline" size={12} color={colors.textLight} />
+                <Text style={[styles.badgeText, { color: colors.textLight }]}>Tắt thông báo</Text>
               </View>
             )}
 
@@ -107,7 +112,7 @@ const EventCard: React.FC<EventCardProps> = ({
                 <Ionicons
                   name={event.isNotificationEnabled !== false ? 'notifications' : 'notifications-off-outline'}
                   size={18}
-                  color={event.isNotificationEnabled !== false ? COLORS.primary : COLORS.textLight}
+                  color={event.isNotificationEnabled !== false ? colors.primary : colors.textLight}
                 />
               </TouchableOpacity>
             )}
@@ -117,7 +122,7 @@ const EventCard: React.FC<EventCardProps> = ({
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={styles.actionBtn}
               >
-                <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+                <Ionicons name="trash-outline" size={18} color={colors.error} />
               </TouchableOpacity>
             )}
           </View>
@@ -131,7 +136,7 @@ const EventCard: React.FC<EventCardProps> = ({
                     styles.progressFill,
                     {
                       width: `${(checklistProgress.completed / checklistProgress.total) * 100}%`,
-                      backgroundColor: checklistProgress.completed === checklistProgress.total ? COLORS.success : tagColor,
+                      backgroundColor: checklistProgress.completed === checklistProgress.total ? colors.success : tagColor,
                     },
                   ]}
                 />
@@ -151,7 +156,7 @@ const EventCard: React.FC<EventCardProps> = ({
         title="Xóa sự kiện"
         message={`Bạn có chắc muốn xóa "${event.title}"? Hành động này không thể hoàn tác.`}
         icon="trash"
-        iconColor={COLORS.error}
+        iconColor={colors.error}
         confirmText="Xóa"
         cancelText="Hủy"
         onConfirm={handleConfirmDelete}
@@ -161,15 +166,15 @@ const EventCard: React.FC<EventCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   card: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     marginHorizontal: 8,
     marginVertical: 5,
     overflow: 'hidden',
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -202,8 +207,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     marginBottom: 3,
   },
   metaRow: {
@@ -213,13 +218,13 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   dot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: COLORS.textLight,
+    backgroundColor: colors.textLight,
   },
   tagPill: {
     paddingHorizontal: 6,
@@ -228,7 +233,7 @@ const styles = StyleSheet.create({
   },
   tagPillText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
   badgesRow: {
     flexDirection: 'row',
@@ -244,7 +249,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   actionBtn: {
     padding: 4,
@@ -256,7 +261,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 5,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 4,
@@ -267,9 +272,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
-});
-
-export default React.memo(EventCard);
+}));export default React.memo(EventCard);

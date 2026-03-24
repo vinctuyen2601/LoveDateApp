@@ -5,7 +5,7 @@ export interface MBTITypeInfo {
   type: string;
   name: string;
   nameEn: string;
-  emoji: string;
+  ionIcon: string;
   shortDesc: string;
   fullDesc: string;
   strengths: string[];
@@ -25,7 +25,7 @@ export interface MBTIGroup {
   id: string;
   name: string;
   nameEn: string;
-  emoji: string;
+  ionIcon: string;
   color: string;
   gradient: [string, string];
   description: string;
@@ -39,7 +39,7 @@ export const MBTI_GROUPS: MBTIGroup[] = [
     id: "analyst",
     name: "Nhà phân tích",
     nameEn: "Analysts",
-    emoji: "🧠",
+    ionIcon: "analytics-outline",
     color: "#7C3AED",
     gradient: ["#7C3AED", "#6D28D9"],
     description:
@@ -50,7 +50,7 @@ export const MBTI_GROUPS: MBTIGroup[] = [
     id: "diplomat",
     name: "Nhà ngoại giao",
     nameEn: "Diplomats",
-    emoji: "💚",
+    ionIcon: "heart-outline",
     color: "#059669",
     gradient: ["#059669", "#047857"],
     description:
@@ -61,7 +61,7 @@ export const MBTI_GROUPS: MBTIGroup[] = [
     id: "sentinel",
     name: "Người bảo vệ",
     nameEn: "Sentinels",
-    emoji: "🛡️",
+    ionIcon: "shield-outline",
     color: "#0EA5E9",
     gradient: ["#0EA5E9", "#0284C7"],
     description:
@@ -72,7 +72,7 @@ export const MBTI_GROUPS: MBTIGroup[] = [
     id: "explorer",
     name: "Nhà thám hiểm",
     nameEn: "Explorers",
-    emoji: "🔥",
+    ionIcon: "flame-outline",
     color: "#F59E0B",
     gradient: ["#F59E0B", "#D97706"],
     description:
@@ -157,7 +157,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "INTJ",
     name: "Kiến trúc sư",
     nameEn: "Architect",
-    emoji: "🏗️",
+    ionIcon: "construct-outline",
     shortDesc: "Nhà chiến lược tầm nhìn xa, luôn xây dựng kế hoạch hoàn hảo cho mọi thứ — kể cả tình yêu",
     fullDesc:
       "INTJ là một trong những kiểu tính cách hiếm nhất, chỉ chiếm khoảng 2% dân số. Họ là những nhà tư duy chiến lược bẩm sinh với khả năng nhìn thấy bức tranh toàn cảnh mà ít người nhận ra. INTJ không chỉ đặt mục tiêu — họ xây dựng cả hệ thống để đạt được mục tiêu đó.\n\nTrong công việc và cuộc sống, INTJ nổi bật với sự độc lập và tự chủ. Họ không cần sự công nhận từ đám đông, mà được thúc đẩy bởi tiêu chuẩn nội tại rất cao. Khi đối mặt với vấn đề phức tạp, INTJ sẽ kiên nhẫn phân tích từng khía cạnh cho đến khi tìm ra giải pháp tối ưu nhất.\n\nTrong tình yêu, INTJ là kiểu người \"chậm mà chắc\". Họ không dễ rung động, nhưng một khi đã chọn ai đó, sự cam kết của họ gần như tuyệt đối. INTJ thể hiện tình cảm không qua lời nói hoa mỹ mà qua hành động thiết thực: lập kế hoạch tương lai chung, giải quyết vấn đề cho người yêu, và luôn giữ lời hứa. Họ cần một người bạn đời thông minh, có chiều sâu và tôn trọng không gian cá nhân của nhau.\n\nĐiểm đáng chú ý: INTJ có thể vô tình làm tổn thương người khác bằng sự thẳng thắn quá mức, nhưng đó xuất phát từ sự chân thành — họ tin rằng trung thực là nền tảng của mọi mối quan hệ bền vững.",
@@ -197,7 +197,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "INTP",
     name: "Nhà logic học",
     nameEn: "Logician",
-    emoji: "🔬",
+    ionIcon: "flask-outline",
     shortDesc: "Bộ não không ngừng phân tích, luôn tò mò khám phá bản chất sâu xa của mọi thứ",
     fullDesc:
       "INTP được ví như \"nhà khoa học\" trong 16 kiểu tính cách — bộ não của họ luôn hoạt động, phân tích và đặt câu hỏi \"Tại sao?\" cho mọi thứ. Chiếm khoảng 3% dân số, INTP sống trong thế giới của ý tưởng và lý thuyết, nơi mà logic là ngôn ngữ chính.\n\nINTP có khả năng nhìn thấy các mô hình và kết nối mà người khác bỏ qua. Họ thích phân tích vấn đề từ mọi góc độ, thường dành hàng giờ đắm chìm trong suy nghĩ về một chủ đề thú vị. Sự sáng tạo của INTP không nằm ở nghệ thuật truyền thống, mà ở khả năng tìm ra giải pháp độc đáo cho những vấn đề phức tạp.\n\nTrong tình yêu, INTP có thể khiến đối phương bối rối vì sự im lặng — nhưng đó không phải là sự thờ ơ. Khi INTP im lặng, họ đang xử lý cảm xúc theo cách riêng. Họ yêu bằng trí tuệ: thích thảo luận sâu về mọi chủ đề, chia sẻ những khám phá thú vị, và giải quyết vấn đề cho người yêu. INTP cần một người kiên nhẫn, tôn trọng không gian suy nghĩ của họ, và có thể kết nối ở mức trí tuệ.\n\nĐiểm đáng chú ý: INTP đôi khi quên mất thế giới thực vì quá chìm đắm trong suy nghĩ. Họ cần người yêu nhẹ nhàng \"kéo\" họ về với thực tại — và khi tìm được người đó, INTP sẽ trung thành và biết ơn sâu sắc.",
@@ -237,7 +237,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ENTJ",
     name: "Tư lệnh",
     nameEn: "Commander",
-    emoji: "👑",
+    ionIcon: "trophy-outline",
     shortDesc: "Nhà lãnh đạo bẩm sinh với ý chí sắt đá, biến mọi tầm nhìn thành hiện thực",
     fullDesc:
       "ENTJ là \"vị tướng\" trong thế giới MBTI — quyết đoán, tham vọng và luôn dẫn đầu. Chiếm khoảng 3% dân số, họ có năng lực lãnh đạo tự nhiên mà ít kiểu tính cách nào sánh được. Khi ENTJ đặt mục tiêu, họ sẽ xây dựng chiến lược, tập hợp nguồn lực và kiên trì cho đến khi đạt được.\n\nENTJ nhìn thấy sự thiếu hiệu quả ở khắp nơi và có bản năng muốn cải thiện mọi thứ. Họ là người ra quyết định nhanh, không ngại đối mặt với thử thách, và có khả năng truyền cảm hứng để người khác hành động. Tuy nhiên, sự quyết đoán đôi khi biến thành áp đặt — ENTJ cần học cách lắng nghe và tôn trọng nhịp độ của người khác.\n\nTrong tình yêu, ENTJ yêu mãnh liệt và bảo vệ. Họ coi mối quan hệ như một \"dự án đầu tư\" quan trọng nhất và sẵn sàng nỗ lực hết mình để nó thành công. ENTJ sẽ lên kế hoạch hẹn hò chu đáo, xây dựng nền tảng tài chính vững chắc cho tương lai, và luôn khuyến khích người yêu phát triển bản thân. Họ thích một người bạn đời có tư duy, có tham vọng riêng và dám nói thẳng — ENTJ không thích người quá phụ thuộc.\n\nĐiểm đáng chú ý: Dưới vẻ ngoài mạnh mẽ, ENTJ cũng có một khía cạnh dịu dàng ít ai thấy. Khi thực sự yêu, họ sẵn sàng bỏ xuống \"áo giáp\" và trở nên dễ tổn thương — nhưng chỉ với người họ tin tưởng tuyệt đối.",
@@ -277,7 +277,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ENTP",
     name: "Nhà tranh luận",
     nameEn: "Debater",
-    emoji: "💡",
+    ionIcon: "bulb-outline",
     shortDesc: "Bộ não sáng tạo không giới hạn, biến mọi cuộc trò chuyện thành cuộc phiêu lưu trí tuệ",
     fullDesc:
       "ENTP là \"nhà phát minh\" trong thế giới tính cách — luôn tràn ngập ý tưởng mới và có khả năng nhìn thấy khả năng ở những nơi người khác chỉ thấy giới hạn. Chiếm khoảng 3% dân số, ENTP nổi bật bởi sự nhanh trí, hài hước và sức hút giao tiếp đặc biệt.\n\nENTP có bộ não hoạt động không ngừng, luôn kết nối ý tưởng từ nhiều lĩnh vực khác nhau. Họ thích tranh luận — không phải để \"thắng\" mà vì quá trình thảo luận giúp họ khám phá thêm góc nhìn mới. Sự sáng tạo của ENTP là vô tận: họ có thể đưa ra 10 giải pháp cho một vấn đề, nhưng thường gặp khó khăn trong việc chọn và theo đuổi một giải pháp đến cùng.\n\nTrong tình yêu, hẹn hò với ENTP giống như lên tàu lượn siêu tốc — đầy kích thích và không bao giờ biết trước điều gì sẽ xảy ra. Họ mang đến sự mới mẻ, tiếng cười và những cuộc trò chuyện kéo dài đến tận khuya. ENTP yêu bằng trí tuệ và cần đối phương có thể đáp lại những cuộc tranh luận vui vẻ. Tuy nhiên, ENTP cần học cách kiên nhẫn với chi tiết nhỏ và cam kết lâu dài — khi đã tìm được người có thể \"theo kịp\" bộ não của mình, ENTP sẽ trở thành người bạn đời thú vị và trung thành.\n\nĐiểm đáng chú ý: ENTP đôi khi vô tình tranh luận về những điều nhạy cảm mà không nhận ra cảm xúc của đối phương. Nếu bạn yêu một ENTP, hãy nói thẳng cảm xúc của mình — họ sẽ lập tức điều chỉnh vì thực ra rất quan tâm đến người mình yêu.",
@@ -319,7 +319,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "INFJ",
     name: "Người cố vấn",
     nameEn: "Advocate",
-    emoji: "🌌",
+    ionIcon: "planet-outline",
     shortDesc: "Kiểu tính cách hiếm nhất thế giới, có khả năng đọc vị con người và trực giác phi thường",
     fullDesc:
       "INFJ là kiểu tính cách hiếm nhất trong 16 kiểu, chỉ chiếm khoảng 1-2% dân số thế giới. Họ được ví như \"nhà tiên tri\" — có trực giác mạnh mẽ đến mức đôi khi hiểu người khác hơn cả chính người đó hiểu mình. INFJ kết hợp độc đáo giữa sự nhạy cảm sâu sắc và tư duy chiến lược, tạo nên một kiểu tính cách vừa mơ mộng vừa thực tế.\n\nINFJ sống với sứ mệnh — họ cần tìm thấy ý nghĩa trong mọi việc mình làm. Không chỉ muốn giúp đỡ người khác, INFJ muốn thay đổi thế giới theo hướng tốt đẹp hơn. Họ có \"chiếc radar cảm xúc\" cực kỳ nhạy bén, có thể cảm nhận được tâm trạng của người xung quanh chỉ qua ngôn ngữ cơ thể và giọng nói.\n\nTrong tình yêu, INFJ tìm kiếm sự kết nối linh hồn — không chỉ là sự hấp dẫn bề ngoài mà là sự thấu hiểu ở mức sâu nhất. Khi yêu, INFJ cống hiến hoàn toàn: họ ghi nhớ mọi chi tiết nhỏ về người yêu, dự đoán được nhu cầu trước khi đối phương nói ra, và tạo một không gian cảm xúc an toàn tuyệt đối. Tuy nhiên, INFJ có \"cánh cửa đóng sập\" (INFJ door slam) — khi bị tổn thương quá nhiều lần, họ có thể cắt đứt mối quan hệ hoàn toàn và không bao giờ quay lại.\n\nĐiểm đáng chú ý: INFJ dễ bị kiệt sức cảm xúc vì \"hấp thụ\" cảm xúc của người khác. Họ cần những khoảng thời gian một mình để \"sạc lại năng lượng\" — người yêu INFJ cần hiểu rằng việc cần không gian riêng không phải là dấu hiệu của sự xa cách, mà là cách họ giữ cho mình khỏe mạnh để yêu thương tốt hơn.",
@@ -359,7 +359,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "INFP",
     name: "Người hòa giải",
     nameEn: "Mediator",
-    emoji: "🦋",
+    ionIcon: "leaf-outline",
     shortDesc: "Trái tim lãng mạn với thế giới nội tâm phong phú, luôn tìm kiếm vẻ đẹp và ý nghĩa sâu xa",
     fullDesc:
       "INFP là \"nhà thơ\" trong thế giới tính cách — họ sống với trái tim nhạy cảm và thế giới nội tâm phong phú đến kinh ngạc. Chiếm khoảng 4% dân số, INFP nhìn thấy vẻ đẹp và ý nghĩa ở những nơi người khác bỏ qua: một tia nắng chiều, một câu nói bất chợt, hay nụ cười của người lạ trên phố.\n\nINFP có hệ giá trị nội tâm vô cùng mạnh mẽ — họ không dễ bị ảnh hưởng bởi đám đông hay xu hướng xã hội. Điều họ coi trọng nhất là sự chân thật: chân thật với bản thân, với người mình yêu, và với giá trị mình tin tưởng. INFP sáng tạo theo cách rất riêng — không ồn ào nhưng sâu sắc, thường thể hiện qua văn chương, âm nhạc, nghệ thuật hoặc cách họ sống cuộc đời.\n\nTrong tình yêu, INFP là người lãng mạn nhất trong 16 kiểu tính cách. Họ yêu như trong tiểu thuyết — sâu đậm, chân thành và hết mình. INFP sẽ viết thư tình, ghi nhớ kỷ niệm nhỏ nhất, và biến những khoảnh khắc bình thường thành đặc biệt. Tuy nhiên, INFP cũng dễ lý tưởng hóa đối phương, tạo ra hình ảnh \"hoàn hảo\" trong đầu rồi thất vọng khi thực tế không khớp. Họ cần học cách chấp nhận người yêu với cả ưu và khuyết điểm.\n\nĐiểm đáng chú ý: INFP thường giữ nỗi buồn cho riêng mình vì không muốn làm phiền người khác. Nếu bạn yêu một INFP, hãy chủ động hỏi han — đôi khi họ cần được \"cho phép\" mới dám chia sẻ những gì đang cảm thấy.",
@@ -399,7 +399,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ENFJ",
     name: "Người dẫn dắt",
     nameEn: "Protagonist",
-    emoji: "🌟",
+    ionIcon: "star-outline",
     shortDesc: "Nhà lãnh đạo bằng trái tim, có khả năng truyền cảm hứng và kết nối mọi người xung quanh",
     fullDesc:
       "ENFJ là \"ngọn hải đăng\" trong thế giới tính cách — họ tỏa sáng bằng sự ấm áp và có khả năng nâng đỡ mọi người xung quanh. Chiếm khoảng 2-3% dân số, ENFJ kết hợp giữa kỹ năng lãnh đạo xuất sắc và trái tim đầy đồng cảm, tạo nên một kiểu tính cách vừa mạnh mẽ vừa dịu dàng.\n\nENFJ có \"radar tình cảm\" rất nhạy — họ có thể bước vào phòng và ngay lập tức cảm nhận được ai đang vui, ai đang buồn, ai cần được quan tâm. Không chỉ cảm nhận, ENFJ còn hành động: họ sẽ chủ động lắng nghe, khuyến khích và giúp người khác trở thành phiên bản tốt nhất của chính mình. Đây là lý do ENFJ thường được mọi người yêu mến và tin tưởng.\n\nTrong tình yêu, ENFJ là người bạn đời tận tụy và chu đáo nhất. Họ đặt hạnh phúc của người yêu lên hàng đầu, thường quên cả nhu cầu bản thân. ENFJ sẽ nhớ mọi dịp quan trọng, tổ chức buổi hẹn ý nghĩa, luôn khuyến khích và động viên đối phương. Họ yêu với cả trái tim và muốn xây dựng một mối quan hệ sâu sắc, có ý nghĩa — không chỉ là yêu đương mà là cùng nhau trưởng thành.\n\nĐiểm đáng chú ý: ENFJ dễ bị \"kiệt sức vì yêu\" do luôn đặt người khác lên trước. Họ cần học cách nói \"không\", đặt ra giới hạn, và hiểu rằng chăm sóc bản thân không phải là ích kỷ — mà là cách để yêu thương bền vững hơn.",
@@ -439,7 +439,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ENFP",
     name: "Người truyền cảm hứng",
     nameEn: "Campaigner",
-    emoji: "🎨",
+    ionIcon: "color-palette-outline",
     shortDesc: "Ngọn lửa nhiệt huyết không bao giờ tắt, biến mỗi ngày thành một cuộc phiêu lưu đầy sắc màu",
     fullDesc:
       "ENFP là \"cầu vồng\" trong thế giới tính cách — tràn đầy màu sắc, năng lượng và khả năng truyền cảm hứng. Chiếm khoảng 7% dân số, ENFP có sức hút tự nhiên khiến mọi người muốn ở gần. Họ nhìn thấy tiềm năng ở khắp nơi và có khả năng biến những ý tưởng điên rồ nhất thành hiện thực.\n\nENFP sống với niềm đam mê cháy bỏng — khi họ hứng thú với điều gì đó, năng lượng của họ gần như vô tận. Họ kết nối ý tưởng từ nhiều lĩnh vực khác nhau, luôn nhìn ra cơ hội mà người khác bỏ qua. Tuy nhiên, ENFP cũng dễ bị \"hội chứng con sóc\" — nhảy từ dự án này sang dự án khác khi có thứ mới hấp dẫn hơn xuất hiện.\n\nTrong tình yêu, ENFP là người bạn đời thú vị nhất bạn có thể gặp. Họ biến mỗi buổi hẹn thành cuộc phiêu lưu: hôm nay có thể đi ăn ở quán nhỏ trong hẻm, ngày mai bất ngờ lên kế hoạch du lịch cuối tuần. ENFP yêu nồng nhiệt, lãng mạn và luôn khuyến khích người yêu theo đuổi ước mơ. Họ nhìn thấy phiên bản tốt nhất của đối phương và không ngừng khuyến khích họ hướng tới đó.\n\nĐiểm đáng chú ý: ENFP đôi khi quá lạc quan và hứa hẹn nhiều hơn khả năng thực hiện. Họ cần một người bạn đời giúp \"neo\" lại thực tế, nhưng không phải bằng cách dập tắt nhiệt huyết, mà bằng sự nhẹ nhàng giúp họ ưu tiên và hoàn thành những gì quan trọng nhất.",
@@ -481,7 +481,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ISTJ",
     name: "Người trách nhiệm",
     nameEn: "Logistician",
-    emoji: "📋",
+    ionIcon: "clipboard-outline",
     shortDesc: "Trụ cột vững chắc nhất, luôn giữ lời hứa và hoàn thành mọi cam kết đến cùng",
     fullDesc:
       "ISTJ là \"nền móng\" của xã hội — nếu thế giới vận hành được, phần lớn là nhờ những người ISTJ đang âm thầm giữ cho mọi thứ đúng trật tự. Chiếm khoảng 13% dân số (một trong những kiểu phổ biến nhất), ISTJ nổi bật với tinh thần trách nhiệm cực cao và sự đáng tin cậy tuyệt đối.\n\nISTJ coi trọng truyền thống, sự ổn định và lời hứa. Khi họ nói \"tôi sẽ làm\", bạn có thể yên tâm 100% rằng điều đó sẽ xảy ra. Họ có trí nhớ tuyệt vời về chi tiết, luôn có kế hoạch rõ ràng, và hiếm khi trễ deadline. ISTJ không phải kiểu người \"nổ\" — họ chứng minh giá trị bằng hành động bền bỉ, ngày qua ngày.\n\nTrong tình yêu, ISTJ thể hiện tình cảm theo cách rất thực tế: đưa đón đúng giờ, sửa chữa đồ đạc trong nhà, đảm bảo tài chính ổn định, nhớ mọi dịp quan trọng. Họ không giỏi nói lời ngọt ngào hay viết thư tình, nhưng sự có mặt đáng tin cậy của ISTJ chính là \"lời nói yêu\" mạnh mẽ nhất. Khi đã cam kết, ISTJ sẽ trung thành tuyệt đối — ly hôn hay chia tay không nằm trong từ điển của họ trừ khi bị phản bội.\n\nĐiểm đáng chú ý: ISTJ đôi khi quá cứng nhắc với quy tắc và khó thích ứng với thay đổi đột ngột. Nếu yêu một ISTJ, hãy kiên nhẫn giúp họ mở rộng vùng an toàn từ từ — đừng ép họ thay đổi một sớm một chiều, vì họ cần thời gian để xử lý và chấp nhận cái mới.",
@@ -521,7 +521,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ISFJ",
     name: "Người nuôi dưỡng",
     nameEn: "Defender",
-    emoji: "🤗",
+    ionIcon: "heart-circle-outline",
     shortDesc: "Người chăm sóc ấm áp nhất, ghi nhớ mọi chi tiết nhỏ và yêu thương bằng hành động tận tụy",
     fullDesc:
       "ISFJ là \"thiên thần hộ mệnh\" trong thế giới tính cách — lặng lẽ chăm sóc mọi người xung quanh mà ít khi đòi hỏi sự đền đáp. Chiếm khoảng 13% dân số, ISFJ là kiểu tính cách phổ biến nhất và cũng là \"chất keo\" giữ cho các mối quan hệ và cộng đồng gắn kết.\n\nISFJ có trí nhớ phi thường về chi tiết — họ nhớ bạn thích uống gì, sợ gì, sinh nhật của ai, và thậm chí cả câu chuyện bạn kể từ 3 năm trước. Sự quan tâm của ISFJ không ồn ào nhưng vô cùng tỉ mỉ: họ sẽ chuẩn bị sẵn chiếc áo khoác trước khi bạn biết trời sắp lạnh, nấu món bạn thích khi biết bạn mệt mỏi.\n\nTrong tình yêu, ISFJ là người bạn đời tận tụy và ấm áp nhất. Họ thể hiện tình yêu qua ngôn ngữ của sự chăm sóc: bữa ăn ngon, ngôi nhà gọn gàng, sự quan tâm lặng lẽ nhưng liên tục. ISFJ không cần buổi hẹn hò xa hoa — họ tìm thấy hạnh phúc trong những khoảnh khắc bình dị bên người mình yêu. Khi đã yêu, ISFJ sẵn sàng hy sinh rất nhiều cho mối quan hệ.\n\nĐiểm đáng chú ý: ISFJ có xu hướng cho đi quá nhiều mà quên mất bản thân. Họ thường giấu cảm xúc tiêu cực, sợ làm phiền người khác, cho đến khi \"tràn ly\" và bùng nổ bất ngờ. Nếu yêu một ISFJ, hãy chủ động hỏi \"Em/Anh có ổn không?\" và tạo không gian an toàn để họ chia sẻ — đó là món quà quý giá nhất bạn có thể tặng họ.",
@@ -561,7 +561,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ESTJ",
     name: "Người quản lý",
     nameEn: "Executive",
-    emoji: "📊",
+    ionIcon: "bar-chart-outline",
     shortDesc: "Người tổ chức xuất sắc, coi trọng trật tự và luôn bảo vệ những giá trị truyền thống",
     fullDesc:
       "ESTJ là \"người quản lý\" trong thế giới tính cách — có khả năng tổ chức, lên kế hoạch và đưa mọi thứ vào quy củ. Chiếm khoảng 11% dân số, ESTJ là những người giữ cho xã hội vận hành trơn tru, từ gia đình đến công ty, từ cộng đồng đến quốc gia.\n\nESTJ tin vào quy tắc, truyền thống và hệ thống đã được chứng minh. Họ không phải kiểu người \"phá vỡ khuôn khổ\" — thay vào đó, họ hoàn thiện và bảo vệ những gì đang hoạt động tốt. ESTJ quyết đoán, dứt khoát và không ngại đứng lên bảo vệ quan điểm của mình. Khi lãnh đạo, họ rõ ràng về kỳ vọng và luôn đánh giá bằng kết quả thực tế.\n\nTrong tình yêu, ESTJ là người bạn đời đáng tin cậy và có trách nhiệm. Họ thể hiện tình yêu bằng cách xây dựng nền tảng vững chắc cho gia đình: tài chính ổn định, nhà cửa ngăn nắp, kế hoạch tương lai rõ ràng. ESTJ coi trọng cam kết và lời hứa — khi đã nói \"anh/em sẽ lo\", họ sẽ lo đến nơi đến chốn. Tuy nhiên, ESTJ cần học cách lắng nghe cảm xúc nhiều hơn, vì đôi khi người yêu cần sự thấu hiểu hơn là giải pháp.\n\nĐiểm đáng chú ý: ESTJ đôi khi bị coi là \"cứng nhắc\" hay \"kiểm soát\" — nhưng thực ra đó xuất phát từ sự quan tâm. Họ muốn mọi thứ tốt đẹp cho người mình yêu và gia đình. Nếu yêu một ESTJ, hãy thẳng thắn chia sẻ khi cần không gian — họ sẽ tôn trọng nếu hiểu lý do.",
@@ -601,7 +601,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ESFJ",
     name: "Người quan tâm",
     nameEn: "Consul",
-    emoji: "🫂",
+    ionIcon: "people-outline",
     shortDesc: "Trái tim ấm áp nhất, luôn kết nối và chăm sóc mọi người bằng tình yêu thương chân thành",
     fullDesc:
       "ESFJ là \"bà mẹ\" (hoặc \"ông bố\") trong thế giới tính cách — dù có phải cha mẹ thật hay không, họ luôn tự nhiên chăm sóc và lo lắng cho người xung quanh. Chiếm khoảng 12% dân số, ESFJ là kiểu tính cách hướng ngoại ấm áp nhất, có khả năng tạo ra những mối liên kết xã hội bền chặt.\n\nESFJ sống để kết nối — họ ghi nhớ tên, sở thích, và câu chuyện của mọi người. Ở đâu có ESFJ, ở đó có sự hài hòa: họ là người tổ chức bữa tiệc gia đình, nhớ sinh nhật của tất cả bạn bè, và luôn kiểm tra xem ai cần giúp đỡ. ESFJ coi trọng sự hòa thuận và không thích xung đột, đôi khi dẫn đến việc họ tránh đối mặt với vấn đề khó.\n\nTrong tình yêu, ESFJ là người bạn đời chăm sóc tận tụy và chu đáo. Họ thể hiện tình yêu qua nấu ăn, trang trí nhà cửa, tổ chức sự kiện gia đình, và đảm bảo mọi người đều hạnh phúc. ESFJ coi trọng truyền thống trong tình yêu: hẹn hò đúng nghĩa, ra mắt gia đình, các dịp kỷ niệm. Họ muốn xây dựng một mái ấm thực sự — nơi mọi người cảm thấy được yêu thương và thuộc về.\n\nĐiểm đáng chú ý: ESFJ rất nhạy cảm với lời phê bình, đặc biệt từ người mình yêu. Một câu nói bất cẩn có thể khiến họ đau lòng lâu hơn bạn tưởng. Nếu cần góp ý với ESFJ, hãy bắt đầu bằng lời khen chân thành trước — họ sẽ lắng nghe tốt hơn khi cảm thấy được trân trọng.",
@@ -643,7 +643,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ISTP",
     name: "Thợ thủ công",
     nameEn: "Virtuoso",
-    emoji: "🔧",
+    ionIcon: "build-outline",
     shortDesc: "Bậc thầy xử lý tình huống, bình tĩnh tuyệt đối và thích tìm hiểu cách mọi thứ vận hành",
     fullDesc:
       "ISTP là \"MacGyver\" trong thế giới tính cách — bình tĩnh, khéo léo và có khả năng giải quyết mọi tình huống bằng những gì có sẵn. Chiếm khoảng 5% dân số, ISTP là kiểu người hành động, thích \"tháo ra xem bên trong\" mọi thứ — từ máy móc, xe cộ đến các hệ thống phức tạp.\n\nISTP sống trong khoảnh khắc hiện tại với sự bình tĩnh đáng kinh ngạc. Khi người khác hoảng loạn, ISTP là người đứng ra giải quyết vấn đề với đầu óc sáng suốt. Họ học bằng cách làm — không cần đọc hướng dẫn 100 trang, chỉ cần bắt tay vào và tìm ra cách. ISTP có khả năng tập trung cao độ khi đang \"vào guồng\" nhưng cũng cần rất nhiều tự do và không gian riêng.\n\nTrong tình yêu, ISTP là kiểu người \"ít nói, nhiều làm\". Họ không giỏi viết thư tình hay nói lời ngọt ngào, nhưng sẽ sửa hết đồ đạc hỏng trong nhà, lái xe đưa bạn đi bất cứ đâu lúc nửa đêm, và luôn có mặt khi bạn cần giúp. Với ISTP, hành động nói to hơn lời nói. Họ cần một người bạn đời tôn trọng sự tự do, không quá đòi hỏi về mặt cảm xúc, và có thể cùng nhau tận hưởng những hoạt động phiêu lưu.\n\nĐiểm đáng chú ý: ISTP đôi khi bị hiểu lầm là \"lạnh lùng\" hay \"không quan tâm\" vì ít bộc lộ cảm xúc bằng lời. Thực tế, họ quan tâm rất nhiều — chỉ là ngôn ngữ yêu thương của ISTP là hành động, không phải lời nói. Hãy nhìn vào những gì ISTP làm, không phải những gì họ nói.",
@@ -683,7 +683,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ISFP",
     name: "Nghệ sĩ",
     nameEn: "Adventurer",
-    emoji: "🎭",
+    ionIcon: "musical-notes-outline",
     shortDesc: "Tâm hồn nghệ sĩ tinh tế, sống trọn vẹn trong khoảnh khắc và tìm vẻ đẹp ở khắp nơi",
     fullDesc:
       "ISFP là \"nghệ sĩ\" trong thế giới tính cách — họ trải nghiệm cuộc sống qua lăng kính thẩm mỹ tinh tế mà ít kiểu tính cách nào có được. Chiếm khoảng 9% dân số, ISFP sống trọn vẹn trong khoảnh khắc hiện tại, trân trọng vẻ đẹp của những điều nhỏ bé mà người khác thường bỏ qua.\n\nISFP có đôi mắt nhìn thấy cái đẹp ở khắp nơi: ánh hoàng hôn, bông hoa dại bên đường, cách ánh sáng rơi qua cửa sổ. Họ thể hiện bản thân qua nghệ thuật — có thể là vẽ tranh, viết nhạc, nấu ăn, trang trí, hay đơn giản là cách họ phối đồ mỗi ngày. ISFP không thích bị gò bó trong quy tắc cứng nhắc; họ cần tự do để khám phá và sáng tạo theo cách riêng.\n\nTrong tình yêu, ISFP nhẹ nhàng nhưng sâu sắc. Họ không phải kiểu tuyên bố tình yêu giữa đám đông — thay vào đó, ISFP vẽ cho bạn một bức tranh, nấu món ăn yêu thích của bạn, hay dắt bạn đi ngắm hoàng hôn ở một nơi chỉ hai người biết. Mỗi khoảnh khắc bên ISFP đều được \"phủ\" lên một lớp thẩm mỹ đặc biệt. Họ yêu chân thành, không vụ lợi, và mong muốn một mối quan hệ tự nhiên, không giả tạo.\n\nĐiểm đáng chú ý: ISFP rất sợ xung đột và có xu hướng tránh né vấn đề thay vì đối mặt. Khi buồn, họ thường rút vào thế giới nội tâm và im lặng. Nếu yêu một ISFP, hãy tạo không gian an toàn để họ chia sẻ, đừng ép họ phải giải thích cảm xúc bằng logic — đôi khi một cái ôm nói nhiều hơn mọi cuộc phân tích.",
@@ -723,7 +723,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ESTP",
     name: "Doanh nhân",
     nameEn: "Entrepreneur",
-    emoji: "🏄",
+    ionIcon: "rocket-outline",
     shortDesc: "Người hành động năng động nhất, sống hết mình trong khoảnh khắc với năng lượng bùng nổ",
     fullDesc:
       "ESTP là \"ngôi sao hành động\" trong thế giới tính cách — năng động, táo bạo và luôn sống hết mình. Chiếm khoảng 4% dân số, ESTP là kiểu người khiến cuộc sống trở nên sôi nổi và thú vị hơn. Họ không ngồi lập kế hoạch — họ nhảy vào và hành động ngay.\n\nESTP có khả năng đọc tình huống cực nhanh và phản ứng tức thì. Trong khi người khác còn đang suy nghĩ, ESTP đã hành động và tìm ra giải pháp. Họ có sức hút giao tiếp đặc biệt: hài hước, tự tin, duyên dáng và biết cách khiến mọi người cảm thấy thoải mái. ESTP sống trong thế giới thực — họ coi trọng trải nghiệm hơn lý thuyết, kết quả hơn kế hoạch.\n\nTrong tình yêu, hẹn hò với ESTP giống như một bộ phim hành động — đầy kịch tính, bất ngờ và adrenaline. Họ sẽ đưa bạn đi những nơi bạn chưa từng đến, thử những điều bạn chưa bao giờ nghĩ mình sẽ làm, và biến mỗi buổi hẹn thành một kỷ niệm đáng nhớ. ESTP thể hiện tình yêu bằng sự có mặt: khi bạn gọi, họ xuất hiện — ngay lập tức, không cần hỏi lý do.\n\nĐiểm đáng chú ý: ESTP có thể khiến đối phương cảm thấy bất an vì lối sống tự do và thích mạo hiểm. Họ cần học cách chậm lại đôi khi, lắng nghe cảm xúc của người yêu, và hiểu rằng sự cam kết không phải là \"nhà tù\" — mà là nền tảng để những cuộc phiêu lưu trở nên ý nghĩa hơn.",
@@ -763,7 +763,7 @@ export const MBTI_TYPES: Record<string, MBTITypeInfo> = {
     type: "ESFP",
     name: "Người trình diễn",
     nameEn: "Entertainer",
-    emoji: "🎤",
+    ionIcon: "mic-outline",
     shortDesc: "Linh hồn của mọi bữa tiệc, tỏa sáng bằng niềm vui và biến cuộc sống thành sân khấu",
     fullDesc:
       "ESFP là \"ngôi sao\" trong thế giới tính cách — ở đâu có ESFP, ở đó có tiếng cười, năng lượng tích cực và sự vui vẻ. Chiếm khoảng 9% dân số, ESFP là kiểu người có khả năng bẩm sinh biến mọi tình huống thành một bữa tiệc. Họ sống trọn vẹn trong khoảnh khắc hiện tại và truyền nguồn năng lượng đó cho tất cả mọi người xung quanh.\n\nESFP có \"bộ cảm biến\" tinh nhạy về không khí — họ biết khi nào cần kể chuyện cười, khi nào cần lắng nghe, và khi nào cần kéo mọi người lên sàn nhảy. Họ thân thiện với tất cả mọi người, từ người lạ trên phố đến CEO trong phòng họp. ESFP sống bằng trải nghiệm: họ muốn nhìn, nghe, chạm, nếm và cảm nhận mọi thứ cuộc sống có thể mang lại.\n\nTrong tình yêu, ESFP là người bạn đời mang lại nhiều tiếng cười nhất. Họ hào phóng trong cảm xúc, thích tặng quà bất ngờ, tổ chức sự kiện kỷ niệm hoành tráng, và biến mỗi ngày bên nhau thành một ngày đáng nhớ. ESFP yêu tự nhiên, không tính toán — khi họ yêu, cả thế giới đều biết. Họ cần một người bạn đời có thể cùng tận hưởng cuộc sống nhưng cũng giúp họ \"neo\" lại khi cần.\n\nĐiểm đáng chú ý: ESFP có xu hướng tránh đối mặt với vấn đề nghiêm túc bằng cách \"đùa qua\" hoặc chuyển chủ đề. Khi gặp xung đột, họ muốn mọi thứ nhanh chóng vui vẻ trở lại thay vì giải quyết tận gốc. Nếu yêu một ESFP, hãy kiên nhẫn dẫn dắt những cuộc trò chuyện khó — nhưng giữ không khí nhẹ nhàng, không quá nặng nề.",

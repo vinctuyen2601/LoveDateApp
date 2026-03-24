@@ -17,6 +17,8 @@ import { AffiliateProduct } from "../../types";
 import { EmptyState } from "@components/atoms/EmptyState";
 import ProductCard from "./ProductCard";
 import { apiService } from "../../services/api.service";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 // ── BE response types ──────────────────────────────────────────────────────────
 
@@ -67,6 +69,260 @@ interface ResultsModalProps {
   products?: AffiliateProduct[];
 }
 
+// ── Styles (declared here so all components below can call useStyles()) ────────
+
+const useStyles = makeStyles((colors) => ({
+  container: { flex: 1, backgroundColor: colors.background },
+
+  // Header
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 10,
+  },
+  closeBtn: { padding: 6 },
+  headerCenter: { flex: 1 },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.white,
+    marginBottom: 2,
+  },
+  headerSub: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    fontFamily: 'Manrope_500Medium',
+  },
+  aiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  aiBadgeText: { fontSize: 11, fontFamily: 'Manrope_800ExtraBold', color: colors.primary },
+
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+
+  // AI summary card
+  aiCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.primary + "1A",
+  },
+  aiCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  aiAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiName: { fontSize: 14, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
+  aiOnline: {
+    fontSize: 11,
+    color: colors.success,
+    fontFamily: 'Manrope_500Medium',
+    marginTop: 1,
+  },
+  aiBubble: {
+    backgroundColor: "rgba(255,107,107,0.07)",
+    borderRadius: 14,
+    borderTopLeftRadius: 4,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: "rgba(255,107,107,0.30)",
+  },
+  aiBubbleText: { fontSize: 14, lineHeight: 21, color: colors.textPrimary },
+
+  // Loading
+  loadingBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    padding: 20,
+    marginBottom: 12,
+  },
+  loadingText: { fontSize: 14, color: colors.textSecondary },
+
+  // Companion card
+  companionCard: {
+    marginBottom: 16,
+    borderRadius: 18,
+    overflow: "hidden",
+    elevation: 3,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+  },
+  companionGradient: { padding: 16 },
+  companionHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 10,
+  },
+  companionIcon: { fontSize: 30 },
+  companionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  companionTitle: {
+    fontSize: 15,
+    fontFamily: 'Manrope_700Bold',
+    color: "#C41E3A",
+    flex: 1,
+  },
+  companionBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  companionBadgeText: { fontSize: 10, color: colors.white, fontFamily: 'Manrope_700Bold'},
+  companionNote: {
+    fontSize: 12,
+    color: "#8B0000",
+    lineHeight: 17,
+    fontStyle: "italic",
+  },
+  companionIdea: { fontSize: 13, color: "#5D1A1A", lineHeight: 20 },
+
+  // Section title
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+
+  // Category card
+  categoryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  categoryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  rankBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rankText: { fontSize: 12, fontFamily: 'Manrope_800ExtraBold', color: colors.white },
+  categoryIcon: { fontSize: 24 },
+  categoryInfo: { flex: 1 },
+  categoryName: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
+  categoryPrice: { fontSize: 12, color: colors.textSecondary, marginTop: 1 },
+  ideaText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    paddingLeft: 4,
+  },
+
+  // Products section inside card
+  productsSection: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  productsSectionTitle: {
+    fontSize: 13,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
+    marginBottom: 10,
+  },
+  productLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+  },
+  productLoadingText: { fontSize: 13, color: colors.textSecondary },
+
+  // Trending badges
+  hotBadge: {
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  hotBadgeText: { fontSize: 10, color: colors.white, fontFamily: 'Manrope_700Bold'},
+  trendingBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 10,
+  },
+  trendingBadgeText: { fontSize: 10, color: colors.white, fontFamily: 'Manrope_700Bold'},
+
+  // Shopee fallback button
+  shopeeBtn: {
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  shopeeBtnText: { color: colors.white, fontFamily: 'Manrope_700Bold', fontSize: 14 },
+
+  // Actions
+  actions: { marginTop: 8, marginBottom: 8 },
+  retakeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    gap: 8,
+  },
+  retakeBtnText: { color: colors.primary, fontSize: 15, fontFamily: 'Manrope_600SemiBold'},
+}));
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function buildAISummary(answers: Record<string, any>): string {
@@ -84,6 +340,7 @@ function buildAISummary(answers: Record<string, any>): string {
 // ── Animated thinking dots ─────────────────────────────────────────────────────
 
 const AIThinkingDots: React.FC = () => {
+  const colors = useColors();
   const d1 = useRef(new Animated.Value(0.3)).current;
   const d2 = useRef(new Animated.Value(0.3)).current;
   const d3 = useRef(new Animated.Value(0.3)).current;
@@ -120,7 +377,7 @@ const AIThinkingDots: React.FC = () => {
             width: 6,
             height: 6,
             borderRadius: 3,
-            backgroundColor: COLORS.primary,
+            backgroundColor: colors.primary,
             opacity: dot,
           }}
         />
@@ -156,6 +413,8 @@ const CategoryProducts: React.FC<CategoryProductsProps> = ({
   maxPrice,
   occasion,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
   const [products, setProducts] = useState<ProductWithTrending[]>([]);
   const [hasProducts, setHasProducts] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -216,7 +475,7 @@ const CategoryProducts: React.FC<CategoryProductsProps> = ({
             <ProductCard product={p} occasion={occasion} />
             {p.isTrending && (
               <View style={styles.trendingBadge}>
-                <Ionicons name="flame" size={11} color="#fff" />
+                <Ionicons name="flame" size={11} color={colors.white} />
                 <Text style={styles.trendingBadgeText}> Đang hot</Text>
               </View>
             )}
@@ -242,6 +501,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   maxPrice,
   occasionKey,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
@@ -271,7 +532,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         <Ionicons
           name={expanded ? "chevron-up" : "chevron-down"}
           size={18}
-          color={COLORS.textSecondary}
+          color={colors.textSecondary}
         />
       </TouchableOpacity>
 
@@ -296,7 +557,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             <Ionicons
               name="bag-handle-outline"
               size={14}
-              color={COLORS.textSecondary}
+              color={colors.textSecondary}
             />
             <Text style={[styles.productsSectionTitle, { marginBottom: 0 }]}>
               Sản phẩm gợi ý
@@ -318,7 +579,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
 
 const CompanionCard: React.FC<{ companion: CompanionGift }> = ({
   companion,
-}) => (
+}) => {
+  const styles = useStyles();
+  return (
   <View style={styles.companionCard}>
     <LinearGradient
       colors={["#FFE0E6", "#FFF0F3"]}
@@ -343,7 +606,8 @@ const CompanionCard: React.FC<{ companion: CompanionGift }> = ({
       ))}
     </LinearGradient>
   </View>
-);
+  );
+};
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
@@ -353,6 +617,8 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
   onClose,
   onRetake,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const aiSummary = buildAISummary(surveyAnswers);
 
@@ -400,13 +666,13 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* ── Header ── */}
         <LinearGradient
-          colors={["#FF6B6B", "#FF8E53"]}
+          colors={[colors.gradientStart, colors.gradientEnd]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={26} color={COLORS.white} />
+            <Ionicons name="close" size={26} color={colors.white} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Gợi ý dành cho bạn</Text>
@@ -417,7 +683,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
             </Text>
           </View>
           <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={11} color="#FF6B6B" />
+            <Ionicons name="sparkles" size={11} color={colors.primary} />
             <Text style={styles.aiBadgeText}>AI</Text>
           </View>
         </LinearGradient>
@@ -432,10 +698,10 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
             <View style={styles.aiCard}>
               <View style={styles.aiCardHeader}>
                 <LinearGradient
-                  colors={["#FF6B6B", "#FF8E53"]}
+                  colors={[colors.gradientStart, colors.gradientEnd]}
                   style={styles.aiAvatar}
                 >
-                  <Ionicons name="sparkles" size={17} color="#fff" />
+                  <Ionicons name="sparkles" size={17} color={colors.white} />
                 </LinearGradient>
                 <View>
                   <Text style={styles.aiName}>Trợ lý quà tặng AI</Text>
@@ -459,13 +725,13 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
                 ) : (
                   <Text style={styles.aiBubbleText}>
                     Mình đã chấm điểm{" "}
-                    <Text style={{ fontWeight: "700" }}>16 danh mục quà</Text>{" "}
+                    <Text style={{ fontFamily: 'Manrope_700Bold'}}>16 danh mục quà</Text>{" "}
                     và tìm ra{" "}
-                    <Text style={{ fontWeight: "700" }}>
+                    <Text style={{ fontFamily: 'Manrope_700Bold'}}>
                       {categories.length} lựa chọn
                     </Text>{" "}
                     phù hợp nhất cho{" "}
-                    <Text style={{ fontWeight: "700" }}>{aiSummary}</Text> nhé!
+                    <Text style={{ fontFamily: 'Manrope_700Bold'}}>{aiSummary}</Text> nhé!
                   </Text>
                 )}
               </View>
@@ -510,7 +776,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
                 <Ionicons
                   name="gift-outline"
                   size={16}
-                  color={COLORS.textPrimary}
+                  color={colors.textPrimary}
                 />
                 <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>
                   Top danh mục quà phù hợp
@@ -531,7 +797,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
           {/* ── Bottom actions ── */}
           <View style={styles.actions}>
             <TouchableOpacity style={styles.retakeBtn} onPress={onRetake}>
-              <Ionicons name="refresh" size={18} color={COLORS.primary} />
+              <Ionicons name="refresh" size={18} color={colors.primary} />
               <Text style={styles.retakeBtnText}>Làm lại khảo sát</Text>
             </TouchableOpacity>
           </View>
@@ -540,259 +806,5 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
     </Modal>
   );
 };
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-
-  // Header
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 10,
-  },
-  closeBtn: { padding: 6 },
-  headerCenter: { flex: 1 },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.white,
-    marginBottom: 2,
-  },
-  headerSub: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    fontWeight: "500",
-  },
-  aiBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  aiBadgeText: { fontSize: 11, fontWeight: "800", color: "#FF6B6B" },
-
-  scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-
-  // AI summary card
-  aiCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(255,107,107,0.10)",
-  },
-  aiCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
-  },
-  aiAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  aiName: { fontSize: 14, fontWeight: "700", color: COLORS.textPrimary },
-  aiOnline: {
-    fontSize: 11,
-    color: COLORS.success,
-    fontWeight: "500",
-    marginTop: 1,
-  },
-  aiBubble: {
-    backgroundColor: "rgba(255,107,107,0.07)",
-    borderRadius: 14,
-    borderTopLeftRadius: 4,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: "rgba(255,107,107,0.30)",
-  },
-  aiBubbleText: { fontSize: 14, lineHeight: 21, color: COLORS.textPrimary },
-
-  // Loading
-  loadingBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    padding: 20,
-    marginBottom: 12,
-  },
-  loadingText: { fontSize: 14, color: COLORS.textSecondary },
-
-  // Companion card
-  companionCard: {
-    marginBottom: 16,
-    borderRadius: 18,
-    overflow: "hidden",
-    elevation: 3,
-    shadowColor: "#FF6B6B",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-  },
-  companionGradient: { padding: 16 },
-  companionHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    marginBottom: 10,
-  },
-  companionIcon: { fontSize: 30 },
-  companionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-  companionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#C41E3A",
-    flex: 1,
-  },
-  companionBadge: {
-    backgroundColor: "#FF6B6B",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  companionBadgeText: { fontSize: 10, color: COLORS.white, fontWeight: "700" },
-  companionNote: {
-    fontSize: 12,
-    color: "#8B0000",
-    lineHeight: 17,
-    fontStyle: "italic",
-  },
-  companionIdea: { fontSize: 13, color: "#5D1A1A", lineHeight: 20 },
-
-  // Section title
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.textPrimary,
-    marginBottom: 12,
-  },
-
-  // Category card
-  categoryCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  categoryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
-  },
-  rankBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#FF6B6B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rankText: { fontSize: 12, fontWeight: "800", color: COLORS.white },
-  categoryIcon: { fontSize: 24 },
-  categoryInfo: { flex: 1 },
-  categoryName: { fontSize: 15, fontWeight: "700", color: COLORS.textPrimary },
-  categoryPrice: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
-  ideaText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-    paddingLeft: 4,
-  },
-
-  // Products section inside card
-  productsSection: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-  },
-  productsSectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textPrimary,
-    marginBottom: 10,
-  },
-  productLoadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-  },
-  productLoadingText: { fontSize: 13, color: COLORS.textSecondary },
-
-  // Trending badges
-  hotBadge: {
-    backgroundColor: "#FF4D2D",
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  hotBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
-  trendingBadge: {
-    position: "absolute",
-    top: 6,
-    left: 6,
-    backgroundColor: "#FF4D2D",
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    zIndex: 10,
-  },
-  trendingBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
-
-  // Shopee fallback button
-  shopeeBtn: {
-    backgroundColor: "#EE4D2D",
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  shopeeBtnText: { color: COLORS.white, fontWeight: "700", fontSize: 14 },
-
-  // Actions
-  actions: { marginTop: 8, marginBottom: 8 },
-  retakeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.white,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
-    gap: 8,
-  },
-  retakeBtnText: { color: COLORS.primary, fontSize: 15, fontWeight: "600" },
-});
 
 export default React.memo(ResultsModal);

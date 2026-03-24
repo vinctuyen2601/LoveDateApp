@@ -16,8 +16,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@themes/colors';
 import { SubscriptionProduct, PremiumSubscription } from '../types';
 import * as PremiumService from '../services/premium.service';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const PremiumScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const db = useSQLiteContext();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -115,7 +120,7 @@ const PremiumScreen: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Đang tải...</Text>
       </View>
     );
@@ -130,13 +135,13 @@ const PremiumScreen: React.FC = () => {
             style={styles.closeButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="close" size={28} color={COLORS.textPrimary} />
+            <Ionicons name="close" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.activePremiumContainer}>
           <View style={styles.premiumBadge}>
-            <Ionicons name="checkmark-circle" size={80} color={COLORS.success} />
+            <Ionicons name="checkmark-circle" size={80} color={colors.success} />
           </View>
           <Text style={styles.activePremiumTitle}>Bạn đang dùng Premium!</Text>
           <Text style={styles.activePremiumSubtitle}>
@@ -170,7 +175,7 @@ const PremiumScreen: React.FC = () => {
           <View style={styles.featuresList}>
             {(selectedProduct.features.featureList || []).map((feature: string, index: number) => (
               <View key={index} style={styles.featureItem}>
-                <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
                 <Text style={styles.featureText}>{feature}</Text>
               </View>
             ))}
@@ -188,14 +193,14 @@ const PremiumScreen: React.FC = () => {
           style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="close" size={28} color={COLORS.textPrimary} />
+          <Ionicons name="close" size={28} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {/* Hero Section */}
       <View style={styles.heroSection}>
         <View style={styles.premiumIconContainer}>
-          <Ionicons name="star" size={60} color={COLORS.warning} />
+          <Ionicons name="star" size={60} color={colors.warning} />
         </View>
         <Text style={styles.heroTitle}>Nâng cấp lên Premium</Text>
         <Text style={styles.heroSubtitle}>
@@ -237,7 +242,7 @@ const PremiumScreen: React.FC = () => {
 
             {selectedProduct.id === product.id && (
               <View style={styles.selectedIndicator}>
-                <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+                <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
               </View>
             )}
           </TouchableOpacity>
@@ -250,7 +255,7 @@ const PremiumScreen: React.FC = () => {
 
         {(selectedProduct.features.featureList || []).map((feature: string, index: number) => (
           <View key={index} style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
             <Text style={styles.featureText}>{feature}</Text>
           </View>
         ))}
@@ -264,10 +269,10 @@ const PremiumScreen: React.FC = () => {
           disabled={isPurchasing}
         >
           {isPurchasing ? (
-            <ActivityIndicator color={COLORS.white} />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <>
-              <Ionicons name="lock-open" size={20} color={COLORS.white} />
+              <Ionicons name="lock-open" size={20} color={colors.white} />
               <Text style={styles.purchaseButtonText}>
                 Mua {selectedProduct.name} - {selectedProduct.price}
               </Text>
@@ -291,10 +296,10 @@ const PremiumScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -303,11 +308,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   loadingText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     marginTop: 12,
   },
   header: {
@@ -320,10 +325,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -338,21 +343,21 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: `${COLORS.warning}15`,
+    backgroundColor: `${colors.warning}15`,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   heroTitle: {
     fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 12,
     textAlign: 'center',
   },
   heroSubtitle: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -362,44 +367,44 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 16,
   },
   planCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     position: 'relative',
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   planCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: `${COLORS.primary}05`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}05`,
   },
   planCardPopular: {
-    borderColor: COLORS.warning,
+    borderColor: colors.warning,
   },
   popularBadge: {
     position: 'absolute',
     top: -10,
     right: 20,
-    backgroundColor: COLORS.warning,
+    backgroundColor: colors.warning,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
   popularBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     letterSpacing: 0.5,
   },
   planHeader: {
@@ -409,25 +414,25 @@ const styles = StyleSheet.create({
   },
   planName: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   planDescription: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   planPriceContainer: {
     alignItems: 'flex-end',
   },
   planPrice: {
     fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.primary,
   },
   planDuration: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   selectedIndicator: {
     position: 'absolute',
@@ -446,7 +451,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
   },
   purchaseSection: {
@@ -455,13 +460,13 @@ const styles = StyleSheet.create({
   },
   purchaseButton: {
     flexDirection: 'row',
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -472,8 +477,8 @@ const styles = StyleSheet.create({
   },
   purchaseButtonText: {
     fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   restoreButton: {
     paddingVertical: 16,
@@ -482,12 +487,12 @@ const styles = StyleSheet.create({
   },
   restoreButtonText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
   },
   disclaimer: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     marginTop: 16,
@@ -503,24 +508,24 @@ const styles = StyleSheet.create({
   },
   activePremiumTitle: {
     fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   activePremiumSubtitle: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
   },
   subscriptionInfoCard: {
     width: '100%',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 32,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -531,27 +536,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
   },
   infoLabel: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   infoValue: {
     fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
   },
   featuresTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     marginBottom: 16,
     alignSelf: 'flex-start',
   },
   featuresList: {
     width: '100%',
   },
-});
-
-export default PremiumScreen;
+}));export default PremiumScreen;

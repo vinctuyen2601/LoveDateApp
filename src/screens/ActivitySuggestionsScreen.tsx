@@ -23,6 +23,8 @@ import { useToast } from '../contexts/ToastContext';
 import { useAiRateLimit } from '../hooks/useAiRateLimit';
 import AiRateLimitModal from '@components/molecules/AiRateLimitModal';
 import { useEvents } from '@contexts/EventsContext';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 type ActivitySuggestionsRouteProp = RouteProp<
   { ActivitySuggestions: { event?: Event; eventId?: string } },
@@ -85,6 +87,9 @@ const BUDGET_PRESETS = [
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 const SkeletonSuggestion: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const anim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -113,28 +118,35 @@ const SkeletonSuggestion: React.FC = () => {
 
 // ── Article mini card ──────────────────────────────────────────────────────────
 
-const ArticleMiniCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => (
-  <TouchableOpacity style={styles.articleCard} onPress={onPress} activeOpacity={0.8}>
-    {article.imageUrl ? (
-      <Image source={{ uri: article.imageUrl }} style={styles.articleImage} />
-    ) : (
-      <View style={[styles.articleImage, { backgroundColor: article.color || '#FF6B6B', alignItems: 'center', justifyContent: 'center' }]}>
-        <Ionicons name="book-outline" size={22} color={article.color || '#FF6B6B'} />
-      </View>
-    )}
-    <View style={styles.articleInfo}>
-      <Text style={styles.articleTitle} numberOfLines={2}>{article.title}</Text>
-      {article.readTime && (
-        <Text style={styles.articleMeta}>{article.readTime} phút đọc</Text>
+const ArticleMiniCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
+  const styles = useStyles();
+  const colors = useColors();
+  return (
+    <TouchableOpacity style={styles.articleCard} onPress={onPress} activeOpacity={0.8}>
+      {article.imageUrl ? (
+        <Image source={{ uri: article.imageUrl }} style={styles.articleImage} />
+      ) : (
+        <View style={[styles.articleImage, { backgroundColor: article.color || colors.primary, alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name="book-outline" size={22} color={article.color || colors.primary} />
+        </View>
       )}
-    </View>
-    <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
-  </TouchableOpacity>
-);
+      <View style={styles.articleInfo}>
+        <Text style={styles.articleTitle} numberOfLines={2}>{article.title}</Text>
+        {article.readTime && (
+          <Text style={styles.articleMeta}>{article.readTime} phút đọc</Text>
+        )}
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={colors.textLight} />
+    </TouchableOpacity>
+  );
+};
 
 // ── Product mini card ──────────────────────────────────────────────────────────
 
 const ProductMiniCard: React.FC<{ product: AffiliateProduct }> = ({ product }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const openLink = () => {
     if (product.affiliateUrl) Linking.openURL(product.affiliateUrl);
   };
@@ -144,8 +156,8 @@ const ProductMiniCard: React.FC<{ product: AffiliateProduct }> = ({ product }) =
       {product.imageUrl ? (
         <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
       ) : (
-        <View style={[styles.productImage, { backgroundColor: product.color || COLORS.border, alignItems: 'center', justifyContent: 'center' }]}>
-          <Ionicons name="bag-handle-outline" size={20} color={COLORS.textSecondary} />
+        <View style={[styles.productImage, { backgroundColor: product.color || colors.border, alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name="bag-handle-outline" size={20} color={colors.textSecondary} />
         </View>
       )}
       <View style={styles.productInfo}>
@@ -168,6 +180,9 @@ const ProductMiniCard: React.FC<{ product: AffiliateProduct }> = ({ product }) =
 // ── Preparation Section ────────────────────────────────────────────────────────
 
 const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ preparation }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const hasOutfit   = preparation.outfitTips.length > 0;
   const hasChecklist = preparation.checklist.length > 0;
   const hasOther    = preparation.generalTips.length > 0;
@@ -178,13 +193,13 @@ const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ prepar
   return (
     <View style={styles.section}>
       <View style={styles.sectionLabelRow}>
-        <Text style={styles.sectionIcon}>📋</Text>
+        <Ionicons name="clipboard-outline" size={16} color={colors.textSecondary} style={styles.sectionIcon} />
         <Text style={styles.sectionLabel}>Chuẩn bị</Text>
       </View>
 
       {hasOutfit && (
         <View style={styles.prepGroup}>
-          <Text style={styles.prepGroupLabel}>👗 Trang phục</Text>
+          <Text style={styles.prepGroupLabel}>Trang phục</Text>
           {preparation.outfitTips.map((tip, i) => (
             <View key={i} style={styles.prepRow}>
               <View style={styles.prepDot} />
@@ -196,10 +211,10 @@ const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ prepar
 
       {hasChecklist && (
         <View style={styles.prepGroup}>
-          <Text style={styles.prepGroupLabel}>✅ Danh sách cần mang</Text>
+          <Text style={styles.prepGroupLabel}>Danh sách cần mang</Text>
           {preparation.checklist.map((item, i) => (
             <View key={i} style={styles.prepRow}>
-              <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.secondary} style={{ marginTop: 1 }} />
+              <Ionicons name="checkmark-circle-outline" size={14} color={colors.secondary} style={{ marginTop: 1 }} />
               <Text style={styles.prepText}>{item}</Text>
             </View>
           ))}
@@ -208,7 +223,7 @@ const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ prepar
 
       {preparation.bookingNote && (
         <View style={styles.prepInfoRow}>
-          <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} style={styles.prepInfoIcon} />
+          <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} style={styles.prepInfoIcon} />
           <View style={{ flex: 1 }}>
             <Text style={styles.prepGroupLabel}>Lưu ý đặt chỗ</Text>
             <Text style={styles.prepText}>{preparation.bookingNote}</Text>
@@ -218,7 +233,7 @@ const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ prepar
 
       {preparation.timingTip && (
         <View style={styles.prepInfoRow}>
-          <Text style={styles.prepInfoIcon}>⏰</Text>
+          <Ionicons name="time-outline" size={16} color={colors.textSecondary} style={styles.prepInfoIcon} />
           <View style={{ flex: 1 }}>
             <Text style={styles.prepGroupLabel}>Thời điểm tốt nhất</Text>
             <Text style={styles.prepText}>{preparation.timingTip}</Text>
@@ -228,7 +243,7 @@ const PreparationSection: React.FC<{ preparation: PreparationData }> = ({ prepar
 
       {hasOther && (
         <View style={styles.prepGroup}>
-          <Text style={styles.prepGroupLabel}>💡 Mẹo hay</Text>
+          <Text style={styles.prepGroupLabel}>Mẹo hay</Text>
           {preparation.generalTips.map((tip, i) => (
             <View key={i} style={styles.prepRow}>
               <View style={styles.prepDot} />
@@ -249,6 +264,9 @@ const DateSuggestionCard: React.FC<{
   onNavigateArticle: (article: Article) => void;
   onSaveActivity?: (title: string, description?: string, budget?: string, emoji?: string, whyFit?: string, timeline?: { time: string; action: string }[]) => void;
 }> = ({ suggestion, budgetMax, onNavigateArticle, onSaveActivity }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const [expanded, setExpanded]       = useState(false);
   const [articles,  setArticles]      = useState<Article[]>([]);
   const [products,  setProducts]      = useState<AffiliateProduct[]>([]);
@@ -337,7 +355,7 @@ const DateSuggestionCard: React.FC<{
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={20}
-          color={COLORS.textSecondary}
+          color={colors.textSecondary}
         />
       </TouchableOpacity>
 
@@ -348,7 +366,7 @@ const DateSuggestionCard: React.FC<{
         </Text>
         {suggestion.estimatedBudget ? (
           <View style={styles.budgetBadge}>
-            <Ionicons name="wallet-outline" size={11} color={COLORS.secondary} />
+            <Ionicons name="wallet-outline" size={11} color={colors.secondary} />
             <Text style={styles.budgetBadgeText}>{suggestion.estimatedBudget}</Text>
           </View>
         ) : null}
@@ -361,7 +379,7 @@ const DateSuggestionCard: React.FC<{
           onPress={() => onSaveActivity(suggestion.title, suggestion.description, suggestion.estimatedBudget, suggestion.emoji, suggestion.whyFit, suggestion.timeline)}
           activeOpacity={0.8}
         >
-          <Ionicons name="bookmark-outline" size={16} color={COLORS.secondary} />
+          <Ionicons name="bookmark-outline" size={16} color={colors.secondary} />
           <Text style={styles.saveActivityText}>Chọn kế hoạch này</Text>
         </TouchableOpacity>
       )}
@@ -375,7 +393,7 @@ const DateSuggestionCard: React.FC<{
           {suggestion.timeline.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionLabelRow}>
-                <Text style={styles.sectionIcon}>📍</Text>
+                <Ionicons name="map-outline" size={16} color={colors.textSecondary} style={styles.sectionIcon} />
                 <Text style={styles.sectionLabel}>Kế hoạch tham khảo</Text>
               </View>
               {suggestion.timeline.map((step, idx) => (
@@ -400,7 +418,7 @@ const DateSuggestionCard: React.FC<{
           {/* Loading inner */}
           {loadingInner && (
             <View style={styles.innerLoading}>
-              <Ionicons name="sync-outline" size={16} color={COLORS.textLight} />
+              <Ionicons name="sync-outline" size={16} color={colors.textLight} />
               <Text style={styles.innerLoadingText}>Đang tải bài viết & gợi ý...</Text>
             </View>
           )}
@@ -409,7 +427,7 @@ const DateSuggestionCard: React.FC<{
           {!loadingInner && articles.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionLabelRow}>
-                <Ionicons name="book-outline" size={20} color="#FF6B6B" />
+                <Ionicons name="book-outline" size={20} color={colors.primary} />
                 <Text style={styles.sectionLabel}>Kinh nghiệm & trải nghiệm</Text>
               </View>
               {articles.map((article) => (
@@ -426,7 +444,7 @@ const DateSuggestionCard: React.FC<{
           {!loadingInner && products.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionLabelRow}>
-                <Ionicons name="bag-handle-outline" size={16} color={COLORS.textSecondary} style={styles.sectionIcon} />
+                <Ionicons name="bag-handle-outline" size={16} color={colors.textSecondary} style={styles.sectionIcon} />
                 <Text style={styles.sectionLabel}>Có thể bạn cần</Text>
               </View>
               {products.map((product) => (
@@ -444,6 +462,9 @@ const DateSuggestionCard: React.FC<{
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 const ActivitySuggestionsScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const navigation = useNavigation<any>();
   const route      = useRoute<ActivitySuggestionsRouteProp>();
   const insets     = useSafeAreaInsets();
@@ -519,13 +540,13 @@ const ActivitySuggestionsScreen: React.FC = () => {
     <View style={styles.container}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <LinearGradient
-        colors={[COLORS.secondary, '#43C59E']}
+        colors={[colors.secondary, '#43C59E']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={26} color={COLORS.white} />
+          <Ionicons name="chevron-back" size={26} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Lên kế hoạch hẹn hò</Text>
@@ -546,7 +567,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
         {/* ── Input Card ───────────────────────────────────────────────────── */}
         <View style={styles.inputCard}>
           <View style={styles.inputCardTitle}>
-            <Ionicons name="map-outline" size={18} color={COLORS.primary} />
+            <Ionicons name="map-outline" size={18} color={colors.primary} />
             <Text style={styles.inputCardLabel}>Bạn muốn làm gì?</Text>
           </View>
 
@@ -577,7 +598,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
               multiline
               numberOfLines={2}
               placeholder="VD: ăn tối lãng mạn, dạo phố ngắm cảnh..."
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={colors.textLight}
               textAlignVertical="top"
             />
             {aiPrompt.length > 0 && (
@@ -585,7 +606,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
                 style={styles.clearBtn}
                 onPress={() => setAiPrompt(defaultPrompt)}
               >
-                <Ionicons name="refresh-outline" size={16} color={COLORS.textSecondary} />
+                <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -621,7 +642,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
           style={styles.generateBtnWrap}
         >
           <LinearGradient
-            colors={isLoading ? ['#C8C8C8', '#B0B0B0'] : [COLORS.secondary, '#43C59E']}
+            colors={isLoading ? ['#C8C8C8', '#B0B0B0'] : [colors.secondary, '#43C59E']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.generateBtn}
@@ -630,7 +651,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
               <Text style={styles.generateBtnText}>AI đang lên kế hoạch...</Text>
             ) : (
               <>
-                <Ionicons name="sparkles" size={20} color={COLORS.white} />
+                <Ionicons name="sparkles" size={20} color={colors.white} />
                 <Text style={styles.generateBtnText}>Gợi ý kế hoạch hẹn hò</Text>
               </>
             )}
@@ -650,7 +671,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
         {!isLoading && suggestions.length > 0 && (
           <>
             <View style={styles.resultsHeader}>
-              <Ionicons name="sparkles" size={15} color={COLORS.secondary} />
+              <Ionicons name="sparkles" size={15} color={colors.secondary} />
               <Text style={styles.resultsHeaderText}>
                 {suggestions.length} gợi ý kế hoạch — nhấn để xem chi tiết
               </Text>
@@ -672,11 +693,11 @@ const ActivitySuggestionsScreen: React.FC = () => {
         {/* ── Empty state ───────────────────────────────────────────────────── */}
         {!isLoading && suggestions.length === 0 && (
           <View style={styles.emptyState}>
-            <Ionicons name="map-outline" size={48} color={COLORS.border} style={styles.emptyIcon} />
+            <Ionicons name="map-outline" size={48} color={colors.border} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>Lên kế hoạch cùng AI</Text>
             <Text style={styles.emptyText}>
               Chọn loại hoạt động, ngân sách{'\n'}rồi nhấn{' '}
-              <Text style={{ fontWeight: '700', color: COLORS.secondary }}>
+              <Text style={{ fontFamily: 'Manrope_700Bold', color: colors.secondary }}>
                 "Gợi ý kế hoạch hẹn hò"
               </Text>
             </Text>
@@ -692,8 +713,8 @@ const ActivitySuggestionsScreen: React.FC = () => {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const useStyles = makeStyles((colors) => ({
+  container: { flex: 1, backgroundColor: colors.background },
 
   // Header
   header: {
@@ -702,7 +723,7 @@ const styles = StyleSheet.create({
   },
   backButton:   { padding: 6, marginRight: 4 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle:  { fontSize: 18, fontWeight: '800', color: COLORS.white },
+  headerTitle:  { fontSize: 18, fontFamily: 'Manrope_800ExtraBold', color: colors.white },
   headerSub:    { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3 },
 
   // Scroll
@@ -711,26 +732,26 @@ const styles = StyleSheet.create({
 
   // Input Card
   inputCard: {
-    backgroundColor: COLORS.white, borderRadius: 20,
+    backgroundColor: colors.surface, borderRadius: 20,
     padding: 16, marginBottom: 14,
-    borderWidth: 1, borderColor: `${COLORS.secondary}20`,
-    shadowColor: COLORS.secondary,
+    borderWidth: 1, borderColor: `${colors.secondary}20`,
+    shadowColor: colors.secondary,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08, shadowRadius: 10, elevation: 3,
   },
   inputCardTitle: {
     flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14,
   },
-  inputCardLabel: { flex: 1, fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  inputCardLabel: { flex: 1, fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
 
   // Free text input
   inputWrap: {
-    backgroundColor: COLORS.background, borderRadius: 12,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: colors.background, borderRadius: 12,
+    borderWidth: 1, borderColor: colors.border,
     paddingHorizontal: 12, paddingTop: 10, paddingBottom: 8, marginBottom: 12,
   },
   aiInput: {
-    fontSize: 14, color: COLORS.textPrimary, minHeight: 52, lineHeight: 20,
+    fontSize: 14, color: colors.textPrimary, minHeight: 52, lineHeight: 20,
   },
   clearBtn: { alignSelf: 'flex-end', padding: 2, marginTop: 2 },
 
@@ -739,27 +760,27 @@ const styles = StyleSheet.create({
   ideaChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border,
   },
-  ideaChipText: { fontSize: 12, color: COLORS.textSecondary },
+  ideaChipText: { fontSize: 12, color: colors.textSecondary },
 
   // Divider
-  divider: { height: 1, backgroundColor: COLORS.borderLight, marginVertical: 14 },
+  divider: { height: 1, backgroundColor: colors.borderLight, marginVertical: 14 },
 
   // Budget
   budgetLabel: {
-    fontSize: 12, fontWeight: '600', color: COLORS.textSecondary,
+    fontSize: 12, fontFamily: 'Manrope_600SemiBold', color: colors.textSecondary,
     textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10,
   },
   budgetRow: { gap: 8, paddingBottom: 2 },
   budgetChip: {
     paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: COLORS.background,
-    borderWidth: 1.5, borderColor: COLORS.border,
+    borderRadius: 20, backgroundColor: colors.background,
+    borderWidth: 1.5, borderColor: colors.border,
   },
-  budgetChipActive:     { backgroundColor: COLORS.secondary, borderColor: COLORS.secondary },
-  budgetChipText:       { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary },
-  budgetChipTextActive: { color: COLORS.white, fontWeight: '600' },
+  budgetChipActive:     { backgroundColor: colors.secondary, borderColor: colors.secondary },
+  budgetChipText:       { fontSize: 13, fontFamily: 'Manrope_500Medium', color: colors.textSecondary },
+  budgetChipTextActive: { color: colors.white, fontFamily: 'Manrope_600SemiBold'},
 
   // Generate button
   generateBtnWrap: { marginBottom: 14, borderRadius: 16, overflow: 'hidden' },
@@ -767,20 +788,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 10, paddingVertical: 17,
   },
-  generateBtnText: { fontSize: 16, fontWeight: '800', color: COLORS.white },
+  generateBtnText: { fontSize: 16, fontFamily: 'Manrope_800ExtraBold', color: colors.white },
 
   // Results header
   resultsHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginBottom: 12, paddingHorizontal: 2,
   },
-  resultsHeaderText: { fontSize: 13, color: COLORS.textSecondary, fontWeight: '500', flex: 1 },
+  resultsHeaderText: { fontSize: 13, color: colors.textSecondary, fontFamily: 'Manrope_500Medium', flex: 1 },
 
   // Suggestion card
   suggestionCard: {
-    backgroundColor: COLORS.white, borderRadius: 18,
+    backgroundColor: colors.surface, borderRadius: 18,
     marginBottom: 12, overflow: 'hidden',
-    borderWidth: 1, borderColor: COLORS.borderLight,
+    borderWidth: 1, borderColor: colors.borderLight,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
@@ -790,44 +811,44 @@ const styles = StyleSheet.create({
   },
   suggestionEmojiWrap: {
     width: 46, height: 46, borderRadius: 23,
-    backgroundColor: `${COLORS.secondary}15`,
+    backgroundColor: `${colors.secondary}15`,
     alignItems: 'center', justifyContent: 'center',
   },
   suggestionEmoji:      { fontSize: 22 },
   suggestionHeaderText: { flex: 1 },
-  suggestionTitle:      { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 3 },
-  suggestionWhyFit:     { fontSize: 12, color: COLORS.secondary, fontWeight: '500' },
+  suggestionTitle:      { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary, marginBottom: 3 },
+  suggestionWhyFit:     { fontSize: 12, color: colors.secondary, fontFamily: 'Manrope_500Medium'},
 
   // Description
   descriptionRow: { paddingHorizontal: 16, paddingBottom: 14, gap: 8 },
-  descriptionText: { fontSize: 13, lineHeight: 19, color: COLORS.textSecondary },
+  descriptionText: { fontSize: 13, lineHeight: 19, color: colors.textSecondary },
   budgetBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-    backgroundColor: `${COLORS.secondary}10`, borderRadius: 10,
+    backgroundColor: `${colors.secondary}10`, borderRadius: 10,
     paddingHorizontal: 8, paddingVertical: 3,
   },
-  budgetBadgeText: { fontSize: 11, color: COLORS.secondary, fontWeight: '600' },
+  budgetBadgeText: { fontSize: 11, color: colors.secondary, fontFamily: 'Manrope_600SemiBold'},
 
   // Section inside expanded
   section:      { paddingHorizontal: 16, paddingBottom: 12 },
   sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
   sectionIcon:  { fontSize: 14 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
+  sectionLabel: { fontSize: 13, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
 
   // Timeline
   timelineRow: { flexDirection: 'row', gap: 12, marginBottom: 0 },
   timelineLeft: { alignItems: 'center', width: 46 },
-  timelineTime: { fontSize: 12, fontWeight: '700', color: COLORS.secondary, textAlign: 'center' },
-  timelineLine: { width: 1.5, flex: 1, backgroundColor: `${COLORS.secondary}30`, marginTop: 3, minHeight: 18 },
+  timelineTime: { fontSize: 12, fontFamily: 'Manrope_700Bold', color: colors.secondary, textAlign: 'center' },
+  timelineLine: { width: 1.5, flex: 1, backgroundColor: `${colors.secondary}30`, marginTop: 3, minHeight: 18 },
   timelineAction: {
-    flex: 1, fontSize: 13, lineHeight: 18, color: COLORS.textPrimary,
+    flex: 1, fontSize: 13, lineHeight: 18, color: colors.textPrimary,
     paddingBottom: 16,
   },
 
   // Preparation
   prepGroup: { marginBottom: 12 },
   prepGroupLabel: {
-    fontSize: 12, fontWeight: '700', color: COLORS.textSecondary,
+    fontSize: 12, fontFamily: 'Manrope_700Bold', color: colors.textSecondary,
     marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4,
   },
   prepRow: {
@@ -835,12 +856,12 @@ const styles = StyleSheet.create({
   },
   prepDot: {
     width: 5, height: 5, borderRadius: 3,
-    backgroundColor: COLORS.secondary, marginTop: 6,
+    backgroundColor: colors.secondary, marginTop: 6,
   },
-  prepText: { flex: 1, fontSize: 13, lineHeight: 18, color: COLORS.textSecondary },
+  prepText: { flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary },
   prepInfoRow: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: `${COLORS.secondary}08`, borderRadius: 10,
+    backgroundColor: `${colors.secondary}08`, borderRadius: 10,
     padding: 10, marginBottom: 10,
   },
   prepInfoIcon: { fontSize: 16, marginTop: 1 },
@@ -850,64 +871,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingBottom: 14,
   },
-  innerLoadingText: { fontSize: 12, color: COLORS.textLight },
+  innerLoadingText: { fontSize: 12, color: colors.textLight },
 
   // Article mini card
   articleCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: COLORS.background, borderRadius: 12,
+    backgroundColor: colors.background, borderRadius: 12,
     padding: 10, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.borderLight,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   articleImage: { width: 60, height: 50, borderRadius: 8 },
   articleInfo:  { flex: 1 },
-  articleTitle: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 18 },
-  articleMeta:  { fontSize: 11, color: COLORS.textLight, marginTop: 3 },
+  articleTitle: { fontSize: 13, fontFamily: 'Manrope_600SemiBold', color: colors.textPrimary, lineHeight: 18 },
+  articleMeta:  { fontSize: 11, color: colors.textLight, marginTop: 3 },
 
   // Product mini card
   productCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: COLORS.background, borderRadius: 12,
+    backgroundColor: colors.background, borderRadius: 12,
     padding: 10, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.borderLight,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   productImage: { width: 54, height: 54, borderRadius: 8 },
   productInfo:  { flex: 1 },
-  productName:  { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, lineHeight: 18 },
-  productPrice: { fontSize: 12, color: COLORS.secondary, fontWeight: '700', marginTop: 3 },
+  productName:  { fontSize: 13, fontFamily: 'Manrope_600SemiBold', color: colors.textPrimary, lineHeight: 18 },
+  productPrice: { fontSize: 12, color: colors.secondary, fontFamily: 'Manrope_700Bold', marginTop: 3 },
   productBtn: {
-    backgroundColor: COLORS.secondary, borderRadius: 8,
+    backgroundColor: colors.secondary, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 5,
   },
-  productBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.white },
+  productBtnText: { fontSize: 12, fontFamily: 'Manrope_700Bold', color: colors.white },
 
   // Save activity button
   saveActivityBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     marginHorizontal: 16, marginBottom: 16, marginTop: 4,
     paddingVertical: 10, borderRadius: 12,
-    backgroundColor: `${COLORS.secondary}12`,
-    borderWidth: 1, borderColor: `${COLORS.secondary}30`,
+    backgroundColor: `${colors.secondary}12`,
+    borderWidth: 1, borderColor: `${colors.secondary}30`,
   },
   saveActivityText: {
-    fontSize: 13, fontWeight: '600', color: COLORS.secondary,
+    fontSize: 13, fontFamily: 'Manrope_600SemiBold', color: colors.secondary,
   },
 
   // Skeleton
   skeletonCard: {
-    backgroundColor: COLORS.white, borderRadius: 18,
+    backgroundColor: colors.surface, borderRadius: 18,
     padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.borderLight,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   skeletonHeaderRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  skeletonEmoji: { width: 46, height: 46, borderRadius: 23, backgroundColor: COLORS.borderLight },
-  skeletonLine:  { height: 12, backgroundColor: COLORS.borderLight, borderRadius: 6 },
+  skeletonEmoji: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.borderLight },
+  skeletonLine:  { height: 12, backgroundColor: colors.borderLight, borderRadius: 6 },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingVertical: 56 },
   emptyIcon:  { fontSize: 52, marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
-  emptyText:  { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 28, lineHeight: 22 },
-});
-
-export default ActivitySuggestionsScreen;
+  emptyTitle: { fontSize: 18, fontFamily: 'Manrope_700Bold', color: colors.textPrimary, marginBottom: 8 },
+  emptyText:  { fontSize: 14, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 28, lineHeight: 22 },
+}));export default ActivitySuggestionsScreen;

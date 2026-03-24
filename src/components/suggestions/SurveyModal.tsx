@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "@themes/colors";
 import { filterSuggestions, Suggestion } from "../../data/suggestions";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 interface SurveyQuestion {
   id: string;
@@ -56,6 +58,9 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   onClose,
   onComplete,
 }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const [surveyStep, setSurveyStep] = useState(0);
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, any>>({});
@@ -485,7 +490,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
               <Ionicons
                 name="arrow-back"
                 size={22}
-                color={COLORS.textPrimary}
+                color={colors.textPrimary}
               />
             </TouchableOpacity>
           ) : (
@@ -495,7 +500,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
             Câu {surveyStep + 1}/{currentFilteredQuestions.length}
           </Text>
           <TouchableOpacity onPress={onClose} style={styles.headerBtn}>
-            <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -529,7 +534,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
                       "gift-outline") as any
                   }
                   size={26}
-                  color={COLORS.primary}
+                  color={colors.primary}
                 />
               </View>
 
@@ -621,7 +626,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
                               <Ionicons
                                 name="checkmark"
                                 size={13}
-                                color="#fff"
+                                color={colors.white}
                               />
                             )}
                           </View>
@@ -648,7 +653,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
                   placeholder={
                     currentQuestion.placeholder || "Nhập câu trả lời..."
                   }
-                  placeholderTextColor={COLORS.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={currentTextInput}
                   onChangeText={setCurrentTextInput}
                   multiline
@@ -694,7 +699,7 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
                         : "sparkles"
                     }
                     size={18}
-                    color={isNextDisabled ? COLORS.textSecondary : "#fff"}
+                    color={isNextDisabled ? colors.textSecondary : colors.white }
                   />
                 </TouchableOpacity>
               </View>
@@ -706,10 +711,10 @@ const SurveyModal: React.FC<SurveyModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   sheet: {
     flex: 1,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
   },
   sheetHeader: {
     flexDirection: "row",
@@ -722,12 +727,12 @@ const styles = StyleSheet.create({
   headerBtnPlaceholder: { width: 34 },
   headerProgress: {
     fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   progressTrack: {
     height: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginHorizontal: 16,
     borderRadius: 2,
     marginBottom: 4,
@@ -735,7 +740,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     borderRadius: 2,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   scrollArea: { flex: 1 },
   scrollContent: {
@@ -747,28 +752,28 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 14,
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: `${colors.primary}15`,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
   },
   questionText: {
     fontSize: 19,
-    fontWeight: "700",
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     lineHeight: 27,
     marginBottom: 8,
   },
   questionHint: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: 19,
     marginBottom: 20,
   },
   selectionHint: {
     fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
     marginBottom: 12,
   },
   optionsWrap: { gap: 10 },
@@ -776,15 +781,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: COLORS.surface,
+    backgroundColor: colors.surface,
     borderRadius: 14,
     padding: 15,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
   optionBtnSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: `${COLORS.primary}0D`,
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}0D`,
   },
   optionBtnDisabled: { opacity: 0.45 },
   optionRadio: {
@@ -792,50 +797,50 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 1,
     flexShrink: 0,
   },
-  optionRadioSelected: { borderColor: COLORS.primary },
+  optionRadioSelected: { borderColor: colors.primary },
   optionRadioDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   checkBox: {
     width: 20,
     height: 20,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 1,
     flexShrink: 0,
   },
   checkBoxSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   optionText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     lineHeight: 20,
   },
-  optionTextSelected: { color: COLORS.primary, fontWeight: "600" },
-  optionTextDisabled: { color: COLORS.textLight },
+  optionTextSelected: { color: colors.primary, fontFamily: 'Manrope_600SemiBold'},
+  optionTextDisabled: { color: colors.textLight },
   textInput: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     borderRadius: 14,
     padding: 14,
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     minHeight: 100,
   },
   footer: {
@@ -844,21 +849,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: colors.border,
   },
   skipBtn: {
     paddingVertical: 15,
     paddingHorizontal: 18,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   skipBtnText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   nextBtn: {
     flex: 1,
@@ -866,13 +871,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 15,
   },
-  nextBtnDisabled: { backgroundColor: COLORS.border },
-  nextBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
-  nextBtnTextDisabled: { color: COLORS.textSecondary },
-});
-
-export default React.memo(SurveyModal);
+  nextBtnDisabled: { backgroundColor: colors.border },
+  nextBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
+  nextBtnTextDisabled: { color: colors.textSecondary },
+}));export default React.memo(SurveyModal);

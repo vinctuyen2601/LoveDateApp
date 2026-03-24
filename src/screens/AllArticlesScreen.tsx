@@ -22,18 +22,20 @@ import { trackArticleView, fetchArticlesPaginated } from '../services/articleSer
 import { useInfiniteList } from '../hooks/useInfiniteList';
 import { useMasterData } from '../contexts/MasterDataContext';
 import PressableCard from '@components/atoms/PressableCard';
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const AI_TOPIC_CHIPS = [
-  '💝 Giữ lửa tình yêu',
-  '🎁 Ý tưởng tặng quà',
-  '💬 Giao tiếp với người yêu',
-  '🌟 Hẹn hò lãng mạn',
-  '⭐ Chòm sao & tình yêu',
-  '🧠 Hiểu tính cách bạn đời',
-  '😢 Hàn gắn sau cãi nhau',
-  '💕 Lời nói ngọt ngào',
+  'Giữ lửa tình yêu',
+  'Ý tưởng tặng quà',
+  'Giao tiếp với người yêu',
+  'Hẹn hò lãng mạn',
+  'Chòm sao & tình yêu',
+  'Hiểu tính cách bạn đời',
+  'Hàn gắn sau cãi nhau',
+  'Lời nói ngọt ngào',
 ];
 
 // ─── Sort ─────────────────────────────────────────────────────────────────────
@@ -58,7 +60,7 @@ const SORT_PARAMS: Record<SortKey, { sortBy: 'created_at' | 'views' | 'likes'; s
 // ─── Category config ──────────────────────────────────────────────────────────
 
 const STATIC_CATEGORIES = [
-  { id: 'all',           name: 'Tất cả',        icon: 'apps',         color: COLORS.primary },
+  { id: 'all',           name: 'Tất cả',        icon: 'apps',         color: '#FF6B9D' },
   { id: 'gifts',         name: 'Quà tặng',      icon: 'gift',         color: '#FF6B6B' },
   { id: 'dates',         name: 'Hẹn hò',        icon: 'heart',        color: '#E91E63' },
   { id: 'communication', name: 'Giao tiếp',     icon: 'chatbubbles',  color: '#2196F3' },
@@ -73,56 +75,63 @@ function formatCount(n: number): string {
 
 // ─── Hero card (featured, full-width) ─────────────────────────────────────────
 
-const HeroCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => (
-  <PressableCard style={styles.heroCard} onPress={onPress}>
-    {article.imageUrl ? (
-      <Image source={{ uri: article.imageUrl }} style={styles.heroImage} resizeMode="cover" />
-    ) : (
-      <View style={[styles.heroImage, { backgroundColor: article.color, alignItems: 'center', justifyContent: 'center' }]}>
-        <Ionicons name={article.icon as any} size={56} color="rgba(255,255,255,0.4)" />
-      </View>
-    )}
-
-    {/* Gradient overlay */}
-    <View style={styles.heroOverlay}>
-      <View style={styles.heroBadgeRow}>
-        <View style={[styles.heroCategoryBadge, { backgroundColor: article.color }]}>
-          <Ionicons name={article.icon as any} size={11} color={COLORS.white} />
-          <Text style={styles.heroCategoryText}>
-            {STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? article.category}
-          </Text>
+const HeroCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
+  const styles = useStyles();
+  const colors = useColors();
+  return (
+    <PressableCard style={styles.heroCard} onPress={onPress}>
+      {article.imageUrl ? (
+        <Image source={{ uri: article.imageUrl }} style={styles.heroImage} resizeMode="cover" />
+      ) : (
+        <View style={[styles.heroImage, { backgroundColor: article.color, alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name={article.icon as any} size={56} color="rgba(255,255,255,0.4)" />
         </View>
-        {article.isFeatured && (
-          <View style={styles.featuredBadge}>
-            <Ionicons name="star" size={10} color="#FFB300" />
-            <Text style={styles.featuredText}>Nổi bật</Text>
+      )}
+
+      {/* Gradient overlay */}
+      <View style={styles.heroOverlay}>
+        <View style={styles.heroBadgeRow}>
+          <View style={[styles.heroCategoryBadge, { backgroundColor: article.color }]}>
+            <Ionicons name={article.icon as any} size={11} color={colors.white} />
+            <Text style={styles.heroCategoryText}>
+              {STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? article.category}
+            </Text>
           </View>
-        )}
-      </View>
+          {article.isFeatured && (
+            <View style={styles.featuredBadge}>
+              <Ionicons name="star" size={10} color="#FFB300" />
+              <Text style={styles.featuredText}>Nổi bật</Text>
+            </View>
+          )}
+        </View>
 
-      <Text style={styles.heroTitle} numberOfLines={2}>{article.title}</Text>
+        <Text style={styles.heroTitle} numberOfLines={2}>{article.title}</Text>
 
-      <View style={styles.heroMeta}>
-        <View style={styles.heroMetaItem}>
-          <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.heroMetaText}>{article.readTime ?? 5} phút đọc</Text>
-        </View>
-        <View style={styles.heroMetaItem}>
-          <Ionicons name="eye-outline" size={13} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.heroMetaText}>{formatCount(article.views ?? 0)}</Text>
-        </View>
-        <View style={styles.heroMetaItem}>
-          <Ionicons name="heart-outline" size={13} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.heroMetaText}>{formatCount(article.likes ?? 0)}</Text>
+        <View style={styles.heroMeta}>
+          <View style={styles.heroMetaItem}>
+            <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.heroMetaText}>{article.readTime ?? 5} phút đọc</Text>
+          </View>
+          <View style={styles.heroMetaItem}>
+            <Ionicons name="eye-outline" size={13} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.heroMetaText}>{formatCount(article.views ?? 0)}</Text>
+          </View>
+          <View style={styles.heroMetaItem}>
+            <Ionicons name="heart-outline" size={13} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.heroMetaText}>{formatCount(article.likes ?? 0)}</Text>
+          </View>
         </View>
       </View>
-    </View>
-  </PressableCard>
-);
+    </PressableCard>
+  );
+};
 
 // ─── Editorial list card ───────────────────────────────────────────────────────
 
 const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const catInfo = STATIC_CATEGORIES.find((c) => c.id === article.category);
 
   return (
@@ -144,7 +153,7 @@ const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
             <Text style={styles.listCatText}>{catInfo?.name ?? article.category}</Text>
           </View>
           <View style={styles.listReadTime}>
-            <Ionicons name="time-outline" size={11} color={COLORS.textSecondary} />
+            <Ionicons name="time-outline" size={11} color={colors.textSecondary} />
             <Text style={styles.listReadTimeText}>{article.readTime ?? 5} phút</Text>
           </View>
         </View>
@@ -155,7 +164,7 @@ const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
         {/* Stats */}
         <View style={styles.listStats}>
           <View style={styles.listStat}>
-            <Ionicons name="eye-outline" size={12} color={COLORS.textSecondary} />
+            <Ionicons name="eye-outline" size={12} color={colors.textSecondary} />
             <Text style={styles.listStatText}>{formatCount(article.views ?? 0)}</Text>
           </View>
           <View style={styles.listStat}>
@@ -166,7 +175,7 @@ const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
       </View>
 
       {/* Right arrow */}
-      <Ionicons name="chevron-forward" size={16} color={COLORS.border} style={styles.listArrow} />
+      <Ionicons name="chevron-forward" size={16} color={colors.border} style={styles.listArrow} />
     </PressableCard>
   );
 };
@@ -179,6 +188,9 @@ type ListItem =
   | { type: 'count'; count: number; activeFilters: number };
 
 const AllArticlesScreen: React.FC = () => {
+  const styles = useStyles();
+  const colors = useColors();
+
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
@@ -315,7 +327,7 @@ const AllArticlesScreen: React.FC = () => {
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Cẩm nang yêu thương</Text>
@@ -336,14 +348,14 @@ const AllArticlesScreen: React.FC = () => {
           style={[styles.modeBtn, !aiMode && styles.modeBtnActive]}
           onPress={() => setAiMode(false)}
         >
-          <Ionicons name="list-outline" size={14} color={!aiMode ? COLORS.white : COLORS.textSecondary} />
+          <Ionicons name="list-outline" size={14} color={!aiMode ? colors.white : colors.textSecondary} />
           <Text style={[styles.modeBtnText, !aiMode && styles.modeBtnTextActive]}>Duyệt bài viết</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.modeBtn, aiMode && styles.modeBtnAiActive]}
           onPress={() => setAiMode(true)}
         >
-          <Ionicons name="sparkles" size={14} color={aiMode ? COLORS.white : COLORS.primary} />
+          <Ionicons name="sparkles" size={14} color={aiMode ? colors.white : colors.primary} />
           <Text style={[styles.modeBtnText, aiMode && styles.modeBtnAiTextActive]}>AI Gợi ý</Text>
         </TouchableOpacity>
       </View>
@@ -353,18 +365,18 @@ const AllArticlesScreen: React.FC = () => {
         <>
           {/* Search + Sort row */}
           <View style={styles.searchRow}>
-            <Ionicons name="search-outline" size={17} color={COLORS.textSecondary} />
+            <Ionicons name="search-outline" size={17} color={colors.textSecondary} />
             <TextInput
               style={styles.searchInput}
               placeholder="Tìm bài viết, chủ đề..."
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
               clearButtonMode="while-editing"
             />
             <TouchableOpacity style={styles.sortPill} onPress={() => setShowSort(true)}>
-              <Ionicons name="swap-vertical-outline" size={14} color={COLORS.primary} />
+              <Ionicons name="swap-vertical-outline" size={14} color={colors.primary} />
               <Text style={styles.sortPillText} numberOfLines={1}>
                 {sort === 'popular' ? 'Sắp xếp' : activeSortLabel}
               </Text>
@@ -382,8 +394,8 @@ const AllArticlesScreen: React.FC = () => {
                     style={[styles.catChip, active && { backgroundColor: cat.color, borderColor: cat.color }]}
                     onPress={() => setCategoryId(cat.id)}
                   >
-                    <Ionicons name={cat.icon as any} size={13} color={active ? COLORS.white : cat.color} />
-                    <Text style={[styles.catChipText, { color: active ? COLORS.white : cat.color }]}>
+                    <Ionicons name={cat.icon as any} size={13} color={active ? colors.white : cat.color} />
+                    <Text style={[styles.catChipText, { color: active ? colors.white : cat.color }]}>
                       {cat.name}
                     </Text>
                   </TouchableOpacity>
@@ -394,12 +406,12 @@ const AllArticlesScreen: React.FC = () => {
 
           {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.stateText}>Đang tải bài viết...</Text>
           </View>
         ) : error ? (
           <View style={styles.center}>
-            <Ionicons name="wifi-outline" size={44} color={COLORS.textSecondary} />
+            <Ionicons name="wifi-outline" size={44} color={colors.textSecondary} />
             <Text style={styles.stateText}>{error}</Text>
             <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
               <Text style={styles.retryBtnText}>Thử lại</Text>
@@ -407,7 +419,7 @@ const AllArticlesScreen: React.FC = () => {
           </View>
         ) : items.length === 0 ? (
           <View style={styles.center}>
-            <Ionicons name="document-text-outline" size={44} color={COLORS.textSecondary} />
+            <Ionicons name="document-text-outline" size={44} color={colors.textSecondary} />
             <Text style={styles.stateText}>
               {activeFilterCount > 0 ? 'Không tìm thấy bài viết phù hợp' : 'Chưa có bài viết nào'}
             </Text>
@@ -432,7 +444,7 @@ const AllArticlesScreen: React.FC = () => {
             ListFooterComponent={
               loadingMore ? (
                 <View style={styles.footerLoader}>
-                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 </View>
               ) : !hasMore && items.length > 0 ? (
                 <Text style={styles.footerEnd}>— Hết danh sách —</Text>
@@ -476,7 +488,7 @@ const AllArticlesScreen: React.FC = () => {
                     multiline
                     numberOfLines={2}
                     placeholder="VD: cách tặng quà bạn gái, hẹn hò lần đầu, giao tiếp trong tình yêu..."
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={colors.textLight}
                     textAlignVertical="top"
                   />
                   {aiQuery.length > 0 && (
@@ -484,7 +496,7 @@ const AllArticlesScreen: React.FC = () => {
                       style={styles.aiClearBtn}
                       onPress={() => { setAiQuery(''); setAiSearched(false); }}
                     >
-                      <Ionicons name="close-circle-outline" size={16} color={COLORS.textSecondary} />
+                      <Ionicons name="close-circle-outline" size={16} color={colors.textSecondary} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -512,7 +524,7 @@ const AllArticlesScreen: React.FC = () => {
                   disabled={!aiQuery.trim()}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name="sparkles" size={18} color={COLORS.white} />
+                  <Ionicons name="sparkles" size={18} color={colors.white} />
                   <Text style={styles.aiSearchBtnText}>Tìm bài viết phù hợp</Text>
                 </TouchableOpacity>
               </View>
@@ -539,7 +551,7 @@ const AllArticlesScreen: React.FC = () => {
                   </>
                 ) : (
                   <View style={styles.aiEmpty}>
-                    <Text style={styles.aiEmptyIcon}>📭</Text>
+                    <Ionicons name="search-outline" size={40} color={colors.textLight} />
                     <Text style={styles.aiEmptyTitle}>Không tìm thấy bài viết</Text>
                     <Text style={styles.aiEmptyText}>Thử từ khóa khác hoặc chọn chủ đề gợi ý bên trên</Text>
                   </View>
@@ -555,7 +567,7 @@ const AllArticlesScreen: React.FC = () => {
           ListFooterComponent={
             aiLoadingMore ? (
               <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
+                <ActivityIndicator size="small" color={colors.primary} />
               </View>
             ) : !aiHasMore && aiItems.length > 0 && (!aiSearched || !aiQuery.trim()) ? (
               <Text style={styles.footerEnd}>— Hết danh sách —</Text>
@@ -579,13 +591,13 @@ const AllArticlesScreen: React.FC = () => {
                 <Ionicons
                   name={option.icon as any}
                   size={20}
-                  color={sort === option.key ? COLORS.primary : COLORS.textSecondary}
+                  color={sort === option.key ? colors.primary : colors.textSecondary}
                 />
                 <Text style={[styles.sheetRowText, sort === option.key && styles.sheetRowActive]}>
                   {option.label}
                 </Text>
                 {sort === option.key && (
-                  <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                  <Ionicons name="checkmark" size={18} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -598,10 +610,10 @@ const AllArticlesScreen: React.FC = () => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
 
   // Header — warm gradient feel
@@ -612,7 +624,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 14,
     paddingHorizontal: 12,
-    backgroundColor: '#C62A47',
+    backgroundColor: colors.error,
   },
   iconBtn: {
     width: 40,
@@ -626,8 +638,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   headerSub: {
     fontSize: 11,
@@ -644,20 +656,20 @@ const styles = StyleSheet.create({
   },
   clearBadgeText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
 
   // Search + sort row
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 12,
     marginVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === 'ios' ? 10 : 4,
     gap: 8,
@@ -665,7 +677,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
   },
   sortPill: {
     flexDirection: 'row',
@@ -674,23 +686,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
-    backgroundColor: COLORS.primary + '12',
+    backgroundColor: colors.primary + '12',
     borderWidth: 1,
-    borderColor: COLORS.primary + '30',
+    borderColor: colors.primary + '30',
     maxWidth: 100,
   },
   sortPillText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.primary,
     flexShrink: 1,
   },
 
   // Category chips
   categoryBar: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     paddingVertical: 8,
   },
   chipsRow: {
@@ -705,12 +717,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   catChipText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // List
@@ -757,8 +769,8 @@ const styles = StyleSheet.create({
   },
   heroCategoryText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   featuredBadge: {
     flexDirection: 'row',
@@ -773,13 +785,13 @@ const styles = StyleSheet.create({
   },
   featuredText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     color: '#FFB300',
   },
   heroTitle: {
     fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
     lineHeight: 23,
     marginBottom: 10,
   },
@@ -807,26 +819,26 @@ const styles = StyleSheet.create({
   },
   resultsCount: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    color: colors.textSecondary,
+    fontFamily: 'Manrope_500Medium',
   },
   clearText: {
     fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // Editorial list card
   listCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     marginHorizontal: 12,
     marginBottom: 8,
     borderRadius: 14,
     padding: 12,
     elevation: 1,
-    shadowColor: COLORS.shadow,
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
@@ -858,8 +870,8 @@ const styles = StyleSheet.create({
   },
   listCatText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   listReadTime: {
     flexDirection: 'row',
@@ -868,12 +880,12 @@ const styles = StyleSheet.create({
   },
   listReadTimeText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   listTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textPrimary,
     lineHeight: 19,
   },
   listStats: {
@@ -887,7 +899,7 @@ const styles = StyleSheet.create({
   },
   listStatText: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
   listArrow: {
     marginLeft: 6,
@@ -904,19 +916,19 @@ const styles = StyleSheet.create({
   },
   stateText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   retryBtn: {
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
   },
   retryBtnText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.white,
   },
 
   footerLoader: {
@@ -927,7 +939,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 20,
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
   },
 
   // Sort sheet
@@ -937,7 +949,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 32,
@@ -947,14 +959,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: 16,
   },
   sheetTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
@@ -967,20 +979,20 @@ const styles = StyleSheet.create({
   },
   sheetRowText: {
     fontSize: 15,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     flex: 1,
   },
   sheetRowActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
+    color: colors.primary,
+    fontFamily: 'Manrope_700Bold',
   },
 
   // Mode toggle
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: colors.border,
     padding: 8,
     gap: 8,
     paddingHorizontal: 12,
@@ -994,27 +1006,27 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.background,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
   },
   modeBtnActive: {
-    backgroundColor: '#C62A47',
-    borderColor: '#C62A47',
+    backgroundColor: colors.error,
+    borderColor: colors.error,
   },
   modeBtnAiActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   modeBtnText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   modeBtnTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
   modeBtnAiTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
 
   // AI scroll
@@ -1023,13 +1035,13 @@ const styles = StyleSheet.create({
 
   // AI input card
   aiCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surface,
     borderRadius: 18,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: COLORS.primary + '30',
-    shadowColor: COLORS.primary,
+    borderColor: colors.primary + '30',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -1037,12 +1049,12 @@ const styles = StyleSheet.create({
   },
   aiCardTitle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   aiSparkle: { fontSize: 18 },
-  aiCardLabel: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  aiCardLabel: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
   aiInputWrap: {
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 8,
@@ -1050,7 +1062,7 @@ const styles = StyleSheet.create({
   },
   aiTextInput: {
     fontSize: 14,
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     minHeight: 52,
     lineHeight: 20,
   },
@@ -1060,22 +1072,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
-  topicChipText: { fontSize: 12, color: COLORS.textSecondary },
+  topicChipText: { fontSize: 12, color: colors.textSecondary },
   aiSearchBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 14,
   },
   aiSearchBtnDisabled: { opacity: 0.6 },
-  aiSearchBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.white },
+  aiSearchBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
 
   // AI result header
   aiResultHeader: {
@@ -1087,28 +1099,26 @@ const styles = StyleSheet.create({
   },
   aiResultCount: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
   },
   aiResultClear: {
     fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
 
   // AI empty
   aiEmpty: { alignItems: 'center', paddingVertical: 40 },
   aiEmptyIcon: { fontSize: 44, marginBottom: 12 },
-  aiEmptyTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
-  aiEmptyText: { fontSize: 13, color: COLORS.textSecondary, textAlign: 'center', paddingHorizontal: 24 },
+  aiEmptyTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold', color: colors.textPrimary, marginBottom: 6 },
+  aiEmptyText: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 24 },
 
   aiDefaultHeader: {
     fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.textSecondary,
     marginBottom: 10,
     paddingHorizontal: 2,
   },
-});
-
-export default AllArticlesScreen;
+}));export default AllArticlesScreen;

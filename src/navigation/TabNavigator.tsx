@@ -23,6 +23,8 @@ import CalendarScreen from "../screens/CalendarScreen";
 import SuggestionsScreen from "../screens/SuggestionsScreen";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import { makeStyles } from '@utils/makeStyles';
+import { useColors } from '@contexts/ThemeContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SCREEN_W = Dimensions.get("window").width;
@@ -41,6 +43,7 @@ function makePath(cx: number): string {
   const x1 = cx + HW;
   const lcp = x0 + HW * 0.55;
   const rcp = x1 - HW * 0.55;
+
   return (
     `M 0,${BUMP_H}` +
     ` L ${x0},${BUMP_H}` +
@@ -56,6 +59,7 @@ function makePath(cx: number): string {
 const AnimatedPath = Reanimated.createAnimatedComponent(Path);
 
 const HillBackground: React.FC<{ activeIndex: number }> = ({ activeIndex }) => {
+  const colors = useColors();
   const cx = useSharedValue(ROW_PAD + (activeIndex + 0.5) * TAB_W);
 
   React.useEffect(() => {
@@ -83,7 +87,7 @@ const HillBackground: React.FC<{ activeIndex: number }> = ({ activeIndex }) => {
       </Defs>
       <AnimatedPath
         animatedProps={animatedProps}
-        fill={`${COLORS.primary}16`}
+        fill={`${colors.primary}16`}
         filter="url(#shadow)"
       />
     </Svg>
@@ -97,6 +101,8 @@ const TabItem: React.FC<{
   config: TabConfig;
   onPress: () => void;
 }> = ({ isFocused, config, onPress }) => {
+  const styles = useStyles();
+  const colors = useColors();
   const anim = React.useRef(new RNAnimated.Value(isFocused ? 1 : 0)).current;
 
   React.useEffect(() => {
@@ -128,7 +134,7 @@ const TabItem: React.FC<{
           <Ionicons
             name={isFocused ? config.iconFocused : config.icon}
             size={22}
-            color={isFocused ? COLORS.primary : COLORS.textSecondary}
+            color={isFocused ? colors.primary : colors.textSecondary}
           />
         </View>
       </RNAnimated.View>
@@ -184,6 +190,7 @@ const TAB_CONFIGS: TabConfig[] = [
 
 // ─── Custom tab bar ───────────────────────────────────────────────────────────
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
 
   return (
@@ -236,10 +243,10 @@ const TabNavigator: React.FC = () => (
 export default TabNavigator;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   wrapper: {
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   tabRow: {
     position: "absolute",
@@ -256,7 +263,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     paddingBottom: 10,
-    gap: 3,
     overflow: "visible",
   },
   iconWrap: {
@@ -267,15 +273,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconWrapActive: {
-    backgroundColor: `${COLORS.white}`,
+    backgroundColor: colors.primary + '18',
   },
   label: {
     fontSize: 10,
-    fontWeight: "500",
-    color: COLORS.textSecondary,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.textSecondary,
   },
   labelActive: {
-    color: COLORS.primary,
-    fontWeight: "600",
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
   },
-});
+}));

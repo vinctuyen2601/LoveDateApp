@@ -1,5 +1,6 @@
 import React from 'react';
 import Svg, { Path, Circle, G, Rect } from 'react-native-svg';
+import { COLORS } from '@themes/colors';
 
 interface IconProps {
   size?: number;
@@ -7,7 +8,7 @@ interface IconProps {
 }
 
 // Birthday Cake Icon
-export const BirthdayIcon: React.FC<IconProps> = ({ size = 24, color = '#FF6B6B' }) => (
+export const BirthdayIcon: React.FC<IconProps> = ({ size = 24, color = COLORS.categoryBirthday }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     {/* Candle */}
     <Rect x="11" y="2" width="2" height="4" fill={color} />
@@ -38,7 +39,7 @@ export const BirthdayIcon: React.FC<IconProps> = ({ size = 24, color = '#FF6B6B'
 );
 
 // Anniversary/Heart Icon
-export const AnniversaryIcon: React.FC<IconProps> = ({ size = 24, color = '#E91E63' }) => (
+export const AnniversaryIcon: React.FC<IconProps> = ({ size = 24, color = COLORS.categoryAnniversary }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     {/* Main heart */}
     <Path
@@ -57,7 +58,7 @@ export const AnniversaryIcon: React.FC<IconProps> = ({ size = 24, color = '#E91E
 );
 
 // Holiday/Star Icon
-export const HolidayIcon: React.FC<IconProps> = ({ size = 24, color = '#FFC107' }) => (
+export const HolidayIcon: React.FC<IconProps> = ({ size = 24, color = COLORS.categoryHoliday }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     {/* Star shape */}
     <Path
@@ -76,7 +77,7 @@ export const HolidayIcon: React.FC<IconProps> = ({ size = 24, color = '#FFC107' 
 );
 
 // Other/Calendar Icon
-export const OtherIcon: React.FC<IconProps> = ({ size = 24, color = '#9C27B0' }) => (
+export const OtherIcon: React.FC<IconProps> = ({ size = 24, color = COLORS.categoryOther }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     {/* Calendar body */}
     <Rect x="3" y="4" width="18" height="18" rx="2" fill={color} />

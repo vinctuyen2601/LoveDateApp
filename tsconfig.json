@@ -43,6 +43,9 @@
       ],
       "@schemas/*": [
         "src/schemas/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
       ]
     }
   },
