@@ -78,7 +78,7 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
 
 export const THEME_LIST: ThemeInfo[] = [
   { name: "light", label: "Cam", preview: THEMES.light.primary },
-  { name: "rose", label: "Hồng", preview: THEMES.rose.primary },
+  { name: "rose", label: "Đỏ", preview: THEMES.rose.primary },
   // { name: 'ocean',  label: 'Đại dương',  preview: THEMES.ocean.primary },
   { name: "forest", label: "Xanh", preview: THEMES.forest.primary },
   { name: "dark", label: "Xanh Đêm", preview: "#1E293B" },

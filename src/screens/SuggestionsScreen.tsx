@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
   Dimensions,
 } from "react-native";
@@ -28,8 +27,8 @@ import { LoadingState } from "@components/atoms/LoadingState";
 import HeroBanner from "../components/suggestions/HeroBanner";
 import ArticlesSection from "../components/suggestions/ArticlesSection";
 import ProductCard from "../components/suggestions/ProductCard";
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 // import ExperienceCard from "../components/suggestions/ExperienceCard"; // tạm ẩn
 // import OccasionCards from "../components/suggestions/OccasionCard"; // tạm ẩn
 import { useMasterData } from "../contexts/MasterDataContext";
@@ -42,114 +41,124 @@ import {
 } from "../services/analyticsService";
 import ResultsModal from "../components/suggestions/ResultsModal";
 import PressableCard from "@components/atoms/PressableCard";
+import AiViewAllBtn from "@components/atoms/AiViewAllBtn";
 
-const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(({ navigation }) => {
-  const styles = useStyles();
-  const colors = useColors();
-  return (
-  <View style={styles.section}>
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>Trắc nghiệm & Khám phá</Text>
-      <View style={styles.sectionBadge}>
-        <Text style={styles.sectionBadgeText}>3 công cụ</Text>
+const TOOL_ITEMS = [
+  {
+    id: "personality",
+    icon: "person-circle-outline" as const,
+    title: "Khảo sát tính cách",
+    desc: "Khám phá phong cách yêu thương của bạn",
+    pills: ["8 câu", "3 phút"],
+    route: "PersonalitySurvey",
+    routeParams: {},
+    isAI: true,
+  },
+  {
+    id: "mbti",
+    icon: "people" as const,
+    title: "Trắc nghiệm MBTI",
+    desc: "Khám phá 16 loại tính cách & sự tương hợp",
+    pills: ["40 câu", "10 phút"],
+    route: "MBTISurvey",
+    routeParams: {},
+    isAI: false,
+  },
+  {
+    id: "activities",
+    icon: "map-outline" as const,
+    title: "Gợi ý hoạt động",
+    desc: "Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn",
+    pills: ["Ẩm thực", "Spa"],
+    route: "ActivitySuggestions",
+    routeParams: {},
+    isAI: true,
+  },
+];
+
+const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(
+  ({ navigation }) => {
+    const styles = useStyles();
+    const colors = useColors();
+
+    const toolColors = [colors.primary, colors.success, colors.secondary];
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Trắc nghiệm & Khám phá</Text>
+          <View style={styles.sectionBadge}>
+            <Text style={styles.sectionBadgeText}>3 công cụ</Text>
+          </View>
+        </View>
+
+        <View style={styles.toolList}>
+          {TOOL_ITEMS.map((item, idx) => {
+            const color = toolColors[idx];
+            return (
+              <PressableCard
+                key={item.id}
+                style={styles.toolRow}
+                onPress={() =>
+                  navigation.navigate(item.route, item.routeParams)
+                }
+              >
+                {/* Colored icon block */}
+                <View
+                  style={[
+                    styles.toolRowIcon,
+                    { backgroundColor: color + "18" },
+                  ]}
+                >
+                  <Ionicons name={item.icon} size={26} color={color} />
+                </View>
+
+                {/* Text */}
+                <View style={styles.toolRowContent}>
+                  <View style={styles.toolRowTitleRow}>
+                    <Text style={styles.toolRowTitle}>{item.title}</Text>
+                    {item.isAI && (
+                      <View style={styles.aiBadge}>
+                        <Ionicons name="sparkles" size={10} color={colors.aiPrimary} />
+                        <Text style={styles.aiBadgeText}>AI</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.toolRowDesc} numberOfLines={1}>
+                    {item.desc}
+                  </Text>
+                  <View style={styles.toolRowPills}>
+                    {item.pills.map((p) => (
+                      <View
+                        key={p}
+                        style={[
+                          styles.toolRowPill,
+                          { backgroundColor: color + "12" },
+                        ]}
+                      >
+                        <Text style={[styles.toolRowPillText, { color }]}>
+                          {p}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Arrow */}
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={colors.textLight}
+                />
+              </PressableCard>
+            );
+          })}
+        </View>
       </View>
-    </View>
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.toolCards}
-      removeClippedSubviews={false}
-    >
-      <PressableCard
-        style={[styles.toolCard, { backgroundColor: colors.primary }]}
-        onPress={() => navigation.navigate("PersonalitySurvey")}
-      >
-        <View style={styles.toolTop}>
-          <View style={styles.toolHeader}>
-            <View style={styles.toolIconWrap}>
-              <Ionicons name="person-circle-outline" size={32} color="rgba(255,255,255,0.9)" />
-            </View>
-            <View style={styles.toolPills}>
-              <View style={styles.toolPill}>
-                <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.toolPillText}>8 câu</Text>
-              </View>
-              <View style={styles.toolPill}>
-                <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.toolPillText}>3 phút</Text>
-              </View>
-            </View>
-          </View>
-          <Text style={styles.toolTitle}>Khảo sát tính cách</Text>
-          <Text style={styles.toolDesc}>Khám phá phong cách yêu thương của bạn</Text>
-        </View>
-        <View style={styles.toolCta}>
-          <Text style={styles.toolCtaText}>Khám phá</Text>
-          <Ionicons name="arrow-forward" size={13} color={colors.white} />
-        </View>
-      </PressableCard>
+    );
+  }
+);
 
-      <PressableCard
-        style={[styles.toolCard, { backgroundColor: colors.success }]}
-        onPress={() => navigation.navigate("MBTISurvey")}
-      >
-        <View style={styles.toolTop}>
-          <View style={styles.toolHeader}>
-            <View style={styles.toolIconWrap}>
-              <Ionicons name="people" size={32} color="rgba(255,255,255,0.9)" />
-            </View>
-            <View style={styles.toolPills}>
-              <View style={styles.toolPill}>
-                <Ionicons name="help-circle-outline" size={10} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.toolPillText}>40 câu</Text>
-              </View>
-              <View style={styles.toolPill}>
-                <Ionicons name="time-outline" size={10} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.toolPillText}>10 phút</Text>
-              </View>
-            </View>
-          </View>
-          <Text style={styles.toolTitle}>Trắc nghiệm MBTI</Text>
-          <Text style={styles.toolDesc}>Khám phá tính cách và sự tương hợp</Text>
-        </View>
-        <View style={styles.toolCta}>
-          <Text style={styles.toolCtaText}>Bắt đầu</Text>
-          <Ionicons name="arrow-forward" size={13} color={colors.white} />
-        </View>
-      </PressableCard>
-
-      <PressableCard
-        style={[styles.toolCard, { backgroundColor: colors.secondary }]}
-        onPress={() => navigation.navigate("ActivitySuggestions", {})}
-      >
-        <View style={styles.toolTop}>
-          <View style={styles.toolHeader}>
-            <View style={styles.toolIconWrap}>
-              <Ionicons name="map-outline" size={32} color="rgba(255,255,255,0.9)" />
-            </View>
-            <View style={styles.toolPills}>
-              <View style={styles.toolPill}>
-                <Ionicons name="restaurant-outline" size={10} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.toolPillText}>Ẩm thực</Text>
-              </View>
-              <View style={styles.toolPill}>
-                <Ionicons name="leaf-outline" size={10} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.toolPillText}>Spa</Text>
-              </View>
-            </View>
-          </View>
-          <Text style={styles.toolTitle}>Gợi ý hoạt động</Text>
-          <Text style={styles.toolDesc}>Nhà hàng, spa, trải nghiệm hẹn hò lãng mạn</Text>
-        </View>
-        <View style={styles.toolCta}>
-          <Text style={styles.toolCtaText}>Khám phá</Text>
-          <Ionicons name="arrow-forward" size={13} color={colors.white} />
-        </View>
-      </PressableCard>
-    </ScrollView>
-  </View>
-  );
-});
 
 const SuggestionsScreen: React.FC = () => {
   const styles = useStyles();
@@ -353,12 +362,12 @@ const SuggestionsScreen: React.FC = () => {
         {/* Section 6: Trending Products */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Danh sách quà tặng</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("AllProducts")}
-            >
-              <Text style={styles.viewAllText}>Xem tất cả</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
+            <AiViewAllBtn
+              onPress={() =>
+                navigation.navigate("AllProducts", { initialAiMode: true })
+              }
+            />
           </View>
           {loading ? (
             <LoadingState
@@ -382,9 +391,7 @@ const SuggestionsScreen: React.FC = () => {
                 size={20}
                 color={colors.textSecondary}
               />
-              <Text style={styles.offlineBannerText}>
-                Chưa có sản phẩm nào
-              </Text>
+              <Text style={styles.offlineBannerText}>Chưa có sản phẩm nào</Text>
             </View>
           ) : (
             <View style={styles.verticalProductList}>
@@ -462,28 +469,89 @@ const useStyles = makeStyles((colors) => ({
   },
   sectionTitle: {
     fontSize: 17,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   sectionTitlePadded: {
     marginHorizontal: 16,
     marginBottom: 14,
   },
-  viewAllText: {
-    fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
-    color: colors.primary,
-  },
   horizontalScroll: {
     paddingHorizontal: 16,
   },
 
-  // Tool Cards — horizontal scroll, fixed-width cards
-  toolCards: {
+  // Tool Cards — vertical stacked list
+  toolList: {
+    marginHorizontal: 16,
+    gap: 10,
+  },
+  toolRow: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingRight: 24,
-    gap: 12,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: 14,
+    padding: 14,
+    gap: 14,
+    elevation: 2,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  toolRowIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  toolRowContent: {
+    flex: 1,
+    gap: 3,
+  },
+  toolRowTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  toolRowTitle: {
+    fontSize: 15,
+    fontFamily: "Manrope_700Bold",
+    color: colors.textPrimary,
+  },
+  aiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: colors.aiLight,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  aiBadgeText: {
+    fontSize: 10,
+    fontFamily: "Manrope_700Bold",
+    color: colors.aiPrimary,
+  },
+  toolRowDesc: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 16,
+  },
+  toolRowPills: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 4,
+  },
+  toolRowPill: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  toolRowPillText: {
+    fontSize: 11,
+    fontFamily: "Manrope_600SemiBold",
   },
   sectionBadge: {
     backgroundColor: colors.primary + "18",
@@ -493,82 +561,8 @@ const useStyles = makeStyles((colors) => ({
   },
   sectionBadgeText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
-  },
-  toolCard: {
-    width: Math.round((SCREEN_WIDTH - 32 - 12) * 0.45),
-    borderRadius: 18,
-    padding: 16,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-  toolTop: {
-    marginBottom: 14,
-  },
-  toolHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 14,
-  },
-  toolIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toolTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
-    color: colors.white,
-    lineHeight: 21,
-    minHeight: 42,
-    marginBottom: 6,
-  },
-  toolDesc: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.8)",
-    lineHeight: 15,
-    flexShrink: 1,
-  },
-  toolPills: {
-    flexDirection: "column",
-    gap: 5,
-    alignItems: "flex-end",
-  },
-  toolPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-  },
-  toolPillText: {
-    fontSize: 10,
-    fontFamily: 'Manrope_600SemiBold',
-    color: "rgba(255,255,255,0.95)",
-  },
-  toolCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    backgroundColor: "rgba(255,255,255,0.22)",
-    borderRadius: 10,
-    paddingVertical: 9,
-  },
-  toolCtaText: {
-    fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
-    color: colors.white,
   },
 
   // Offline / empty state banner
@@ -592,4 +586,5 @@ const useStyles = makeStyles((colors) => ({
   verticalProductList: {
     paddingHorizontal: 16,
   },
-}));export default SuggestionsScreen;
+}));
+export default SuggestionsScreen;

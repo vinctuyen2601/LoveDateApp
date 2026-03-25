@@ -335,18 +335,26 @@ const ArticleDetailScreen: React.FC = () => {
                   style={styles.relatedArticleCard}
                   onPress={() => handleRelatedArticle(relArticle)}
                 >
-                  <View
-                    style={[
-                      styles.relatedArticleIcon,
-                      { backgroundColor: relArticle.color + "20" },
-                    ]}
-                  >
-                    <Ionicons
-                      name={relArticle.icon as any}
-                      size={22}
-                      color={relArticle.color}
+                  {relArticle.imageUrl ? (
+                    <Image
+                      source={{ uri: relArticle.imageUrl }}
+                      style={styles.relatedArticleImg}
+                      resizeMode="cover"
                     />
-                  </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.relatedArticleIcon,
+                        { backgroundColor: relArticle.color + "20" },
+                      ]}
+                    >
+                      <Ionicons
+                        name={relArticle.icon as any}
+                        size={22}
+                        color={relArticle.color}
+                      />
+                    </View>
+                  )}
                   <View style={styles.relatedArticleContent}>
                     <Text style={styles.relatedArticleTitle} numberOfLines={2}>
                       {relArticle.title}
@@ -371,6 +379,7 @@ const ArticleDetailScreen: React.FC = () => {
                     name="chevron-forward"
                     size={18}
                     color={colors.textLight}
+                    style={{ marginRight: 12 }}
                   />
                 </PressableCard>
               );
@@ -557,25 +566,30 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 12,
     marginBottom: 10,
-    elevation: 1,
+    elevation: 2,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    overflow: "hidden",
+  },
+  relatedArticleImg: {
+    width: 90,
+    height: 72,
+    flexShrink: 0,
   },
   relatedArticleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 72,
+    height: 72,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    flexShrink: 0,
   },
   relatedArticleContent: {
     flex: 1,
-    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   relatedArticleTitle: {
     fontSize: 14,

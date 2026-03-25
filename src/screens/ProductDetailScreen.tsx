@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import {
   View,
   Text,
@@ -10,6 +16,7 @@ import {
   Linking,
   Dimensions,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,6 +39,7 @@ import { makeStyles } from "@utils/makeStyles";
 import { useColors, useTheme } from "@contexts/ThemeContext";
 
 const { width: screenWidth } = Dimensions.get("window");
+const PAGE_SIZE = 8;
 
 const ProductDetailScreen: React.FC = () => {
   const styles = useStyles();
@@ -46,6 +54,9 @@ const ProductDetailScreen: React.FC = () => {
   const [similarProducts, setSimilarProducts] = useState<AffiliateProduct[]>(
     []
   );
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
   const { occasions } = useMasterData();
 
   const categoryInfo = SERVICE_CATEGORIES.find(
@@ -79,9 +90,7 @@ const ProductDetailScreen: React.FC = () => {
     const loadSimilar = async () => {
       try {
         const categoryProducts = await getProductsByCategory(product.category);
-        setSimilarProducts(
-          categoryProducts.filter((p) => p.id !== product.id).slice(0, 6)
-        );
+        setSimilarProducts(categoryProducts.filter((p) => p.id !== product.id));
       } catch {
         // Fallback - no similar products shown
       }
@@ -111,12 +120,33 @@ const ProductDetailScreen: React.FC = () => {
       await Share.share({
         message: `${product.name} - ${
           product.price ? formatPrice(product.price) : product.priceRange
-        } | Love Date App`,
+        } | Ngày yêu thương`,
       });
     } catch {
       // User cancelled
     }
   };
+
+  const handleScroll = useCallback(
+    (event: any) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - contentOffset.y - layoutMeasurement.height;
+      if (
+        distanceFromBottom < 200 &&
+        !isLoadingMore &&
+        visibleCount < similarProducts.length
+      ) {
+        setIsLoadingMore(true);
+        setTimeout(() => {
+          setVisibleCount((prev) => prev + PAGE_SIZE);
+          setIsLoadingMore(false);
+        }, 300);
+      }
+    },
+    [isLoadingMore, visibleCount, similarProducts.length]
+  );
 
   // Render star rating
   const renderStars = (rating: number) => {
@@ -161,9 +191,12 @@ const ProductDetailScreen: React.FC = () => {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* Hero Section */}
         {product.galleryUrls && product.galleryUrls.length > 0 ? (
@@ -428,15 +461,18 @@ const ProductDetailScreen: React.FC = () => {
               <Ionicons name="grid-outline" size={20} color={colors.primary} />
               <Text style={styles.cardHeaderText}>Sản phẩm tương tự</Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-            >
-              {similarProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
+            <View style={styles.similarList}>
+              {similarProducts.slice(0, visibleCount).map((p) => (
+                <ProductCard key={p.id} product={p} variant="vertical" />
               ))}
-            </ScrollView>
+              {isLoadingMore && (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  style={{ marginVertical: 12 }}
+                />
+              )}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -746,8 +782,7 @@ const useStyles = makeStyles((colors) => ({
     marginTop: 16,
     paddingHorizontal: 16,
   },
-  horizontalScroll: {
-    paddingRight: 16,
+  similarList: {
     gap: 0,
   },
 

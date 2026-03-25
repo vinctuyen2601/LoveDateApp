@@ -540,7 +540,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
     <View style={styles.container}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <LinearGradient
-        colors={[colors.secondary, '#43C59E']}
+        colors={[colors.gradientStart, colors.gradientEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
@@ -549,7 +549,13 @@ const ActivitySuggestionsScreen: React.FC = () => {
           <Ionicons name="chevron-back" size={26} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Lên kế hoạch hẹn hò</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.headerTitle}>Lên kế hoạch hẹn hò</Text>
+            <View style={styles.aiHeaderBadge}>
+              <Ionicons name="sparkles" size={10} color={colors.aiPrimary} />
+              <Text style={styles.aiHeaderBadgeText}>AI</Text>
+            </View>
+          </View>
           {event && (
             <Text style={styles.headerSub} numberOfLines={1}>{event.title}</Text>
           )}
@@ -642,7 +648,7 @@ const ActivitySuggestionsScreen: React.FC = () => {
           style={styles.generateBtnWrap}
         >
           <LinearGradient
-            colors={isLoading ? ['#C8C8C8', '#B0B0B0'] : [colors.secondary, '#43C59E']}
+            colors={isLoading ? [colors.textDisabled, colors.border] : [colors.gradientStart, colors.gradientEnd]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.generateBtn}
@@ -723,8 +729,15 @@ const useStyles = makeStyles((colors) => ({
   },
   backButton:   { padding: 6, marginRight: 4 },
   headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerTitle:  { fontSize: 18, fontFamily: 'Manrope_800ExtraBold', color: colors.white },
   headerSub:    { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3 },
+  aiHeaderBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: colors.aiLight,
+    paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10,
+  },
+  aiHeaderBadgeText: { fontSize: 10, fontFamily: 'Manrope_700Bold', color: colors.aiPrimary },
 
   // Scroll
   scroll:        { flex: 1 },

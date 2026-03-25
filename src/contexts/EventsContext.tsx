@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback, useRef } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Event, EventFormData, EventNote, EventsContextValue } from '../types';
 import * as DB from '../services/database.service';
@@ -24,6 +24,8 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const rescheduleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     loadEvents();
   }, []);
@@ -42,7 +44,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshEvents = async () => {
+  const refreshEvents = useCallback(async () => {
     try {
       const allEvents = await DB.getAllEvents(db);
       setEvents(allEvents);
@@ -52,38 +54,27 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       setError(err.message || 'Failed to refresh events');
       throw err;
     }
-  };
+  }, [db]);
 
-  // Debounce timer để tránh schedule notifications nhiều lần liên tiếp
-  const rescheduleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  /**
-   * Lấy danh sách events mới nhất từ DB và schedule lại tất cả notifications.
-   * Debounce 2s: nếu gọi liên tiếp (vd: tạo nhiều events nhanh),
-   * chỉ schedule 1 lần sau thao tác cuối cùng.
-   */
-  const refreshAndReschedule = async () => {
+  const refreshAndReschedule = useCallback(async () => {
     const freshEvents = await DB.getAllEvents(db);
     setEvents(freshEvents);
     setError(null);
 
-    // Clear timer cũ nếu có
     if (rescheduleTimerRef.current) {
       clearTimeout(rescheduleTimerRef.current);
     }
 
-    // Debounce: chờ 2s sau thao tác cuối mới schedule
     rescheduleTimerRef.current = setTimeout(async () => {
       try {
-        const latestEvents = await DB.getAllEvents(db);
-        await scheduleUpcomingNotifications(latestEvents);
+        await scheduleUpcomingNotifications(freshEvents);
       } catch (err) {
         console.error('⚠️ Error rescheduling notifications:', err);
       }
     }, RESCHEDULE_DEBOUNCE_MS);
-  };
+  }, [db]);
 
-  const addEvent = async (formData: EventFormData): Promise<Event> => {
+  const addEvent = useCallback(async (formData: EventFormData): Promise<Event> => {
     try {
       const localId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -109,7 +100,6 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
       const savedEvent = await DB.createEvent(db, newEvent);
 
-      // Auto-generate checklist
       try {
         await ChecklistService.generateChecklistForEvent(
           db,
@@ -121,7 +111,6 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         console.error('⚠️ Error generating checklist:', error);
       }
 
-      // Gamification tracking
       try {
         const newAchievements = await StreakService.trackEventCreated(db, 'default-user');
         if (newAchievements.length > 0) {
@@ -131,10 +120,8 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         console.error('⚠️ Error tracking event creation:', error);
       }
 
-      // Refresh state + reschedule all notifications for updated event list
       await refreshAndReschedule();
 
-      // Sync lên server nếu đã đăng nhập (background)
       authService.isAnonymous().then(isAnon => {
         if (!isAnon) syncService.sync().catch(err => console.warn('Event add sync failed:', err));
       });
@@ -145,9 +132,9 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       setError(err.message || 'Failed to add event');
       throw err;
     }
-  };
+  }, [db, showAchievements, refreshAndReschedule]);
 
-  const updateEvent = async (id: string, formData: Partial<EventFormData>): Promise<Event> => {
+  const updateEvent = useCallback(async (id: string, formData: Partial<EventFormData>): Promise<Event> => {
     try {
       const updates: Partial<Event> = {};
 
@@ -156,7 +143,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       if (formData.isLunarCalendar !== undefined) updates.isLunarCalendar = formData.isLunarCalendar;
       if (formData.tags !== undefined) updates.tags = formData.tags;
       if (formData.remindDaysBefore !== undefined || formData.reminderTime !== undefined) {
-        const existingEvent = events.find(e => e.id === id);
+        const existingEvent = await DB.getEventById(db, id);
         updates.reminderSettings = {
           remindDaysBefore: formData.remindDaysBefore ?? existingEvent?.reminderSettings?.remindDaysBefore ?? [],
           reminderTime: formData.reminderTime ?? existingEvent?.reminderSettings?.reminderTime,
@@ -169,10 +156,8 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
       const updatedEvent = await DB.updateEvent(db, id, updates);
 
-      // Refresh state + reschedule all notifications for updated event list
       await refreshAndReschedule();
 
-      // Sync lên server nếu đã đăng nhập (background)
       authService.isAnonymous().then(isAnon => {
         if (!isAnon) syncService.sync().catch(err => console.warn('Event update sync failed:', err));
       });
@@ -183,20 +168,18 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       setError(err.message || 'Failed to update event');
       throw err;
     }
-  };
+  }, [db, refreshAndReschedule]);
 
-  const deleteEvent = async (id: string): Promise<void> => {
+  const deleteEvent = useCallback(async (id: string): Promise<void> => {
     try {
       await DB.deleteEvent(db, id);
-
-      // Refresh state + reschedule (deleted event filtered out automatically)
       await refreshAndReschedule();
     } catch (err: any) {
       console.error('Failed to delete event:', err);
       setError(err.message || 'Failed to delete event');
       throw err;
     }
-  };
+  }, [db, refreshAndReschedule]);
 
   const getEventById = useCallback((id: string): Event | undefined => {
     return events.find(event => event.id === id);
@@ -224,7 +207,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     );
   }, [events]);
 
-  const toggleEventNotification = async (id: string): Promise<void> => {
+  const toggleEventNotification = useCallback(async (id: string): Promise<void> => {
     try {
       const event = events.find(e => e.id === id);
       if (!event) return;
@@ -246,9 +229,9 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       setError(err.message || 'Failed to toggle notification');
       throw err;
     }
-  };
+  }, [db, events, refreshAndReschedule]);
 
-  const upsertEventNote = async (eventId: string, noteData: Partial<EventNote>): Promise<Event> => {
+  const upsertEventNote = useCallback(async (eventId: string, noteData: Partial<EventNote>): Promise<Event> => {
     try {
       const existing = events.find(e => e.id === eventId);
       if (!existing) throw new Error('Event not found');
@@ -271,9 +254,9 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       console.error('Failed to upsert event note:', err);
       throw err;
     }
-  };
+  }, [db, events, refreshAndReschedule]);
 
-  const value: EventsContextValue = {
+  const value = useMemo<EventsContextValue>(() => ({
     events,
     isLoading,
     error,
@@ -287,7 +270,21 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     searchEvents,
     toggleEventNotification,
     upsertEventNote,
-  };
+  }), [
+    events,
+    isLoading,
+    error,
+    refreshEvents,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    getEventById,
+    getUpcomingEvents,
+    getEventsByTag,
+    searchEvents,
+    toggleEventNotification,
+    upsertEventNote,
+  ]);
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;
 };

@@ -60,7 +60,7 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Cẩm nang yêu thương</Text>
+        <Text style={styles.sectionTitle}>Blog chia sẻ</Text>
         {onViewAll && (
           <TouchableOpacity onPress={onViewAll}>
             <Text style={styles.viewAllText}>Xem tất cả</Text>

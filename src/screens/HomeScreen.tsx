@@ -50,6 +50,7 @@ import { vi } from "date-fns/locale";
 import { DateUtils } from "@lib/date.utils";
 import NotificationBanner from "@components/molecules/NotificationBanner";
 import PressableCard from "@components/atoms/PressableCard";
+import AiViewAllBtn from "@components/atoms/AiViewAllBtn";
 import HolidaySuggestionOverlay from "@components/organisms/HolidaySuggestionOverlay";
 import {
   getActiveSuggestion,
@@ -245,68 +246,6 @@ const HomeScreen: React.FC = () => {
     return nearest;
   }, []);
 
-  // const markedDates = useMemo(() => {
-  //   const marked: any = {};
-  //   // Lấy năm hiện tại trên calendar để hiển thị recurring events đúng năm
-  //   const calYear = parseInt(currentMonth.slice(0, 4), 10);
-
-  //   events.forEach((event) => {
-  //     if (!event.eventDate) return;
-  //     const date = new Date(event.eventDate);
-  //     if (isNaN(date.getTime())) return;
-
-  //     let markDate: string;
-  //     if (event.isRecurring) {
-  //       // Recurring (sinh nhật, kỷ niệm...): đánh dấu đúng ngày MM-DD
-  //       // nhưng theo năm đang hiển thị trên calendar
-  //       const mm = String(date.getMonth() + 1).padStart(2, "0");
-  //       const dd = String(date.getDate()).padStart(2, "0");
-  //       markDate = `${calYear}-${mm}-${dd}`;
-  //     } else {
-  //       markDate = DateUtils.toLocalDateString(date);
-  //     }
-
-  //     if (!marked[markDate]) {
-  //       marked[markDate] = { marked: true, dots: [] };
-  //     }
-  //     const primaryTag = event.tags[0] || "other";
-  //     marked[markDate].dots.push({
-  //       color: getTagColor(primaryTag),
-  //       image: getTagImage(primaryTag),
-  //     });
-  //   });
-
-  //   // Merge ngày đặc biệt (bao gồm âm lịch, nth-weekday) — dùng emoji
-  //   const calMonth = parseInt(currentMonth.slice(5, 7), 10);
-  //   const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
-  //   resolvedSpecials.forEach((sd) => {
-  //     const mm = String(sd.solarMonth).padStart(2, "0");
-  //     const dd = String(sd.solarDay).padStart(2, "0");
-  //     const dateKey = `${calYear}-${mm}-${dd}`;
-  //     if (!marked[dateKey]) {
-  //       marked[dateKey] = { dots: [] };
-  //     }
-  //     if (!marked[dateKey].dots) {
-  //       marked[dateKey].dots = [];
-  //     }
-  //     marked[dateKey].dots.unshift({
-  //       color: sd.color,
-  //       image: getSpecialDateImage(sd.id),
-  //     });
-  //   });
-
-  //   if (marked[selectedDate]) {
-  //     marked[selectedDate].selected = true;
-  //     marked[selectedDate].selectedColor = colors.primary;
-  //   } else {
-  //     marked[selectedDate] = {
-  //       selected: true,
-  //       selectedColor: colors.primary,
-  //     };
-  //   }
-  //   return marked;
-  // }, [events, selectedDate, currentMonth]);
-
   // Chỉ tính dots từ events + specials — KHÔNG phụ thuộc selectedDate
   const baseMarkedDates = useMemo(() => {
     const marked: any = {};
@@ -410,32 +349,34 @@ const HomeScreen: React.FC = () => {
     ReturnType<typeof getFeaturedArticles>
   >([]);
 
-  React.useEffect(() => {
-    Promise.all([getArticles(), databaseService.getReadArticleIds()])
-      .then(([all, readIds]) => {
-        const readSet = new Set(readIds);
-        setArticles(getFeaturedArticles(all).filter((a) => !readSet.has(a.id)));
-      })
-      .catch(() => {});
-  }, []);
-
   const [trendingProducts, setTrendingProducts] = useState<AffiliateProduct[]>(
     []
   );
 
-  React.useEffect(() => {
-    getTrendingProducts()
-      .then(setTrendingProducts)
-      .catch(() => {});
-  }, []);
-
   // Holiday suggestion overlay
   const [activeSuggestion, setActiveSuggestion] =
     useState<HolidaySuggestion | null>(null);
+
+  // Merge all mount-only data fetches into one effect to avoid render bursts
   useEffect(() => {
-    getActiveSuggestion()
-      .then(setActiveSuggestion)
-      .catch(() => {});
+    Promise.all([
+      getArticles()
+        .then((all) =>
+          databaseService.getReadArticleIds().then((readIds) => {
+            const readSet = new Set(readIds);
+            setArticles(
+              getFeaturedArticles(all).filter((a) => !readSet.has(a.id))
+            );
+          })
+        )
+        .catch(() => {}),
+      getTrendingProducts()
+        .then(setTrendingProducts)
+        .catch(() => {}),
+      getActiveSuggestion()
+        .then(setActiveSuggestion)
+        .catch(() => {}),
+    ]);
   }, []);
 
   // Occasion prep popup — show once per session
@@ -541,9 +482,7 @@ const HomeScreen: React.FC = () => {
     setActiveSuggestion(null);
   };
 
-  const handleSurveyPress = () =>
-    navigation.navigate("Suggestions", { openSurvey: true });
-  const handleEventPress = (event: Event) =>
+const handleEventPress = (event: Event) =>
     navigation.navigate("EventDetail", { eventId: event.id });
   const handleAddEvent = () => navigation.navigate("AddEvent");
 
@@ -602,130 +541,121 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  const renderEventCard = (
-    event: Event,
-    iconSource?: ReturnType<typeof getSpecialDateImage>
-  ) => {
-    const primaryTag = event.tags?.[0] || "other";
-    const tagColor = getTagColor(primaryTag);
-    const tagLabel = getTagLabel(primaryTag);
-    const icon = iconSource ?? getTagImage(primaryTag);
+  const renderEventCard = useCallback(
+    (event: Event, iconSource?: ReturnType<typeof getSpecialDateImage>) => {
+      const primaryTag = event.tags?.[0] || "other";
+      const tagColor = getTagColor(primaryTag);
+      const tagLabel = getTagLabel(primaryTag);
+      const icon = iconSource ?? getTagImage(primaryTag);
 
-    return (
-      <TouchableOpacity
-        key={event.id}
-        style={styles.calEventCard}
-        activeOpacity={0.7}
-        onPress={() => handleEventPress(event)}
-      >
-        <View style={[styles.calEventAccent, { backgroundColor: tagColor }]} />
-        <View style={styles.calEventBody}>
-          <View style={styles.calEventRow}>
-            <View
-              style={[
-                styles.calEventIcon,
-                { backgroundColor: tagColor + "15" },
-              ]}
-            >
-              <IconImage source={icon} size={22} />
-            </View>
-            <View style={styles.calEventContent}>
-              <Text style={styles.calEventTitle} numberOfLines={1}>
-                {event.title}
-              </Text>
-              <View style={styles.calEventMeta}>
-                <Text style={styles.calEventDate}>
-                  {DateUtils.getEventDateDisplay(event.eventDate)}
-                  {event.isLunarCalendar ? " (ÂL)" : ""}
-                </Text>
-                <View style={styles.calEventDot} />
-                <View
-                  style={[
-                    styles.calEventTag,
-                    { backgroundColor: tagColor + "15" },
-                  ]}
-                >
-                  <Text style={[styles.calEventTagText, { color: tagColor }]}>
-                    {tagLabel}
-                  </Text>
-                </View>
+      return (
+        <TouchableOpacity
+          key={event.id}
+          style={styles.calEventCard}
+          activeOpacity={0.7}
+          onPress={() => handleEventPress(event)}
+        >
+          <View
+            style={[styles.calEventAccent, { backgroundColor: tagColor }]}
+          />
+          <View style={styles.calEventBody}>
+            <View style={styles.calEventRow}>
+              <View
+                style={[
+                  styles.calEventIcon,
+                  { backgroundColor: tagColor + "15" },
+                ]}
+              >
+                <IconImage source={icon} size={22} />
               </View>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={colors.textLight}
-            />
-          </View>
-          {(event.isRecurring || event.isNotificationEnabled === false) && (
-            <View style={styles.calEventBadges}>
-              {event.isRecurring && (
-                <View style={styles.calEventBadge}>
-                  <Ionicons
-                    name="repeat"
-                    size={12}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.calEventBadgeText}>Hàng năm</Text>
-                </View>
-              )}
-              {event.isNotificationEnabled === false && (
-                <View style={styles.calEventBadge}>
-                  <Ionicons
-                    name="notifications-off-outline"
-                    size={12}
-                    color={colors.textLight}
-                  />
-                  <Text
+              <View style={styles.calEventContent}>
+                <Text style={styles.calEventTitle} numberOfLines={1}>
+                  {event.title}
+                </Text>
+                <View style={styles.calEventMeta}>
+                  <Text style={styles.calEventDate}>
+                    {DateUtils.getEventDateDisplay(event.eventDate)}
+                    {event.isLunarCalendar ? " (ÂL)" : ""}
+                  </Text>
+                  <View style={styles.calEventDot} />
+                  <View
                     style={[
-                      styles.calEventBadgeText,
-                      { color: colors.textLight },
+                      styles.calEventTag,
+                      { backgroundColor: tagColor + "15" },
                     ]}
                   >
-                    Tắt TB
-                  </Text>
+                    <Text style={[styles.calEventTagText, { color: tagColor }]}>
+                      {tagLabel}
+                    </Text>
+                  </View>
                 </View>
-              )}
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={colors.textLight}
+              />
             </View>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  // ===== QUICK ACTIONS =====
-  const quickActions = useMemo(
-    () => [
-      {
-        id: "survey",
-        icon: "heart-circle" as const,
-        title: "Khảo sát\ntính cách",
-        subtitle: "Gợi ý quà phù hợp với nửa kia",
-        color: colors.primary,
-        onPress: handleSurveyPress,
-      },
-      {
-        id: "mbti",
-        icon: "people" as const,
-        title: "Trắc nghiệm\nMBTI",
-        subtitle: "Khám phá 16 loại tính cách",
-        color: "#1A9E6E",
-        onPress: () => navigation.navigate("MBTISurvey"),
-      },
-      {
-        id: "activities",
-        icon: "map-outline" as const,
-        title: "Gợi ý\nhoạt động",
-        subtitle: "Ý tưởng hẹn hò, nhà hàng, spa...",
-        color: colors.secondary,
-        onPress: () =>
-          navigation.navigate("ActivitySuggestions", {
-            event: upcomingEvents[0] ?? events[0] ?? undefined,
-          }),
-      },
-    ],
-    [colors.primary, handleSurveyPress, navigation]
+            {(event.isRecurring || event.isNotificationEnabled === false || !!event.sourceSharedEventId) && (
+              <View style={styles.calEventBadges}>
+                {event.isRecurring && (
+                  <View style={styles.calEventBadge}>
+                    <Ionicons
+                      name="repeat"
+                      size={12}
+                      color={colors.textSecondary}
+                    />
+                    <Text style={styles.calEventBadgeText}>Hàng năm</Text>
+                  </View>
+                )}
+                {event.isNotificationEnabled === false && (
+                  <View style={styles.calEventBadge}>
+                    <Ionicons
+                      name="notifications-off-outline"
+                      size={12}
+                      color={colors.textLight}
+                    />
+                    <Text
+                      style={[
+                        styles.calEventBadgeText,
+                        { color: colors.textLight },
+                      ]}
+                    >
+                      Tắt TB
+                    </Text>
+                  </View>
+                )}
+                {!!event.sourceSharedEventId && (
+                  <View
+                    style={[
+                      styles.calEventBadge,
+                      { backgroundColor: colors.primary + "15" },
+                    ]}
+                  >
+                    <Ionicons
+                      name="people-outline"
+                      size={12}
+                      color={colors.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.calEventBadgeText,
+                        { color: colors.primary },
+                      ]}
+                    >
+                      Được chia sẻ
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [styles, colors, handleEventPress]
   );
+
 
   const renderDay = useCallback(
     ({ date, state, marking }: any) => (
@@ -1093,12 +1023,7 @@ const HomeScreen: React.FC = () => {
             onPress={() => navigation.navigate("LocalShop")}
             activeOpacity={0.85}
           >
-            <LinearGradient
-              colors={[colors.primary + "18", "#C850C015"]}
-              style={styles.shopBannerGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
+            <View style={styles.shopBannerGradient}>
               <Ionicons
                 name="flower-outline"
                 size={32}
@@ -1117,7 +1042,7 @@ const HomeScreen: React.FC = () => {
                 size={20}
                 color={colors.primary}
               />
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         )}
 
@@ -1292,77 +1217,6 @@ const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Khám phá — sau Calendar */}
-        {events.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionHeaderLeft}>
-                <Ionicons
-                  name="flash-outline"
-                  size={20}
-                  color={colors.primary}
-                />
-                <Text style={styles.sectionTitle}>Khám phá</Text>
-              </View>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickActionsScroll}
-            >
-              {quickActions.map((action) => {
-                const cardContent = (
-                  <>
-                    <View style={styles.qaDecorCircle} />
-                    <View style={styles.qaIconBg}>
-                      <Ionicons
-                        name={action.icon}
-                        size={26}
-                        color="rgba(255,255,255,0.95)"
-                      />
-                    </View>
-                    <Text style={styles.qaTitle}>{action.title}</Text>
-                    <Text style={styles.qaSub} numberOfLines={2}>
-                      {action.subtitle}
-                    </Text>
-                    <Ionicons
-                      name="arrow-forward-circle"
-                      size={20}
-                      color="rgba(255,255,255,0.5)"
-                      style={styles.qaArrow}
-                    />
-                  </>
-                );
-                return (action as any).gradient ? (
-                  <PressableCard
-                    key={action.id}
-                    style={styles.quickActionCard}
-                    onPress={action.onPress}
-                  >
-                    <LinearGradient
-                      colors={(action as any).gradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                    {cardContent}
-                  </PressableCard>
-                ) : (
-                  <PressableCard
-                    key={action.id}
-                    style={[
-                      styles.quickActionCard,
-                      { backgroundColor: action.color },
-                    ]}
-                    onPress={action.onPress}
-                  >
-                    {cardContent}
-                  </PressableCard>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
 
         {/* Articles */}
         <View style={styles.section}>
@@ -1371,11 +1225,10 @@ const HomeScreen: React.FC = () => {
               <Ionicons name="book-outline" size={20} color={colors.primary} />
               <Text style={styles.sectionTitle}>Bài viết nổi bật</Text>
             </View>
-            <TouchableOpacity
+            <AiViewAllBtn
+              label="Đọc với AI"
               onPress={() => navigation.navigate("AllArticles")}
-            >
-              <Text style={styles.viewAllText}>Xem tất cả</Text>
-            </TouchableOpacity>
+            />
           </View>
 
           {/* Featured hero card — first article */}
@@ -1521,11 +1374,10 @@ const HomeScreen: React.FC = () => {
                 <Ionicons name="trending-up" size={20} color={colors.primary} />
                 <Text style={styles.sectionTitle}>Xu hướng quà tặng</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate("AllProducts")}
-              >
-                <Text style={styles.viewAllText}>Xem tất cả</Text>
-              </TouchableOpacity>
+              <AiViewAllBtn
+                label="Gợi ý AI"
+                onPress={() => navigation.navigate("AllProducts", { initialAiMode: true })}
+              />
             </View>
             <View style={styles.productsGrid}>
               {trendingProducts.slice(0, 6).map((product) => (
@@ -1618,6 +1470,7 @@ const useStyles = makeStyles((colors) => ({
     paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 10,
+    backgroundColor: colors.primary + "12",
     borderWidth: 1.5,
     borderColor: colors.primary + "25",
     borderRadius: 14,
@@ -2004,6 +1857,7 @@ const useStyles = makeStyles((colors) => ({
     width: 30,
     height: 30,
     borderRadius: 15,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },

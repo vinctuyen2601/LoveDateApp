@@ -21,6 +21,7 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { COLORS } from "@themes/colors";
@@ -38,8 +39,8 @@ import GiftSuggestionCard from "@components/molecules/GiftSuggestionCard";
 import { useToast } from "../contexts/ToastContext";
 import { useAiRateLimit } from "../hooks/useAiRateLimit";
 import AiRateLimitModal from "@components/molecules/AiRateLimitModal";
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
@@ -146,8 +147,8 @@ const SORT_PARAMS: Record<
 
 const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(
   ({ product }) => {
-  const styles = useStyles();
-  const colors = useColors();
+    const styles = useStyles();
+    const colors = useColors();
 
     const navigation = useNavigation<any>();
 
@@ -228,10 +229,7 @@ const GridCard: React.FC<{ product: AffiliateProduct }> = React.memo(
           )}
 
           {/* CTA */}
-          <TouchableOpacity
-            style={[styles.gridCta, { backgroundColor: product.color }]}
-            onPress={handleBuyPress}
-          >
+          <TouchableOpacity style={styles.gridCta} onPress={handleBuyPress}>
             <Text style={styles.gridCtaText}>Mua ngay</Text>
           </TouchableOpacity>
         </View>
@@ -263,6 +261,7 @@ const AllProductsScreen: React.FC = () => {
 
   // UI state
   const [showSort, setShowSort] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   // AI mode
   const [aiMode, setAiMode] = useState(!!route.params?.initialAiMode);
@@ -360,14 +359,19 @@ const AllProductsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 8 }]}
+      >
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tìm quà tặng</Text>
+        <Text style={styles.headerTitle}>Gợi ý quà tặng</Text>
         {activeFilterCount > 0 ? (
           <TouchableOpacity style={styles.clearBadge} onPress={clearAll}>
             <Text style={styles.clearBadgeText}>Xóa ({activeFilterCount})</Text>
@@ -375,7 +379,7 @@ const AllProductsScreen: React.FC = () => {
         ) : (
           <View style={styles.iconBtn} />
         )}
-      </View>
+      </LinearGradient>
 
       {/* ── Mode toggle ── */}
       <View style={styles.modeToggle}>
@@ -401,7 +405,7 @@ const AllProductsScreen: React.FC = () => {
           <Ionicons
             name="sparkles"
             size={14}
-            color={aiMode ? colors.white : "#D97706"}
+            color={aiMode ? colors.white : colors.aiPrimary}
           />
           <Text
             style={[styles.modeBtnText, aiMode && styles.modeBtnAiTextActive]}
@@ -440,97 +444,123 @@ const AllProductsScreen: React.FC = () => {
                 />
               </TouchableOpacity>
             )}
-          </View>
-
-          {/* Category chips */}
-          <View style={styles.categoryBar}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipsRow}
-            >
-              <TouchableOpacity
-                style={[styles.chip, categoryId === "all" && styles.chipActive]}
-                onPress={() => setCategoryId("all")}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    categoryId === "all" && styles.chipTextActive,
-                  ]}
-                >
-                  Tất cả
-                </Text>
-              </TouchableOpacity>
-              {productCategories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[
-                    styles.chip,
-                    styles.chipWithIcon,
-                    categoryId === cat.id && {
-                      backgroundColor: cat.color,
-                      borderColor: cat.color,
-                    },
-                  ]}
-                  onPress={() => setCategoryId(cat.id)}
-                >
-                  <Ionicons
-                    name={cat.icon as any}
-                    size={14}
-                    color={categoryId === cat.id ? colors.white : cat.color}
-                  />
-                  <Text
-                    style={[
-                      styles.chipText,
-                      categoryId === cat.id && styles.chipTextActive,
-                    ]}
-                  >
-                    {cat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Budget + Sort row */}
-          <View style={styles.filterRow}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipsRow}
-            >
-              {BUDGET_OPTIONS.map((f) => (
-                <TouchableOpacity
-                  key={f.key}
-                  style={[styles.chip, budget === f.key && styles.chipActive]}
-                  onPress={() => setBudget(f.key)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      budget === f.key && styles.chipTextActive,
-                    ]}
-                  >
-                    {f.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
             <TouchableOpacity
-              style={styles.sortBtn}
-              onPress={() => setShowSort(true)}
+              style={styles.filterToggleBtn}
+              onPress={() => setFiltersOpen((v) => !v)}
             >
               <Ionicons
-                name="funnel-outline"
-                size={15}
-                color={colors.textSecondary}
+                name={filtersOpen ? "chevron-up" : "options-outline"}
+                size={18}
+                color={
+                  activeFilterCount > 0 ? colors.primary : colors.textSecondary
+                }
               />
-              <Text style={styles.sortBtnText} numberOfLines={1}>
-                {sort === "popular" ? "Sắp xếp" : activeSortLabel}
-              </Text>
+              {activeFilterCount > 0 && !filtersOpen && (
+                <View style={styles.filterDot} />
+              )}
             </TouchableOpacity>
           </View>
+
+          {/* Collapsible filters */}
+          {filtersOpen && (
+            <>
+              {/* Category chips */}
+              <View style={styles.categoryBar}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipsRow}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.chip,
+                      categoryId === "all" && styles.chipActive,
+                    ]}
+                    onPress={() => setCategoryId("all")}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        categoryId === "all" && styles.chipTextActive,
+                      ]}
+                    >
+                      Tất cả
+                    </Text>
+                  </TouchableOpacity>
+                  {productCategories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.chip,
+                        styles.chipWithIcon,
+                        categoryId === cat.id && {
+                          backgroundColor: cat.color,
+                          borderColor: cat.color,
+                        },
+                      ]}
+                      onPress={() => setCategoryId(cat.id)}
+                    >
+                      <Ionicons
+                        name={cat.icon as any}
+                        size={14}
+                        color={categoryId === cat.id ? colors.white : cat.color}
+                      />
+                      <Text
+                        style={[
+                          styles.chipText,
+                          categoryId === cat.id && styles.chipTextActive,
+                        ]}
+                      >
+                        {cat.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Budget + Sort row */}
+              <View style={styles.filterRow}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipsRow}
+                >
+                  {BUDGET_OPTIONS.map((f) => (
+                    <TouchableOpacity
+                      key={f.key}
+                      style={[
+                        styles.chip,
+                        budget === f.key && styles.chipActive,
+                      ]}
+                      onPress={() => setBudget(f.key)}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          budget === f.key && styles.chipTextActive,
+                        ]}
+                      >
+                        {f.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity
+                  style={styles.sortBtn}
+                  onPress={() => setShowSort(true)}
+                >
+                  <Ionicons
+                    name="funnel-outline"
+                    size={15}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={styles.sortBtnText} numberOfLines={1}>
+                    {sort === "popular" ? "Sắp xếp" : activeSortLabel}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
           {/* Results bar */}
           {!loading && !error && (
@@ -548,7 +578,7 @@ const AllProductsScreen: React.FC = () => {
 
           {/* Content */}
           {/* Local shop promo card */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.shopPromoCard}
             onPress={() => navigation.navigate("LocalShop")}
             activeOpacity={0.85}
@@ -570,7 +600,7 @@ const AllProductsScreen: React.FC = () => {
             <View style={styles.shopPromoArrow}>
               <Ionicons name="arrow-forward" size={16} color={colors.white} />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {loading ? (
             <View style={styles.center}>
@@ -710,7 +740,11 @@ const AllProductsScreen: React.FC = () => {
           {/* Reasoning banner */}
           {aiReasoning ? (
             <View style={styles.reasoningBanner}>
-              <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+              <Ionicons
+                name="sparkles-outline"
+                size={16}
+                color={colors.primary}
+              />
               <Text style={styles.reasoningText}>{aiReasoning}</Text>
               <TouchableOpacity
                 onPress={() => {
@@ -837,9 +871,6 @@ const useStyles = makeStyles((colors) => ({
     paddingTop: 0,
     paddingBottom: 10,
     paddingHorizontal: 12,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   iconBtn: {
     width: 40,
@@ -849,19 +880,19 @@ const useStyles = makeStyles((colors) => ({
   },
   headerTitle: {
     fontSize: 17,
-    fontFamily: 'Manrope_700Bold',
-    color: colors.textPrimary,
+    fontFamily: "Manrope_700Bold",
+    color: colors.white,
   },
   clearBadge: {
-    backgroundColor: colors.primary + "18",
+    backgroundColor: "rgba(255,255,255,0.25)",
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   clearBadgeText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
-    color: colors.primary,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.white,
   },
 
   // Search bar
@@ -884,6 +915,20 @@ const useStyles = makeStyles((colors) => ({
     flex: 1,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  filterToggleBtn: {
+    padding: 6,
+    marginLeft: 4,
+    position: "relative",
+  },
+  filterDot: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
   },
 
   // Category + filter bars
@@ -923,12 +968,12 @@ const useStyles = makeStyles((colors) => ({
   },
   chipText: {
     fontSize: 13,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
   },
   chipTextActive: {
     color: colors.white,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
   sortBtn: {
     flexDirection: "row",
@@ -959,12 +1004,12 @@ const useStyles = makeStyles((colors) => ({
   resultsCount: {
     fontSize: 13,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   clearText: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // Empty / loading states
@@ -989,7 +1034,7 @@ const useStyles = makeStyles((colors) => ({
   },
   retryBtnText: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.white,
   },
 
@@ -1041,7 +1086,7 @@ const useStyles = makeStyles((colors) => ({
   },
   discountText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   gridBody: {
@@ -1050,7 +1095,7 @@ const useStyles = makeStyles((colors) => ({
   },
   gridName: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     lineHeight: 18,
     minHeight: 36,
@@ -1062,7 +1107,7 @@ const useStyles = makeStyles((colors) => ({
   },
   gridRatingText: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
   gridReviews: {
@@ -1077,7 +1122,7 @@ const useStyles = makeStyles((colors) => ({
   },
   gridPrice: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.success,
   },
   gridOriginal: {
@@ -1094,10 +1139,11 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: 8,
     paddingVertical: 7,
     alignItems: "center",
+    backgroundColor: colors.primary,
   },
   gridCtaText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
 
@@ -1124,7 +1170,7 @@ const useStyles = makeStyles((colors) => ({
   },
   sheetTitle: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 8,
@@ -1143,7 +1189,7 @@ const useStyles = makeStyles((colors) => ({
   },
   sheetRowActive: {
     color: colors.primary,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
 
   // Mode toggle
@@ -1173,12 +1219,12 @@ const useStyles = makeStyles((colors) => ({
     borderColor: colors.primary,
   },
   modeBtnAiActive: {
-    backgroundColor: colors.warning,
-    borderColor: colors.warning,
+    backgroundColor: colors.aiPrimary,
+    borderColor: colors.aiPrimary,
   },
   modeBtnText: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   modeBtnTextActive: {
@@ -1213,7 +1259,11 @@ const useStyles = makeStyles((colors) => ({
     marginBottom: 12,
   },
   aiSparkle: { fontSize: 18 },
-  aiCardLabel: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
+  aiCardLabel: {
+    fontSize: 15,
+    fontFamily: "Manrope_700Bold",
+    color: colors.textPrimary,
+  },
   inputWrap: {
     backgroundColor: colors.background,
     borderRadius: 12,
@@ -1251,7 +1301,11 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: 14,
   },
   generateBtnDisabled: { opacity: 0.6 },
-  generateBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
+  generateBtnText: {
+    fontSize: 15,
+    fontFamily: "Manrope_700Bold",
+    color: colors.white,
+  },
 
   // Reasoning banner
   reasoningBanner: {
@@ -1279,7 +1333,7 @@ const useStyles = makeStyles((colors) => ({
   aiResultCount: {
     fontSize: 13,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
     marginBottom: 10,
     paddingHorizontal: 2,
   },
@@ -1293,7 +1347,7 @@ const useStyles = makeStyles((colors) => ({
   aiEmptyIcon: { fontSize: 52, marginBottom: 16 },
   aiEmptyTitle: {
     fontSize: 18,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
     marginBottom: 8,
   },
@@ -1331,7 +1385,7 @@ const useStyles = makeStyles((colors) => ({
 
   aiDefaultHeader: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
     marginBottom: 10,
     paddingHorizontal: 2,
@@ -1359,7 +1413,7 @@ const useStyles = makeStyles((colors) => ({
   },
   shopPromoTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
   },
   shopPromoSub: {
@@ -1375,4 +1429,5 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "center",
     justifyContent: "center",
   },
-}));export default AllProductsScreen;
+}));
+export default AllProductsScreen;

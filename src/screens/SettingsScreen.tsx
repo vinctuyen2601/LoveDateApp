@@ -105,6 +105,8 @@ const SettingsScreen: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const { events } = useEvents();
 
+  const [showAboutModal, setShowAboutModal] = useState(false);
+
   // Special dates notification state
   const [showSpecialDates, setShowSpecialDates] = useState(false);
   const [mutedSpecialDates, setMutedSpecialDates] = useState<string[]>([]);
@@ -612,14 +614,7 @@ const SettingsScreen: React.FC = () => {
           icon="information-circle"
           title="Về ứng dụng"
           subtitle={`Phiên bản ${APP_VERSION || "1.0.0"}`}
-          onPress={() =>
-            Alert.alert(
-              "Ngày yêu thương",
-              `Version: ${
-                APP_VERSION || "1.0.0"
-              }\n\nỨng dụng nhắc nhở những ngày quan trọng trong cuộc sống.`
-            )
-          }
+          onPress={() => setShowAboutModal(true)}
         />
 
         <SettingItem
@@ -830,6 +825,76 @@ const SettingsScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* About App Modal */}
+      <Modal
+        visible={showAboutModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAboutModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowAboutModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.aboutModalCard}>
+            <LinearGradient
+              colors={[colors.primary, colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.aboutLogoWrap}
+            >
+              <Image
+                source={require("../../assets/icon.png")}
+                style={styles.aboutLogo}
+                resizeMode="contain"
+              />
+            </LinearGradient>
+
+            <Text style={styles.aboutAppName}>Ngày Yêu Thương</Text>
+            <Text style={styles.aboutVersion}>Phiên bản {APP_VERSION || "1.0.0"}</Text>
+
+            <Text style={styles.aboutDesc}>
+              Ứng dụng giúp bạn ghi nhớ và chuẩn bị cho những ngày quan trọng
+              trong cuộc sống — sinh nhật, kỷ niệm, ngày lễ và hơn thế nữa.
+            </Text>
+
+            <View style={styles.aboutDivider} />
+
+            <TouchableOpacity
+              style={styles.aboutRow}
+              onPress={() => {
+                setShowAboutModal(false);
+                navigation.navigate("PrivacyPolicy");
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+              <Text style={styles.aboutRowText}>Chính sách bảo mật</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.aboutRow}
+              onPress={() => Linking.openURL("mailto:support@ngayyeuthuong.com")}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="mail-outline" size={20} color={colors.primary} />
+              <Text style={styles.aboutRowText}>Liên hệ hỗ trợ</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.aboutCloseBtn, { backgroundColor: colors.primary }]}
+              onPress={() => setShowAboutModal(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.aboutCloseBtnText}>Đóng</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </ScrollView>
   );
@@ -1401,6 +1466,83 @@ const useStyles = makeStyles((colors) => ({
   themeLabel: {
     fontSize: 11,
     color: colors.textSecondary,
+  },
+
+  // About modal
+  aboutModalCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 24,
+    paddingBottom: 28,
+    alignItems: 'center',
+    width: '100%',
+  },
+  aboutModalHandle: {
+    width: 0,
+    height: 0,
+    marginBottom: 0,
+  },
+  aboutLogoWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  aboutLogo: {
+    width: 56,
+    height: 56,
+  },
+  aboutAppName: {
+    fontSize: 20,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  aboutVersion: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 16,
+  },
+  aboutDesc: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  aboutDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: colors.border,
+    marginBottom: 8,
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 14,
+    gap: 12,
+  },
+  aboutRowText: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontFamily: 'Manrope_500Medium',
+  },
+  aboutCloseBtn: {
+    marginTop: 16,
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  aboutCloseBtnText: {
+    fontSize: 15,
+    fontFamily: 'Manrope_600SemiBold',
+    color: '#fff',
   },
 }));
 export default SettingsScreen;

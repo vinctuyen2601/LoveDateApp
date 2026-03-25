@@ -104,7 +104,7 @@ const useStyles = makeStyles((colors) => ({
     paddingVertical: 5,
     borderRadius: 12,
   },
-  aiBadgeText: { fontSize: 11, fontFamily: 'Manrope_800ExtraBold', color: colors.primary },
+  aiBadgeText: { fontSize: 11, fontFamily: 'Manrope_800ExtraBold', color: colors.aiPrimary },
 
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 32 },
@@ -683,7 +683,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
             </Text>
           </View>
           <View style={styles.aiBadge}>
-            <Ionicons name="sparkles" size={11} color={colors.primary} />
+            <Ionicons name="sparkles" size={11} color={colors.aiPrimary} />
             <Text style={styles.aiBadgeText}>AI</Text>
           </View>
         </LinearGradient>
@@ -698,7 +698,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
             <View style={styles.aiCard}>
               <View style={styles.aiCardHeader}>
                 <LinearGradient
-                  colors={[colors.gradientStart, colors.gradientEnd]}
+                  colors={[colors.aiPrimary, colors.aiSecondary]}
                   style={styles.aiAvatar}
                 >
                   <Ionicons name="sparkles" size={17} color={colors.white} />

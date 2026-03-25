@@ -344,6 +344,20 @@ const EventDetailScreen: React.FC = () => {
                     </Text>
                   </View>
                 )}
+                {!!event.sourceSharedEventId && (
+                  <View style={[styles.recurBadge, styles.sharedBadge]}>
+                    <Ionicons
+                      name="people-outline"
+                      size={12}
+                      color={colors.primary}
+                    />
+                    <Text style={[styles.recurBadgeText, { color: colors.primary }]}>
+                      {sharerPlanInfo?.sharerName
+                        ? `Từ ${sharerPlanInfo.sharerName}`
+                        : "Được chia sẻ"}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -1363,6 +1377,9 @@ const useStyles = makeStyles((colors) => ({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+  },
+  sharedBadge: {
+    backgroundColor: colors.primary + "18",
   },
   recurBadgeText: {
     fontSize: 11,

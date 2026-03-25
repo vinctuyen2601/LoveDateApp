@@ -1,32 +1,51 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { AffiliateProduct } from '../../types';
-import { formatPrice } from '../../data/affiliateProducts';
-import PressableCard from '@components/atoms/PressableCard';
-import { trackAffiliateClick } from '../../services/affiliateProductService';
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Linking,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { AffiliateProduct } from "../../types";
+import { formatPrice } from "../../data/affiliateProducts";
+import PressableCard from "@components/atoms/PressableCard";
+import { trackAffiliateClick } from "../../services/affiliateProductService";
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 
 interface ProductCardProps {
   product: AffiliateProduct;
-  variant?: 'horizontal' | 'vertical' | 'grid';
+  variant?: "horizontal" | "vertical" | "grid";
   occasion?: string;
   onSaveToEvent?: (product: AffiliateProduct) => void;
 }
 
 const stripHtml = (html: string): string =>
-  html?.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() ?? '';
+  html
+    ?.replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() ?? "";
 
-const getDiscountPercent = (price: number | string | undefined, originalPrice: number | string | undefined): number | null => {
+const getDiscountPercent = (
+  price: number | string | undefined,
+  originalPrice: number | string | undefined
+): number | null => {
   const p = Number(price);
   const op = Number(originalPrice);
   if (!op || !p || op <= 0 || p >= op) return null;
   return Math.round((1 - p / op) * 100);
 };
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizontal', occasion, onSaveToEvent }) => {
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  variant = "horizontal",
+  occasion,
+  onSaveToEvent,
+}) => {
   const styles = useStyles();
   const colors = useColors();
 
@@ -34,7 +53,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
   const discount = getDiscountPercent(product.price, product.originalPrice);
 
   const handlePress = () => {
-    navigation.navigate('ProductDetail', { product });
+    navigation.navigate("ProductDetail", { product });
   };
 
   const handleBuyPress = () => {
@@ -44,7 +63,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
     }
   };
 
-  if (variant === 'vertical') {
+  if (variant === "vertical") {
     return (
       <PressableCard style={styles.verticalCard} onPress={handlePress}>
         {product.imageUrl ? (
@@ -54,24 +73,43 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
             resizeMode="cover"
           />
         ) : (
-          <View style={[styles.verticalIcon, { backgroundColor: product.color }]}>
-            <Ionicons name={product.icon as any} size={24} color={colors.white} />
+          <View
+            style={[styles.verticalIcon, { backgroundColor: product.color }]}
+          >
+            <Ionicons
+              name={product.icon as any}
+              size={24}
+              color={colors.white}
+            />
           </View>
         )}
         <View style={styles.verticalContent}>
-          <Text style={styles.verticalName} numberOfLines={2}>{product.name}</Text>
-          <Text style={styles.verticalDesc} numberOfLines={1}>{stripHtml(product.description)}</Text>
+          <Text style={styles.verticalName} numberOfLines={2}>
+            {product.name}
+          </Text>
+          <Text style={styles.verticalDesc} numberOfLines={1}>
+            {stripHtml(product.description)}
+          </Text>
         </View>
         <View style={styles.verticalRight}>
           {product.price && (
-            <Text style={styles.verticalPrice}>{formatPrice(product.price)}</Text>
+            <Text style={styles.verticalPrice}>
+              {formatPrice(product.price)}
+            </Text>
           )}
           <TouchableOpacity style={styles.verticalCta} onPress={handleBuyPress}>
             <Text style={styles.verticalCtaText}>Mua</Text>
           </TouchableOpacity>
           {onSaveToEvent && (
-            <TouchableOpacity style={styles.verticalSave} onPress={() => onSaveToEvent(product)}>
-              <Ionicons name="bookmark-outline" size={16} color={colors.primary} />
+            <TouchableOpacity
+              style={styles.verticalSave}
+              onPress={() => onSaveToEvent(product)}
+            >
+              <Ionicons
+                name="bookmark-outline"
+                size={16}
+                color={colors.primary}
+              />
             </TouchableOpacity>
           )}
           <Text style={styles.affiliateLabel}>AD</Text>
@@ -80,9 +118,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
     );
   }
 
-  const cardStyle = variant === 'grid'
-    ? [styles.card, styles.gridCard]
-    : styles.card;
+  const cardStyle =
+    variant === "grid" ? [styles.card, styles.gridCard] : styles.card;
 
   return (
     <PressableCard style={cardStyle} onPress={handlePress}>
@@ -100,7 +137,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           )}
         </View>
       ) : (
-        <View style={[styles.gradientHeader, { backgroundColor: product.color }]}>
+        <View
+          style={[styles.gradientHeader, { backgroundColor: product.color }]}
+        >
           <Ionicons name={product.icon as any} size={28} color={colors.white} />
           {discount !== null && (
             <View style={styles.discountBadge}>
@@ -111,13 +150,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
       )}
 
       <View style={styles.cardBody}>
-        <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+        <Text style={styles.productName} numberOfLines={2}>
+          {product.name}
+        </Text>
 
         {product.price && (
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatPrice(product.price)}</Text>
             {discount !== null && (
-              <Text style={styles.originalPrice}>{formatPrice(product.originalPrice!)}</Text>
+              <Text style={styles.originalPrice}>
+                {formatPrice(product.originalPrice!)}
+              </Text>
             )}
           </View>
         )}
@@ -128,11 +171,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'horizonta
           <Text style={styles.reviewCount}>({product.reviewCount})</Text>
         </View>
 
-        <TouchableOpacity style={[styles.ctaButton, { borderColor: colors.primary }]} onPress={handleBuyPress}>
-          <Text style={[styles.ctaText, { color: colors.primary }]}>Mua ngay</Text>
+        <TouchableOpacity
+          style={[styles.ctaButton, { borderColor: colors.primary }]}
+          onPress={handleBuyPress}
+        >
+          <Text style={[styles.ctaText, { color: colors.primary }]}>
+            Mua ngay
+          </Text>
           <Ionicons name="arrow-forward" size={14} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.affiliateLabel}>* Liên kết affiliate</Text>
       </View>
     </PressableCard>
   );
@@ -144,29 +191,29 @@ const useStyles = makeStyles((colors) => ({
     width: 180,
     backgroundColor: colors.surface,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 3,
     marginRight: 12,
   },
   gridCard: {
-    width: '100%' as any,
+    width: "100%" as any,
     marginRight: 0,
   },
   imageHeader: {
     height: 120,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   productImage: {
-    width: '100%',
+    width: "100%",
     height: 120,
   },
   gradientHeader: {
     height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   discountBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 6,
     right: 6,
     backgroundColor: colors.error,
@@ -176,7 +223,7 @@ const useStyles = makeStyles((colors) => ({
   },
   discountText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   cardBody: {
@@ -184,36 +231,36 @@ const useStyles = makeStyles((colors) => ({
   },
   productName: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     marginBottom: 6,
     lineHeight: 19,
   },
   priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     marginBottom: 4,
   },
   price: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.success,
   },
   originalPrice: {
     fontSize: 12,
     color: colors.textLight,
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
   },
   ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     marginBottom: 10,
   },
   ratingText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
   },
   reviewCount: {
@@ -221,9 +268,9 @@ const useStyles = makeStyles((colors) => ({
     color: colors.textSecondary,
   },
   ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1.5,
     borderRadius: 10,
     paddingVertical: 7,
@@ -231,13 +278,13 @@ const useStyles = makeStyles((colors) => ({
   },
   ctaText: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // Vertical card (for budget filter list)
   verticalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 12,
@@ -258,8 +305,8 @@ const useStyles = makeStyles((colors) => ({
     width: 44,
     height: 44,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   verticalContent: {
@@ -268,7 +315,7 @@ const useStyles = makeStyles((colors) => ({
   },
   verticalName: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     marginBottom: 2,
   },
@@ -277,31 +324,31 @@ const useStyles = makeStyles((colors) => ({
     color: colors.textSecondary,
   },
   verticalRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     gap: 4,
   },
   verticalPrice: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.success,
   },
   verticalCta: {
-    backgroundColor: colors.primary + '15',
+    backgroundColor: colors.primary + "15",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   verticalCtaText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
   },
   verticalSave: {
-    backgroundColor: colors.primary + '15',
+    backgroundColor: colors.primary + "15",
     borderRadius: 8,
     padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   affiliateLabel: {
     fontSize: 10,
@@ -309,4 +356,5 @@ const useStyles = makeStyles((colors) => ({
     opacity: 0.6,
     marginTop: 4,
   },
-}));export default React.memo(ProductCard);
+}));
+export default React.memo(ProductCard);

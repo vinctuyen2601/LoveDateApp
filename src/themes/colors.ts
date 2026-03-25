@@ -68,6 +68,11 @@ export const COLORS = {
   gradientStart: "#FF6B6B",
   gradientEnd: "#FF9A6C",
 
+  // AI feature colors — fixed purple regardless of theme (purple = AI universal)
+  aiPrimary: "#7C3AED",   // violet-600
+  aiSecondary: "#A855F7", // purple-500
+  aiLight: "#EDE9FE",     // violet-100
+
   // Overlay
   overlay: "rgba(0, 0, 0, 0.5)",
   overlayLight: "rgba(0, 0, 0, 0.3)",

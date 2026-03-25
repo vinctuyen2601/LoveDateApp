@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -69,8 +69,8 @@ const CalendarScreen: React.FC = () => {
     "sys_giang_sinh",
   ];
 
-  // Prepare marked dates for calendar (emoji-based, same as HomeScreen)
-  const markedDates = useMemo(() => {
+  // Base marked dates — KHÔNG phụ thuộc selectedDate, chỉ tính lại khi events/tháng thay đổi
+  const baseMarkedDates = useMemo(() => {
     const marked: any = {};
     const calYear = parseInt(currentMonth.slice(0, 4), 10);
 
@@ -109,7 +109,6 @@ const CalendarScreen: React.FC = () => {
       if (!marked[dateKey].dots) marked[dateKey].dots = [];
 
       if (PREP_SPECIAL_IDS.includes(sd.id)) {
-        // Find the holiday event dot index for this date (if any)
         const holidayEventExists = events.some((e) => {
           if (!e.eventDate || !e.tags.includes("holiday")) return false;
           const d = new Date(e.eventDate);
@@ -121,14 +120,10 @@ const CalendarScreen: React.FC = () => {
           return mk === dateKey;
         });
         if (holidayEventExists) {
-          // Replace holiday dot with special date icon so only one dot shows
           const holidayDotIdx = marked[dateKey].dots.findIndex(
             (dot: any) => dot.color === getTagColor("holiday")
           );
-          const specialDot = {
-            color: sd.color,
-            image: getSpecialDateImage(sd.id),
-          };
+          const specialDot = { color: sd.color, image: getSpecialDateImage(sd.id) };
           if (holidayDotIdx >= 0) {
             marked[dateKey].dots[holidayDotIdx] = specialDot;
           } else {
@@ -144,16 +139,19 @@ const CalendarScreen: React.FC = () => {
       });
     });
 
-    // Highlight selected date
+    return marked;
+  }, [events, currentMonth]);
+
+  // Merge selectedDate highlight — O(1), không duyệt lại events
+  const markedDates = useMemo(() => {
+    const marked = { ...baseMarkedDates };
     if (marked[selectedDate]) {
-      marked[selectedDate].selected = true;
-      marked[selectedDate].selectedColor = colors.primary;
+      marked[selectedDate] = { ...marked[selectedDate], selected: true, selectedColor: colors.primary };
     } else {
       marked[selectedDate] = { selected: true, selectedColor: colors.primary };
     }
-
     return marked;
-  }, [events, selectedDate, currentMonth]);
+  }, [baseMarkedDates, selectedDate, colors.primary]);
 
   // Get events for selected date (recurring events match by month+day)
   const selectedDateEvents = useMemo(() => {
@@ -249,13 +247,13 @@ const CalendarScreen: React.FC = () => {
     };
   }, [events, currentMonth]);
 
-  const handleDayPress = (day: DateData) => {
+  const handleDayPress = useCallback((day: DateData) => {
     setSelectedDate(day.dateString);
-  };
+  }, []);
 
-  const handleMonthChange = (month: DateData) => {
+  const handleMonthChange = useCallback((month: DateData) => {
     setCurrentMonth(month.dateString);
-  };
+  }, []);
 
   const handlePrepSpecialDate = async (sd: SpecialDate, date: Date) => {
     const existing = events.find((e) => {
@@ -675,6 +673,28 @@ const CalendarScreen: React.FC = () => {
                               </Text>
                             </View>
                           )}
+                          {!!event.sourceSharedEventId && (
+                            <View
+                              style={[
+                                styles.calEventBadge,
+                                { backgroundColor: colors.primary + "15" },
+                              ]}
+                            >
+                              <Ionicons
+                                name="people-outline"
+                                size={12}
+                                color={colors.primary}
+                              />
+                              <Text
+                                style={[
+                                  styles.calEventBadgeText,
+                                  { color: colors.primary },
+                                ]}
+                              >
+                                Được chia sẻ
+                              </Text>
+                            </View>
+                          )}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -972,6 +992,7 @@ const useStyles = makeStyles((colors) => ({
     width: 30,
     height: 30,
     borderRadius: 15,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },

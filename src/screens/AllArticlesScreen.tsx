@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -12,60 +18,72 @@ import {
   Image,
   Dimensions,
   ListRenderItem,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { COLORS } from '@themes/colors';
-import { Article } from '../data/articles';
-import { trackArticleView, fetchArticlesPaginated } from '../services/articleService';
-import { useInfiniteList } from '../hooks/useInfiniteList';
-import { useMasterData } from '../contexts/MasterDataContext';
-import PressableCard from '@components/atoms/PressableCard';
-import { makeStyles } from '@utils/makeStyles';
-import { useColors } from '@contexts/ThemeContext';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { COLORS } from "@themes/colors";
+import { Article } from "../data/articles";
+import {
+  trackArticleView,
+  fetchArticlesPaginated,
+} from "../services/articleService";
+import { useInfiniteList } from "../hooks/useInfiniteList";
+import { useMasterData } from "../contexts/MasterDataContext";
+import PressableCard from "@components/atoms/PressableCard";
+import { makeStyles } from "@utils/makeStyles";
+import { useColors } from "@contexts/ThemeContext";
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const AI_TOPIC_CHIPS = [
-  'Giữ lửa tình yêu',
-  'Ý tưởng tặng quà',
-  'Giao tiếp với người yêu',
-  'Hẹn hò lãng mạn',
-  'Chòm sao & tình yêu',
-  'Hiểu tính cách bạn đời',
-  'Hàn gắn sau cãi nhau',
-  'Lời nói ngọt ngào',
+  "Giữ lửa tình yêu",
+  "Ý tưởng tặng quà",
+  "Giao tiếp với người yêu",
+  "Hẹn hò lãng mạn",
+  "Chòm sao & tình yêu",
+  "Hiểu tính cách bạn đời",
+  "Hàn gắn sau cãi nhau",
+  "Lời nói ngọt ngào",
 ];
 
 // ─── Sort ─────────────────────────────────────────────────────────────────────
 
-type SortKey = 'popular' | 'newest' | 'liked' | 'quick';
+type SortKey = "popular" | "newest" | "liked" | "quick";
 
 const SORT_OPTIONS: { key: SortKey; label: string; icon: string }[] = [
-  { key: 'popular', label: 'Phổ biến nhất',  icon: 'eye-outline' },
-  { key: 'newest',  label: 'Mới nhất',        icon: 'time-outline' },
-  { key: 'liked',   label: 'Được yêu thích',  icon: 'heart-outline' },
-  { key: 'quick',   label: 'Đọc nhanh nhất',  icon: 'flash-outline' },
+  { key: "popular", label: "Phổ biến nhất", icon: "eye-outline" },
+  { key: "newest", label: "Mới nhất", icon: "time-outline" },
+  { key: "liked", label: "Được yêu thích", icon: "heart-outline" },
+  { key: "quick", label: "Đọc nhanh nhất", icon: "flash-outline" },
 ];
 
 // Map UI sort key → backend params
-const SORT_PARAMS: Record<SortKey, { sortBy: 'created_at' | 'views' | 'likes'; sortOrder: 'ASC' | 'DESC' }> = {
-  popular: { sortBy: 'views',      sortOrder: 'DESC' },
-  newest:  { sortBy: 'created_at', sortOrder: 'DESC' },
-  liked:   { sortBy: 'likes',      sortOrder: 'DESC' },
-  quick:   { sortBy: 'created_at', sortOrder: 'ASC'  },
+const SORT_PARAMS: Record<
+  SortKey,
+  { sortBy: "created_at" | "views" | "likes"; sortOrder: "ASC" | "DESC" }
+> = {
+  popular: { sortBy: "views", sortOrder: "DESC" },
+  newest: { sortBy: "created_at", sortOrder: "DESC" },
+  liked: { sortBy: "likes", sortOrder: "DESC" },
+  quick: { sortBy: "created_at", sortOrder: "ASC" },
 };
 
 // ─── Category config ──────────────────────────────────────────────────────────
 
 const STATIC_CATEGORIES = [
-  { id: 'all',           name: 'Tất cả',        icon: 'apps',         color: '#FF6B9D' },
-  { id: 'gifts',         name: 'Quà tặng',      icon: 'gift',         color: '#FF6B6B' },
-  { id: 'dates',         name: 'Hẹn hò',        icon: 'heart',        color: '#E91E63' },
-  { id: 'communication', name: 'Giao tiếp',     icon: 'chatbubbles',  color: '#2196F3' },
-  { id: 'zodiac',        name: 'Hoàng đạo',     icon: 'sparkles',     color: '#FF9800' },
-  { id: 'personality',   name: 'Tính cách',     icon: 'people',       color: '#4CAF50' },
+  { id: "all", name: "Tất cả", icon: "apps", color: "#FF6B9D" },
+  { id: "gifts", name: "Quà tặng", icon: "gift", color: "#FF6B6B" },
+  { id: "dates", name: "Hẹn hò", icon: "heart", color: "#E91E63" },
+  {
+    id: "communication",
+    name: "Giao tiếp",
+    icon: "chatbubbles",
+    color: "#2196F3",
+  },
+  { id: "zodiac", name: "Hoàng đạo", icon: "sparkles", color: "#FF9800" },
+  { id: "personality", name: "Tính cách", icon: "people", color: "#4CAF50" },
 ];
 
 function formatCount(n: number): string {
@@ -75,50 +93,100 @@ function formatCount(n: number): string {
 
 // ─── Hero card (featured, full-width) ─────────────────────────────────────────
 
-const HeroCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
+const HeroCard: React.FC<{ article: Article; onPress: () => void }> = ({
+  article,
+  onPress,
+}) => {
   const styles = useStyles();
   const colors = useColors();
   return (
     <PressableCard style={styles.heroCard} onPress={onPress}>
       {article.imageUrl ? (
-        <Image source={{ uri: article.imageUrl }} style={styles.heroImage} resizeMode="cover" />
+        <Image
+          source={{ uri: article.imageUrl }}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
       ) : (
-        <View style={[styles.heroImage, { backgroundColor: article.color, alignItems: 'center', justifyContent: 'center' }]}>
-          <Ionicons name={article.icon as any} size={56} color="rgba(255,255,255,0.4)" />
+        <View
+          style={[
+            styles.heroImage,
+            {
+              backgroundColor: article.color,
+              alignItems: "center",
+              justifyContent: "center",
+            },
+          ]}
+        >
+          <Ionicons
+            name={article.icon as any}
+            size={56}
+            color="rgba(255,255,255,0.4)"
+          />
         </View>
       )}
 
       {/* Gradient overlay */}
       <View style={styles.heroOverlay}>
         <View style={styles.heroBadgeRow}>
-          <View style={[styles.heroCategoryBadge, { backgroundColor: article.color }]}>
-            <Ionicons name={article.icon as any} size={11} color={colors.white} />
+          <View
+            style={[
+              styles.heroCategoryBadge,
+              { backgroundColor: article.color },
+            ]}
+          >
+            <Ionicons
+              name={article.icon as any}
+              size={11}
+              color={colors.white}
+            />
             <Text style={styles.heroCategoryText}>
-              {STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? article.category}
+              {STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ??
+                article.category}
             </Text>
           </View>
           {article.isFeatured && (
             <View style={styles.featuredBadge}>
-              <Ionicons name="star" size={10} color="#FFB300" />
+              <Ionicons name="star" size={10} color={colors.warning} />
               <Text style={styles.featuredText}>Nổi bật</Text>
             </View>
           )}
         </View>
 
-        <Text style={styles.heroTitle} numberOfLines={2}>{article.title}</Text>
+        <Text style={styles.heroTitle} numberOfLines={2}>
+          {article.title}
+        </Text>
 
         <View style={styles.heroMeta}>
           <View style={styles.heroMetaItem}>
-            <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.heroMetaText}>{article.readTime ?? 5} phút đọc</Text>
+            <Ionicons
+              name="time-outline"
+              size={13}
+              color="rgba(255,255,255,0.8)"
+            />
+            <Text style={styles.heroMetaText}>
+              {article.readTime ?? 5} phút đọc
+            </Text>
           </View>
           <View style={styles.heroMetaItem}>
-            <Ionicons name="eye-outline" size={13} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.heroMetaText}>{formatCount(article.views ?? 0)}</Text>
+            <Ionicons
+              name="eye-outline"
+              size={13}
+              color="rgba(255,255,255,0.8)"
+            />
+            <Text style={styles.heroMetaText}>
+              {formatCount(article.views ?? 0)}
+            </Text>
           </View>
           <View style={styles.heroMetaItem}>
-            <Ionicons name="heart-outline" size={13} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.heroMetaText}>{formatCount(article.likes ?? 0)}</Text>
+            <Ionicons
+              name="heart-outline"
+              size={13}
+              color="rgba(255,255,255,0.8)"
+            />
+            <Text style={styles.heroMetaText}>
+              {formatCount(article.likes ?? 0)}
+            </Text>
           </View>
         </View>
       </View>
@@ -128,7 +196,10 @@ const HeroCard: React.FC<{ article: Article; onPress: () => void }> = ({ article
 
 // ─── Editorial list card ───────────────────────────────────────────────────────
 
-const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ article, onPress }) => {
+const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({
+  article,
+  onPress,
+}) => {
   const styles = useStyles();
   const colors = useColors();
 
@@ -138,10 +209,24 @@ const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
     <PressableCard style={styles.listCard} onPress={onPress}>
       {/* Thumbnail */}
       {article.imageUrl ? (
-        <Image source={{ uri: article.imageUrl }} style={styles.listThumb} resizeMode="cover" />
+        <Image
+          source={{ uri: article.imageUrl }}
+          style={styles.listThumb}
+          resizeMode="cover"
+        />
       ) : (
-        <View style={[styles.listThumb, styles.listThumbIcon, { backgroundColor: article.color + '20' }]}>
-          <Ionicons name={article.icon as any} size={22} color={article.color} />
+        <View
+          style={[
+            styles.listThumb,
+            styles.listThumbIcon,
+            { backgroundColor: article.color + "20" },
+          ]}
+        >
+          <Ionicons
+            name={article.icon as any}
+            size={22}
+            color={article.color}
+          />
         </View>
       )}
 
@@ -149,33 +234,61 @@ const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
       <View style={styles.listContent}>
         {/* Category + read time */}
         <View style={styles.listTopRow}>
-          <View style={[styles.listCatBadge, { backgroundColor: catInfo?.color ?? article.color }]}>
-            <Text style={styles.listCatText}>{catInfo?.name ?? article.category}</Text>
+          <View
+            style={[
+              styles.listCatBadge,
+              { backgroundColor: catInfo?.color ?? article.color },
+            ]}
+          >
+            <Text style={styles.listCatText}>
+              {catInfo?.name ?? article.category}
+            </Text>
           </View>
           <View style={styles.listReadTime}>
-            <Ionicons name="time-outline" size={11} color={colors.textSecondary} />
-            <Text style={styles.listReadTimeText}>{article.readTime ?? 5} phút</Text>
+            <Ionicons
+              name="time-outline"
+              size={11}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.listReadTimeText}>
+              {article.readTime ?? 5} phút
+            </Text>
           </View>
         </View>
 
         {/* Title */}
-        <Text style={styles.listTitle} numberOfLines={2}>{article.title}</Text>
+        <Text style={styles.listTitle} numberOfLines={2}>
+          {article.title}
+        </Text>
 
         {/* Stats */}
         <View style={styles.listStats}>
           <View style={styles.listStat}>
-            <Ionicons name="eye-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.listStatText}>{formatCount(article.views ?? 0)}</Text>
+            <Ionicons
+              name="eye-outline"
+              size={12}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.listStatText}>
+              {formatCount(article.views ?? 0)}
+            </Text>
           </View>
           <View style={styles.listStat}>
-            <Ionicons name="heart-outline" size={12} color="#E91E63" />
-            <Text style={styles.listStatText}>{formatCount(article.likes ?? 0)}</Text>
+            <Ionicons name="heart-outline" size={12} color={colors.error} />
+            <Text style={styles.listStatText}>
+              {formatCount(article.likes ?? 0)}
+            </Text>
           </View>
         </View>
       </View>
 
       {/* Right arrow */}
-      <Ionicons name="chevron-forward" size={16} color={colors.border} style={styles.listArrow} />
+      <Ionicons
+        name="chevron-forward"
+        size={16}
+        color={colors.border}
+        style={styles.listArrow}
+      />
     </PressableCard>
   );
 };
@@ -183,9 +296,9 @@ const ArticleListCard: React.FC<{ article: Article; onPress: () => void }> = ({ 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 type ListItem =
-  | { type: 'hero'; article: Article }
-  | { type: 'article'; article: Article }
-  | { type: 'count'; count: number; activeFilters: number };
+  | { type: "hero"; article: Article }
+  | { type: "article"; article: Article }
+  | { type: "count"; count: number; activeFilters: number };
 
 const AllArticlesScreen: React.FC = () => {
   const styles = useStyles();
@@ -194,19 +307,19 @@ const AllArticlesScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
-  const [searchQuery, setSearchQuery]       = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [categoryId, setCategoryId]         = useState('all');
-  const [sort, setSort]                     = useState<SortKey>('popular');
-  const [showSort, setShowSort]             = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [categoryId, setCategoryId] = useState("all");
+  const [sort, setSort] = useState<SortKey>("popular");
+  const [showSort, setShowSort] = useState(false);
 
   // AI mode
-  const [aiMode, setAiMode]         = useState(false);
-  const [aiQuery, setAiQuery]       = useState('');
+  const [aiMode, setAiMode] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
   const [aiSearched, setAiSearched] = useState(false);
 
   const appendTopic = (topic: string) => {
-    const clean = topic.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    const clean = topic.replace(/^[\p{Emoji}\s]+/u, "").trim();
     setAiQuery((prev) => {
       if (prev.includes(clean)) return prev;
       return prev ? `${prev}, ${clean.toLowerCase()}` : clean;
@@ -221,27 +334,42 @@ const AllArticlesScreen: React.FC = () => {
 
   // ── Infinite scroll for browse mode ──────────────────────────────────────────
   const fetchFn = useCallback(
-    (page: number) => fetchArticlesPaginated({
-      page,
-      limit: 12,
-      search: debouncedQuery || undefined,
-      category: categoryId !== 'all' ? categoryId : undefined,
-      ...SORT_PARAMS[sort],
-    }),
-    [debouncedQuery, categoryId, sort],
+    (page: number) =>
+      fetchArticlesPaginated({
+        page,
+        limit: 12,
+        search: debouncedQuery || undefined,
+        category: categoryId !== "all" ? categoryId : undefined,
+        ...SORT_PARAMS[sort],
+      }),
+    [debouncedQuery, categoryId, sort]
   );
 
   const {
-    items, total, loading, loadingMore, hasMore, error, refresh, loadMore,
+    items,
+    total,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    refresh,
+    loadMore,
   } = useInfiniteList(fetchFn, [debouncedQuery, categoryId, sort] as const);
 
   // ── Infinite scroll for AI mode default list ──────────────────────────────────
   const aiFetchFn = useCallback(
     (page: number) => {
-      if (!aiMode) return Promise.resolve({ data: [], total: 0, page: 1, limit: 12, totalPages: 0 });
+      if (!aiMode)
+        return Promise.resolve({
+          data: [],
+          total: 0,
+          page: 1,
+          limit: 12,
+          totalPages: 0,
+        });
       return fetchArticlesPaginated({ page, limit: 12 });
     },
-    [aiMode],
+    [aiMode]
   );
   const {
     items: aiItems,
@@ -250,37 +378,45 @@ const AllArticlesScreen: React.FC = () => {
     loadMore: aiLoadMore,
   } = useInfiniteList(aiFetchFn, [aiMode] as const);
 
-  const handleArticlePress = useCallback((article: Article) => {
-    trackArticleView(article.id);
-    navigation.navigate('ArticleDetail', { article });
-  }, [navigation]);
+  const handleArticlePress = useCallback(
+    (article: Article) => {
+      trackArticleView(article.id);
+      navigation.navigate("ArticleDetail", { article });
+    },
+    [navigation]
+  );
 
   const activeFilterCount = useMemo(() => {
     let n = 0;
     if (debouncedQuery.trim()) n++;
-    if (categoryId !== 'all') n++;
+    if (categoryId !== "all") n++;
     return n;
   }, [debouncedQuery, categoryId]);
 
   // AI smart filter — keyword match trên các bài viết đã load (aiItems)
   const aiFiltered = useMemo(() => {
     if (!aiQuery.trim()) return [];
-    const keywords = aiQuery.toLowerCase().split(/[,\s]+/).filter((k) => k.length > 1);
+    const keywords = aiQuery
+      .toLowerCase()
+      .split(/[,\s]+/)
+      .filter((k) => k.length > 1);
     return aiItems.filter((article) => {
       const haystack = [
         article.title,
         ...(article.tags ?? []),
-        STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? '',
-      ].join(' ').toLowerCase();
+        STATIC_CATEGORIES.find((c) => c.id === article.category)?.name ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
       return keywords.some((kw) => haystack.includes(kw));
     });
   }, [aiItems, aiQuery]);
 
   const clearAll = useCallback(() => {
-    setSearchQuery('');
-    setDebouncedQuery('');
-    setCategoryId('all');
-    setSort('popular');
+    setSearchQuery("");
+    setDebouncedQuery("");
+    setCategoryId("all");
+    setSort("popular");
   }, []);
 
   // Build list data: hero (first) + count bar + rest as list cards
@@ -288,49 +424,70 @@ const AllArticlesScreen: React.FC = () => {
     if (items.length === 0) return [];
     const [hero, ...rest] = items;
     return [
-      { type: 'hero', article: hero },
-      { type: 'count', count: total, activeFilters: activeFilterCount },
-      ...rest.map((a): ListItem => ({ type: 'article', article: a })),
+      { type: "hero", article: hero },
+      { type: "count", count: total, activeFilters: activeFilterCount },
+      ...rest.map((a): ListItem => ({ type: "article", article: a })),
     ];
   }, [items, total, activeFilterCount]);
 
-  const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label ?? '';
+  const activeSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label ?? "";
 
-  const renderItem: ListRenderItem<ListItem> = useCallback(({ item }) => {
-    if (item.type === 'hero') {
-      return <HeroCard article={item.article} onPress={() => handleArticlePress(item.article)} />;
-    }
-    if (item.type === 'count') {
+  const renderItem: ListRenderItem<ListItem> = useCallback(
+    ({ item }) => {
+      if (item.type === "hero") {
+        return (
+          <HeroCard
+            article={item.article}
+            onPress={() => handleArticlePress(item.article)}
+          />
+        );
+      }
+      if (item.type === "count") {
+        return (
+          <View style={styles.resultsBar}>
+            <Text style={styles.resultsCount}>
+              {item.count} bài viết{item.activeFilters > 0 ? " (đang lọc)" : ""}
+            </Text>
+            {item.activeFilters > 0 && (
+              <TouchableOpacity onPress={clearAll}>
+                <Text style={styles.clearText}>Xóa bộ lọc</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      }
       return (
-        <View style={styles.resultsBar}>
-          <Text style={styles.resultsCount}>
-            {item.count} bài viết{item.activeFilters > 0 ? ' (đang lọc)' : ''}
-          </Text>
-          {item.activeFilters > 0 && (
-            <TouchableOpacity onPress={clearAll}>
-              <Text style={styles.clearText}>Xóa bộ lọc</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <ArticleListCard
+          article={item.article}
+          onPress={() => handleArticlePress(item.article)}
+        />
       );
-    }
-    return <ArticleListCard article={item.article} onPress={() => handleArticlePress(item.article)} />;
-  }, [handleArticlePress, clearAll]);
+    },
+    [handleArticlePress, clearAll]
+  );
 
   const keyExtractor = useCallback((item: ListItem, index: number) => {
-    if (item.type === 'count') return 'count-bar';
-    return item.article.id + '-' + index;
+    if (item.type === "count") return "count-bar";
+    return item.article.id + "-" + index;
   }, []);
 
   return (
     <View style={styles.container}>
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 8 }]}
+      >
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Cẩm nang yêu thương</Text>
+          <Text style={styles.headerTitle}>Blog chia sẻ</Text>
           <Text style={styles.headerSub}>Bí quyết cho tình yêu bền lâu</Text>
         </View>
         {activeFilterCount > 0 ? (
@@ -340,7 +497,7 @@ const AllArticlesScreen: React.FC = () => {
         ) : (
           <View style={styles.iconBtn} />
         )}
-      </View>
+      </LinearGradient>
 
       {/* ── Mode toggle ── */}
       <View style={styles.modeToggle}>
@@ -348,15 +505,31 @@ const AllArticlesScreen: React.FC = () => {
           style={[styles.modeBtn, !aiMode && styles.modeBtnActive]}
           onPress={() => setAiMode(false)}
         >
-          <Ionicons name="list-outline" size={14} color={!aiMode ? colors.white : colors.textSecondary} />
-          <Text style={[styles.modeBtnText, !aiMode && styles.modeBtnTextActive]}>Duyệt bài viết</Text>
+          <Ionicons
+            name="list-outline"
+            size={14}
+            color={!aiMode ? colors.white : colors.textSecondary}
+          />
+          <Text
+            style={[styles.modeBtnText, !aiMode && styles.modeBtnTextActive]}
+          >
+            Duyệt bài viết
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.modeBtn, aiMode && styles.modeBtnAiActive]}
           onPress={() => setAiMode(true)}
         >
-          <Ionicons name="sparkles" size={14} color={aiMode ? colors.white : colors.primary} />
-          <Text style={[styles.modeBtnText, aiMode && styles.modeBtnAiTextActive]}>AI Gợi ý</Text>
+          <Ionicons
+            name="sparkles"
+            size={14}
+            color={aiMode ? colors.white : colors.primary}
+          />
+          <Text
+            style={[styles.modeBtnText, aiMode && styles.modeBtnAiTextActive]}
+          >
+            AI Gợi ý
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -365,7 +538,11 @@ const AllArticlesScreen: React.FC = () => {
         <>
           {/* Search + Sort row */}
           <View style={styles.searchRow}>
-            <Ionicons name="search-outline" size={17} color={colors.textSecondary} />
+            <Ionicons
+              name="search-outline"
+              size={17}
+              color={colors.textSecondary}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder="Tìm bài viết, chủ đề..."
@@ -375,27 +552,53 @@ const AllArticlesScreen: React.FC = () => {
               returnKeyType="search"
               clearButtonMode="while-editing"
             />
-            <TouchableOpacity style={styles.sortPill} onPress={() => setShowSort(true)}>
-              <Ionicons name="swap-vertical-outline" size={14} color={colors.primary} />
+            <TouchableOpacity
+              style={styles.sortPill}
+              onPress={() => setShowSort(true)}
+            >
+              <Ionicons
+                name="swap-vertical-outline"
+                size={14}
+                color={colors.primary}
+              />
               <Text style={styles.sortPillText} numberOfLines={1}>
-                {sort === 'popular' ? 'Sắp xếp' : activeSortLabel}
+                {sort === "popular" ? "Sắp xếp" : activeSortLabel}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Category tabs */}
           <View style={styles.categoryBar}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsRow}
+            >
               {STATIC_CATEGORIES.map((cat) => {
                 const active = categoryId === cat.id;
                 return (
                   <TouchableOpacity
                     key={cat.id}
-                    style={[styles.catChip, active && { backgroundColor: cat.color, borderColor: cat.color }]}
+                    style={[
+                      styles.catChip,
+                      active && {
+                        backgroundColor: cat.color,
+                        borderColor: cat.color,
+                      },
+                    ]}
                     onPress={() => setCategoryId(cat.id)}
                   >
-                    <Ionicons name={cat.icon as any} size={13} color={active ? colors.white : cat.color} />
-                    <Text style={[styles.catChipText, { color: active ? colors.white : cat.color }]}>
+                    <Ionicons
+                      name={cat.icon as any}
+                      size={13}
+                      color={active ? colors.white : cat.color}
+                    />
+                    <Text
+                      style={[
+                        styles.catChipText,
+                        { color: active ? colors.white : cat.color },
+                      ]}
+                    >
                       {cat.name}
                     </Text>
                   </TouchableOpacity>
@@ -405,53 +608,63 @@ const AllArticlesScreen: React.FC = () => {
           </View>
 
           {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.stateText}>Đang tải bài viết...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.center}>
-            <Ionicons name="wifi-outline" size={44} color={colors.textSecondary} />
-            <Text style={styles.stateText}>{error}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
-              <Text style={styles.retryBtnText}>Thử lại</Text>
-            </TouchableOpacity>
-          </View>
-        ) : items.length === 0 ? (
-          <View style={styles.center}>
-            <Ionicons name="document-text-outline" size={44} color={colors.textSecondary} />
-            <Text style={styles.stateText}>
-              {activeFilterCount > 0 ? 'Không tìm thấy bài viết phù hợp' : 'Chưa có bài viết nào'}
-            </Text>
-            {activeFilterCount > 0 && (
-              <TouchableOpacity style={styles.retryBtn} onPress={clearAll}>
-                <Text style={styles.retryBtnText}>Xóa bộ lọc</Text>
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.stateText}>Đang tải bài viết...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.center}>
+              <Ionicons
+                name="wifi-outline"
+                size={44}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.stateText}>{error}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={refresh}>
+                <Text style={styles.retryBtnText}>Thử lại</Text>
               </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          <FlatList
-            data={listData}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.3}
-            onRefresh={refresh}
-            refreshing={loading && items.length > 0}
-            ListFooterComponent={
-              loadingMore ? (
-                <View style={styles.footerLoader}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              ) : !hasMore && items.length > 0 ? (
-                <Text style={styles.footerEnd}>— Hết danh sách —</Text>
-              ) : null
-            }
-          />
-        )}
+            </View>
+          ) : items.length === 0 ? (
+            <View style={styles.center}>
+              <Ionicons
+                name="document-text-outline"
+                size={44}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.stateText}>
+                {activeFilterCount > 0
+                  ? "Không tìm thấy bài viết phù hợp"
+                  : "Chưa có bài viết nào"}
+              </Text>
+              {activeFilterCount > 0 && (
+                <TouchableOpacity style={styles.retryBtn} onPress={clearAll}>
+                  <Text style={styles.retryBtnText}>Xóa bộ lọc</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <FlatList
+              data={listData}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              contentContainerStyle={styles.list}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.3}
+              onRefresh={refresh}
+              refreshing={loading && items.length > 0}
+              ListFooterComponent={
+                loadingMore ? (
+                  <View style={styles.footerLoader}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                ) : !hasMore && items.length > 0 ? (
+                  <Text style={styles.footerEnd}>— Hết danh sách —</Text>
+                ) : null
+              }
+            />
+          )}
         </>
       )}
 
@@ -477,14 +690,19 @@ const AllArticlesScreen: React.FC = () => {
               {/* AI input card */}
               <View style={styles.aiCard}>
                 <View style={styles.aiCardTitle}>
-                  <Ionicons name="book-outline" size={22} color="#8B5CF6" />
-                  <Text style={styles.aiCardLabel}>Bạn muốn đọc về chủ đề gì?</Text>
+                  <Ionicons name="book-outline" size={22} color={colors.primary} />
+                  <Text style={styles.aiCardLabel}>
+                    Bạn muốn đọc về chủ đề gì?
+                  </Text>
                 </View>
                 <View style={styles.aiInputWrap}>
                   <TextInput
                     style={styles.aiTextInput}
                     value={aiQuery}
-                    onChangeText={(text) => { setAiQuery(text); setAiSearched(false); }}
+                    onChangeText={(text) => {
+                      setAiQuery(text);
+                      setAiSearched(false);
+                    }}
                     multiline
                     numberOfLines={2}
                     placeholder="VD: cách tặng quà bạn gái, hẹn hò lần đầu, giao tiếp trong tình yêu..."
@@ -494,9 +712,16 @@ const AllArticlesScreen: React.FC = () => {
                   {aiQuery.length > 0 && (
                     <TouchableOpacity
                       style={styles.aiClearBtn}
-                      onPress={() => { setAiQuery(''); setAiSearched(false); }}
+                      onPress={() => {
+                        setAiQuery("");
+                        setAiSearched(false);
+                      }}
                     >
-                      <Ionicons name="close-circle-outline" size={16} color={colors.textSecondary} />
+                      <Ionicons
+                        name="close-circle-outline"
+                        size={16}
+                        color={colors.textSecondary}
+                      />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -511,7 +736,10 @@ const AllArticlesScreen: React.FC = () => {
                     <TouchableOpacity
                       key={topic}
                       style={styles.topicChip}
-                      onPress={() => { appendTopic(topic); setAiSearched(false); }}
+                      onPress={() => {
+                        appendTopic(topic);
+                        setAiSearched(false);
+                      }}
                     >
                       <Text style={styles.topicChipText}>{topic}</Text>
                     </TouchableOpacity>
@@ -519,25 +747,36 @@ const AllArticlesScreen: React.FC = () => {
                 </ScrollView>
 
                 <TouchableOpacity
-                  style={[styles.aiSearchBtn, !aiQuery.trim() && styles.aiSearchBtnDisabled]}
+                  style={[
+                    styles.aiSearchBtn,
+                    !aiQuery.trim() && styles.aiSearchBtnDisabled,
+                  ]}
                   onPress={() => setAiSearched(true)}
                   disabled={!aiQuery.trim()}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="sparkles" size={18} color={colors.white} />
-                  <Text style={styles.aiSearchBtnText}>Tìm bài viết phù hợp</Text>
+                  <Text style={styles.aiSearchBtnText}>
+                    Tìm bài viết phù hợp
+                  </Text>
                 </TouchableOpacity>
               </View>
 
               {/* AI results (khi đã search) */}
-              {aiSearched && aiQuery.trim() && (
-                aiFiltered.length > 0 ? (
+              {aiSearched &&
+                aiQuery.trim() &&
+                (aiFiltered.length > 0 ? (
                   <>
                     <View style={styles.aiResultHeader}>
                       <Text style={styles.aiResultCount}>
                         Tìm thấy {aiFiltered.length} bài viết
                       </Text>
-                      <TouchableOpacity onPress={() => { setAiQuery(''); setAiSearched(false); }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setAiQuery("");
+                          setAiSearched(false);
+                        }}
+                      >
                         <Text style={styles.aiResultClear}>Xóa</Text>
                       </TouchableOpacity>
                     </View>
@@ -551,12 +790,19 @@ const AllArticlesScreen: React.FC = () => {
                   </>
                 ) : (
                   <View style={styles.aiEmpty}>
-                    <Ionicons name="search-outline" size={40} color={colors.textLight} />
-                    <Text style={styles.aiEmptyTitle}>Không tìm thấy bài viết</Text>
-                    <Text style={styles.aiEmptyText}>Thử từ khóa khác hoặc chọn chủ đề gợi ý bên trên</Text>
+                    <Ionicons
+                      name="search-outline"
+                      size={40}
+                      color={colors.textLight}
+                    />
+                    <Text style={styles.aiEmptyTitle}>
+                      Không tìm thấy bài viết
+                    </Text>
+                    <Text style={styles.aiEmptyText}>
+                      Thử từ khóa khác hoặc chọn chủ đề gợi ý bên trên
+                    </Text>
                   </View>
-                )
-              )}
+                ))}
 
               {/* Header mặc định */}
               {(!aiSearched || !aiQuery.trim()) && aiItems.length > 0 && (
@@ -569,7 +815,9 @@ const AllArticlesScreen: React.FC = () => {
               <View style={styles.footerLoader}>
                 <ActivityIndicator size="small" color={colors.primary} />
               </View>
-            ) : !aiHasMore && aiItems.length > 0 && (!aiSearched || !aiQuery.trim()) ? (
+            ) : !aiHasMore &&
+              aiItems.length > 0 &&
+              (!aiSearched || !aiQuery.trim()) ? (
               <Text style={styles.footerEnd}>— Hết danh sách —</Text>
             ) : null
           }
@@ -578,22 +826,40 @@ const AllArticlesScreen: React.FC = () => {
 
       {/* ── Sort sheet ── */}
       {showSort && (
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowSort(false)}>
-          <TouchableOpacity style={styles.sheet} activeOpacity={1} onPress={() => {}}>
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setShowSort(false)}
+        >
+          <TouchableOpacity
+            style={styles.sheet}
+            activeOpacity={1}
+            onPress={() => {}}
+          >
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Sắp xếp theo</Text>
             {SORT_OPTIONS.map((option) => (
               <TouchableOpacity
                 key={option.key}
                 style={styles.sheetRow}
-                onPress={() => { setSort(option.key); setShowSort(false); }}
+                onPress={() => {
+                  setSort(option.key);
+                  setShowSort(false);
+                }}
               >
                 <Ionicons
                   name={option.icon as any}
                   size={20}
-                  color={sort === option.key ? colors.primary : colors.textSecondary}
+                  color={
+                    sort === option.key ? colors.primary : colors.textSecondary
+                  }
                 />
-                <Text style={[styles.sheetRowText, sort === option.key && styles.sheetRowActive]}>
+                <Text
+                  style={[
+                    styles.sheetRowText,
+                    sort === option.key && styles.sheetRowActive,
+                  ]}
+                >
                   {option.label}
                 </Text>
                 {sort === option.key && (
@@ -616,54 +882,53 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.background,
   },
 
-  // Header — warm gradient feel
+  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingTop: 0,
     paddingBottom: 14,
     paddingHorizontal: 12,
-    backgroundColor: colors.error,
   },
   iconBtn: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerCenter: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   headerTitle: {
     fontSize: 17,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   headerSub: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.75)',
+    color: "rgba(255,255,255,0.75)",
     marginTop: 2,
   },
   clearBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: "rgba(255,255,255,0.25)",
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
     width: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   clearBadgeText: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.white,
   },
 
   // Search + sort row
   searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     marginHorizontal: 12,
     marginVertical: 10,
@@ -671,7 +936,7 @@ const useStyles = makeStyles((colors) => ({
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 4,
+    paddingVertical: Platform.OS === "ios" ? 10 : 4,
     gap: 8,
   },
   searchInput: {
@@ -680,20 +945,20 @@ const useStyles = makeStyles((colors) => ({
     color: colors.textPrimary,
   },
   sortPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 10,
-    backgroundColor: colors.primary + '12',
+    backgroundColor: colors.primary + "12",
     borderWidth: 1,
-    borderColor: colors.primary + '30',
+    borderColor: colors.primary + "30",
     maxWidth: 100,
   },
   sortPillText: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
     flexShrink: 1,
   },
@@ -710,8 +975,8 @@ const useStyles = makeStyles((colors) => ({
     gap: 8,
   },
   catChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 11,
     paddingVertical: 6,
@@ -722,7 +987,7 @@ const useStyles = makeStyles((colors) => ({
   },
   catChipText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // List
@@ -735,33 +1000,33 @@ const useStyles = makeStyles((colors) => ({
     marginHorizontal: 12,
     marginTop: 12,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     height: 200,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
   },
   heroImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
+    width: "100%",
+    height: "100%",
+    position: "absolute",
   },
   heroOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
     padding: 14,
   },
   heroBadgeRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 6,
     marginBottom: 8,
   },
   heroCategoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -769,69 +1034,69 @@ const useStyles = makeStyles((colors) => ({
   },
   heroCategoryText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   featuredBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,179,0,0.25)',
+    backgroundColor: "rgba(255,179,0,0.25)",
     borderWidth: 1,
-    borderColor: '#FFB300',
+    borderColor: colors.warning,
   },
   featuredText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
-    color: '#FFB300',
+    fontFamily: "Manrope_700Bold",
+    color: colors.warning,
   },
   heroTitle: {
     fontSize: 17,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
     lineHeight: 23,
     marginBottom: 10,
   },
   heroMeta: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 14,
   },
   heroMetaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   heroMetaText: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+    color: "rgba(255,255,255,0.85)",
   },
 
   // Results bar
   resultsBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   resultsCount: {
     fontSize: 13,
     color: colors.textSecondary,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: "Manrope_500Medium",
   },
   clearText: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // Editorial list card
   listCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
     marginHorizontal: 12,
     marginBottom: 8,
@@ -851,16 +1116,16 @@ const useStyles = makeStyles((colors) => ({
     flexShrink: 0,
   },
   listThumbIcon: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   listContent: {
     flex: 1,
     gap: 5,
   },
   listTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   listCatBadge: {
@@ -870,12 +1135,12 @@ const useStyles = makeStyles((colors) => ({
   },
   listCatText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   listReadTime: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
   },
   listReadTimeText: {
@@ -884,17 +1149,17 @@ const useStyles = makeStyles((colors) => ({
   },
   listTitle: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textPrimary,
     lineHeight: 19,
   },
   listStats: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   listStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
   },
   listStatText: {
@@ -909,15 +1174,15 @@ const useStyles = makeStyles((colors) => ({
   // States
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 12,
     paddingHorizontal: 32,
   },
   stateText: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   retryBtn: {
     paddingHorizontal: 24,
@@ -927,16 +1192,16 @@ const useStyles = makeStyles((colors) => ({
   },
   retryBtnText: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.white,
   },
 
   footerLoader: {
     paddingVertical: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerEnd: {
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: 20,
     fontSize: 13,
     color: colors.textSecondary,
@@ -945,8 +1210,8 @@ const useStyles = makeStyles((colors) => ({
   // Sort sheet
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: colors.surface,
@@ -960,19 +1225,19 @@ const useStyles = makeStyles((colors) => ({
     height: 4,
     borderRadius: 2,
     backgroundColor: colors.border,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 16,
   },
   sheetTitle: {
     fontSize: 16,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
     color: colors.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 8,
   },
   sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 14,
     paddingHorizontal: 20,
     paddingVertical: 14,
@@ -984,12 +1249,12 @@ const useStyles = makeStyles((colors) => ({
   },
   sheetRowActive: {
     color: colors.primary,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: "Manrope_700Bold",
   },
 
   // Mode toggle
   modeToggle: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -999,9 +1264,9 @@ const useStyles = makeStyles((colors) => ({
   },
   modeBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 5,
     paddingVertical: 8,
     borderRadius: 10,
@@ -1010,16 +1275,16 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.background,
   },
   modeBtnActive: {
-    backgroundColor: colors.error,
-    borderColor: colors.error,
-  },
-  modeBtnAiActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
+  modeBtnAiActive: {
+    backgroundColor: colors.aiPrimary,
+    borderColor: colors.aiPrimary,
+  },
   modeBtnText: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   modeBtnTextActive: {
@@ -1040,16 +1305,25 @@ const useStyles = makeStyles((colors) => ({
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.primary + '30',
+    borderColor: colors.primary + "30",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
-  aiCardTitle: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  aiCardTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
   aiSparkle: { fontSize: 18 },
-  aiCardLabel: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.textPrimary },
+  aiCardLabel: {
+    fontSize: 15,
+    fontFamily: "Manrope_700Bold",
+    color: colors.textPrimary,
+  },
   aiInputWrap: {
     backgroundColor: colors.background,
     borderRadius: 12,
@@ -1066,7 +1340,7 @@ const useStyles = makeStyles((colors) => ({
     minHeight: 52,
     lineHeight: 20,
   },
-  aiClearBtn: { alignSelf: 'flex-end', padding: 2, marginTop: 2 },
+  aiClearBtn: { alignSelf: "flex-end", padding: 2, marginTop: 2 },
   topicRow: { gap: 8, paddingBottom: 4, marginBottom: 14 },
   topicChip: {
     paddingHorizontal: 12,
@@ -1078,47 +1352,62 @@ const useStyles = makeStyles((colors) => ({
   },
   topicChipText: { fontSize: 12, color: colors.textSecondary },
   aiSearchBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 14,
   },
   aiSearchBtnDisabled: { opacity: 0.6 },
-  aiSearchBtnText: { fontSize: 15, fontFamily: 'Manrope_700Bold', color: colors.white },
+  aiSearchBtnText: {
+    fontSize: 15,
+    fontFamily: "Manrope_700Bold",
+    color: colors.white,
+  },
 
   // AI result header
   aiResultHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
     paddingHorizontal: 2,
   },
   aiResultCount: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   aiResultClear: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
   },
 
   // AI empty
-  aiEmpty: { alignItems: 'center', paddingVertical: 40 },
+  aiEmpty: { alignItems: "center", paddingVertical: 40 },
   aiEmptyIcon: { fontSize: 44, marginBottom: 12 },
-  aiEmptyTitle: { fontSize: 16, fontFamily: 'Manrope_700Bold', color: colors.textPrimary, marginBottom: 6 },
-  aiEmptyText: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 24 },
+  aiEmptyTitle: {
+    fontSize: 16,
+    fontFamily: "Manrope_700Bold",
+    color: colors.textPrimary,
+    marginBottom: 6,
+  },
+  aiEmptyText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: "center",
+    paddingHorizontal: 24,
+  },
 
   aiDefaultHeader: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
     marginBottom: 10,
     paddingHorizontal: 2,
   },
-}));export default AllArticlesScreen;
+}));
+export default AllArticlesScreen;

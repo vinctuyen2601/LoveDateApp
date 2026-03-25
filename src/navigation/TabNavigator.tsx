@@ -16,7 +16,7 @@ import Reanimated, {
   useAnimatedProps,
   withSpring,
 } from "react-native-reanimated";
-import { Svg, Path, Defs, Filter, FeDropShadow } from "react-native-svg";
+import { Svg, Path } from "react-native-svg";
 import { COLORS } from "@themes/colors";
 import HomeScreen from "../screens/HomeScreen";
 import CalendarScreen from "../screens/CalendarScreen";
@@ -32,7 +32,7 @@ const BAR_W = SCREEN_W;
 const ROW_PAD = 8;
 const TAB_W = (BAR_W - ROW_PAD * 2) / 5;
 const BUMP_H = 14;
-const BAR_H = 62;
+const BAR_H = 72;
 const TOTAL_H = BUMP_H + BAR_H;
 const HW = TAB_W * 0.6; // hill half-width
 
@@ -74,21 +74,9 @@ const HillBackground: React.FC<{ activeIndex: number }> = ({ activeIndex }) => {
 
   return (
     <Svg width={BAR_W} height={TOTAL_H} style={StyleSheet.absoluteFill}>
-      <Defs>
-        <Filter id="shadow" x="-5%" y="-20%" width="110%" height="140%">
-          <FeDropShadow
-            dx="0"
-            dy="4"
-            stdDeviation="8"
-            floodColor="#000"
-            floodOpacity="0.10"
-          />
-        </Filter>
-      </Defs>
       <AnimatedPath
         animatedProps={animatedProps}
-        fill={`${colors.primary}16`}
-        filter="url(#shadow)"
+        fill={`${colors.primary}24`}
       />
     </Svg>
   );
@@ -257,6 +245,7 @@ const useStyles = makeStyles((colors) => ({
     height: BAR_H,
     flexDirection: "row",
     paddingHorizontal: ROW_PAD,
+    paddingTop: 8,
     overflow: "visible",
   },
   tabItem: {
@@ -268,13 +257,14 @@ const useStyles = makeStyles((colors) => ({
   },
   iconWrap: {
     width: 40,
-    height: 34,
-    borderRadius: 17,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
   iconWrapActive: {
-    backgroundColor: colors.primary + "18",
+    backgroundColor: colors.primary + "50",
   },
   label: {
     fontSize: 10,
