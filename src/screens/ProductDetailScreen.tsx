@@ -489,7 +489,7 @@ const ProductDetailScreen: React.FC = () => {
             colors={
               isDisabled
                 ? [colors.textLight, colors.textLight]
-                : [product.color, product.color + "DD"]
+                : [colors.primary, colors.primaryDark]
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}

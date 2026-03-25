@@ -253,17 +253,23 @@ const AddEventScreen: React.FC = () => {
           .finally(() => setIsLoadingConnections(false));
         // Sync then poll DB until serverId appears (avoids race with background sync)
         const waitForServerId = async () => {
-          await sync().catch(console.warn);
-          for (let i = 0; i < 10; i++) {
-            const fresh = await DB.getEventById(db, newEvent.id);
-
-            if (fresh?.serverId) {
-              setCreatedEvent((prev) =>
-                prev ? { ...prev, serverId: fresh.serverId } : prev
-              );
-              return;
+          // addEvent already kicked off a sync; poll first to avoid skipping it
+          // if that sync is still in progress. Retry sync once if first round fails.
+          for (let attempt = 0; attempt < 2; attempt++) {
+            if (attempt > 0) {
+              // First round didn't find serverId — trigger an explicit sync
+              await sync().catch(console.warn);
             }
-            await new Promise((r) => setTimeout(r, 500));
+            for (let i = 0; i < 12; i++) {
+              await new Promise((r) => setTimeout(r, 600));
+              const fresh = await DB.getEventById(db, newEvent.id);
+              if (fresh?.serverId) {
+                setCreatedEvent((prev) =>
+                  prev ? { ...prev, serverId: fresh.serverId } : prev
+                );
+                return;
+              }
+            }
           }
         };
         waitForServerId().finally(() => setIsSyncingForShare(false));

@@ -327,7 +327,13 @@ const EventDetailScreen: React.FC = () => {
                       size={12}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.recurBadgeText}>Hàng năm</Text>
+                    <Text style={styles.recurBadgeText}>
+                      {event.recurrencePattern?.type === 'weekly'
+                        ? 'Hàng tuần'
+                        : event.recurrencePattern?.type === 'monthly'
+                        ? 'Hàng tháng'
+                        : 'Hàng năm'}
+                    </Text>
                   </View>
                 )}
                 {event.isLunarCalendar && (
@@ -448,7 +454,8 @@ const EventDetailScreen: React.FC = () => {
 
         {/* Occasion Prep Banner — eligible tag + còn ≤ 30 ngày + chưa có note năm nay */}
         {(() => {
-          if (event.sourceSharedEventId) return null; // Sự kiện từ kết nối không hiện prep
+          if (event.sourceSharedEventId) return null;
+          if (event.recurrencePattern?.type === 'weekly') return null;
           const isEligible = event.tags.some((t) => OCCASION_TAGS.includes(t));
           const daysUntil = getDaysUntil(event.eventDate);
           const currentYear = new Date().getFullYear();
@@ -495,7 +502,8 @@ const EventDetailScreen: React.FC = () => {
 
         {/* Post-event Banner — eligible + đã qua ≤ 3 ngày + chưa rating */}
         {(() => {
-          if (event.sourceSharedEventId) return null; // Sự kiện từ kết nối không hiện post-event prep
+          if (event.sourceSharedEventId) return null;
+          if (event.recurrencePattern?.type === 'weekly') return null;
           const isEligible = event.tags.some((t) => OCCASION_TAGS.includes(t));
           const daysUntil = getDaysUntil(event.eventDate);
           const currentYear = new Date().getFullYear();
@@ -541,7 +549,8 @@ const EventDetailScreen: React.FC = () => {
 
         {/* Preparation Status Card — upcoming event already has note for current year */}
         {(() => {
-          if (event.sourceSharedEventId) return null; // Sự kiện từ kết nối không hiện prep status
+          if (event.sourceSharedEventId) return null;
+          if (event.recurrencePattern?.type === 'weekly') return null;
           const currentYear = new Date().getFullYear();
           const daysUntil = getDaysUntil(event.eventDate);
           const thisYearNote = event.notes?.find(
@@ -1151,8 +1160,8 @@ const EventDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Quick Actions Grid */}
-        <View style={styles.section}>
+        {/* Quick Actions Grid — ẩn cho sự kiện hàng tuần */}
+        {event.recurrencePattern?.type !== 'weekly' && <View style={styles.section}>
           <Text style={styles.sectionTitle}>Chuẩn bị cho ngày đặc biệt</Text>
           <View style={styles.actionsGrid}>
             <TouchableOpacity
@@ -1192,7 +1201,7 @@ const EventDetailScreen: React.FC = () => {
               <Text style={styles.actionSub}>Nhà hàng, địa điểm</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </View>}
 
         {/* Quick links row — compact */}
         <View style={styles.section}>

@@ -158,9 +158,6 @@ const LOVE_LANGUAGE_MAP: Record<string, { label: string; icon: string; desc: str
 const AV_SCORE: Record<string, number> = { a: 10, b: 90, c: 20, d: 35 };
 const AX_SCORE: Record<string, number> = { a: 10, b: 90, c: 40, d: 70 };
 function deriveQuadrant(avoidance: string, anxiety: string): string {
-  const styles = useStyles();
-  const colors = useColors();
-
   const av = AV_SCORE[avoidance] ?? 35;
   const ax = AX_SCORE[anxiety]   ?? 35;
   if (av < 45 && ax < 45) return 'a'; // Gắn bó an toàn

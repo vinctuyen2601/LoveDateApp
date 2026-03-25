@@ -230,7 +230,13 @@ const SharedInboxScreen: React.FC = () => {
                 eventSnapshot.eventDate,
                 eventSnapshot.isLunarCalendar,
               )}
-              {eventSnapshot.isRecurring && " · Hàng năm"}
+              {eventSnapshot.isRecurring && ` · ${
+                eventSnapshot.recurrencePattern?.type === 'weekly'
+                  ? 'Hàng tuần'
+                  : eventSnapshot.recurrencePattern?.type === 'monthly'
+                  ? 'Hàng tháng'
+                  : 'Hàng năm'
+              }`}
             </Text>
             {tags.length > 0 && (
               <View style={styles.tagsRow}>

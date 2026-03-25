@@ -262,6 +262,9 @@ function collectUserNotifications(
 
   for (const event of events) {
     if (!event.reminderSettings?.remindDaysBefore?.length) continue;
+    // weekly/monthly are handled server-side via Expo Push API — skip local scheduling
+    const patternType = event.recurrencePattern?.type;
+    if (patternType === 'weekly' || patternType === 'monthly') continue;
 
     const occurrences = getOccurrencesInWindow(event, now, windowEnd);
     const reminderTime = event.reminderSettings?.reminderTime ?? { hour: 9, minute: 0 };

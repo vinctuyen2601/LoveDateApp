@@ -20,6 +20,7 @@ import { getSpecialDatesForMonth } from '../constants/specialDates';
 import { getSpecialDateImage } from '@lib/iconImages';
 import { makeStyles } from '@utils/makeStyles';
 import { useColors } from '@contexts/ThemeContext';
+import { getOccurrencesInMonth } from '@utils/recurrence';
 
 type FilterType = 'all' | 'upcoming' | 'past' | 'birthday' | 'anniversary' | 'holiday' | 'other';
 
@@ -70,8 +71,7 @@ const EventsListScreen: React.FC = () => {
         if (!event.eventDate) return false;
         const d = new Date(event.eventDate);
         if (isNaN(d.getTime())) return false;
-        // Recurring events: match by month only (same as CalendarScreen)
-        if (event.isRecurring) return d.getMonth() === month;
+        if (event.isRecurring) return getOccurrencesInMonth(event, year, month).length > 0;
         return d.getFullYear() === year && d.getMonth() === month;
       });
     }

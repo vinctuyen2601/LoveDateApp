@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Event, EventFormData, EventNote, EventsContextValue } from '../types';
 import * as DB from '../services/database.service';
 import { scheduleUpcomingNotifications } from '../services/notificationScheduler.service';
+import { cancelEventPush, restoreEventPush } from '../services/pushNotification.service';
 
 const RESCHEDULE_DEBOUNCE_MS = 2000;
 import * as ChecklistService from '../services/checklist.service';
@@ -172,14 +173,19 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
   const deleteEvent = useCallback(async (id: string): Promise<void> => {
     try {
+      const event = events.find(e => e.id === id);
+      const isServerPushEvent = event?.recurrencePattern?.type === 'weekly' || event?.recurrencePattern?.type === 'monthly';
       await DB.deleteEvent(db, id);
       await refreshAndReschedule();
+      if (isServerPushEvent) {
+        cancelEventPush(id).catch(() => {});
+      }
     } catch (err: any) {
       console.error('Failed to delete event:', err);
       setError(err.message || 'Failed to delete event');
       throw err;
     }
-  }, [db, refreshAndReschedule]);
+  }, [db, events, refreshAndReschedule]);
 
   const getEventById = useCallback((id: string): Event | undefined => {
     return events.find(event => event.id === id);
@@ -212,6 +218,9 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       const event = events.find(e => e.id === id);
       if (!event) return;
 
+      const isServerPushEvent = event.recurrencePattern?.type === 'weekly' || event.recurrencePattern?.type === 'monthly';
+      const willDisable = event.isNotificationEnabled;
+
       const updates: Partial<Event> = {
         isNotificationEnabled: !event.isNotificationEnabled,
         needsSync: true,
@@ -220,6 +229,14 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
       await DB.updateEvent(db, id, updates);
       await refreshAndReschedule();
+
+      if (isServerPushEvent) {
+        if (willDisable) {
+          cancelEventPush(id).catch(() => {});
+        } else {
+          restoreEventPush(id).catch(() => {});
+        }
+      }
 
       authService.isAnonymous().then(isAnon => {
         if (!isAnon) syncService.sync().catch(err => console.warn('Toggle notification sync failed:', err));

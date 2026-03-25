@@ -82,7 +82,13 @@ const EventCard: React.FC<EventCardProps> = ({
             {event.isRecurring && (
               <View style={styles.badge}>
                 <Ionicons name="repeat" size={12} color={colors.textSecondary} />
-                <Text style={styles.badgeText}>Hàng năm</Text>
+                <Text style={styles.badgeText}>
+                  {event.recurrencePattern?.type === 'weekly'
+                    ? 'Hàng tuần'
+                    : event.recurrencePattern?.type === 'monthly'
+                    ? 'Hàng tháng'
+                    : 'Hàng năm'}
+                </Text>
               </View>
             )}
             {event.isNotificationEnabled === false && (

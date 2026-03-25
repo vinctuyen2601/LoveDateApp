@@ -194,7 +194,7 @@ const useStyles = makeStyles((colors) => ({
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     paddingHorizontal: 16,
     paddingVertical: 11,
     borderRadius: 12,

@@ -28,6 +28,7 @@ import {
   getSpecialDatesForMonth,
   SpecialDate,
 } from "../constants/specialDates";
+import { getOccurrencesInMonth, occursOnDate } from "@utils/recurrence";
 
 const CalendarScreen: React.FC = () => {
   const styles = useStyles();
@@ -74,33 +75,33 @@ const CalendarScreen: React.FC = () => {
     const marked: any = {};
     const calYear = parseInt(currentMonth.slice(0, 4), 10);
 
+    const calMonth = parseInt(currentMonth.slice(5, 7), 10) - 1; // 0-based
+
+    const markDot = (dateKey: string, tag: string) => {
+      if (!marked[dateKey]) marked[dateKey] = { marked: true, dots: [] };
+      marked[dateKey].dots.push({ color: getTagColor(tag), image: getTagImage(tag) });
+    };
+
     events.forEach((event) => {
       if (!event.eventDate) return;
       const date = new Date(event.eventDate);
       if (isNaN(date.getTime())) return;
 
-      let markDate: string;
-      if (event.isRecurring) {
-        const mm = String(date.getMonth() + 1).padStart(2, "0");
-        const dd = String(date.getDate()).padStart(2, "0");
-        markDate = `${calYear}-${mm}-${dd}`;
-      } else {
-        markDate = DateUtils.toLocalDateString(date);
-      }
-
-      if (!marked[markDate]) {
-        marked[markDate] = { marked: true, dots: [] };
-      }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].dots.push({
-        color: getTagColor(primaryTag),
-        image: getTagImage(primaryTag),
-      });
+
+      if (event.isRecurring) {
+        const occurrences = getOccurrencesInMonth(event, calYear, calMonth);
+        occurrences.forEach((occ) => {
+          const key = `${calYear}-${String(occ.getMonth() + 1).padStart(2, "0")}-${String(occ.getDate()).padStart(2, "0")}`;
+          markDot(key, primaryTag);
+        });
+      } else {
+        markDot(DateUtils.toLocalDateString(date), primaryTag);
+      }
     });
 
     // Merge special dates (bao gom am lich, nth-weekday)
-    const calMonth = parseInt(currentMonth.slice(5, 7), 10);
-    const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
+    const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth + 1);
     resolvedSpecials.forEach((sd) => {
       const mm = String(sd.solarMonth).padStart(2, "0");
       const dd = String(sd.solarDay).padStart(2, "0");
@@ -157,21 +158,12 @@ const CalendarScreen: React.FC = () => {
   const selectedDateEvents = useMemo(() => {
     const selDate = new Date(selectedDate);
     if (isNaN(selDate.getTime())) return [];
-    const selMonth = selDate.getMonth();
-    const selDay = selDate.getDate();
 
     return events
       .filter((event) => {
         if (!event.eventDate) return false;
-        const d = new Date(event.eventDate);
-        if (isNaN(d.getTime())) return false;
-
-        if (event.isRecurring) {
-          // Recurring: match by month + day only
-          return d.getMonth() === selMonth && d.getDate() === selDay;
-        }
-        // One-time: exact date match
-        return DateUtils.toLocalDateString(d) === selectedDate;
+        if (isNaN(new Date(event.eventDate).getTime())) return false;
+        return occursOnDate(event, selDate);
       })
       .sort(
         (a, b) =>
@@ -194,12 +186,12 @@ const CalendarScreen: React.FC = () => {
     const year = monthDate.getFullYear();
     const month = monthDate.getMonth(); // 0-based
 
-    // User events: recurring matches by month only, one-time by year+month
+    // User events: dùng getOccurrencesInMonth để xử lý đúng weekly/monthly/yearly
     const monthEvents = events.filter((event) => {
       if (!event.eventDate) return false;
+      if (isNaN(new Date(event.eventDate).getTime())) return false;
+      if (event.isRecurring) return getOccurrencesInMonth(event, year, month).length > 0;
       const d = new Date(event.eventDate);
-      if (isNaN(d.getTime())) return false;
-      if (event.isRecurring) return d.getMonth() === month;
       return d.getFullYear() === year && d.getMonth() === month;
     });
 
@@ -652,7 +644,11 @@ const CalendarScreen: React.FC = () => {
                                 color={colors.textSecondary}
                               />
                               <Text style={styles.calEventBadgeText}>
-                                Hàng năm
+                                {event.recurrencePattern?.type === 'weekly'
+                                  ? 'Hàng tuần'
+                                  : event.recurrencePattern?.type === 'monthly'
+                                  ? 'Hàng tháng'
+                                  : 'Hàng năm'}
                               </Text>
                             </View>
                           )}

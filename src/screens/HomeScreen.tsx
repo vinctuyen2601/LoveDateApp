@@ -60,6 +60,7 @@ import {
 import { HolidaySuggestion } from "@constants/holidaySuggestions";
 import { makeStyles } from "@utils/makeStyles";
 import { useColors, useTheme } from "@contexts/ThemeContext";
+import { getOccurrencesInWindow, getOccurrencesInMonth, occursOnDate } from "@utils/recurrence";
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -152,31 +153,27 @@ const HomeScreen: React.FC = () => {
     return events
       .filter((event) => {
         if (!event.eventDate) return false;
+
+        if (event.isRecurring) {
+          // Recurring: kiểm tra xem có occurrence nào trong 7 ngày tới không
+          return getOccurrencesInWindow(event, todayStart, sevenDaysLater).length > 0;
+        }
+
+        // One-time: giữ nguyên logic cũ
         const eventDate = new Date(event.eventDate);
         const eventDateDay = new Date(eventDate);
         eventDateDay.setHours(0, 0, 0, 0);
-
-        if (eventDateDay > todayStart) {
-          // Ngày tương lai: luôn hiển thị trong cửa sổ 7 ngày
-          return eventDateDay <= sevenDaysLater;
-        }
+        if (eventDateDay > todayStart) return eventDateDay <= sevenDaysLater;
         if (eventDateDay.getTime() === todayStart.getTime()) {
-          // Sự kiện hôm nay:
-          // - Lặp lại: luôn hiển thị (vẫn còn ý nghĩa trong ngày)
-          // - Một lần: chỉ hiển thị nếu chưa qua thời điểm nhắc nhở
-          if (event.isRecurring) return true;
           const reminderTime = event.reminderSettings?.reminderTime;
           if (!reminderTime) return eventDate >= now;
           const reminderDate = new Date(eventDate);
           reminderDate.setHours(reminderTime.hour, reminderTime.minute, 0, 0);
           return reminderDate > now;
         }
-        return false; // Ngày đã qua
+        return false;
       })
-      .sort(
-        (a, b) =>
-          new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-      )
+      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
       .slice(0, 3);
   }, [events]);
 
@@ -191,7 +188,8 @@ const HomeScreen: React.FC = () => {
       events
         .filter((event) => {
           if (!event.eventDate) return false;
-          if (event.sourceSharedEventId) return false; // Sự kiện từ kết nối không chuẩn bị quà
+          if (event.sourceSharedEventId) return false;
+          if (event.recurrencePattern?.type === 'weekly') return false; // Không chuẩn bị quà cho sự kiện hàng tuần
           const primaryTag = event.tags?.[0];
           if (!eligibleTags.includes(primaryTag)) return false;
           const eventDay = new Date(event.eventDate);
@@ -250,35 +248,33 @@ const HomeScreen: React.FC = () => {
   const baseMarkedDates = useMemo(() => {
     const marked: any = {};
     const calYear = parseInt(currentMonth.slice(0, 4), 10);
+    const calMonth = parseInt(currentMonth.slice(5, 7), 10) - 1; // 0-based
+
+    const markDot = (dateKey: string, tag: string) => {
+      if (!marked[dateKey]) marked[dateKey] = { marked: true, dots: [] };
+      marked[dateKey].dots.push({ color: getTagColor(tag), image: getTagImage(tag) });
+    };
 
     events.forEach((event) => {
       if (!event.eventDate) return;
       const date = new Date(event.eventDate);
       if (isNaN(date.getTime())) return;
 
-      let markDate: string;
-      if (event.isRecurring) {
-        // Recurring (sinh nhật, kỷ niệm...): đánh dấu đúng ngày MM-DD
-        // nhưng theo năm đang hiển thị trên calendar
-        const mm = String(date.getMonth() + 1).padStart(2, "0");
-        const dd = String(date.getDate()).padStart(2, "0");
-        markDate = `${calYear}-${mm}-${dd}`;
-      } else {
-        markDate = DateUtils.toLocalDateString(date);
-      }
-
-      if (!marked[markDate]) {
-        marked[markDate] = { marked: true, dots: [] };
-      }
       const primaryTag = event.tags[0] || "other";
-      marked[markDate].dots.push({
-        color: getTagColor(primaryTag),
-        image: getTagImage(primaryTag),
-      });
+
+      if (event.isRecurring) {
+        // Lấy TẤT CẢ ngày xảy ra trong tháng hiện tại (weekly có thể có nhiều ngày)
+        const occurrences = getOccurrencesInMonth(event, calYear, calMonth);
+        occurrences.forEach((occ) => {
+          const key = `${calYear}-${String(occ.getMonth() + 1).padStart(2, "0")}-${String(occ.getDate()).padStart(2, "0")}`;
+          markDot(key, primaryTag);
+        });
+      } else {
+        markDot(DateUtils.toLocalDateString(date), primaryTag);
+      }
     });
 
-    const calMonth = parseInt(currentMonth.slice(5, 7), 10);
-    const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth);
+    const resolvedSpecials = getSpecialDatesForMonth(calYear, calMonth + 1);
     resolvedSpecials.forEach((sd) => {
       const mm = String(sd.solarMonth).padStart(2, "0");
       const dd = String(sd.solarDay).padStart(2, "0");
@@ -325,16 +321,8 @@ const HomeScreen: React.FC = () => {
   const selectedDateEvents = useMemo(() => {
     return events.filter((event) => {
       if (!event.eventDate) return false;
-      const date = new Date(event.eventDate);
-      if (isNaN(date.getTime())) return false;
-
-      if (event.isRecurring) {
-        // Recurring: so khớp MM-DD, bỏ qua năm
-        const mm = String(date.getMonth() + 1).padStart(2, "0");
-        const dd = String(date.getDate()).padStart(2, "0");
-        return selectedDate.slice(5) === `${mm}-${dd}`;
-      }
-      return DateUtils.toLocalDateString(date) === selectedDate;
+      if (isNaN(new Date(event.eventDate).getTime())) return false;
+      return occursOnDate(event, selectedDate);
     });
   }, [events, selectedDate]);
 
@@ -482,7 +470,7 @@ const HomeScreen: React.FC = () => {
     setActiveSuggestion(null);
   };
 
-const handleEventPress = (event: Event) =>
+  const handleEventPress = (event: Event) =>
     navigation.navigate("EventDetail", { eventId: event.id });
   const handleAddEvent = () => navigation.navigate("AddEvent");
 
@@ -596,7 +584,9 @@ const handleEventPress = (event: Event) =>
                 color={colors.textLight}
               />
             </View>
-            {(event.isRecurring || event.isNotificationEnabled === false || !!event.sourceSharedEventId) && (
+            {(event.isRecurring ||
+              event.isNotificationEnabled === false ||
+              !!event.sourceSharedEventId) && (
               <View style={styles.calEventBadges}>
                 {event.isRecurring && (
                   <View style={styles.calEventBadge}>
@@ -605,7 +595,13 @@ const handleEventPress = (event: Event) =>
                       size={12}
                       color={colors.textSecondary}
                     />
-                    <Text style={styles.calEventBadgeText}>Hàng năm</Text>
+                    <Text style={styles.calEventBadgeText}>
+                      {event.recurrencePattern?.type === "weekly"
+                        ? "Hàng tuần"
+                        : event.recurrencePattern?.type === "monthly"
+                        ? "Hàng tháng"
+                        : "Hàng năm"}
+                    </Text>
                   </View>
                 )}
                 {event.isNotificationEnabled === false && (
@@ -655,7 +651,6 @@ const handleEventPress = (event: Event) =>
     },
     [styles, colors, handleEventPress]
   );
-
 
   const renderDay = useCallback(
     ({ date, state, marking }: any) => (
@@ -768,7 +763,7 @@ const handleEventPress = (event: Event) =>
                       activeOpacity={0.85}
                     >
                       <LinearGradient
-                        colors={[tagColor, tagColor + "CC"]}
+                        colors={[colors.gradientStart, colors.gradientEnd]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.prepModalBtn}
@@ -1217,7 +1212,6 @@ const handleEventPress = (event: Event) =>
           )}
         </View>
 
-
         {/* Articles */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -1376,7 +1370,9 @@ const handleEventPress = (event: Event) =>
               </View>
               <AiViewAllBtn
                 label="Gợi ý AI"
-                onPress={() => navigation.navigate("AllProducts", { initialAiMode: true })}
+                onPress={() =>
+                  navigation.navigate("AllProducts", { initialAiMode: true })
+                }
               />
             </View>
             <View style={styles.productsGrid}>

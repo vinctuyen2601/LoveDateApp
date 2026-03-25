@@ -12,6 +12,7 @@ import { COLORS } from '@themes/colors';
 import { Article, filterArticlesByCategory } from "../../data/articles";
 import { LoadingState } from '@components/atoms/LoadingState';
 import PressableCard from '@components/atoms/PressableCard';
+import AiViewAllBtn from '@components/atoms/AiViewAllBtn';
 import { makeStyles } from '@utils/makeStyles';
 import { useColors } from '@contexts/ThemeContext';
 
@@ -62,9 +63,7 @@ const ArticlesSection: React.FC<ArticlesSectionProps> = ({
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Blog chia sẻ</Text>
         {onViewAll && (
-          <TouchableOpacity onPress={onViewAll}>
-            <Text style={styles.viewAllText}>Xem tất cả</Text>
-          </TouchableOpacity>
+          <AiViewAllBtn label="Đọc với AI" onPress={onViewAll} />
         )}
       </View>
 
@@ -192,11 +191,6 @@ const useStyles = makeStyles((colors) => ({
     fontSize: 17,
     fontFamily: 'Manrope_700Bold',
     color: colors.textPrimary,
-  },
-  viewAllText: {
-    fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
-    color: colors.primary,
   },
   horizontalScroll: {
     paddingHorizontal: 16,

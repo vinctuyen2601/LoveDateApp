@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, AuthTokens, AuthContextValue } from '../types';
 import { authService } from '../services/auth.service';
 import { syncService } from '../services/sync.service';
+import { registerPushToken, deactivatePushToken } from '../services/pushNotification.service';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -63,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Nếu đã có tài khoản thật → pull events từ server về (background)
         if (!anon) {
           syncService.sync().catch(err => console.warn('Startup sync failed:', err));
+          registerPushToken().catch(err => console.warn('Push token registration failed:', err));
         }
       }
     } catch (error) {
@@ -82,6 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(true);
       setIsAnonymous(false);
       setIsEmailVerified(user.emailVerified || false);
+      registerPushToken().catch(err => console.warn('Push token registration failed:', err));
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -149,6 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setIsLoading(true);
+      await deactivatePushToken().catch(() => {});
       await authService.logout();
 
       setUser(null);
