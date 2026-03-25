@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@contexts/AuthContext";
+import { useToast } from "@contexts/ToastContext";
 import { COLORS } from "@themes/colors";
 import { STRINGS } from "../constants/strings";
 import { ValidationUtils } from "@lib/validation.utils";
@@ -32,8 +33,8 @@ const AuthScreen: React.FC = () => {
 
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { login, register, isAnonymous } = useAuth();
-  const wasAnonymousRef = useRef(isAnonymous);
+  const { login, register } = useAuth();
+  const { showSuccess } = useToast();
 
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -45,7 +46,6 @@ const AuthScreen: React.FC = () => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
   const registeredEmail = useRef("");
-  const suppressGoBack = useRef(false);
 
   // Real-time validation state
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -72,13 +72,6 @@ const AuthScreen: React.FC = () => {
       hide.remove();
     };
   }, []);
-
-  useEffect(() => {
-    if (wasAnonymousRef.current && !isAnonymous && !suppressGoBack.current) {
-      navigation.goBack();
-    }
-    wasAnonymousRef.current = isAnonymous;
-  }, [isAnonymous]);
 
   const markTouched = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -196,8 +189,9 @@ const AuthScreen: React.FC = () => {
       if (isLogin) {
         await login(email, password);
         logLogin("email");
+        showSuccess("Đăng nhập thành công!");
+        navigation.goBack();
       } else {
-        suppressGoBack.current = true;
         await register(email, password, displayName);
         logSignUp("email");
         registeredEmail.current = email;
@@ -566,7 +560,6 @@ const AuthScreen: React.FC = () => {
               activeOpacity={0.85}
               onPress={() => {
                 setShowRegisterSuccess(false);
-                suppressGoBack.current = false;
                 navigation.goBack();
               }}
             >
