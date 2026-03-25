@@ -238,8 +238,7 @@ const AppNavigator: React.FC = () => {
             name="Auth"
             component={AuthScreen}
             options={{
-              title: "Đăng nhập / Đăng ký",
-              presentation: "modal",
+              headerShown: false,
             }}
           />
         </Stack.Navigator>

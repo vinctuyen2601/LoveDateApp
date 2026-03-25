@@ -91,6 +91,7 @@ const SettingsScreen: React.FC = () => {
     isEmailVerified,
     linkedProviders,
     logout,
+    deleteAccount,
     updateProfile,
     linkWithEmailPassword,
     resendVerificationEmail,
@@ -239,25 +240,25 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Xóa tài khoản",
-      "Xóa toàn bộ dữ liệu trên thiết bị và đăng xuất?",
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Xóa & Đăng xuất",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await AsyncStorage.clear();
-              await logout();
-            } catch (error: any) {
-              Alert.alert("Lỗi", error.message || "Không thể xóa dữ liệu.");
-            }
-          },
+    const title = isAnonymous ? "Xóa toàn bộ dữ liệu" : "Xóa tài khoản";
+    const message = isAnonymous
+      ? "Toàn bộ dữ liệu trên thiết bị sẽ bị xoá và ứng dụng sẽ reset về ban đầu. Bạn có chắc chắn?"
+      : "Tài khoản của bạn sẽ bị xoá vĩnh viễn. Bạn có chắc chắn muốn tiếp tục?";
+    const confirmText = isAnonymous ? "Xóa dữ liệu" : "Xóa tài khoản";
+    Alert.alert(title, message, [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: confirmText,
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteAccount();
+          } catch (error: any) {
+            Alert.alert("Lỗi", error.message || "Không thể thực hiện. Vui lòng thử lại.");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleLogout = () => {
@@ -323,7 +324,8 @@ const SettingsScreen: React.FC = () => {
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
     >
-      {/* Profile Section */}
+      {/* Profile Section — only for registered users */}
+      {!isAnonymous && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
 
@@ -423,6 +425,7 @@ const SettingsScreen: React.FC = () => {
           </View>
         )}
       </View>
+      )}
 
       {/* Link Account Section */}
       {isAnonymous && (
@@ -631,13 +634,15 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
 
-      {/* Delete Account */}
+      {/* Delete Account / Reset Data */}
       <TouchableOpacity
         style={[styles.deleteButton, { marginHorizontal: 16, marginTop: 12 }]}
         onPress={handleDeleteAccount}
       >
         <Ionicons name="trash-outline" size={20} color={colors.error} />
-        <Text style={styles.deleteText}>Xóa tài khoản</Text>
+        <Text style={styles.deleteText}>
+          {isAnonymous ? "Xóa toàn bộ dữ liệu" : "Xóa tài khoản"}
+        </Text>
       </TouchableOpacity>
 
       {/* Edit Profile Modal */}
