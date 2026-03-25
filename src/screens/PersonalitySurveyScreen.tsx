@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -538,9 +539,17 @@ const PersonalitySurveyScreen: React.FC = () => {
                     onPress={() => navigation.navigate('ArticleDetail' as any, { article })}
                     activeOpacity={0.72}
                   >
-                    <View style={[styles.articleIconBox, { backgroundColor: article.color + '22' }]}>
-                      <Ionicons name={article.icon as any} size={22} color={article.color} />
-                    </View>
+                    {article.imageUrl ? (
+                      <Image
+                        source={{ uri: article.imageUrl }}
+                        style={styles.articleThumbnail}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.articleIconBox, { backgroundColor: article.color + '22' }]}>
+                        <Ionicons name={article.icon as any} size={22} color={article.color} />
+                      </View>
+                    )}
                     <View style={styles.articleInfo}>
                       <Text style={styles.articleTitle} numberOfLines={2}>{article.title}</Text>
                       <Text style={styles.articleMeta}>
@@ -795,8 +804,11 @@ const useStyles = makeStyles((colors) => ({
     flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10,
   },
   articleCardBorder: { borderTopWidth: 1, borderTopColor: colors.border },
+  articleThumbnail: {
+    width: 68, height: 68, borderRadius: 12, flexShrink: 0,
+  },
   articleIconBox: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 68, height: 68, borderRadius: 12,
     backgroundColor: colors.info + '12', alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   articleEmoji: { fontSize: 22 },

@@ -60,7 +60,7 @@ import {
 import { HolidaySuggestion } from "@constants/holidaySuggestions";
 import { makeStyles } from "@utils/makeStyles";
 import { useColors, useTheme } from "@contexts/ThemeContext";
-import { getOccurrencesInWindow, getOccurrencesInMonth, occursOnDate } from "@utils/recurrence";
+import { getOccurrencesInWindow, getOccurrencesInMonth, occursOnDate, getNextOccurrence } from "@utils/recurrence";
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -173,7 +173,12 @@ const HomeScreen: React.FC = () => {
         }
         return false;
       })
-      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+      .sort((a, b) => {
+        const getNext = (e: typeof a) => e.isRecurring
+          ? (getNextOccurrence(e, todayStart) ?? new Date(e.eventDate))
+          : new Date(e.eventDate);
+        return getNext(a).getTime() - getNext(b).getTime();
+      })
       .slice(0, 3);
   }, [events]);
 
@@ -879,9 +884,11 @@ const HomeScreen: React.FC = () => {
             {upcomingEvents.map((event) => {
               const primaryTag = event.tags?.[0] || "other";
               const categoryColor = getTagColor(primaryTag);
-              const eventDate = new Date(event.eventDate);
               const today = new Date();
               today.setHours(0, 0, 0, 0);
+              const eventDate = event.isRecurring
+                ? (getNextOccurrence(event, today) ?? new Date(event.eventDate))
+                : new Date(event.eventDate);
               const daysLeft = differenceInCalendarDays(eventDate, today);
               const isOccasion = [
                 "birthday",
