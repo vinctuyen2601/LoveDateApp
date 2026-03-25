@@ -1,0 +1,13 @@
+{
+  "name": "LoveDate",
+  "short_name": "LoveDate",
+  "description": "Không bao giờ quên những ngày quan trọng",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#FF6B6B",
+  "background_color": "#FF8E8E",
+  "display": "standalone",
+  "start_url": "/"
+}
