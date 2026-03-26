@@ -442,6 +442,18 @@ class AuthService {
   }
 
   /**
+   * Xóa session local khi tài khoản bị deactivate từ server (403 ACCOUNT_DEACTIVATED)
+   */
+  async clearLocalSession(): Promise<void> {
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.AUTH_TOKEN,
+      STORAGE_KEYS.USER_DATA,
+      STORAGE_KEYS.IS_ANONYMOUS,
+    ]);
+    apiService.setAuthToken(null);
+  }
+
+  /**
    * Save tokens to AsyncStorage
    */
   private async saveTokens(tokens: AuthTokens): Promise<void> {

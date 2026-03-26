@@ -104,7 +104,7 @@ const SettingsScreen: React.FC = () => {
     }, [isAnonymous, isEmailVerified])
   );
   const { showSuccess, showError } = useToast();
-  const { events } = useEvents();
+  const { events, clearUserData } = useEvents();
 
   const [showAboutModal, setShowAboutModal] = useState(false);
 
@@ -280,6 +280,10 @@ const SettingsScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
+              if (!isAnonymous) {
+                await syncService.sync().catch(() => {});
+              }
+              await clearUserData();
               await logout();
             } catch (error: any) {
               Alert.alert("Lỗi", error.message);

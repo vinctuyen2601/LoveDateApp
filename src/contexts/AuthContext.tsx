@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import { User, AuthTokens, AuthContextValue } from '../types';
 import { authService } from '../services/auth.service';
+import { apiService } from '../services/api.service';
 import { syncService } from '../services/sync.service';
 import { registerPushToken, deactivatePushToken } from '../services/pushNotification.service';
 
@@ -22,6 +24,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Auto-login on app start (or create anonymous account)
     autoLogin();
+  }, []);
+
+  useEffect(() => {
+    // Xử lý khi tài khoản bị deactivate (403 ACCOUNT_DEACTIVATED từ bất kỳ API call nào)
+    apiService.setOnAccountDeactivated(async () => {
+      await authService.clearLocalSession();
+
+      setUser(null);
+      setTokens(null);
+      setIsAuthenticated(false);
+      setIsAnonymous(false);
+      setIsEmailVerified(false);
+      setLinkedProviders([]);
+
+      Alert.alert(
+        'Tài khoản đã bị xoá',
+        'Tài khoản của bạn đã bị xoá. Nếu muốn khôi phục, vui lòng liên hệ support@ngayyeuthuong.com',
+        [{ text: 'Đã hiểu', style: 'default' }],
+      );
+    });
   }, []);
 
   useEffect(() => {
@@ -76,7 +98,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
       const { user, tokens } = await authService.loginWithEmail(email, password);
 
       setUser(user);
@@ -85,11 +106,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAnonymous(false);
       setIsEmailVerified(user.emailVerified || false);
       registerPushToken().catch(err => console.warn('Push token registration failed:', err));
+      syncService.sync().catch(err => console.warn('Post-login sync failed:', err));
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -111,7 +131,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string, displayName: string) => {
     try {
-      setIsLoading(true);
       const { user, tokens } = await authService.register(email, password, displayName);
 
       setUser(user);
@@ -122,8 +141,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Register failed:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 

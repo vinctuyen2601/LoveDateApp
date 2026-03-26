@@ -220,7 +220,7 @@ const OnboardingOverlay: React.FC<Props> = ({
           >
             <View style={styles.centerContent}>
               <Image
-                source={require("../../../assets/adaptive-icon.png")}
+                source={require("../../../assets/icon.png")}
                 style={styles.appIcon}
                 resizeMode="contain"
               />

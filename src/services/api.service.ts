@@ -12,6 +12,11 @@ import {
 class ApiService {
   private client: AxiosInstance;
   private authToken: string | null = null;
+  private onAccountDeactivatedCallback: (() => void) | null = null;
+
+  setOnAccountDeactivated(callback: () => void): void {
+    this.onAccountDeactivatedCallback = callback;
+  }
 
   constructor() {
     this.client = axios.create({
@@ -88,8 +93,11 @@ class ApiService {
               break;
 
             case 403:
-              // Forbidden - insufficient permissions
-              console.log('Access forbidden');
+              if (errorData?.message === 'ACCOUNT_DEACTIVATED') {
+                // Tài khoản bị xóa — xóa token, thông báo AuthContext
+                this.authToken = null;
+                this.onAccountDeactivatedCallback?.();
+              }
               break;
 
             case 404:
