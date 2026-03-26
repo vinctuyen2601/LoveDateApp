@@ -135,8 +135,12 @@ const EventsListScreen: React.FC = () => {
       case 'birthday':
       case 'anniversary':
       case 'holiday':
-      case 'other':
         filtered = filtered.filter((event) => event.tags.includes(selectedFilter));
+        break;
+      case 'other':
+        filtered = filtered.filter((event) =>
+          !event.tags.some((tag) => ['birthday', 'anniversary', 'holiday'].includes(tag))
+        );
         break;
       case 'all':
       default:

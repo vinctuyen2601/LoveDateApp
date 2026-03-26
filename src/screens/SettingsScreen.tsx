@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   TextInput,
   Modal,
   KeyboardAvoidingView,
@@ -20,6 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import IconImage from "@components/atoms/IconImage";
+import ConfirmDialog from "@components/organisms/ConfirmDialog";
 import { getSpecialDateImage } from "@lib/iconImages";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@contexts/AuthContext";
@@ -135,6 +135,10 @@ const SettingsScreen: React.FC = () => {
   const [linkDisplayName, setLinkDisplayName] = useState("");
   const [isLinking, setIsLinking] = useState(false);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showPhotoPermissionDialog, setShowPhotoPermissionDialog] = useState(false);
+
   // Edit profile state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
@@ -170,20 +174,7 @@ const SettingsScreen: React.FC = () => {
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Cần quyền truy cập",
-        "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện.",
-        [
-          { text: "Hủy", style: "cancel" },
-          {
-            text: "Mở cài đặt",
-            onPress: () =>
-              Platform.OS === "ios"
-                ? Linking.openURL("app-settings:")
-                : Linking.openSettings(),
-          },
-        ]
-      );
+      setShowPhotoPermissionDialog(true);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -240,63 +231,36 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleDeleteAccount = () => {
-    const title = isAnonymous ? "Xóa toàn bộ dữ liệu" : "Xóa tài khoản";
-    const message = isAnonymous
-      ? "Toàn bộ dữ liệu trên thiết bị sẽ bị xoá và ứng dụng sẽ reset về ban đầu. Bạn có chắc chắn?"
-      : "Tài khoản của bạn sẽ bị xoá vĩnh viễn. Bạn có chắc chắn muốn tiếp tục?";
-    const confirmText = isAnonymous ? "Xóa dữ liệu" : "Xóa tài khoản";
-    Alert.alert(title, message, [
-      { text: "Hủy", style: "cancel" },
-      {
-        text: confirmText,
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteAccount();
-          } catch (error: any) {
-            Alert.alert("Lỗi", error.message || "Không thể thực hiện. Vui lòng thử lại.");
-          }
-        },
-      },
-    ]);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      await deleteAccount();
+    } catch (error: any) {
+      showError(error.message || "Không thể thực hiện. Vui lòng thử lại.");
+    }
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Đăng xuất",
-      isAnonymous
-        ? "Bạn đang dùng tài khoản ẩn danh. Nếu đăng xuất, dữ liệu có thể bị mất. Bạn có muốn liên kết tài khoản trước?"
-        : "Bạn có chắc muốn đăng xuất?",
-      [
-        { text: "Hủy", style: "cancel" },
-        isAnonymous
-          ? {
-              text: "Liên kết trước",
-              onPress: () => setShowLinkEmailModal(true),
-            }
-          : null,
-        {
-          text: "Đăng xuất",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              if (!isAnonymous) {
-                await syncService.sync().catch(() => {});
-              }
-              await clearUserData();
-              await logout();
-            } catch (error: any) {
-              Alert.alert("Lỗi", error.message);
-            }
-          },
-        },
-      ].filter(Boolean) as any
-    );
+    setShowLogoutConfirm(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setShowLogoutConfirm(false);
+    try {
+      if (!isAnonymous) await syncService.sync().catch(() => {});
+      await clearUserData();
+      await logout();
+    } catch (error: any) {
+      showError(error.message || "Không thể đăng xuất. Vui lòng thử lại.");
+    }
   };
 
   const handleLinkEmail = async () => {
     if (!linkEmail || !linkPassword || !linkDisplayName) {
-      Alert.alert("Lỗi", "Vui lòng điền đầy đủ thông tin");
+      showError("Vui lòng điền đầy đủ thông tin");
       return;
     }
 
@@ -648,6 +612,50 @@ const SettingsScreen: React.FC = () => {
           {isAnonymous ? "Xóa toàn bộ dữ liệu" : "Xóa tài khoản"}
         </Text>
       </TouchableOpacity>
+
+      {/* Logout Confirm Dialog */}
+      <ConfirmDialog
+        visible={showLogoutConfirm}
+        title="Đăng xuất"
+        message={
+          isAnonymous
+            ? "Bạn đang dùng tài khoản ẩn danh. Nếu đăng xuất, dữ liệu có thể bị mất. Bạn có muốn liên kết tài khoản trước?"
+            : "Bạn có chắc muốn đăng xuất?"
+        }
+        icon="log-out-outline"
+        confirmText="Đăng xuất"
+        onConfirm={handleConfirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
+
+      {/* Photo Permission Dialog */}
+      <ConfirmDialog
+        visible={showPhotoPermissionDialog}
+        title="Cần quyền truy cập"
+        message="Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện."
+        icon="images-outline"
+        confirmText="Mở cài đặt"
+        onConfirm={() => {
+          setShowPhotoPermissionDialog(false);
+          Platform.OS === "ios" ? Linking.openURL("app-settings:") : Linking.openSettings();
+        }}
+        onCancel={() => setShowPhotoPermissionDialog(false)}
+      />
+
+      {/* Delete Confirm Dialog */}
+      <ConfirmDialog
+        visible={showDeleteConfirm}
+        title={isAnonymous ? "Xóa toàn bộ dữ liệu" : "Xóa tài khoản"}
+        message={
+          isAnonymous
+            ? "Toàn bộ dữ liệu trên thiết bị sẽ bị xoá và ứng dụng sẽ reset về ban đầu. Bạn có chắc chắn?"
+            : "Tài khoản của bạn sẽ bị xoá vĩnh viễn. Bạn có chắc chắn muốn tiếp tục?"
+        }
+        icon="trash-outline"
+        confirmText={isAnonymous ? "Xóa dữ liệu" : "Xóa tài khoản"}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
 
       {/* Edit Profile Modal */}
       <Modal

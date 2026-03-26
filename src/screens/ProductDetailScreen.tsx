@@ -641,16 +641,19 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "baseline",
     gap: 10,
     marginBottom: 6,
+    flexWrap: "wrap",
   },
   currentPrice: {
     fontSize: 28,
     fontFamily: "Manrope_800ExtraBold",
     color: colors.success,
+    flexShrink: 1,
   },
   originalPrice: {
     fontSize: 16,
     color: colors.textLight,
     textDecorationLine: "line-through",
+    flexShrink: 1,
   },
   savingsBadge: {
     flexDirection: "row",
