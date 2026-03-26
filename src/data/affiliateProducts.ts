@@ -705,11 +705,7 @@ export const getProductsByCategoryAndBudget = (
 };
 
 export const formatPrice = (price: number): string => {
-  if (price >= 1000000) {
-    const millions = price / 1000000;
-    return `${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`;
-  }
-  return `${(price / 1000).toFixed(0)}k`;
+  return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "₫";
 };
 
 // Get related products for an article based on tags matching occasions/tags

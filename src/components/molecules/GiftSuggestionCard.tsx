@@ -34,12 +34,7 @@ const stripHtml = (html: string): string =>
 
 function formatPrice(price?: number): string | null {
   if (price == null) return null;
-  if (price >= 1_000_000) {
-    const m = price / 1_000_000;
-    return `${m % 1 === 0 ? m : m.toFixed(1)}M`;
-  }
-  if (price >= 1_000) return `${Math.round(price / 1_000)}k`;
-  return String(price);
+  return Math.round(price).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "₫";
 }
 
 interface GiftSuggestionCardProps {
@@ -197,20 +192,22 @@ const GiftSuggestionCard: React.FC<GiftSuggestionCardProps> = ({
 
         {/* Price row */}
         <View style={styles.priceRow}>
-          {priceFormatted ? (
-            <>
-              <Text style={styles.priceText}>{priceFormatted}</Text>
-              {discount > 0 && product.originalPrice && (
-                <Text style={styles.originalPrice}>
-                  {formatPrice(product.originalPrice)}
-                </Text>
-              )}
-            </>
-          ) : (
-            <Text style={styles.priceText}>
-              {product.priceRange || "Xem giá"}
-            </Text>
-          )}
+          <View style={styles.priceGroup}>
+            {priceFormatted ? (
+              <>
+                <Text style={styles.priceText} numberOfLines={1}>{priceFormatted}</Text>
+                {discount > 0 && product.originalPrice && (
+                  <Text style={styles.originalPrice} numberOfLines={1}>
+                    {formatPrice(product.originalPrice)}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text style={styles.priceText} numberOfLines={1}>
+                {product.priceRange || "Xem giá"}
+              </Text>
+            )}
+          </View>
 
           {/* Rating (right-aligned) */}
           {product.rating != null && Number(product.rating) > 0 && (
@@ -380,7 +377,14 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "center",
     gap: 6,
     marginBottom: 6,
-    flexWrap: "wrap",
+  },
+  priceGroup: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 1,
+    overflow: "hidden",
   },
   priceText: {
     fontSize: 16,

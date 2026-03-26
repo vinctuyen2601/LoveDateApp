@@ -273,6 +273,12 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     }
   }, [db, events, refreshAndReschedule]);
 
+  const clearUserData = useCallback(async () => {
+    await db.execAsync('DELETE FROM events');
+    await db.execAsync('DELETE FROM sync_metadata');
+    setEvents([]);
+  }, [db]);
+
   const value = useMemo<EventsContextValue>(() => ({
     events,
     isLoading,
@@ -287,6 +293,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     searchEvents,
     toggleEventNotification,
     upsertEventNote,
+    clearUserData,
   }), [
     events,
     isLoading,
@@ -301,6 +308,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     searchEvents,
     toggleEventNotification,
     upsertEventNote,
+    clearUserData,
   ]);
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;

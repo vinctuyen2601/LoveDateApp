@@ -62,6 +62,7 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
   ocean: buildTheme({
     primary: "#0EA5E9", // sky-500
     primaryLight: "#38BDF8", // sky-400
+    primaryDark: "#0284C7", // sky-600
     secondary: "#06B6D4", // cyan-500
     gradientStart: "#0EA5E9",
     gradientEnd: "#06B6D4",
@@ -70,6 +71,7 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
   forest: buildTheme({
     primary: "#22C55E", // green-500
     primaryLight: "#4ADE80", // green-400
+    primaryDark: "#16A34A", // green-600
     secondary: "#14B8A6", // teal-500
     gradientStart: "#22C55E",
     gradientEnd: "#14B8A6",

@@ -513,6 +513,7 @@ export interface EventsContextValue {
   searchEvents: (query: string) => Event[];
   toggleEventNotification: (id: string) => Promise<void>;
   upsertEventNote: (eventId: string, noteData: Partial<EventNote>) => Promise<Event>;
+  clearUserData: () => Promise<void>;
 }
 
 export interface SyncContextValue {

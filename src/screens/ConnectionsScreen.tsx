@@ -110,6 +110,7 @@ const ConnectionsScreen: React.FC = () => {
   const [isSendingRequest, setIsSendingRequest] = useState(false);
 
   const loadData = useCallback(async (silent = false) => {
+    if (isAnonymous) { setIsLoading(false); return; }
     if (!silent) setIsLoading(true);
     try {
       const [conns, reqs, lims] = await Promise.all([
@@ -126,9 +127,9 @@ const ConnectionsScreen: React.FC = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [isAnonymous]);
 
-  useFocusEffect(useCallback(() => { loadData(); }, []));
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
   const handleRefresh = () => {
     setIsRefreshing(true);

@@ -241,16 +241,19 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "center",
     gap: 6,
     marginBottom: 4,
+    flexWrap: "wrap",
   },
   price: {
     fontSize: 15,
     fontFamily: "Manrope_700Bold",
     color: colors.success,
+    flexShrink: 1,
   },
   originalPrice: {
     fontSize: 12,
     color: colors.textLight,
     textDecorationLine: "line-through",
+    flexShrink: 1,
   },
   ratingRow: {
     flexDirection: "row",

@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FF69B4"
+      "backgroundColor": "#FF8E8E"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -18,7 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lovedate.mobile",
       "icon": "./assets/icon.png",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -33,7 +33,7 @@
       }
     },
     "android": {
-      "versionCode": 10,
+      "versionCode": 12,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF8E8E"
