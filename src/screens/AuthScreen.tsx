@@ -190,7 +190,7 @@ const AuthScreen: React.FC = () => {
         await login(email, password);
         logLogin("email");
         showSuccess("Đăng nhập thành công!");
-        navigation.goBack();
+        (navigation as any).navigate("Main", { screen: "Home" });
       } else {
         await register(email, password, displayName);
         logSignUp("email");
@@ -560,7 +560,7 @@ const AuthScreen: React.FC = () => {
               activeOpacity={0.85}
               onPress={() => {
                 setShowRegisterSuccess(false);
-                navigation.goBack();
+                (navigation as any).navigate("Main", { screen: "Home" });
               }}
             >
               <Text style={styles.modalBtnText}>Bắt đầu khám phá</Text>

@@ -248,6 +248,7 @@ const AppNavigator: React.FC = () => {
           onComplete={() => {
             setShowOnboarding(false);
             DeviceEventEmitter.emit("onboardingComplete");
+            navigate("Main", { screen: "Home" });
           }}
           onRegister={() => {
             setShowOnboarding(false);

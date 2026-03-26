@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       Alert.alert(
         'Tài khoản đã bị xoá',
-        'Tài khoản của bạn đã bị xoá. Nếu muốn khôi phục, vui lòng liên hệ support@ngayyeuthuong.com',
+        'Tài khoản của bạn đã bị xoá. Có thắc mắc xin vui lòng liên hệ support@ngayyeuthuong.com',
         [{ text: 'Đã hiểu', style: 'default' }],
       );
     });
