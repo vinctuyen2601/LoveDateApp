@@ -29,6 +29,8 @@ import MBTITypeDetailScreen from "../screens/MBTITypeDetailScreen";
 import ConnectionsScreen from "../screens/ConnectionsScreen";
 import QRScreen from "../screens/QRScreen";
 import SharedInboxScreen from "../screens/SharedInboxScreen";
+import NotificationListScreen from "../screens/NotificationListScreen";
+import NotificationDetailScreen from "../screens/NotificationDetailScreen";
 import OnboardingOverlay, {
   checkOnboardingComplete,
 } from "../components/organisms/OnboardingOverlay";
@@ -233,12 +235,23 @@ const AppNavigator: React.FC = () => {
             component={SharedInboxScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="NotificationList"
+            component={NotificationListScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="NotificationDetail"
+            component={NotificationDetailScreen}
+            options={{ headerShown: false }}
+          />
           {/* Auth screen available from Settings if user wants to link account */}
           <Stack.Screen
             name="Auth"
             component={AuthScreen}
             options={{
               headerShown: false,
+              gestureEnabled: false,
             }}
           />
         </Stack.Navigator>

@@ -5,7 +5,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { Event, NotificationPriority, getTagIcon } from '../types';
+import { Event, NotificationPriority } from '../types';
 import { DateUtils } from './date.utils';
 import { STRINGS } from '../constants/strings';
 import { lunarService } from '../services/lunar.service';
@@ -22,13 +22,6 @@ export function getChannelId(priority: NotificationPriority): string {
   return priority; // channel IDs match priority names
 }
 
-// ─── Icon ────────────────────────────────────────────────────────────────────
-
-export function getNotificationIcon(tags: string[]): string {
-  const primaryTag = tags[0];
-  if (primaryTag) return getTagIcon(primaryTag);
-  return 'calendar-outline';
-}
 
 // ─── Content ─────────────────────────────────────────────────────────────────
 
@@ -49,7 +42,7 @@ export function createNotificationContent(
   }
 
   return {
-    title: `${getNotificationIcon(event.tags)} ${STRINGS.notif_reminder_title}`,
+    title: STRINGS.notif_reminder_title,
     body,
     data: {
       eventId: event.id,

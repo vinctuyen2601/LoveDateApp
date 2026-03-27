@@ -24,7 +24,7 @@ import {
   ARTICLE_CATEGORIES,
 } from "../data/articles";
 import { getRelatedProductsForArticleAsync } from "../services/affiliateProductService";
-import { getArticles } from "../services/articleService";
+import { getArticles, getArticleById } from "../services/articleService";
 import { AffiliateProduct } from "../types";
 import ProductCard from "../components/suggestions/ProductCard";
 import PressableCard from "@components/atoms/PressableCard";
@@ -41,23 +41,29 @@ const ArticleDetailScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { article } = route.params as { article: Article };
-
+  const params = route.params as { article?: Article; articleId?: string };
+  const [article, setArticle] = useState<Article | null>(params.article ?? null);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(article.likes || 0);
+  const [likeCount, setLikeCount] = useState(params.article?.likes || 0);
   const [allArticles, setAllArticles] = useState<Article[]>([]);
-  const [relatedProducts, setRelatedProducts] = useState<AffiliateProduct[]>(
-    []
-  );
+  const [relatedProducts, setRelatedProducts] = useState<AffiliateProduct[]>([]);
 
   useEffect(() => {
-    logArticleView({
-      id: article.id,
-      title: article.title,
-      category: article.category,
-    });
-    loadArticles();
-    loadRelatedProducts();
+    const init = async () => {
+      let a = article;
+      if (!a && params.articleId) {
+        a = await getArticleById(params.articleId);
+        if (a) {
+          setArticle(a);
+          setLikeCount(a.likes || 0);
+        }
+      }
+      if (!a) return;
+      logArticleView({ id: a.id, title: a.title, category: a.category });
+      loadArticles();
+      loadRelatedProducts(a);
+    };
+    init();
   }, []);
 
   const loadArticles = async () => {
@@ -69,9 +75,9 @@ const ArticleDetailScreen: React.FC = () => {
     }
   };
 
-  const loadRelatedProducts = async () => {
+  const loadRelatedProducts = async (a: Article) => {
     try {
-      const products = await getRelatedProductsForArticleAsync(article.tags);
+      const products = await getRelatedProductsForArticleAsync(a.tags);
       setRelatedProducts(products);
     } catch {
       // Fallback - no related products shown
@@ -79,13 +85,15 @@ const ArticleDetailScreen: React.FC = () => {
   };
 
   const categoryInfo = ARTICLE_CATEGORIES.find(
-    (c) => c.id === article.category
+    (c) => c.id === article?.category
   );
 
   const relatedArticles = useMemo(
-    () => getRelatedArticles(article, allArticles, 3),
-    [article.id, allArticles]
+    () => article ? getRelatedArticles(article, allArticles, 3) : [],
+    [article?.id, allArticles]
   );
+
+  if (!article) return null;
 
   const handleShare = async () => {
     const slug = article.slug || article.id;

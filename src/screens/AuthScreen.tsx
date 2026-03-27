@@ -189,8 +189,8 @@ const AuthScreen: React.FC = () => {
       if (isLogin) {
         await login(email, password);
         logLogin("email");
+        (navigation as any).reset({ index: 0, routes: [{ name: "Main", params: { screen: "Home" } }] });
         showSuccess("Đăng nhập thành công!");
-        (navigation as any).navigate("Main", { screen: "Home" });
       } else {
         await register(email, password, displayName);
         logSignUp("email");
@@ -304,6 +304,17 @@ const AuthScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* Back button */}
+      {(navigation as any).canGoBack() && (
+        <TouchableOpacity
+          style={[styles.backBtn, { top: insets.top + 8 }]}
+          onPress={() => (navigation as any).goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+      )}
+
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 20) }]}
@@ -588,6 +599,15 @@ const useStyles = makeStyles((colors) => ({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  backBtn: {
+    position: "absolute",
+    left: 12,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
     flexGrow: 1,
