@@ -237,6 +237,7 @@ const SettingsScreen: React.FC = () => {
   const handleConfirmDelete = async () => {
     setShowDeleteConfirm(false);
     try {
+      await clearUserData();
       await deleteAccount();
     } catch (error: any) {
       showError(error.message || "Không thể thực hiện. Vui lòng thử lại.");

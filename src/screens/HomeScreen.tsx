@@ -31,7 +31,8 @@ import { useNotification } from "@contexts/NotificationContext";
 import { Event, getTagColor, getTagLabel } from "../types";
 import { COLORS } from "@themes/colors";
 import { getCalendarTheme } from "@themes/calendarTheme";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { getUnreadCount } from "../services/notificationInbox.service";
 import { getFeaturedArticles } from "../data/articles";
 import { getArticles } from "../services/articleService";
 import { databaseService } from "../services/database.service";
@@ -129,6 +130,13 @@ const HomeScreen: React.FC = () => {
   const { events, isLoading, refreshEvents, addEvent } = useEvents();
   const { sync } = useSync();
   const { message, image } = useNotification();
+
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      getUnreadCount().then(setUnreadNotifCount);
+    }, [])
+  );
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(DateUtils.getTodayString());
@@ -834,6 +842,20 @@ const HomeScreen: React.FC = () => {
               </View>
             );
           })()}
+          <TouchableOpacity
+            style={styles.bellBtn}
+            onPress={() => navigation.navigate("NotificationList")}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+            {unreadNotifCount > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>
+                  {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Hero empty state — chỉ hiện khi chưa có sự kiện nào */}
@@ -1448,6 +1470,32 @@ const useStyles = makeStyles((colors) => ({
   greeting: {
     paddingHorizontal: 16,
     paddingBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  bellBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bellBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.error,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  bellBadgeText: {
+    fontSize: 9,
+    fontFamily: "Manrope_700Bold",
+    color: colors.white,
   },
   greetingText: {
     fontSize: 20,

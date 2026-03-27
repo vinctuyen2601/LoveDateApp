@@ -83,10 +83,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const anon = await authService.isAnonymous();
         setIsAnonymous(anon);
 
-        // Nếu đã có tài khoản thật → pull events từ server về (background)
+        // Đăng ký push token cho tất cả user (kể cả anonymous)
+        registerPushToken().catch(err => console.warn('Push token registration failed:', err));
+
+        // Chỉ sync events cho tài khoản thật
         if (!anon) {
           syncService.sync().catch(err => console.warn('Startup sync failed:', err));
-          registerPushToken().catch(err => console.warn('Push token registration failed:', err));
         }
       }
     } catch (error) {

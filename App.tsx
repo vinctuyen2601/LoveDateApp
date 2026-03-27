@@ -3,7 +3,7 @@ import "react-native-gesture-handler"; // Must be before any navigation imports
 import React, { useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AppState, AppStateStatus, Text, TextInput } from "react-native";
+import { AppState, AppStateStatus, Platform, Text, TextInput } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 import {
   useFonts,
@@ -52,13 +52,55 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Handles killed-state notification tap — uses a hook not available on web
+function KilledStateNotifHandler({
+  onResponse,
+}: {
+  onResponse: (r: Notifications.NotificationResponse) => void;
+}) {
+  const lastResponse = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    if (lastResponse) onResponse(lastResponse);
+  }, [lastResponse]);
+  return null;
+}
+
 // Inner component that uses SQLite context
 function AppContent() {
   const db = useSQLiteContext();
   const appState = useRef(AppState.currentState);
+  const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+    const data = response.notification.request.content.data;
+    if (!data) return;
+
+    const screen = data.screen as string | undefined;
+
+    switch (screen) {
+      case "EventDetail":
+        if (data.eventId) navigate("EventDetail", { eventId: data.eventId });
+        break;
+      case "Home":
+        navigate("Main", { screen: "Home" });
+        break;
+      case "Connections":
+        navigate("Main", { screen: "Connections" });
+        break;
+      case "ArticleDetail":
+        if (data.articleId) navigate("ArticleDetail", { articleId: data.articleId });
+        break;
+      default:
+        // Backward compatible: nếu không có screen nhưng có eventId
+        if (data.eventId) navigate("EventDetail", { eventId: data.eventId });
+        break;
+    }
+  };
+
+
   useEffect(() => {
     // Initialize app
     initializeApp();
+
+    if (Platform.OS === 'web') return;
 
     // Setup notification listeners
     const notificationListener = Notifications.addNotificationReceivedListener(
@@ -67,14 +109,10 @@ function AppContent() {
       }
     );
 
+    // Handle tap when app is in background/foreground
     const responseListener =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("Notification tapped:", response);
-        // Navigate to event detail screen when user taps notification
-        const eventId = response.notification.request.content.data?.eventId;
-        if (eventId) {
-          navigate("EventDetail", { eventId });
-        }
+        handleNotificationResponse(response);
       });
 
     // Setup AppState listener to reschedule notifications on app resume
@@ -174,6 +212,9 @@ function AppContent() {
                 <NotificationProvider>
                   <SyncProvider>
                     <AppNavigator />
+                    {Platform.OS !== 'web' && (
+                      <KilledStateNotifHandler onResponse={handleNotificationResponse} />
+                    )}
                     <StatusBar style="auto" />
                     <TodayEventPopup />
                     <PermissionModal
