@@ -274,8 +274,16 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   }, [db, events, refreshAndReschedule]);
 
   const clearUserData = useCallback(async () => {
-    await db.execAsync('DELETE FROM events');
-    await db.execAsync('DELETE FROM sync_metadata');
+    try {
+      await db.execAsync('DELETE FROM events');
+    } catch (e) {
+      console.warn('clearUserData: failed to delete events', e);
+    }
+    try {
+      await db.execAsync('DELETE FROM sync_metadata');
+    } catch (e) {
+      console.warn('clearUserData: failed to delete sync_metadata', e);
+    }
     setEvents([]);
   }, [db]);
 
