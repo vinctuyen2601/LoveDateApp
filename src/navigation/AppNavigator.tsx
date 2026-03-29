@@ -9,6 +9,7 @@ import { COLORS } from "@themes/colors";
 import AuthScreen from "../screens/AuthScreen";
 import TabNavigator from "./TabNavigator";
 import AddEventScreen from "../screens/AddEventScreen";
+import AddYearlyEventScreen from "../screens/AddYearlyEventScreen";
 import EventDetailScreen from "../screens/EventDetailScreen";
 import EventsListScreen from "../screens/EventsListScreen";
 import MBTISurveyScreen from "../screens/MBTISurveyScreen";
@@ -106,6 +107,13 @@ const AppNavigator: React.FC = () => {
             component={AddEventScreen}
             options={{
               title: "Thêm sự kiện",
+              presentation: "modal",
+            }}
+          />
+          <Stack.Screen
+            name="AddYearlyEvent"
+            component={AddYearlyEventScreen}
+            options={{
               presentation: "modal",
             }}
           />

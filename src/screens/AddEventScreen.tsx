@@ -9,7 +9,6 @@ import {
   Switch,
   Alert,
   BackHandler,
-  Modal,
   ActivityIndicator,
   Image,
 } from "react-native";
@@ -20,7 +19,6 @@ import { getTagImage } from "@lib/iconImages";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSQLiteContext } from "expo-sqlite";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEvents } from "@contexts/EventsContext";
 import { useSync } from "../contexts/SyncContext";
 import { useToast } from "../contexts/ToastContext";
@@ -36,6 +34,7 @@ import {
   shareEvent,
 } from "../services/connections.service";
 import type { ConnectionWithQuota } from "../types/connections";
+import { lunarService } from "../services/lunar.service";
 import { COLORS } from "@themes/colors";
 import { STRINGS } from "../constants/strings";
 import { DateUtils } from "@lib/date.utils";
@@ -55,7 +54,6 @@ const AddEventScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const db = useSQLiteContext();
-  const insets = useSafeAreaInsets();
   const { addEvent, updateEvent, getEventById } = useEvents();
   const { sync } = useSync();
   const { showSuccess, showError } = useToast();
@@ -75,7 +73,7 @@ const AddEventScreen: React.FC = () => {
     eventDate: defaultDate,
     isLunarCalendar: false,
     tags: [],
-    remindDaysBefore: [1, 7],
+    remindDaysBefore: [0, 1, 7],
     reminderTime: { hour: 9, minute: 0 },
     isRecurring: true, // Default yearly recurring
   });
@@ -90,8 +88,7 @@ const AddEventScreen: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentStep, setCurrentStep] = useState(0); // 0=Tên, 1=Nhãn, 2=Thời gian, 3=Nhắc nhở
 
-  // Share modal after event creation
-  const [showShareModal, setShowShareModal] = useState(false);
+  // Share step after event creation
   const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
   const [connections, setConnections] = useState<ConnectionWithQuota[]>([]);
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
@@ -144,6 +141,10 @@ const AddEventScreen: React.FC = () => {
   // Override header back button to go to previous step instead of exiting
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerStyle: {
+        backgroundColor: colors.surface,
+      },
+      headerTintColor: colors.textPrimary,
       headerLeft: () =>
         currentStep > 0 ? (
           <TouchableOpacity
@@ -151,13 +152,18 @@ const AddEventScreen: React.FC = () => {
             style={{ paddingHorizontal: 12, paddingVertical: 8 }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons
-              name="chevron-back"
-              size={26}
-              color={colors.textPrimary}
-            />
+            <Ionicons name="chevron-back" size={26} color={colors.textPrimary} />
           </TouchableOpacity>
         ) : undefined,
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ paddingHorizontal: 16, paddingVertical: 8 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="close" size={24} color={colors.textSecondary} />
+        </TouchableOpacity>
+      ),
     });
   }, [navigation, currentStep]);
 
@@ -175,8 +181,18 @@ const AddEventScreen: React.FC = () => {
   }, [currentStep]);
 
   // Validate current step before advancing
+  const YEARLY_TAGS = ["birthday", "memorial", "anniversary"];
+
   const handleNext = () => {
     if (currentStep === 0) {
+      // Step 0: Tag selection — route yearly types to dedicated screen
+      const selectedTag = formData.tags[0];
+      if (selectedTag && YEARLY_TAGS.includes(selectedTag)) {
+        navigation.navigate("AddYearlyEvent", { eventType: selectedTag });
+        return;
+      }
+    }
+    if (currentStep === 1) {
       if (!formData.title.trim()) {
         setErrors({ title: "Vui lòng nhập tên sự kiện" });
         return;
@@ -204,6 +220,15 @@ const AddEventScreen: React.FC = () => {
     try {
       setIsSubmitting(true);
 
+      // If lunar calendar, convert solar eventDate → lunar coords before saving.
+      // Convention: eventDate stores lunar day/month as ISO numbers when isLunarCalendar=true.
+      const saveDate = formData.isLunarCalendar
+        ? (() => {
+            const lunar = lunarService.jsDateToLunar(formData.eventDate);
+            return new Date(lunar.year, lunar.month - 1, lunar.day, 12, 0, 0, 0);
+          })()
+        : formData.eventDate;
+
       // Build recurrence pattern based on type
       let recurrencePattern = undefined;
       if (formData.isRecurring) {
@@ -220,8 +245,8 @@ const AddEventScreen: React.FC = () => {
         } else if (recurrenceType === "yearly") {
           recurrencePattern = {
             type: recurrenceType,
-            month: formData.eventDate.getMonth() + 1, // 1-12
-            day: formData.eventDate.getDate(), // 1-31
+            month: saveDate.getMonth() + 1,
+            day: saveDate.getDate(),
           };
         } else {
           // 'once' - no pattern needed
@@ -231,20 +256,22 @@ const AddEventScreen: React.FC = () => {
         }
       }
 
+      const formDataToSave = { ...formData, eventDate: saveDate };
+
       if (isEditMode) {
         // Update existing event
-        await updateEvent(eventId, { ...formData, recurrencePattern });
+        await updateEvent(eventId, { ...formDataToSave, recurrencePattern });
         showSuccess(`Đã cập nhật sự kiện "${formData.title}" thành công!`);
       } else {
         // Add new event
         // EventsContext.addEvent already handles checklist auto-generation
-        const newEvent = await addEvent({ ...formData, recurrencePattern });
+        const newEvent = await addEvent({ ...formDataToSave, recurrencePattern });
         showSuccess(`Đã thêm sự kiện "${formData.title}" thành công!`);
         // Offer to share with connections if user has any
         setCreatedEvent(newEvent);
         setIsLoadingConnections(true);
         setIsSyncingForShare(true);
-        setShowShareModal(true);
+        setCurrentStep(4);
         setSelectedConnIds(new Set());
         // Fetch connections and sync to get serverId — run in parallel
         getConnectionsWithQuota()
@@ -360,7 +387,6 @@ const AddEventScreen: React.FC = () => {
         setIsSharing(false);
       }
     }
-    setShowShareModal(false);
     navigation.goBack();
   };
 
@@ -377,59 +403,45 @@ const AddEventScreen: React.FC = () => {
   // ── Form steps for progress indicator ────────────────────────────────────
 
   const formSteps = [
-    { label: "Tên", icon: "text-outline" as const },
     { label: "Nhãn", icon: "pricetag-outline" as const },
+    { label: "Tên", icon: "text-outline" as const },
     { label: "Thời gian", icon: "calendar-outline" as const },
     { label: "Nhắc nhở", icon: "notifications-outline" as const },
+    { label: "Chia sẻ", icon: "share-outline" as const },
   ];
 
   return (
     <View style={styles.container}>
       {/* Step Progress Indicator */}
       <View style={styles.stepIndicator}>
-        {formSteps.map((step, index) => {
-          const isActive = index === currentStep;
-          const isDone = index < currentStep;
-          return (
-            <View key={step.label} style={styles.stepItem}>
-              <View
-                style={[
-                  styles.stepDot,
-                  {
-                    backgroundColor: isActive
-                      ? colors.primary
-                      : isDone
-                      ? colors.primary + "60"
-                      : colors.primary + "25",
-                  },
-                ]}
-              >
-                {isDone ? (
-                  <Ionicons name="checkmark" size={14} color={colors.white} />
-                ) : (
-                  <Ionicons
-                    name={step.icon}
-                    size={14}
-                    color={isActive ? colors.white : colors.primary}
-                  />
-                )}
-              </View>
-              <Text
-                style={[styles.stepLabel, isActive && styles.stepLabelActive]}
-              >
-                {step.label}
-              </Text>
-              {index < formSteps.length - 1 && (
-                <View
-                  style={[
-                    styles.stepLine,
-                    isDone && { backgroundColor: colors.primary + "60" },
-                  ]}
-                />
-              )}
-            </View>
-          );
-        })}
+        <View style={styles.stepMeta}>
+          <Text style={styles.stepCount}>
+            Bước {currentStep + 1}/{formSteps.length}
+          </Text>
+          <Text style={styles.stepLabelActive}>
+            {formSteps[currentStep]?.label}
+          </Text>
+        </View>
+        <View style={styles.stepBarTrack}>
+          <View
+            style={[
+              styles.stepBarFill,
+              { width: `${((currentStep + 1) / formSteps.length) * 100}%` },
+            ]}
+          />
+        </View>
+        <View style={styles.stepDots}>
+          {formSteps.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.stepDot,
+                i < currentStep && styles.stepDotDone,
+                i === currentStep && styles.stepDotActive,
+              ]}
+            />
+          ))}
+        </View>
       </View>
 
       <ScrollView
@@ -439,7 +451,7 @@ const AddEventScreen: React.FC = () => {
         scrollEventThrottle={16}
       >
         {/* ── Step 0: Tên sự kiện ── */}
-        {(currentStep === 0 || isEditMode) && (
+        {(currentStep === 1 || isEditMode) && (
           <>
             <View style={styles.sectionDivider}>
               <Ionicons name="text-outline" size={16} color={colors.primary} />
@@ -452,7 +464,7 @@ const AddEventScreen: React.FC = () => {
               </Text>
               <TextInput
                 style={[styles.input, errors.title && styles.inputError]}
-                placeholder="VD: Sinh nhật vợ"
+                placeholder="Tên sự kiện"
                 placeholderTextColor={`${colors.textSecondary}99`}
                 value={formData.title}
                 onChangeText={(text) => {
@@ -483,7 +495,7 @@ const AddEventScreen: React.FC = () => {
         )}
 
         {/* ── Step 1: Nhãn ── */}
-        {(currentStep === 1 || isEditMode) && (
+        {(currentStep === 0 || isEditMode) && (
           <>
             <View style={styles.sectionDivider}>
               <Ionicons
@@ -515,7 +527,8 @@ const AddEventScreen: React.FC = () => {
                       ]}
                       onPress={() => {
                         const newTags = isSelected ? [] : [tag.value];
-                        setFormData({ ...formData, tags: newTags });
+                        const autoLunar = tag.value === "memorial" && !isSelected && !formData.isLunarCalendar;
+                        setFormData({ ...formData, tags: newTags, ...(autoLunar && { isLunarCalendar: true }) });
                       }}
                     >
                       <IconImage source={getTagImage(tag.value)} size={20} />
@@ -804,15 +817,7 @@ const AddEventScreen: React.FC = () => {
                         const [year, month, date] = day.dateString
                           .split("-")
                           .map(Number);
-                        const selectedDate = new Date(
-                          year,
-                          month - 1,
-                          date,
-                          12,
-                          0,
-                          0,
-                          0
-                        );
+                        const selectedDate = new Date(year, month - 1, date, 12, 0, 0, 0);
                         setFormData({ ...formData, eventDate: selectedDate });
                       }}
                       markedDates={{
@@ -862,13 +867,20 @@ const AddEventScreen: React.FC = () => {
                     />
                   </View>
                   <Text style={styles.selectedInfoText}>
-                    Đã chọn:{" "}
-                    {formData.eventDate.toLocaleDateString("vi-VN", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {formData.isLunarCalendar
+                      ? (() => {
+                          const lunar = lunarService.jsDateToLunar(formData.eventDate);
+                          return `Đã chọn: ${formData.eventDate.toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" })}  ·  Âm lịch: ${lunar.day}/${lunar.month}${lunar.isLeapMonth ? " (nhuận)" : ""} ÂL`;
+                        })()
+                      : `Đã chọn: ${formData.eventDate.toLocaleDateString(
+                          "vi-VN",
+                          {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }
+                        )}`}
                   </Text>
                 </View>
               )}
@@ -881,9 +893,9 @@ const AddEventScreen: React.FC = () => {
                   </Text>
                   <Switch
                     value={formData.isLunarCalendar}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, isLunarCalendar: value })
-                    }
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, isLunarCalendar: value });
+                    }}
                     trackColor={{
                       false: colors.border,
                       true: colors.primaryLight,
@@ -930,11 +942,168 @@ const AddEventScreen: React.FC = () => {
             />
           </>
         )}
+
+        {/* ── Step 4: Chia sẻ ── */}
+        {currentStep === 4 && (
+          <>
+            <View style={styles.sectionDivider}>
+              <Ionicons name="share-outline" size={16} color={colors.primary} />
+              <Text style={styles.sectionDividerText}>Chia sẻ sự kiện</Text>
+            </View>
+
+            {isLoadingConnections ? (
+              <View style={styles.shareModalLoading}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.shareModalLoadingText}>
+                  Đang tải danh sách kết nối...
+                </Text>
+              </View>
+            ) : connections.length === 0 ? (
+              <View style={styles.shareModalEmpty}>
+                <Ionicons
+                  name="people-outline"
+                  size={48}
+                  color={colors.textLight}
+                />
+                <Text style={styles.shareModalEmptyTitle}>Chưa có kết nối</Text>
+                <Text style={styles.shareModalEmptySub}>
+                  Thêm kết nối với người thân để có thể chia sẻ sự kiện sau này
+                </Text>
+              </View>
+            ) : (
+              <View style={{ gap: 10 }}>
+                <Text style={styles.shareModalHint}>
+                  Chọn những người bạn muốn chia sẻ "{createdEvent?.title}". Họ sẽ
+                  nhận được thông báo và có thể thêm vào lịch của mình.
+                </Text>
+                {connections.map(({ connection, partner, canReceive }) => {
+                  const isSelected = selectedConnIds.has(partner.id);
+                  return (
+                    <TouchableOpacity
+                      key={connection.id}
+                      style={[
+                        styles.shareConnCard,
+                        isSelected && styles.shareConnCardSelected,
+                        !canReceive && styles.shareConnCardDisabled,
+                      ]}
+                      onPress={() => toggleConnSelection(partner.id, canReceive)}
+                      activeOpacity={canReceive ? 0.7 : 1}
+                    >
+                      <View
+                        style={[
+                          styles.shareConnAvatar,
+                          {
+                            backgroundColor: [
+                              "#FF6B6B",
+                              "#4ECDC4",
+                              "#845EF7",
+                              "#339AF0",
+                            ][partner.id.charCodeAt(0) % 4],
+                          },
+                        ]}
+                      >
+                        {partner.photoUrl ? (
+                          <Image
+                            source={{ uri: partner.photoUrl }}
+                            style={{ width: 40, height: 40, borderRadius: 20 }}
+                          />
+                        ) : (
+                          <Text style={styles.shareConnAvatarText}>
+                            {(partner.displayName ||
+                              partner.email ||
+                              "?")[0].toUpperCase()}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[
+                            styles.shareConnName,
+                            !canReceive && { color: colors.textLight },
+                          ]}
+                        >
+                          {partner.displayName || "Người dùng"}
+                        </Text>
+                        <Text style={styles.shareConnEmail} numberOfLines={1}>
+                          {partner.email}
+                        </Text>
+                        {!canReceive && (
+                          <Text style={styles.shareConnFull}>Hết lượt nhận</Text>
+                        )}
+                      </View>
+                      {canReceive && (
+                        <View
+                          style={[
+                            styles.shareConnCheck,
+                            isSelected && {
+                              backgroundColor: colors.primary,
+                              borderColor: colors.primary,
+                            },
+                          ]}
+                        >
+                          {isSelected && (
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color={colors.white}
+                            />
+                          )}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </>
+        )}
       </ScrollView>
 
-      {/* Footer: Tiếp theo (create step 0-2) hoặc Lưu (step 3 hoặc edit mode) */}
+      {/* Footer */}
       <View style={[styles.footer, isScrolled && styles.footerShadow]}>
-        {currentStep < 3 && !isEditMode ? (
+        {currentStep === 4 ? (
+          <View style={styles.shareFooterRow}>
+            <TouchableOpacity
+              style={styles.shareModalSkipBtn}
+              onPress={() => handleShareDone(true)}
+            >
+              <Text style={styles.shareModalSkipText}>Bỏ qua</Text>
+            </TouchableOpacity>
+            {connections.length > 0 && (
+              <TouchableOpacity
+                style={[
+                  styles.shareModalSendBtn,
+                  (selectedConnIds.size === 0 ||
+                    isSharing ||
+                    isSyncingForShare) &&
+                    styles.shareModalSendBtnDisabled,
+                ]}
+                onPress={() => handleShareDone(false)}
+                disabled={
+                  selectedConnIds.size === 0 || isSharing || isSyncingForShare
+                }
+              >
+                {isSharing || isSyncingForShare ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="share-outline"
+                      size={18}
+                      color={colors.white}
+                    />
+                    <Text style={styles.shareModalSendText}>
+                      Chia sẻ
+                      {selectedConnIds.size > 0
+                        ? ` (${selectedConnIds.size})`
+                        : ""}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : currentStep < 3 && !isEditMode ? (
           <TouchableOpacity
             style={styles.submitButton}
             onPress={handleNext}
@@ -982,179 +1151,6 @@ const AddEventScreen: React.FC = () => {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* ── Share with connections modal ──────────────────────────────────── */}
-      <Modal
-        visible={showShareModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => handleShareDone(true)}
-      >
-        <View style={[styles.shareModalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.shareModalHeader}>
-            <View>
-              <Text style={styles.shareModalTitle}>Chia sẻ sự kiện</Text>
-              <Text style={styles.shareModalSub}>{createdEvent?.title}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => handleShareDone(true)}
-              style={styles.shareModalCloseBtn}
-            >
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-
-          {isLoadingConnections ? (
-            <View style={styles.shareModalLoading}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={styles.shareModalLoadingText}>
-                Đang tải danh sách kết nối...
-              </Text>
-            </View>
-          ) : connections.length === 0 ? (
-            <View style={styles.shareModalEmpty}>
-              <Ionicons
-                name="people-outline"
-                size={48}
-                color={colors.textLight}
-              />
-              <Text style={styles.shareModalEmptyTitle}>Chưa có kết nối</Text>
-              <Text style={styles.shareModalEmptySub}>
-                Thêm kết nối với người thân để có thể chia sẻ sự kiện sau này
-              </Text>
-            </View>
-          ) : (
-            <ScrollView
-              style={styles.shareModalList}
-              contentContainerStyle={{ padding: 16, gap: 10 }}
-            >
-              <Text style={styles.shareModalHint}>
-                Chọn những người bạn muốn chia sẻ "{createdEvent?.title}". Họ sẽ
-                nhận được thông báo và có thể thêm vào lịch của mình.
-              </Text>
-              {connections.map(({ connection, partner, canReceive }) => {
-                const isSelected = selectedConnIds.has(partner.id);
-                return (
-                  <TouchableOpacity
-                    key={connection.id}
-                    style={[
-                      styles.shareConnCard,
-                      isSelected && styles.shareConnCardSelected,
-                      !canReceive && styles.shareConnCardDisabled,
-                    ]}
-                    onPress={() => toggleConnSelection(partner.id, canReceive)}
-                    activeOpacity={canReceive ? 0.7 : 1}
-                  >
-                    <View
-                      style={[
-                        styles.shareConnAvatar,
-                        {
-                          backgroundColor: [
-                            "#FF6B6B",
-                            "#4ECDC4",
-                            "#845EF7",
-                            "#339AF0",
-                          ][partner.id.charCodeAt(0) % 4],
-                        },
-                      ]}
-                    >
-                      {partner.photoUrl ? (
-                        <Image
-                          source={{ uri: partner.photoUrl }}
-                          style={{ width: 40, height: 40, borderRadius: 20 }}
-                        />
-                      ) : (
-                        <Text style={styles.shareConnAvatarText}>
-                          {(partner.displayName ||
-                            partner.email ||
-                            "?")[0].toUpperCase()}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.shareConnName,
-                          !canReceive && { color: colors.textLight },
-                        ]}
-                      >
-                        {partner.displayName || "Người dùng"}
-                      </Text>
-                      <Text style={styles.shareConnEmail} numberOfLines={1}>
-                        {partner.email}
-                      </Text>
-                      {!canReceive && (
-                        <Text style={styles.shareConnFull}>Hết lượt nhận</Text>
-                      )}
-                    </View>
-                    {canReceive && (
-                      <View
-                        style={[
-                          styles.shareConnCheck,
-                          isSelected && {
-                            backgroundColor: colors.primary,
-                            borderColor: colors.primary,
-                          },
-                        ]}
-                      >
-                        {isSelected && (
-                          <Ionicons
-                            name="checkmark"
-                            size={14}
-                            color={colors.white}
-                          />
-                        )}
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
-
-          <View style={styles.shareModalFooter}>
-            <TouchableOpacity
-              style={styles.shareModalSkipBtn}
-              onPress={() => handleShareDone(true)}
-            >
-              <Text style={styles.shareModalSkipText}>Bỏ qua</Text>
-            </TouchableOpacity>
-            {connections.length > 0 && (
-              <TouchableOpacity
-                style={[
-                  styles.shareModalSendBtn,
-                  (selectedConnIds.size === 0 ||
-                    isSharing ||
-                    isSyncingForShare) &&
-                    styles.shareModalSendBtnDisabled,
-                ]}
-                onPress={() => handleShareDone(false)}
-                disabled={
-                  selectedConnIds.size === 0 || isSharing || isSyncingForShare
-                }
-              >
-                {isSharing || isSyncingForShare ? (
-                  <ActivityIndicator size="small" color={colors.white} />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="share-outline"
-                      size={18}
-                      color={colors.white}
-                    />
-                    <Text style={styles.shareModalSendText}>
-                      Chia sẻ
-                      {selectedConnIds.size > 0
-                        ? ` (${selectedConnIds.size})`
-                        : ""}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
@@ -1402,41 +1398,56 @@ const useStyles = makeStyles((colors) => ({
     fontStyle: "italic",
   },
   stepIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    gap: 8,
   },
-  stepItem: {
+  stepMeta: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  stepDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stepLabel: {
+  stepCount: {
     fontSize: 12,
-    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
-    marginLeft: 4,
+    fontFamily: "Manrope_500Medium",
   },
   stepLabelActive: {
+    fontSize: 12,
     color: colors.primary,
     fontFamily: "Manrope_700Bold",
   },
-  stepLine: {
-    width: 20,
-    height: 2,
+  stepBarTrack: {
+    height: 3,
     backgroundColor: colors.border,
-    marginHorizontal: 6,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  stepBarFill: {
+    height: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 2,
+  },
+  stepDots: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  stepDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+  },
+  stepDotDone: {
+    backgroundColor: colors.primary + "60",
+  },
+  stepDotActive: {
+    width: 18,
+    backgroundColor: colors.primary,
   },
   sectionDivider: {
     flexDirection: "row",
@@ -1594,6 +1605,11 @@ const useStyles = makeStyles((colors) => ({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
+  },
+  shareFooterRow: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
   },
   shareModalFooter: {
     flexDirection: "row",

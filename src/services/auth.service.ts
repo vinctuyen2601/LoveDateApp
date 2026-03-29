@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
+import { v4 as uuidv4 } from 'uuid';
 import { STORAGE_KEYS } from '../constants/config';
 import { User, AuthTokens, AuthError } from '../types';
 import { apiService } from './api.service';
@@ -7,16 +8,34 @@ import { notificationService } from './notification.service';
 
 class AuthService {
   /**
-   * 🆕 Sign in anonymously (tạo tài khoản ẩn danh dựa trên Device ID)
-   * - Sử dụng Device ID để tạo tên unique
+   * Returns a per-session device key stored in AsyncStorage.
+   * A new key is generated on first launch and after every logout,
+   * ensuring each logout produces a distinct anonymous account on the server.
+   */
+  private async getOrCreateDeviceSessionKey(): Promise<string> {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.DEVICE_SESSION_KEY);
+    if (stored) return stored;
+    const key = uuidv4();
+    await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_SESSION_KEY, key);
+    return key;
+  }
+
+  private async resetDeviceSessionKey(): Promise<void> {
+    const key = uuidv4();
+    await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_SESSION_KEY, key);
+  }
+
+  /**
+   * 🆕 Sign in anonymously (tạo tài khoản ẩn danh dựa trên session key)
+   * - Session key reset sau mỗi lần logout → mỗi lần logout tạo account mới
    * - Không cần Backend cũng hoạt động (offline-first)
    */
   async signInAnonymously(): Promise<{ user: User; tokens: AuthTokens }> {
     try {
       console.log('Creating anonymous account...');
 
-      // Get device info for unique identifier
-      const deviceId = Device.modelId || Device.osInternalBuildId || 'unknown';
+      // Use session key (not hardware device ID) so logout → new account
+      const deviceId = await this.getOrCreateDeviceSessionKey();
       const deviceName = Device.deviceName || Device.modelName || 'Device';
 
       // Generate display name based on device
@@ -383,15 +402,38 @@ class AuthService {
 
   /**
    * Logout
+   *
+   * - Anonymous accounts: DELETE /auth/delete-account — wipes all server-side data
+   *   so the old anonymous events are not left orphaned on the server.
+   * - Real accounts: POST /auth/logout — invalidates the session token only.
+   *
+   * Token is cleared from memory AFTER the server call so the request is authenticated.
    */
   async logout(): Promise<void> {
     try {
-      // Optional: Notify backend about logout (for session invalidation)
-      try {
-        await apiService.post('/auth/logout', {});
-      } catch (error) {
-        console.log('Backend logout notification failed (non-critical):', error);
+      const isAnon = await this.isAnonymous();
+
+      if (isAnon) {
+        // Delete the anonymous account + all its data from the server
+        try {
+          await apiService.delete('/auth/delete-account');
+        } catch (error) {
+          console.log('Failed to delete anonymous account on server (non-critical):', error);
+        }
+      } else {
+        // Invalidate real account session on the server
+        try {
+          await apiService.post('/auth/logout', {});
+        } catch (error) {
+          console.log('Backend logout notification failed (non-critical):', error);
+        }
       }
+
+      // Clear token from memory after the server call
+      apiService.setAuthToken(null);
+
+      // Reset device session key so the next signInAnonymously() gets a fresh account
+      await this.resetDeviceSessionKey();
 
       // Clear local storage
       await AsyncStorage.multiRemove([
@@ -399,9 +441,6 @@ class AuthService {
         STORAGE_KEYS.USER_DATA,
         STORAGE_KEYS.IS_ANONYMOUS,
       ]);
-
-      // Clear token from API service
-      apiService.setAuthToken(null);
 
       console.log('User logged out successfully');
     } catch (error) {

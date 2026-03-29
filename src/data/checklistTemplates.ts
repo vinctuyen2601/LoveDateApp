@@ -36,8 +36,8 @@ const BIRTHDAY_ITEMS: ChecklistTemplateItem[] = [
 
 // Birthday checklist template
 export const BIRTHDAY_CHECKLIST: ChecklistTemplate = {
-  id: 'birthday_template',
-  eventCategory: 'birthday',
+  id: "birthday_template",
+  eventCategory: "birthday",
   items: BIRTHDAY_ITEMS,
 };
 
@@ -77,8 +77,8 @@ const ANNIVERSARY_ITEMS: ChecklistTemplateItem[] = [
 
 // Anniversary checklist template
 export const ANNIVERSARY_CHECKLIST: ChecklistTemplate = {
-  id: 'anniversary_template',
-  eventCategory: 'anniversary',
+  id: "anniversary_template",
+  eventCategory: "anniversary",
   items: ANNIVERSARY_ITEMS,
 };
 
@@ -108,9 +108,59 @@ const HOLIDAY_ITEMS: ChecklistTemplateItem[] = [
 
 // Holiday checklist template
 export const HOLIDAY_CHECKLIST: ChecklistTemplate = {
-  id: 'holiday_template',
-  eventCategory: 'holiday',
+  id: "holiday_template",
+  eventCategory: "holiday",
   items: HOLIDAY_ITEMS,
+};
+
+// Memorial checklist items — truyền thống (thắp hương)
+const MEMORIAL_ITEMS: ChecklistTemplateItem[] = [
+  {
+    title: "Chuẩn bị hoa tươi viếng mộ",
+    dueDaysBefore: 1,
+    order: 1,
+  },
+  {
+    title: "Chuẩn bị đồ thắp hương (nhang, nến, vàng mã)",
+    dueDaysBefore: 1,
+    order: 2,
+  },
+  {
+    title: "Chuẩn bị mâm cơm cúng",
+    dueDaysBefore: 0,
+    order: 3,
+  },
+];
+
+export const MEMORIAL_CHECKLIST: ChecklistTemplate = {
+  id: "memorial_template",
+  eventCategory: "memorial",
+  items: MEMORIAL_ITEMS,
+};
+
+// Memorial checklist items — Công giáo
+const MEMORIAL_CATHOLIC_ITEMS: ChecklistTemplateItem[] = [
+  {
+    title: "Xin lễ cầu nguyện",
+    dueDaysBefore: 7,
+    order: 1,
+  },
+  {
+    title: "Chuẩn bị hoa viếng mộ",
+    dueDaysBefore: 1,
+    order: 2,
+  },
+  {
+    title: "Họp mặt và cầu nguyện cùng gia đình",
+    dueDaysBefore: 0,
+    order: 3,
+  },
+];
+
+export const MEMORIAL_CATHOLIC_CHECKLIST: ChecklistTemplate = {
+  id: "memorial_catholic_template",
+  eventCategory: "memorial",
+  items: MEMORIAL_CATHOLIC_ITEMS,
 };
 
 // Default checklist items for other events
@@ -134,8 +184,8 @@ const DEFAULT_ITEMS: ChecklistTemplateItem[] = [
 
 // Default checklist template
 export const DEFAULT_CHECKLIST: ChecklistTemplate = {
-  id: 'default_template',
-  eventCategory: 'default',
+  id: "default_template",
+  eventCategory: "default",
   items: DEFAULT_ITEMS,
 };
 
@@ -153,6 +203,13 @@ export function getChecklistTemplate(tags: string[]): ChecklistTemplate {
   // Check for anniversary
   if (tags.includes("anniversary")) {
     return ANNIVERSARY_CHECKLIST;
+  }
+
+  // Check for memorial — Công giáo gets prayer items, others get incense items
+  if (tags.includes("memorial")) {
+    return tags.includes("catholic")
+      ? MEMORIAL_CATHOLIC_CHECKLIST
+      : MEMORIAL_CHECKLIST;
   }
 
   // Check for holidays

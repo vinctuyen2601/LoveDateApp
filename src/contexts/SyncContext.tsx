@@ -16,8 +16,13 @@ interface SyncProviderProps {
 
 export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   const db = useSQLiteContext();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAnonymous } = useAuth();
   const { refreshEvents } = useEvents();
+  const isAnonymousRef = React.useRef(isAnonymous);
+
+  useEffect(() => {
+    isAnonymousRef.current = isAnonymous;
+  }, [isAnonymous]);
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     isSyncing: false,
@@ -35,6 +40,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       setSyncStatus(prevStatus => ({
         ...prevStatus,
         ...status,
+        error: status.error ?? undefined,
       }));
 
       // Handle conflicts
@@ -42,8 +48,8 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
         setConflicts(status.conflicts);
       }
 
-      // Refresh events after successful sync
-      if (status.isSyncing === false && !status.error) {
+      // Refresh events after successful sync — skip if user just logged out (anonymous)
+      if (status.isSyncing === false && !status.error && !isAnonymousRef.current) {
         refreshEvents()
           .then(async () => {
             // Reschedule all notifications after sync to ensure they're up to date

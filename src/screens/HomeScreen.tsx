@@ -1010,7 +1010,9 @@ const HomeScreen: React.FC = () => {
                   >
                     {daysLeft === 0 ? (
                       <Image
-                        source={require("../../assets/icons/tags/confetti.png")}
+                        source={primaryTag === 'memorial'
+                          ? require("../../assets/icons/tags/candle.png")
+                          : require("../../assets/icons/tags/confetti.png")}
                         style={styles.countdownToday}
                       />
                     ) : (

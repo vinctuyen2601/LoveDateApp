@@ -6,7 +6,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Event, NotificationPriority } from '../types';
-import { DateUtils } from './date.utils';
+import { DateUtils, getYearlyEventTitle } from './date.utils';
 import { STRINGS } from '../constants/strings';
 import { lunarService } from '../services/lunar.service';
 
@@ -31,14 +31,15 @@ export function createNotificationContent(
 ): Notifications.NotificationContentInput {
   const priority = getNotificationPriority(daysBefore);
   const eventDateDisplay = DateUtils.formatDate(event.eventDate);
+  const displayTitle = getYearlyEventTitle(event.title, event.tags, event.startYear);
 
   let body = '';
   if (daysBefore === 0) {
-    body = `Hôm nay là ${event.title}!`;
+    body = `Hôm nay là ${displayTitle}!`;
   } else if (daysBefore === 1) {
-    body = `Còn 1 ngày nữa đến ${event.title} (${eventDateDisplay})`;
+    body = `Còn 1 ngày nữa đến ${displayTitle} (${eventDateDisplay})`;
   } else {
-    body = `Còn ${daysBefore} ngày nữa đến ${event.title} (${eventDateDisplay})`;
+    body = `Còn ${daysBefore} ngày nữa đến ${displayTitle} (${eventDateDisplay})`;
   }
 
   return {
@@ -46,7 +47,7 @@ export function createNotificationContent(
     body,
     data: {
       eventId: event.id,
-      eventTitle: event.title,
+      eventTitle: displayTitle,
       eventDate: event.eventDate,
       daysBefore,
     },

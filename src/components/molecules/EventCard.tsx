@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Event, getTagLabel, getTagColor } from '../../types';
 import IconImage from '@components/atoms/IconImage';
 import { getTagImage } from '@lib/iconImages';
-import { DateUtils } from '@lib/date.utils';
+import { DateUtils, getYearlyEventTitle } from '@lib/date.utils';
 import { COLORS } from '@themes/colors';
 import ConfirmDialog from '@components/organisms/ConfirmDialog';
 import CountdownTimer from '@components/molecules/CountdownTimer';
@@ -61,7 +61,9 @@ const EventCard: React.FC<EventCardProps> = ({
               <IconImage source={tagImage} size={28} />
             </View>
             <View style={styles.content}>
-              <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                {getYearlyEventTitle(event.title, event.tags, event.startYear)}
+              </Text>
               <View style={styles.metaRow}>
                 <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
                 <Text style={styles.dateText}>

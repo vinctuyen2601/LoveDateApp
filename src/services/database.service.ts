@@ -108,6 +108,16 @@ export async function initializeTables(
       }
     }
 
+    // Add startYear column if it doesn't exist (migration)
+    try {
+      await db.execAsync("ALTER TABLE events ADD COLUMN startYear INTEGER;");
+      console.log("Added startYear column to events table");
+    } catch (error: any) {
+      if (!error.message?.includes("duplicate column")) {
+        console.warn("Error adding startYear column:", error);
+      }
+    }
+
     console.log("✅ Database schema initialized with tags support");
 
     // Indexes
@@ -514,6 +524,7 @@ function dbEventToEvent(dbEvent: DatabaseEvent): Event {
     createdAt: dbEvent.createdAt,
     updatedAt: dbEvent.updatedAt,
     sourceSharedEventId: dbEvent.sourceSharedEventId || null,
+    startYear: dbEvent.startYear ?? undefined,
   };
 }
 
@@ -550,6 +561,8 @@ function eventToDbFormat(event: Partial<Event>): Partial<DatabaseEvent> {
     dbEvent.notes = event.notes ? JSON.stringify(event.notes) : null;
   if (event.sourceSharedEventId !== undefined)
     dbEvent.sourceSharedEventId = event.sourceSharedEventId || null;
+  if (event.startYear !== undefined)
+    dbEvent.startYear = event.startYear ?? null;
   if (event.createdAt !== undefined) dbEvent.createdAt = event.createdAt;
   if (event.updatedAt !== undefined) dbEvent.updatedAt = event.updatedAt;
 
@@ -590,8 +603,8 @@ export async function createEvent(
       `INSERT INTO events (
         id, title, eventDate, isLunarCalendar, tags,
         reminderSettings, isRecurring, recurrencePattern, isDeleted,
-        localId, serverId, version, needsSync, sourceSharedEventId, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        localId, serverId, version, needsSync, sourceSharedEventId, startYear, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         dbEvent.id,
         dbEvent.title,
@@ -607,6 +620,7 @@ export async function createEvent(
         dbEvent.version ?? 0,
         dbEvent.needsSync ?? 1,
         dbEvent.sourceSharedEventId ?? null,
+        dbEvent.startYear ?? null,
         now,
         now,
       ]
@@ -759,6 +773,26 @@ export async function getEventsNeedingSync(
 /**
  * Reset database - drop all tables and recreate
  */
+/**
+ * Clear all user-generated data after logout.
+ * Preserves CMS/shared data (articles, surveys, master_data_cache, activity_suggestions, etc.)
+ */
+export async function clearUserData(db: SQLite.SQLiteDatabase): Promise<void> {
+  try {
+    console.log('🧹 Clearing user data after logout...');
+    await db.execAsync('DELETE FROM events');
+    await db.execAsync('DELETE FROM checklist_items');
+    await db.execAsync('DELETE FROM sync_metadata');
+    await db.execAsync('DELETE FROM scheduled_notifications');
+    await db.execAsync('DELETE FROM notification_logs');
+    await db.execAsync('DELETE FROM article_reads');
+    console.log('✅ User data cleared');
+  } catch (error) {
+    console.error('Error clearing user data:', error);
+    throw new DatabaseError('Failed to clear user data', error);
+  }
+}
+
 export async function resetDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
   try {
     console.log("⚠️ Resetting database - all data will be deleted!");

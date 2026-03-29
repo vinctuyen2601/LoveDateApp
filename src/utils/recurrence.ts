@@ -50,7 +50,9 @@ export function getOccurrencesInWindow(
       if (event.isLunarCalendar) {
         const { month: lunarMonth, day: lunarDay } =
           lunarService.extractLunarCoordinates(new Date(event.eventDate));
-        for (let offset = 0; offset <= 2; offset++) {
+        // Start from -1: lunar month 12 of (year-1) often falls in Jan/Feb of
+        // the window year, so we must check the previous lunar year too.
+        for (let offset = -1; offset <= 2; offset++) {
           const solarDate = lunarService.lunarToSolarForYear(lunarMonth, lunarDay, currentYear + offset);
           if (solarDate) addIfInWindow(solarDate);
         }

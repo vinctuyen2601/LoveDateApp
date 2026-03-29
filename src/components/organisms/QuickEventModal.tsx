@@ -42,39 +42,6 @@ const extractEventTags = (eventName: string): string[] => {
              lowerName.includes('anniversary') || lowerName.includes('cưới') ||
              lowerName.includes('cuoi') || lowerName.includes('yêu') || lowerName.includes('yeu')) {
     tags.push('anniversary');
-  } else if (lowerName.includes('tết') || lowerName.includes('tet') ||
-             lowerName.includes('lễ') || lowerName.includes('le') ||
-             lowerName.includes('holiday') || lowerName.includes('quốc khánh') ||
-             lowerName.includes('giáng sinh') || lowerName.includes('noel')) {
-    tags.push('holiday');
-  }
-
-  // Relationship detection
-  if (lowerName.includes('vợ') || lowerName.includes('vo') || lowerName.includes('wife')) {
-    tags.push('wife');
-  } else if (lowerName.includes('chồng') || lowerName.includes('chong') || lowerName.includes('husband')) {
-    tags.push('husband');
-  } else if (lowerName.includes('con') || lowerName.includes('child') || lowerName.includes('daughter') || lowerName.includes('son')) {
-    tags.push('child');
-  } else if (lowerName.includes('cha') || lowerName.includes('mẹ') || lowerName.includes('me') ||
-             lowerName.includes('bố') || lowerName.includes('bo') || lowerName.includes('má') ||
-             lowerName.includes('ba') || lowerName.includes('parent') || lowerName.includes('mom') ||
-             lowerName.includes('dad')) {
-    tags.push('parent');
-  } else if (lowerName.includes('anh') || lowerName.includes('chị') || lowerName.includes('chi') ||
-             lowerName.includes('em') || lowerName.includes('sibling') || lowerName.includes('brother') ||
-             lowerName.includes('sister')) {
-    tags.push('sibling');
-  } else if (lowerName.includes('bạn') || lowerName.includes('ban') || lowerName.includes('friend')) {
-    tags.push('friend');
-  } else if (lowerName.includes('đồng nghiệp') || lowerName.includes('dong nghiep') ||
-             lowerName.includes('colleague') || lowerName.includes('coworker')) {
-    tags.push('colleague');
-  }
-
-  // Check for "family" keywords
-  if (lowerName.includes('gia đình') || lowerName.includes('gia dinh') || lowerName.includes('family')) {
-    tags.push('family');
   }
 
   return tags;

@@ -5,6 +5,7 @@ import { authService } from '../services/auth.service';
 import { apiService } from '../services/api.service';
 import { syncService } from '../services/sync.service';
 import { registerPushToken, deactivatePushToken } from '../services/pushNotification.service';
+import { navigate } from '../navigation/AppNavigator';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -171,8 +172,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setIsLoading(true);
-      await deactivatePushToken().catch(() => {});
-      await authService.logout();
+      deactivatePushToken().catch(() => {}); // fire-and-forget
+      await authService.logout(); // token cleared + POST /auth/logout + clear storage
 
       setUser(null);
       setTokens(null);
@@ -181,8 +182,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsEmailVerified(false);
       setLinkedProviders([]);
 
-      // Create new anonymous account after logout
-      await autoLogin();
+      navigate('Main', { screen: 'Home' });
+
+      // Create anonymous session in background — triggers isAnonymous false→true
+      // which EventsContext detects to clear local user data
+      autoLogin().catch(err => console.error('Anonymous session creation failed:', err));
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;

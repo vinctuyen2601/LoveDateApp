@@ -157,11 +157,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {product.price && (
           <View style={styles.priceRow}>
             <Text style={styles.price}>{formatPrice(product.price)}</Text>
-            {discount !== null && (
-              <Text style={styles.originalPrice}>
-                {formatPrice(product.originalPrice!)}
-              </Text>
-            )}
+            <Text style={styles.originalPrice}>
+              {product.originalPrice ? formatPrice(product.originalPrice) : " "}
+            </Text>
           </View>
         )}
 
@@ -237,11 +235,8 @@ const useStyles = makeStyles((colors) => ({
     lineHeight: 19,
   },
   priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    flexDirection: "column",
     marginBottom: 4,
-    flexWrap: "wrap",
   },
   price: {
     fontSize: 15,

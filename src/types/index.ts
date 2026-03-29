@@ -39,7 +39,7 @@ export interface ChecklistTemplate {
   relationshipSpecific?: Record<string, ChecklistTemplateItem[]>;
 
   // CMS fields
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   version?: number;
   deletedAt?: string | null;
   createdAt?: string;
@@ -109,7 +109,7 @@ export interface ReminderSettings {
 export interface EventNoteGift {
   name: string;
   price?: number;
-  source?: 'occasion_products' | 'manual';
+  source?: "occasion_products" | "manual";
   productId?: string;
   link?: string;
   imageUrl?: string;
@@ -129,7 +129,7 @@ export interface EventNote {
   activityWhyFit?: string;
   activityTimeline?: { time: string; action: string }[];
   note?: string;
-  rating?: number;   // 1-5 sao
+  rating?: number; // 1-5 sao
   photos?: string[];
 }
 
@@ -142,6 +142,7 @@ export interface Event {
   reminderSettings: ReminderSettings;
   isRecurring: boolean;
   recurrencePattern?: RecurrencePattern; // New: detailed recurrence info
+  startYear?: number; // Năm bắt đầu — dùng cho birthday/memorial/anniversary để tính "năm thứ X"
   isDeleted: boolean;
   isNotificationEnabled: boolean; // Toggle notification for this event
   notes?: EventNote[];
@@ -235,11 +236,11 @@ export interface ScheduledNotification {
 export type NotificationPriority = "urgent" | "important" | "reminder";
 
 export type NotificationStatus =
-  | "scheduled"    // Notification scheduled successfully
-  | "delivered"    // Notification delivered to user
-  | "failed"       // Scheduling failed
-  | "cancelled"    // Manually cancelled
-  | "expired";     // Passed scheduled time without delivery
+  | "scheduled" // Notification scheduled successfully
+  | "delivered" // Notification delivered to user
+  | "failed" // Scheduling failed
+  | "cancelled" // Manually cancelled
+  | "expired"; // Passed scheduled time without delivery
 
 export interface NotificationLog {
   id: string;
@@ -319,7 +320,7 @@ export interface GiftSuggestion {
   id: string;
   title: string;
   description: string;
-  type: 'gift' | 'experience' | 'activity' | 'romantic_plan';
+  type: "gift" | "experience" | "activity" | "romantic_plan";
 
   // Scoring Criteria (for filtering algorithm)
   category?: string[];
@@ -328,7 +329,7 @@ export interface GiftSuggestion {
   personality?: string[];
   hobbies?: string[];
   loveLanguage?: string[];
-  gender?: 'Nam' | 'Nữ' | 'Khác';
+  gender?: "Nam" | "Nữ" | "Khác";
   relationshipStage?: string[];
 
   // Details
@@ -340,7 +341,7 @@ export interface GiftSuggestion {
   relatedArticles?: string[]; // Article IDs
 
   // CMS fields
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   version?: number;
   deletedAt?: string | null;
   createdAt?: string;
@@ -351,10 +352,10 @@ export interface GiftSuggestion {
 export interface ActivitySuggestion {
   id: string;
   name: string;
-  category: 'restaurant' | 'activity' | 'location';
+  category: "restaurant" | "activity" | "location";
   location?: string; // Area/district (e.g., "Quận 1", "Thủ Đức")
   address?: string;
-  priceRange?: '₫' | '₫₫' | '₫₫₫' | '₫₫₫₫'; // Similar to Google Maps
+  priceRange?: "₫" | "₫₫" | "₫₫₫" | "₫₫₫₫"; // Similar to Google Maps
   rating?: number; // 1.0 - 5.0
   bookingUrl?: string;
   phoneNumber?: string;
@@ -363,7 +364,7 @@ export interface ActivitySuggestion {
   tags?: string[]; // e.g., ["Italian", "Romantic", "Outdoor"]
 
   // CMS fields
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   version?: number;
   deletedAt?: string | null;
   createdAt: string;
@@ -408,6 +409,7 @@ export interface DatabaseEvent {
   createdAt: string;
   updatedAt: string;
   sourceSharedEventId: string | null;
+  startYear: number | null;
 }
 
 export interface SyncMetadata {
@@ -427,6 +429,7 @@ export interface EventFormData {
   reminderTime?: { hour: number; minute: number }; // Giờ nhắc mặc định
   isRecurring: boolean;
   recurrencePattern?: RecurrencePattern; // Detailed recurrence information
+  startYear?: number; // Năm bắt đầu — dùng cho birthday/memorial/anniversary
 }
 
 export interface EventFormErrors {
@@ -512,7 +515,10 @@ export interface EventsContextValue {
   getEventsByTag: (tag: string) => Event[]; // Changed from getEventsByCategory
   searchEvents: (query: string) => Event[];
   toggleEventNotification: (id: string) => Promise<void>;
-  upsertEventNote: (eventId: string, noteData: Partial<EventNote>) => Promise<Event>;
+  upsertEventNote: (
+    eventId: string,
+    noteData: Partial<EventNote>
+  ) => Promise<Event>;
   clearUserData: () => Promise<void>;
 }
 
@@ -618,32 +624,54 @@ export const REMIND_OPTIONS = [
 import { ImageSourcePropType } from "react-native";
 
 export const TAG_ICONS: Record<string, ImageSourcePropType> = {
-  birthday:    require("../../assets/icons/tags/cake.png"),
+  birthday: require("../../assets/icons/tags/cake.png"),
   anniversary: require("../../assets/icons/tags/hearts.png"),
-  holiday:     require("../../assets/icons/tags/confetti.png"),
-  memorial:    require("../../assets/icons/tags/candle.png"),
-  wife:        require("../../assets/icons/tags/woman.png"),
-  husband:     require("../../assets/icons/tags/man.png"),
-  family:      require("../../assets/icons/tags/family.png"),
-  other:       require("../../assets/icons/tags/star.png"),
+  memorial: require("../../assets/icons/tags/candle.png"),
+  other: require("../../assets/icons/tags/star.png"),
 };
 
 // ==================== PREDEFINED TAGS ====================
 // Single source of truth for event tag definitions (hardcoded on mobile)
 export const PREDEFINED_TAGS = [
-  { value: "birthday",    label: "Sinh nhật", icon: "gift-outline",         color: "#FF6B6B",  image: TAG_ICONS.birthday },
-  { value: "anniversary", label: "Kỷ niệm",   icon: "heart-circle-outline", color: "#FF69B4", image: TAG_ICONS.anniversary },
-  { value: "holiday",     label: "Ngày lễ",   icon: "ribbon-outline",        color: "#F59E0B", image: TAG_ICONS.holiday },
-  { value: "memorial",    label: "Ngày giỗ",  icon: "flame-outline",         color: "#7C3AED", image: TAG_ICONS.memorial },
-  { value: "wife",        label: "Vợ",        icon: "woman-outline",         color: "#E74C3C",  image: TAG_ICONS.wife },
-  { value: "husband",     label: "Chồng",     icon: "man-outline",           color: "#3498DB",  image: TAG_ICONS.husband },
-  { value: "family",      label: "Gia đình",  icon: "people-outline",        color: "#9B59B6", image: TAG_ICONS.family },
-  { value: "other",       label: "Khác",      icon: "star-outline",          color: "#64748B",  image: TAG_ICONS.other },
+  {
+    value: "birthday",
+    label: "Sinh nhật",
+    icon: "gift-outline",
+    color: "#FF6B6B",
+    image: TAG_ICONS.birthday,
+  },
+  {
+    value: "anniversary",
+    label: "Kỷ niệm",
+    icon: "heart-circle-outline",
+    color: "#FF69B4",
+    image: TAG_ICONS.anniversary,
+  },
+  {
+    value: "memorial",
+    label: "Ngày giỗ",
+    icon: "flame-outline",
+    color: "#7C3AED",
+    image: TAG_ICONS.memorial,
+  },
+  {
+    value: "other",
+    label: "Khác",
+    icon: "star-outline",
+    color: "#64748B",
+    image: TAG_ICONS.other,
+  },
 ] as const;
 
 // ── Tag lookup helpers (single source of truth) ──
 const TAG_MAP = new Map(PREDEFINED_TAGS.map((t) => [t.value as string, t]));
-const DEFAULT_TAG = { value: "other", label: "Khác", icon: "star-outline", color: "#64748B", image: TAG_ICONS.other };
+const DEFAULT_TAG = {
+  value: "other",
+  label: "Khác",
+  icon: "star-outline",
+  color: "#64748B",
+  image: TAG_ICONS.other,
+};
 
 export const getTagImage = (value: string): ImageSourcePropType =>
   TAG_ICONS[value] ?? TAG_ICONS.other;
@@ -651,15 +679,13 @@ export const getTagImage = (value: string): ImageSourcePropType =>
 export const getTagLabel = (value: string): string =>
   TAG_MAP.get(value)?.label ?? DEFAULT_TAG.label;
 
-
 export const getTagIcon = (value: string): string =>
   TAG_MAP.get(value)?.icon ?? DEFAULT_TAG.icon;
 
 export const getTagColor = (value: string): string =>
   TAG_MAP.get(value)?.color ?? DEFAULT_TAG.color;
 
-export const getTagInfo = (value: string) =>
-  TAG_MAP.get(value) ?? DEFAULT_TAG;
+export const getTagInfo = (value: string) => TAG_MAP.get(value) ?? DEFAULT_TAG;
 
 // ==================== ARTICLE TYPES ====================
 
@@ -686,7 +712,7 @@ export interface Article {
   tags?: string[];
   likes?: number;
   views?: number;
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   isFeatured?: boolean;
   publishedAt?: string;
   version?: number;
@@ -813,15 +839,15 @@ export interface DatabaseUserStats {
 }
 
 export type BadgeType =
-  | 'perfect_partner'      // 10 events không quên
-  | 'thoughtful'           // 5 quà được rate 5 sao
-  | 'streak_master'        // 30 ngày streak
-  | 'planner'              // 20 checklists hoàn thành 100%
-  | 'early_bird'           // 10 events created 7+ days in advance
-  | 'consistent'           // 7 ngày streak
-  | 'organizer'            // 50+ checklist items completed
-  | 'generous'             // 10+ gifts purchased
-  | 'beginner';            // First event created
+  | "perfect_partner" // 10 events không quên
+  | "thoughtful" // 5 quà được rate 5 sao
+  | "streak_master" // 30 ngày streak
+  | "planner" // 20 checklists hoàn thành 100%
+  | "early_bird" // 10 events created 7+ days in advance
+  | "consistent" // 7 ngày streak
+  | "organizer" // 50+ checklist items completed
+  | "generous" // 10+ gifts purchased
+  | "beginner"; // First event created
 
 export interface Achievement {
   id: string;
@@ -861,7 +887,7 @@ export interface BadgeDefinition {
   };
 
   // CMS fields
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   version?: number;
   deletedAt?: string | null;
   createdAt?: string;
@@ -870,9 +896,9 @@ export interface BadgeDefinition {
 
 // ==================== PREMIUM TYPES (Phase 3 - Task 8) ====================
 
-export type SubscriptionType = 'free' | 'monthly' | 'yearly';
-export type SubscriptionStatus = 'active' | 'expired' | 'cancelled' | 'trial';
-export type Platform = 'ios' | 'android';
+export type SubscriptionType = "free" | "monthly" | "yearly";
+export type SubscriptionStatus = "active" | "expired" | "cancelled" | "trial";
+export type Platform = "ios" | "android";
 
 export interface PremiumSubscription {
   id: string;
@@ -922,7 +948,7 @@ export interface SubscriptionProduct {
   // Pricing
   price: number;
   currency: string; // 'VND'
-  billingCycle?: 'monthly' | 'yearly' | 'one-time';
+  billingCycle?: "monthly" | "yearly" | "one-time";
 
   // Limits & Features
   features: Record<string, any>; // e.g., {maxEvents: 10, hasAnalytics: false}
@@ -932,7 +958,7 @@ export interface SubscriptionProduct {
   displayOrder?: number;
 
   // CMS fields
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   version?: number;
   deletedAt?: string | null;
   createdAt?: string;
@@ -982,7 +1008,12 @@ export interface ContentSyncResponse {
 
 // ==================== AFFILIATE PRODUCT TYPES ====================
 
-export type AffiliateCategory = 'gift' | 'restaurant' | 'hotel' | 'spa' | 'travel';
+export type AffiliateCategory =
+  | "gift"
+  | "restaurant"
+  | "hotel"
+  | "spa"
+  | "travel";
 
 export interface AffiliateProduct {
   id: string;
@@ -1011,7 +1042,7 @@ export interface AffiliateProduct {
   reason?: string;
 
   // CMS fields
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
   version?: number;
   deletedAt?: string | null;
   createdAt?: string;

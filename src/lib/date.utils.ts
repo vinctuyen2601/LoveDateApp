@@ -277,3 +277,31 @@ export class DateUtils {
     return DateUtils.formatDate(date);
   }
 }
+
+// ─── Yearly event display title ───────────────────────────────────────────────
+
+const YEARLY_TAGS = ["birthday", "memorial", "anniversary"];
+
+/**
+ * Returns the rich display title for yearly events (birthday/memorial/anniversary).
+ * E.g. "Sinh nhật lần thứ 11 của Ánh Dương", "Giỗ năm thứ 7 của Ông nội",
+ * "Kỷ niệm 6 năm Ngày cưới".
+ * Falls back to event.title for other event types or missing startYear.
+ */
+export function getYearlyEventTitle(
+  title: string,
+  tags: string[],
+  startYear?: number | null
+): string {
+  if (!startYear) return title;
+  const tag = tags[0];
+  if (!YEARLY_TAGS.includes(tag)) return title;
+
+  const n = new Date().getFullYear() - startYear;
+  if (n <= 0) return title;
+
+  if (tag === "birthday") return `Sinh nhật lần thứ ${n} của ${title}`;
+  if (tag === "memorial") return `Giỗ năm thứ ${n} của ${title}`;
+  if (tag === "anniversary") return `Kỷ niệm ${n} năm ${title}`;
+  return title;
+}

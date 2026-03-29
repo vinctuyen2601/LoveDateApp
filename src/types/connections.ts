@@ -53,6 +53,7 @@ export interface SharedEventSnapshot {
   isLunarCalendar: boolean;
   tags: string[];
   isRecurring: boolean;
+  recurrencePattern?: { type: string; [key: string]: any };
   notes?: any[];
 }
 

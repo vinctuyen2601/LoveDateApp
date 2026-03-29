@@ -562,6 +562,7 @@ const useStyles = makeStyles((colors) => ({
   relatedSection: {
     marginTop: 16,
     marginHorizontal: 16,
+    marginBottom: 8,
   },
   horizontalScroll: {
     paddingRight: 16,

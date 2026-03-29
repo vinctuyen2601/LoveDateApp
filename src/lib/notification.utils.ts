@@ -17,7 +17,6 @@ import { Event } from '../types';
 export {
   getNotificationPriority,
   getChannelId,
-  getNotificationIcon,
   createNotificationContent,
 } from './notification.shared';
 

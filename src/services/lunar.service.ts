@@ -12,7 +12,7 @@ class LunarService {
       day: lunar.getDay(),
       month: lunar.getMonth(),
       year: lunar.getYear(),
-      isLeapMonth: lunar.isLeapMonth(),
+      isLeapMonth: !!(lunar as any).isLeapMonth,
     };
   }
 

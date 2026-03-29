@@ -33,6 +33,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: "@refresh_token",
   USER_DATA: "@user_data",
   IS_ANONYMOUS: "@is_anonymous",
+  DEVICE_SESSION_KEY: "@device_session_key",
   LAST_SYNC_VERSION: "@last_sync_version",
   LAST_SYNC_AT: "@last_sync_at",
   THEME_MODE: "@theme_mode",
