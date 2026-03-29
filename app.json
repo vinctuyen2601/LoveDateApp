@@ -11,29 +11,21 @@
       "resizeMode": "contain",
       "backgroundColor": "#FF8E8E"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lovedate.mobile",
       "icon": "./assets/icon.png",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "remote-notification",
-          "fetch",
-          "processing"
-        ],
-        "BGTaskSchedulerPermittedIdentifiers": [
-          "BACKGROUND_NOTIFICATION_TASK"
-        ],
+        "UIBackgroundModes": ["remote-notification", "fetch", "processing"],
+        "BGTaskSchedulerPermittedIdentifiers": ["BACKGROUND_NOTIFICATION_TASK"],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "versionCode": 13,
+      "versionCode": 14,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF8E8E"

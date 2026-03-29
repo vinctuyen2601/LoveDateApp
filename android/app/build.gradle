@@ -92,7 +92,7 @@ android {
         applicationId 'com.lovedate.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
+        versionCode 14
         versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
@@ -105,7 +105,7 @@ android {
             keyPassword 'android'
         }
         release {
-            storeFile file('../../credentials/android/keystore.jks')
+            storeFile file("$projectRoot/credentials/android/keystore.jks")
             storePassword '59ad572a73cd18e5da2d9ab12f9d3a57'
             keyAlias '5d2dfd937a7a16342f8eaa6570e1129b'
             keyPassword 'b4a09be0d308ccbe1d9ef7f3b7e7ccdb'
