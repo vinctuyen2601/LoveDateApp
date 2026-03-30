@@ -9,7 +9,6 @@ const RESCHEDULE_DEBOUNCE_MS = 2000;
 import * as ChecklistService from '../services/checklist.service';
 import * as StreakService from '../services/streak.service';
 import { useAchievement } from './AchievementContext';
-import { useAuth } from './AuthContext';
 import { syncService } from '../services/sync.service';
 import { authService } from '../services/auth.service';
 
@@ -22,31 +21,15 @@ interface EventsProviderProps {
 export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const db = useSQLiteContext();
   const { showAchievements } = useAchievement();
-  const { isAnonymous } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const rescheduleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevIsAnonymousRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     loadEvents();
   }, []);
-
-  // Clear local user data when user logs out (transitions from real account → anonymous)
-  useEffect(() => {
-    const prev = prevIsAnonymousRef.current;
-    prevIsAnonymousRef.current = isAnonymous;
-
-    if (prev === false && isAnonymous === true) {
-      // User just logged out → stop sync first (prevent in-flight sync from refilling DB)
-      syncService.stopAutoSync();
-      DB.clearUserData(db)
-        .then(() => loadEvents())
-        .catch(err => console.error('Failed to clear user data on logout:', err));
-    }
-  }, [isAnonymous]);
 
   const loadEvents = async () => {
     try {
