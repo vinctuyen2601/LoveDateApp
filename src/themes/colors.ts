@@ -31,8 +31,8 @@ export const COLORS = {
   textDisabled: "#95A5A6",
 
   // Status Colors
-  success: "#2ECC71",
-  successLight: "#58D68D",
+  success: "#26C4A0",
+  successLight: "#5DD4B8",
   error: "#E74C3C",
   errorLight: "#EC7063",
   warning: "#F39C12",
@@ -69,9 +69,9 @@ export const COLORS = {
   gradientEnd: "#FF9A6C",
 
   // AI feature colors — fixed purple regardless of theme (purple = AI universal)
-  aiPrimary: "#7C3AED",   // violet-600
+  aiPrimary: "#7C3AED", // violet-600
   aiSecondary: "#A855F7", // purple-500
-  aiLight: "#EDE9FE",     // violet-100
+  aiLight: "#EDE9FE", // violet-100
 
   // Overlay
   overlay: "rgba(0, 0, 0, 0.5)",

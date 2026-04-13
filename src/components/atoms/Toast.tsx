@@ -128,14 +128,23 @@ const Toast: React.FC<ToastProps> = ({
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={handleHide}
-        style={[styles.toast, { backgroundColor: config.backgroundColor }]}
+        style={[
+          styles.toast,
+          {
+            backgroundColor: colors.surface,
+            borderLeftColor: config.color,
+            shadowColor: config.color,
+          },
+        ]}
       >
-        <Ionicons name={config.icon} size={24} color={config.color} />
+        <View style={[styles.iconWrap, { backgroundColor: config.color + '18' }]}>
+          <Ionicons name={config.icon} size={22} color={config.color} />
+        </View>
         <Text style={[styles.message, { color: colors.textPrimary }]}>
           {message}
         </Text>
         <TouchableOpacity onPress={handleHide} style={styles.closeButton}>
-          <Ionicons name="close" size={20} color={colors.textSecondary} />
+          <Ionicons name="close" size={18} color={colors.textLight} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
@@ -154,19 +163,26 @@ const useStyles = makeStyles((colors) => ({
   toast: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 12,
-    shadowColor: colors.shadow,
+    borderLeftWidth: 4,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-    gap: 12,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    gap: 10,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   message: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: "Manrope_500Medium",
     lineHeight: 20,
   },
