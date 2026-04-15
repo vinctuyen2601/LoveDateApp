@@ -11,6 +11,7 @@ import {
 const SCREEN_WIDTH = Dimensions.get("window").width;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import AiIcon from "@components/atoms/AiIcon";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { COLORS } from "@themes/colors";
 import { Suggestion } from "../data/suggestions";
@@ -119,7 +120,7 @@ const ToolCardsSection: React.FC<{ navigation: any }> = React.memo(
                     <Text style={styles.toolRowTitle}>{item.title}</Text>
                     {item.isAI && (
                       <View style={styles.aiBadge}>
-                        <Ionicons name="sparkles" size={10} color={colors.aiPrimary} />
+                        <AiIcon size={12} primaryColor={colors.aiPrimary} secondaryColor={colors.aiSecondary} />
                         <Text style={styles.aiBadgeText}>AI</Text>
                       </View>
                     )}

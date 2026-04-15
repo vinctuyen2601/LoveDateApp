@@ -1,6 +1,7 @@
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import { getAllEvents, DB_NAME } from './database.service';
 import { scheduleUpcomingNotifications } from './notificationScheduler.service';
 
@@ -35,6 +36,7 @@ class BackgroundTaskService {
    * Register background fetch task
    */
   async registerBackgroundTask(): Promise<void> {
+    if (Platform.OS === 'web') return;
     try {
       const isRegistered = await TaskManager.isTaskRegisteredAsync(
         BACKGROUND_NOTIFICATION_TASK

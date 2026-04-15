@@ -52,6 +52,7 @@ import { DateUtils } from "@lib/date.utils";
 import NotificationBanner from "@components/molecules/NotificationBanner";
 import PressableCard from "@components/atoms/PressableCard";
 import AiViewAllBtn from "@components/atoms/AiViewAllBtn";
+import AiIcon from "@components/atoms/AiIcon";
 import HolidaySuggestionOverlay from "@components/organisms/HolidaySuggestionOverlay";
 import {
   getActiveSuggestion,
@@ -485,11 +486,13 @@ const HomeScreen: React.FC = () => {
 
   const handleEventPress = (event: Event) =>
     navigation.navigate("EventDetail", { eventId: event.id });
-  const handleAddEvent = () => navigation.navigate("AddEvent");
+  const handleAddEvent = () => navigation.navigate("AIEventCreator");
 
   // FAB pulse animation
   const pulse1 = useRef(new Animated.Value(0)).current;
   const pulse2 = useRef(new Animated.Value(0)).current;
+  // FAB sparkle spin — 1 vòng mỗi 18s, giống hero icon màn AI
+  const fabSpinAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const createPulse = (anim: Animated.Value, delay: number) =>
       Animated.loop(
@@ -509,11 +512,20 @@ const HomeScreen: React.FC = () => {
       );
     const a1 = createPulse(pulse1, 0);
     const a2 = createPulse(pulse2, 700);
+    const spin = Animated.loop(
+      Animated.timing(fabSpinAnim, {
+        toValue: 1,
+        duration: 18000,
+        useNativeDriver: true,
+      })
+    );
     a1.start();
     a2.start();
+    spin.start();
     return () => {
       a1.stop();
       a2.stop();
+      spin.stop();
     };
   }, []);
   const handleViewCalendar = () => navigation.navigate("Calendar");
@@ -1449,11 +1461,26 @@ const HomeScreen: React.FC = () => {
           />
         ))}
         <TouchableOpacity
-          style={styles.fab}
           onPress={handleAddEvent}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={28} color={colors.white} />
+          <LinearGradient
+            colors={[colors.aiPrimary, colors.aiSecondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fab}
+          >
+            <Animated.View style={{
+              transform: [{
+                rotate: fabSpinAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0deg", "360deg"],
+                }),
+              }],
+            }}>
+              <AiIcon size={32} primaryColor={colors.aiPrimary} secondaryColor={colors.aiSecondary} />
+            </Animated.View>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -2213,19 +2240,19 @@ const useStyles = makeStyles((colors) => ({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.aiPrimary,
   },
   fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: colors.primary,
+    shadowColor: colors.aiPrimary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 8,
   },
 

@@ -579,6 +579,13 @@ const AddYearlyEventScreen: React.FC = () => {
               <View style={styles.calendarCard}>
                 <Calendar
                   current={calendarDateString}
+                  onDayPress={!config.isLunar ? (day) => {
+                    const [y, m, d] = day.dateString.split('-').map(Number);
+                    setDateText(
+                      `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
+                    );
+                    setErrors((e) => ({ ...e, date: undefined as any }));
+                  } : undefined}
                   markedDates={{
                     [calendarDateString]: {
                       selected: true,
@@ -606,8 +613,10 @@ const AddYearlyEventScreen: React.FC = () => {
                   hideExtraDays={false}
                   firstDay={1}
                   disableAllTouchEventsForDisabledDays
-                  disableArrowLeft
-                  disableArrowRight
+                  disableArrowLeft={config.isLunar}
+                  disableArrowRight={config.isLunar}
+                  maxDate={!config.isLunar ? `${CURRENT_YEAR}-12-31` : undefined}
+                  minDate={!config.isLunar ? '1900-01-01' : undefined}
                 />
                 {config.isLunar && (
                   <Text style={styles.calendarNote}>

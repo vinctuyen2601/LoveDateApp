@@ -59,6 +59,13 @@ export const STORAGE_KEYS = {
   SUBSCRIPTION_PLANS_CACHE: "@lovedate_subscription_plans_cache",
   SUBSCRIPTION_PLANS_TIMESTAMP: "@lovedate_subscription_plans_cache_timestamp",
 
+  // Remote Config (CMS Feature Flags)
+  REMOTE_FEATURES_CACHE: "@lovedate_remote_features_cache",
+  REMOTE_FEATURES_TIMESTAMP: "@lovedate_remote_features_timestamp",
+
+  // Install tracking (for timed feature trials)
+  FIRST_INSTALL_DATE: "@lovedate_first_install_date",
+
   // Version Tracking (CMS Sync)
   LAST_ARTICLE_VERSION: "@last_article_version",
   LAST_SURVEY_VERSION: "@last_survey_version",
@@ -90,14 +97,23 @@ export const APP_NAME = "Ngày yêu thương";
 // Web URL (for sharing links)
 export const WEB_BASE_URL = REACT_APP_WEB_URL || "https://ngayyeuthuong.com";
 
-// Feature Flags
+// Feature Flags (local defaults — overridable by CMS remote config)
 export const FEATURES = {
   ENABLE_ANALYTICS: true,
   ENABLE_PUSH_NOTIFICATIONS: true,
   ENABLE_OFFLINE_MODE: true,
   ENABLE_LUNAR_CALENDAR: true,
   ENABLE_GIFT_SUGGESTIONS: true,
-  ENABLE_CMS_SYNC: true, // Enable CMS content sync
+  ENABLE_CMS_SYNC: true,
+  ENABLE_GOOGLE_TTS: true,  // Google Cloud TTS for premium + 3-day trial
+} as const;
+
+// CMS Remote Config
+export const REMOTE_CONFIG = {
+  /** Cache TTL: refresh remote flags every 30 minutes */
+  CACHE_TTL_MS: 30 * 60 * 1000,
+  /** Days after first install that Google TTS trial is active */
+  GOOGLE_TTS_TRIAL_DAYS: 3,
 } as const;
 
 // CMS API Endpoints

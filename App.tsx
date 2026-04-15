@@ -32,6 +32,7 @@ import { NotificationUtils } from "./src/lib/notification.utils";
 import * as DB from "./src/services/database.service";
 import { dataSeedService } from "./src/services/dataSeed.service";
 import { backgroundTaskService } from "./src/services/backgroundTask.service";
+import { initInstallDate } from "./src/services/tts.service";
 import "./src/lib/calendar.locale";
 
 // Hold splash screen until fonts are ready
@@ -179,6 +180,9 @@ function AppContent() {
       const events = await DB.getAllEvents(db);
       await scheduleUpcomingNotifications(events);
       console.log("✅ Initial notifications scheduled");
+
+      // 6. Record first-install date (for TTS trial gating)
+      await initInstallDate();
     } catch (error) {
       console.error("❌ Failed to initialize app:", error);
     }

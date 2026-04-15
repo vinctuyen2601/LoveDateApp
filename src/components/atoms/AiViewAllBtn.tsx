@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { makeStyles } from "@utils/makeStyles";
 import { useColors } from "@contexts/ThemeContext";
 import { Text } from "react-native";
+import AiIcon from "./AiIcon";
 
 interface AiViewAllBtnProps {
   onPress: () => void;
@@ -72,7 +73,7 @@ const AiViewAllBtn: React.FC<AiViewAllBtnProps> = ({
           end={{ x: 1, y: 0 }}
           style={styles.btn}
         >
-          <Ionicons name="sparkles" size={13} color={colors.white} />
+          <AiIcon size={14} primaryColor={colors.aiPrimary} secondaryColor={colors.aiSecondary} />
           <Text style={styles.label}>{label}</Text>
           <Animated.View style={{ transform: [{ translateX: arrowX }] }}>
             <Ionicons name="arrow-forward" size={13} color={colors.white} />

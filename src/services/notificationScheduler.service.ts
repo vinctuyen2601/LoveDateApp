@@ -320,7 +320,8 @@ export async function scheduleUpcomingNotifications(
   const windowEnd = new Date(now);
   windowEnd.setDate(windowEnd.getDate() + SCHEDULING_WINDOW_DAYS);
 
-  // Hủy tất cả notifications hiện có
+  // Hủy tất cả notifications hiện có (native only)
+  if (Platform.OS === 'web') return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   // Collect tất cả notifications trong window

@@ -32,6 +32,7 @@ import QRScreen from "../screens/QRScreen";
 import SharedInboxScreen from "../screens/SharedInboxScreen";
 import NotificationListScreen from "../screens/NotificationListScreen";
 import NotificationDetailScreen from "../screens/NotificationDetailScreen";
+import AIEventCreatorScreen from "../screens/AIEventCreatorScreen";
 import OnboardingOverlay, {
   checkOnboardingComplete,
 } from "../components/organisms/OnboardingOverlay";
@@ -107,6 +108,14 @@ const AppNavigator: React.FC = () => {
             component={AddEventScreen}
             options={{
               title: "Thêm sự kiện",
+              presentation: "modal",
+            }}
+          />
+          <Stack.Screen
+            name="AIEventCreator"
+            component={AIEventCreatorScreen}
+            options={{
+              headerShown: false,
               presentation: "modal",
             }}
           />
