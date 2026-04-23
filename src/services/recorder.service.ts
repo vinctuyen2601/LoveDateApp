@@ -4,7 +4,8 @@
  * Returns the local audio file URI on stop.
  */
 
-import { AudioModule, AudioRecorder, RecordingPresets } from "expo-audio";
+import { AudioModule, RecordingPresets } from "expo-audio";
+import type { AudioRecorder } from "expo-audio";
 import { Platform } from "react-native";
 
 let _recorder: AudioRecorder | null = null;
@@ -22,14 +23,41 @@ export async function startRecording(): Promise<void> {
     await stopRecording();
   }
 
-  await AudioModule.setAudioModeAsync({
-    allowsRecordingIOS: true,
-    playsInSilentModeIOS: true,
-  });
+  if (Platform.OS === 'ios') {
+    try {
+      await AudioModule.setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    } catch (e: any) {
+      throw new Error(`[S2-setAudioMode] ${e?.message ?? e}`);
+    }
+  }
 
-  _recorder = new AudioRecorder(RecordingPresets.HIGH_QUALITY);
-  await _recorder.prepareToRecordAsync();
-  _recorder.record();
+  const preset = RecordingPresets.HIGH_QUALITY;
+  const platformOptions = {
+    extension: preset.extension,
+    sampleRate: preset.sampleRate,
+    numberOfChannels: preset.numberOfChannels,
+    bitRate: preset.bitRate,
+    isMeteringEnabled: false,
+    ...(Platform.OS === 'ios' ? preset.ios : preset.android),
+  };
+
+  try {
+    _recorder = new AudioModule.AudioRecorder(platformOptions);
+  } catch (e: any) {
+    throw new Error(`[S3-new AudioRecorder] ${e?.message ?? e}`);
+  }
+
+  try {
+    await _recorder.prepareToRecordAsync();
+  } catch (e: any) {
+    throw new Error(`[S4-prepareToRecordAsync] ${e?.message ?? e}`);
+  }
+
+  try {
+    _recorder.record();
+  } catch (e: any) {
+    throw new Error(`[S5-record] ${e?.message ?? e}`);
+  }
 }
 
 /**
@@ -45,11 +73,12 @@ export async function stopRecording(): Promise<string | null> {
     _recorder.release();
     _recorder = null;
 
-    // Reset audio mode so playback works normally afterwards
-    await AudioModule.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: false,
-    });
+    if (Platform.OS === 'ios') {
+      await AudioModule.setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: false,
+      });
+    }
 
     return uri ?? null;
   } catch {

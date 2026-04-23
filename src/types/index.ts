@@ -309,7 +309,7 @@ export type MainTabParamList = {
 
 export type HomeStackParamList = {
   HomeScreen: undefined;
-  AddEvent: undefined;
+  AddEvent: { eventId?: string; prefill?: EventFormData } | undefined;
   EditEvent: { eventId: string };
   EventDetail: { eventId: string };
 };

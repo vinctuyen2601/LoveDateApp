@@ -30,7 +30,7 @@ const QRScreen: React.FC = () => {
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, isAnonymous, isLoading: isAuthLoading } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [mode, setMode] = useState<ViewMode>('my-qr');
@@ -44,10 +44,11 @@ const QRScreen: React.FC = () => {
   const [isSendingRequest, setIsSendingRequest] = useState(false);
 
   useEffect(() => {
-    loadQRData();
-  }, []);
+    if (!isAuthLoading) loadQRData();
+  }, [isAuthLoading, isAnonymous]);
 
   const loadQRData = async () => {
+    if (isAnonymous) { setIsLoadingQR(false); return; }
     setIsLoadingQR(true);
     try {
       const data = await getMyQRData();
@@ -180,45 +181,75 @@ const QRScreen: React.FC = () => {
       {/* My QR view */}
       {mode === 'my-qr' && (
         <ScrollView contentContainerStyle={styles.qrContent}>
-          <View style={styles.qrCard}>
-            {isLoadingQR ? (
-              <View style={styles.qrLoading}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.qrLoadingText}>Đang tạo mã QR...</Text>
-              </View>
-            ) : qrData ? (
-              <>
-                <Image
-                  source={{ uri: getQRImageUrl(qrData.userId) }}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
-                <Text style={styles.qrName}>{qrData.displayName || user?.displayName || 'Bạn'}</Text>
-                <Text style={styles.qrEmail}>{user?.email}</Text>
-                <View style={styles.qrIdRow}>
-                  <Text style={styles.qrIdLabel}>ID: </Text>
-                  <Text style={styles.qrIdValue} numberOfLines={1}>{qrData.userId}</Text>
+          {isAnonymous ? (
+            <View style={styles.authPromptCard}>
+              <View style={styles.authPromptIconWrap}>
+                <Ionicons name="qr-code-outline" size={52} color={colors.textLight} />
+                <View style={styles.authPromptLockBadge}>
+                  <Ionicons name="lock-closed" size={14} color={colors.white} />
                 </View>
-              </>
-            ) : (
-              <Text style={styles.qrError}>Không thể tạo mã QR</Text>
-            )}
-          </View>
+              </View>
+              <Text style={styles.authPromptTitle}>Bạn chưa đăng nhập</Text>
+              <Text style={styles.authPromptDesc}>
+                Đăng nhập hoặc tạo tài khoản để tạo mã QR và kết nối với bạn bè
+              </Text>
+              <TouchableOpacity
+                style={styles.authLoginBtn}
+                onPress={() => navigation.navigate('Auth')}
+              >
+                <Ionicons name="log-in-outline" size={20} color={colors.white} />
+                <Text style={styles.authLoginBtnText}>Đăng nhập</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.authRegisterBtn}
+                onPress={() => navigation.navigate('Auth')}
+              >
+                <Text style={styles.authRegisterBtnText}>Tạo tài khoản mới</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={styles.qrCard}>
+                {isLoadingQR ? (
+                  <View style={styles.qrLoading}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.qrLoadingText}>Đang tạo mã QR...</Text>
+                  </View>
+                ) : qrData ? (
+                  <>
+                    <Image
+                      source={{ uri: getQRImageUrl(qrData.userId) }}
+                      style={styles.qrImage}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.qrName}>{qrData.displayName || user?.displayName || 'Bạn'}</Text>
+                    <Text style={styles.qrEmail}>{user?.email}</Text>
+                    <View style={styles.qrIdRow}>
+                      <Text style={styles.qrIdLabel}>ID: </Text>
+                      <Text style={styles.qrIdValue} numberOfLines={1}>{qrData.userId}</Text>
+                    </View>
+                  </>
+                ) : (
+                  <Text style={styles.qrError}>Không thể tạo mã QR</Text>
+                )}
+              </View>
 
-          <Text style={styles.qrHint}>
-            Cho bạn bè quét mã này để gửi lời mời kết nối đến bạn
-          </Text>
+              <Text style={styles.qrHint}>
+                Cho bạn bè quét mã này để gửi lời mời kết nối đến bạn
+              </Text>
 
-          <View style={styles.shareButtons}>
-            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-              <Ionicons name="share-outline" size={20} color={colors.white} />
-              <Text style={styles.shareButtonText}>Chia sẻ</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
-              <Ionicons name="copy-outline" size={20} color={colors.secondary} />
-              <Text style={styles.copyButtonText}>Sao chép mã</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.shareButtons}>
+                <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                  <Ionicons name="share-outline" size={20} color={colors.white} />
+                  <Text style={styles.shareButtonText}>Chia sẻ</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
+                  <Ionicons name="copy-outline" size={20} color={colors.secondary} />
+                  <Text style={styles.copyButtonText}>Sao chép mã</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </ScrollView>
       )}
 
@@ -668,5 +699,80 @@ const useStyles = makeStyles((colors) => ({
     color: colors.textSecondary,
     fontSize: 14,
     fontFamily: 'Manrope_500Medium',
+  },
+
+  // Auth prompt (anonymous user)
+  authPromptCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    gap: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  authPromptIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  authPromptLockBadge: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+  authPromptTitle: {
+    fontSize: 20,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  authPromptDesc: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 8,
+  },
+  authLoginBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 28,
+    width: '100%',
+  },
+  authLoginBtnText: {
+    color: colors.white,
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 16,
+  },
+  authRegisterBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    width: '100%',
+  },
+  authRegisterBtnText: {
+    color: colors.primary,
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 15,
   },
 }));

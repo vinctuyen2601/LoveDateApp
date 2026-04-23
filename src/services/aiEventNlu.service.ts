@@ -4,6 +4,7 @@
  * All functions are pure (no React, no I/O) — fully unit-testable.
  */
 
+import { API_BASE_URL } from '../constants/config';
 import { EventFormData } from "../types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -74,17 +75,26 @@ export function parseVietnamese(
       [/(?<!\w)m[eẹ](?!\w)|\bma\b/, "mẹ"],
       [/(?<!\w)[oô]ng(?:\s+(?:n[oộ]i|ngo[aạ]i))?(?!\w)/, "ông nội"],
       [/\bb[aà](?:\s+(?:n[oộ]i|ngo[aạ]i))?/, "bà nội"],
+      [/\bcon\s+g[aá]i/, "con gái"],
+      [/\bcon\s+trai/, "con trai"],
       [/\bcon\b/, "con"],
       [/\banh\b/, "anh"],
       [/(?<!\w)ch[iị](?!\w)/, "chị"],
       [/\bem\b/, "em"],
+      [/ng[uư][oờ]i\s*y[eê]u/, "người yêu"],
+      [/ng[aà]y\s*c[uư][oớ]i/, "ngày cưới"],
     ];
     for (const [re, label] of KEYWORDS) {
       if (re.test(lower)) { result.personName = label; break; }
     }
     if (!result.personName) {
-      const m = lower.match(/\bb[aạ]n\s+([^\s,]+)/);
-      if (m) result.personName = `bạn ${m[1]}`;
+      // Tìm tên riêng: chữ hoa trong text gốc, loại trừ từ khóa đã biết
+      const EXCLUDED = /^(Sinh|Nhật|Kỷ|Niệm|Ngày|Tháng|Năm|Giỗ|Sự|Kiện|Quan|Trọng|Cưới|Bạn|Anh|Chị|Em|Ông|Bà|Bố|Mẹ|Con|Vợ|Chồng|Âm|Lịch)$/;
+      const caps = text.match(/\b[A-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐƠƯ][a-zàáâãèéêìíòóôõùúăđơưạảấầẩẫậắằẳẵặẹẻẽềếểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]+\b/g);
+      if (caps) {
+        const name = caps.find(w => !EXCLUDED.test(w));
+        if (name) result.personName = `bạn ${name}`;
+      }
     }
   }
 
@@ -116,7 +126,7 @@ export function extractDate(lower: string): { day: number; month: number } | nul
     [/ng[aà]y\s+(\d{1,2})\s+th[aá]ng\s+(\d{1,2})/, false],  // "ngày D tháng M"
     [/th[aá]ng\s+(\d{1,2})\s+ng[aà]y\s+(\d{1,2})/, true],   // "tháng M ngày D"
     [/(\d{1,2})\s+th[aá]ng\s+(\d{1,2})/, false],             // "D tháng M"
-    [/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-]\d{2,4})?\b/, false], // "D/M" or "D-M"
+    [/\b(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.]\d{2,4})?\b/, false], // "D/M", "D-M" or "D.M"
   ];
   for (const [re, monthFirst] of patterns) {
     const m = lower.match(re);
@@ -133,7 +143,9 @@ export function extractDate(lower: string): { day: number; month: number } | nul
 
 /** All mandatory fields filled → ready to show CONFIRM card */
 export function isComplete(e: ParsedEvent): boolean {
-  return !!e.eventType && !!e.day && !!e.month;
+  if (!e.eventType || !e.day || !e.month) return false;
+  if (e.eventType !== 'other' && !e.personName) return false;
+  return true;
 }
 
 /** Which slot is still missing → next question to ask */
@@ -142,6 +154,8 @@ export function getNextQuestion(e: ParsedEvent): string {
     return "Đây là loại sự kiện gì vậy?\nSinh nhật, kỷ niệm, ngày giỗ, hay sự kiện khác?";
   if (!e.day || !e.month)
     return `${buildTitle(e)} vào ngày tháng nào?\nVí dụ: ngày 14 tháng 2, hoặc 5/3`;
+  if (e.eventType !== 'other' && !e.personName)
+    return `${buildTitle(e)} là của ai vậy?\nVí dụ: vợ, chồng, bạn Hùng, người yêu...`;
   return "Tuyệt! Tôi đã có đủ thông tin rồi.";
 }
 
@@ -154,8 +168,45 @@ export function buildTitle(e: Partial<ParsedEvent>): string {
     memorial: "Ngày giỗ",
     other: "Sự kiện",
   };
+  if (e.personName === "ngày cưới") return "Ngày cưới";
   const base = labels[e.eventType ?? ""] ?? "Sự kiện";
   return e.personName ? `${base} ${e.personName}` : base;
+}
+
+// ─── AI Parser (via backend) ──────────────────────────────────────────────────
+
+/**
+ * Parse Vietnamese event text via backend /ai-agent/parse-event.
+ * API key stays on server — never exposed in the app bundle.
+ * Falls back to regex parser if backend is unreachable.
+ */
+export async function parseWithAI(
+  text: string,
+  existing: Partial<ParsedEvent> = {}
+): Promise<ParsedEvent> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/ai-agent/parse-event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!res.ok) throw new Error(`parse-event ${res.status}`);
+    const parsed = await res.json() as Partial<ParsedEvent>;
+    console.log('[parseWithAI] response:', JSON.stringify(parsed));
+
+    return {
+      eventType:  parsed.eventType  ?? existing.eventType  ?? null,
+      personName: parsed.personName ?? existing.personName ?? null,
+      day:        parsed.day        ?? existing.day        ?? null,
+      month:      parsed.month      ?? existing.month      ?? null,
+      year:       parsed.year       ?? existing.year       ?? null,
+      isLunar:    parsed.isLunar    ?? existing.isLunar    ?? false,
+      rawText: text,
+    };
+  } catch {
+    return parseVietnamese(text, existing);
+  }
 }
 
 export function buildFormData(e: ParsedEvent): EventFormData {

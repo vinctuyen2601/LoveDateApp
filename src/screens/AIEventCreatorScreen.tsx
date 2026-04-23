@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -29,13 +24,17 @@ import { makeStyles } from "@utils/makeStyles";
 import { getTagColor, getTagImage, getTagLabel } from "../types";
 import type { Event } from "../types";
 import type { ConnectionWithQuota } from "../types/connections";
-import { getConnectionsWithQuota, shareEvent } from "../services/connections.service";
+import {
+  getConnectionsWithQuota,
+  shareEvent,
+} from "../services/connections.service";
 import * as DB from "../services/database.service";
 import { useSQLiteContext } from "expo-sqlite";
 import {
   ParsedEvent,
   EMPTY_PARSED,
   parseVietnamese,
+  parseWithAI,
   isComplete,
   getNextQuestion,
   buildTitle,
@@ -61,13 +60,15 @@ type ScreenState =
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const QUICK_CHIPS = [
-  { tag: "birthday",    label: "Sinh nhật vợ/chồng", prompt: "Sinh nhật vợ" },
-  { tag: "anniversary", label: "Kỷ niệm ngày cưới",  prompt: "Kỷ niệm ngày cưới" },
-  { tag: "memorial",    label: "Ngày giỗ ông bà",    prompt: "Ngày giỗ ông nội" },
-  { tag: "other",       label: "Sự kiện quan trọng", prompt: "Sự kiện quan trọng" },
+  { tag: "birthday", label: "Sinh nhật vợ/chồng", prompt: "Sinh nhật vợ" },
+  {
+    tag: "anniversary",
+    label: "Kỷ niệm ngày cưới",
+    prompt: "Kỷ niệm ngày cưới",
+  },
+  { tag: "memorial", label: "Ngày giỗ ông bà", prompt: "Ngày giỗ ông nội" },
+  { tag: "other", label: "Sự kiện quan trọng", prompt: "Sự kiện quan trọng" },
 ] as const;
-
-
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -89,7 +90,9 @@ const AIEventCreatorScreen: React.FC = () => {
   // Share state
   const [createdEvent, setCreatedEvent] = useState<Event | null>(null);
   const [connections, setConnections] = useState<ConnectionWithQuota[]>([]);
-  const [selectedConnIds, setSelectedConnIds] = useState<Set<string>>(new Set());
+  const [selectedConnIds, setSelectedConnIds] = useState<Set<string>>(
+    new Set()
+  );
   const [isLoadingConnections, setIsLoadingConnections] = useState(false);
   const [isSyncingForShare, setIsSyncingForShare] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -103,14 +106,19 @@ const AIEventCreatorScreen: React.FC = () => {
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Ref để đọc parsedEvent mới nhất trong callbacks (tránh stale closure)
   const parsedEventRef = useRef<ParsedEvent>(EMPTY_PARSED);
-  useEffect(() => { parsedEventRef.current = parsedEvent; }, [parsedEvent]);
+  useEffect(() => {
+    parsedEventRef.current = parsedEvent;
+  }, [parsedEvent]);
 
   // ── Animations ──
   const waveAnims = useRef(
     [0.3, 0.6, 0.9, 1.0, 0.8, 0.55, 0.3].map((v) => new Animated.Value(v))
   ).current;
   const ringAnims = useRef(
-    [0, 1].map(() => ({ scale: new Animated.Value(1), opacity: new Animated.Value(0.5) }))
+    [0, 1].map(() => ({
+      scale: new Animated.Value(1),
+      opacity: new Animated.Value(0.5),
+    }))
   ).current;
   const recDotAnim = useRef(new Animated.Value(1)).current;
   const recMicScale = useRef(new Animated.Value(1)).current;
@@ -118,22 +126,35 @@ const AIEventCreatorScreen: React.FC = () => {
   const recIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Hero icon effects (IDLE state)
   const heroGlowAnims = useRef(
-    [0, 1].map(() => ({ scale: new Animated.Value(1), opacity: new Animated.Value(0.35) }))
+    [0, 1].map(() => ({
+      scale: new Animated.Value(1),
+      opacity: new Animated.Value(0.35),
+    }))
   ).current;
-  const heroSpinAnim  = useRef(new Animated.Value(0)).current;
+  const heroSpinAnim = useRef(new Animated.Value(0)).current;
   const heroBreathAnim = useRef(new Animated.Value(1)).current;
 
   // Waveform
   useEffect(() => {
     if (screenState !== "RECORDING") return;
-    const peaks  = [0.5, 0.8, 1.0, 1.0, 0.85, 0.65, 0.4];
-    const upMs   = [190, 160, 220, 130, 200, 170, 240];
+    const peaks = [0.5, 0.8, 1.0, 1.0, 0.85, 0.65, 0.4];
+    const upMs = [190, 160, 220, 130, 200, 170, 240];
     const downMs = [210, 280, 170, 250, 190, 230, 180];
     const loops = waveAnims.map((anim, i) =>
-      Animated.loop(Animated.sequence([
-        Animated.timing(anim, { toValue: peaks[i],  duration: upMs[i],   useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0.15,      duration: downMs[i], useNativeDriver: true }),
-      ]))
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: peaks[i],
+            duration: upMs[i],
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.15,
+            duration: downMs[i],
+            useNativeDriver: true,
+          }),
+        ])
+      )
     );
     const combined = Animated.parallel(loops);
     combined.start();
@@ -144,17 +165,35 @@ const AIEventCreatorScreen: React.FC = () => {
   useEffect(() => {
     if (screenState !== "RECORDING") return;
     const loops = ringAnims.map((ring, i) =>
-      Animated.loop(Animated.sequence([
-        Animated.delay(i * 600),
-        Animated.parallel([
-          Animated.timing(ring.scale,   { toValue: 2.2, duration: 1400, useNativeDriver: true }),
-          Animated.timing(ring.opacity, { toValue: 0,   duration: 1400, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(ring.scale,   { toValue: 1,   duration: 0, useNativeDriver: true }),
-          Animated.timing(ring.opacity, { toValue: 0.5, duration: 0, useNativeDriver: true }),
-        ]),
-      ]))
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 600),
+          Animated.parallel([
+            Animated.timing(ring.scale, {
+              toValue: 2.2,
+              duration: 1400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(ring.opacity, {
+              toValue: 0,
+              duration: 1400,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(ring.scale, {
+              toValue: 1,
+              duration: 0,
+              useNativeDriver: true,
+            }),
+            Animated.timing(ring.opacity, {
+              toValue: 0.5,
+              duration: 0,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      )
     );
     const combined = Animated.parallel(loops);
     combined.start();
@@ -163,22 +202,48 @@ const AIEventCreatorScreen: React.FC = () => {
 
   // Blinking record dot
   useEffect(() => {
-    if (screenState !== "RECORDING") { recDotAnim.setValue(1); return; }
-    const blink = Animated.loop(Animated.sequence([
-      Animated.timing(recDotAnim, { toValue: 0.15, duration: 450, useNativeDriver: true }),
-      Animated.timing(recDotAnim, { toValue: 1,    duration: 450, useNativeDriver: true }),
-    ]));
+    if (screenState !== "RECORDING") {
+      recDotAnim.setValue(1);
+      return;
+    }
+    const blink = Animated.loop(
+      Animated.sequence([
+        Animated.timing(recDotAnim, {
+          toValue: 0.15,
+          duration: 450,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recDotAnim, {
+          toValue: 1,
+          duration: 450,
+          useNativeDriver: true,
+        }),
+      ])
+    );
     blink.start();
     return () => blink.stop();
   }, [screenState]);
 
   // Mic breathe
   useEffect(() => {
-    if (screenState !== "RECORDING") { recMicScale.setValue(1); return; }
-    const breathe = Animated.loop(Animated.sequence([
-      Animated.timing(recMicScale, { toValue: 1.1, duration: 700, useNativeDriver: true }),
-      Animated.timing(recMicScale, { toValue: 1.0, duration: 700, useNativeDriver: true }),
-    ]));
+    if (screenState !== "RECORDING") {
+      recMicScale.setValue(1);
+      return;
+    }
+    const breathe = Animated.loop(
+      Animated.sequence([
+        Animated.timing(recMicScale, {
+          toValue: 1.1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recMicScale, {
+          toValue: 1.0,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ])
+    );
     breathe.start();
     return () => breathe.stop();
   }, [screenState]);
@@ -187,13 +252,22 @@ const AIEventCreatorScreen: React.FC = () => {
   useEffect(() => {
     if (screenState !== "RECORDING") {
       setRecSeconds(0);
-      if (recIntervalRef.current) { clearInterval(recIntervalRef.current); recIntervalRef.current = null; }
+      if (recIntervalRef.current) {
+        clearInterval(recIntervalRef.current);
+        recIntervalRef.current = null;
+      }
       return;
     }
     setRecSeconds(0);
-    recIntervalRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+    recIntervalRef.current = setInterval(
+      () => setRecSeconds((s) => s + 1),
+      1000
+    );
     return () => {
-      if (recIntervalRef.current) { clearInterval(recIntervalRef.current); recIntervalRef.current = null; }
+      if (recIntervalRef.current) {
+        clearInterval(recIntervalRef.current);
+        recIntervalRef.current = null;
+      }
     };
   }, [screenState]);
 
@@ -202,7 +276,10 @@ const AIEventCreatorScreen: React.FC = () => {
   // Glow rings — expand + fade, 2 rings staggered 900 ms apart
   useEffect(() => {
     if (screenState !== "IDLE") {
-      heroGlowAnims.forEach((r) => { r.scale.setValue(1); r.opacity.setValue(0.35); });
+      heroGlowAnims.forEach((r) => {
+        r.scale.setValue(1);
+        r.opacity.setValue(0.35);
+      });
       return;
     }
     const loops = heroGlowAnims.map((ring, i) =>
@@ -210,12 +287,28 @@ const AIEventCreatorScreen: React.FC = () => {
         Animated.sequence([
           Animated.delay(i * 900),
           Animated.parallel([
-            Animated.timing(ring.scale,   { toValue: 1.7,  duration: 1800, useNativeDriver: true }),
-            Animated.timing(ring.opacity, { toValue: 0,    duration: 1800, useNativeDriver: true }),
+            Animated.timing(ring.scale, {
+              toValue: 1.7,
+              duration: 1800,
+              useNativeDriver: true,
+            }),
+            Animated.timing(ring.opacity, {
+              toValue: 0,
+              duration: 1800,
+              useNativeDriver: true,
+            }),
           ]),
           Animated.parallel([
-            Animated.timing(ring.scale,   { toValue: 1,    duration: 0, useNativeDriver: true }),
-            Animated.timing(ring.opacity, { toValue: 0.35, duration: 0, useNativeDriver: true }),
+            Animated.timing(ring.scale, {
+              toValue: 1,
+              duration: 0,
+              useNativeDriver: true,
+            }),
+            Animated.timing(ring.opacity, {
+              toValue: 0.35,
+              duration: 0,
+              useNativeDriver: true,
+            }),
           ]),
         ])
       )
@@ -240,11 +333,22 @@ const AIEventCreatorScreen: React.FC = () => {
 
   // Icon breathe — gentle scale 1.0 → 1.06 → 1.0 (IDLE only)
   useEffect(() => {
-    if (screenState !== "IDLE") { heroBreathAnim.setValue(1); return; }
+    if (screenState !== "IDLE") {
+      heroBreathAnim.setValue(1);
+      return;
+    }
     const breathe = Animated.loop(
       Animated.sequence([
-        Animated.timing(heroBreathAnim, { toValue: 1.07, duration: 1700, useNativeDriver: true }),
-        Animated.timing(heroBreathAnim, { toValue: 1.0,  duration: 1700, useNativeDriver: true }),
+        Animated.timing(heroBreathAnim, {
+          toValue: 1.07,
+          duration: 1700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroBreathAnim, {
+          toValue: 1.0,
+          duration: 1700,
+          useNativeDriver: true,
+        }),
       ])
     );
     breathe.start();
@@ -253,23 +357,20 @@ const AIEventCreatorScreen: React.FC = () => {
 
   // ── Input logic ──
 
-  const handleTextSubmit = useCallback(() => {
+  const handleTextSubmit = useCallback(async () => {
     const text = inputText.trim();
     if (!text) return;
     setInputText("");
     setScreenState("PROCESSING");
-    setTimeout(() => {
-      // ASKING state: merge vào parsedEvent hiện tại; IDLE: bắt đầu mới
-      const base = screenState === "ASKING" ? parsedEvent : EMPTY_PARSED;
-      const parsed = parseVietnamese(text, base);
-      setParsedEvent(parsed);
-      if (isComplete(parsed)) {
-        Feedback.transition();
-        setScreenState("CONFIRM");
-      } else {
-        setScreenState("ASKING");
-      }
-    }, 400);
+    const base = screenState === "ASKING" ? parsedEvent : EMPTY_PARSED;
+    const parsed = await parseWithAI(text, base);
+    setParsedEvent(parsed);
+    if (isComplete(parsed)) {
+      Feedback.transition();
+      setScreenState("CONFIRM");
+    } else {
+      setScreenState("ASKING");
+    }
   }, [inputText, screenState, parsedEvent]);
 
   const handleChipPress = useCallback((prompt: string) => {
@@ -301,12 +402,14 @@ const AIEventCreatorScreen: React.FC = () => {
     try {
       const uri = await Recorder.stopRecording();
       Feedback.recordStop();
+      console.log('[STT] uri:', uri);
       if (!uri) throw new Error("no audio");
       const text = await transcribe(uri);
+      console.log('[STT] text:', text);
       if (!text.trim()) throw new Error("empty transcript");
       // Luôn merge với parsedEvent hiện tại qua ref
       // (nếu đang ở IDLE thì parsedEventRef = EMPTY_PARSED → tương đương fresh parse)
-      const parsed = parseVietnamese(text, parsedEventRef.current);
+      const parsed = await parseWithAI(text, parsedEventRef.current);
       setParsedEvent(parsed);
       if (isComplete(parsed)) {
         Feedback.transition();
@@ -314,7 +417,8 @@ const AIEventCreatorScreen: React.FC = () => {
       } else {
         setScreenState("ASKING");
       }
-    } catch {
+    } catch (e) {
+      console.error('[STT] error:', e);
       Feedback.error();
       showError("Tôi chưa nghe rõ. Bạn thử nhập chữ nhé!");
       setScreenState("IDLE");
@@ -334,12 +438,18 @@ const AIEventCreatorScreen: React.FC = () => {
       setScreenState("RECORDING");
       // Auto-stop after 8 s
       recordingTimerRef.current = setTimeout(() => stopRecording(), 8000);
-    } catch {
-      showError("Không thể bắt đầu ghi âm. Thử lại nhé!");
+    } catch (e) {
+      showError(
+        e instanceof Error
+          ? e.message
+          : "Không thể bắt đầu ghi âm. Thử lại nhé test 1!"
+      );
     }
   }, [stopRecording, showError]);
 
-  const handleMicPressOut = useCallback(() => { stopRecording(); }, [stopRecording]);
+  const handleMicPressOut = useCallback(() => {
+    stopRecording();
+  }, [stopRecording]);
 
   const handleSave = useCallback(async () => {
     if (!isComplete(parsedEvent)) return;
@@ -371,7 +481,9 @@ const AIEventCreatorScreen: React.FC = () => {
           await new Promise((r) => setTimeout(r, 600));
           const fresh = await DB.getEventById(db, newEvent.id);
           if (fresh?.serverId) {
-            setCreatedEvent((prev) => prev ? { ...prev, serverId: fresh.serverId } : prev);
+            setCreatedEvent((prev) =>
+              prev ? { ...prev, serverId: fresh.serverId } : prev
+            );
             return;
           }
         }
@@ -407,7 +519,14 @@ const AIEventCreatorScreen: React.FC = () => {
     setScreenState("IDLE");
   }, []);
 
-  const handleGoManual = useCallback(() => navigation.navigate("AddEvent"), [navigation]);
+  const handleGoManual = useCallback(
+    () => {
+      const current = parsedEventRef.current;
+      const hasData = current.eventType || current.day || current.month || current.personName;
+      navigation.navigate("AddEvent", hasData ? { prefill: buildFormData(current) } : undefined);
+    },
+    [navigation]
+  );
 
   // ─── Render helpers ────────────────────────────────────────────────────────
 
@@ -438,19 +557,28 @@ const AIEventCreatorScreen: React.FC = () => {
           <Animated.View style={{ transform: [{ scale: heroBreathAnim }] }}>
             <LinearGradient
               colors={[colors.aiPrimary, colors.aiSecondary]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={styles.heroIcon}
             >
               {/* Sparkle rotates slowly */}
-              <Animated.View style={{
-                transform: [{
-                  rotate: heroSpinAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0deg", "360deg"],
-                  }),
-                }],
-              }}>
-                <AiIcon size={42} primaryColor={colors.aiPrimary} secondaryColor={colors.aiSecondary} />
+              <Animated.View
+                style={{
+                  transform: [
+                    {
+                      rotate: heroSpinAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ["0deg", "360deg"],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <AiIcon
+                  size={42}
+                  primaryColor={colors.aiPrimary}
+                  secondaryColor={colors.aiSecondary}
+                />
               </Animated.View>
             </LinearGradient>
           </Animated.View>
@@ -495,8 +623,16 @@ const AIEventCreatorScreen: React.FC = () => {
               onPress={() => handleChipPress(c.prompt)}
               activeOpacity={0.7}
             >
-              <View style={[styles.chipIconWrap, { backgroundColor: tagColor + "18" }]}>
-                <IconImage source={getTagImage(c.tag)} style={{ width: 20, height: 20 }} />
+              <View
+                style={[
+                  styles.chipIconWrap,
+                  { backgroundColor: tagColor + "18" },
+                ]}
+              >
+                <IconImage
+                  source={getTagImage(c.tag)}
+                  style={{ width: 20, height: 20 }}
+                />
               </View>
               <Text style={styles.chipLabel}>{c.label}</Text>
             </TouchableOpacity>
@@ -515,7 +651,9 @@ const AIEventCreatorScreen: React.FC = () => {
     const ss = String(recSeconds % 60).padStart(2, "0");
     return (
       <View style={styles.recordingOverlay}>
-        <Text style={styles.recTimer}>{mm}:{ss}</Text>
+        <Text style={styles.recTimer}>
+          {mm}:{ss}
+        </Text>
         <View style={styles.recIndicator}>
           <Animated.View style={[styles.recDot, { opacity: recDotAnim }]} />
           <Text style={styles.recIndicatorTxt}>Đang ghi âm</Text>
@@ -523,19 +661,28 @@ const AIEventCreatorScreen: React.FC = () => {
         {ringAnims.map((ring, i) => (
           <Animated.View
             key={i}
-            style={[styles.ring, { transform: [{ scale: ring.scale }], opacity: ring.opacity }]}
+            style={[
+              styles.ring,
+              { transform: [{ scale: ring.scale }], opacity: ring.opacity },
+            ]}
           />
         ))}
         <Pressable onPressOut={handleMicPressOut} style={styles.recMicWrap}>
           <Animated.View style={{ transform: [{ scale: recMicScale }] }}>
-            <LinearGradient colors={[colors.aiPrimary, colors.aiSecondary]} style={styles.recMic}>
+            <LinearGradient
+              colors={[colors.aiPrimary, colors.aiSecondary]}
+              style={styles.recMic}
+            >
               <Ionicons name="mic" size={36} color="#fff" />
             </LinearGradient>
           </Animated.View>
         </Pressable>
         <View style={styles.waveform}>
           {waveAnims.map((anim, i) => (
-            <Animated.View key={i} style={[styles.waveBar, { transform: [{ scaleY: anim }] }]} />
+            <Animated.View
+              key={i}
+              style={[styles.waveBar, { transform: [{ scaleY: anim }] }]}
+            />
           ))}
         </View>
         <Text style={styles.recHint}>Thả tay để dừng</Text>
@@ -548,13 +695,15 @@ const AIEventCreatorScreen: React.FC = () => {
     return (
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={styles.askingRoot}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
         >
           {/* AI question bubble */}
           <View style={styles.askingBubbleRow}>
@@ -594,7 +743,10 @@ const AIEventCreatorScreen: React.FC = () => {
               underlineColorAndroid="transparent"
               autoFocus
             />
-            <Pressable onPressIn={handleMicPressIn} onPressOut={handleMicPressOut}>
+            <Pressable
+              onPressIn={handleMicPressIn}
+              onPressOut={handleMicPressOut}
+            >
               <LinearGradient
                 colors={[colors.aiPrimary, colors.aiSecondary]}
                 style={styles.micBtn}
@@ -615,15 +767,16 @@ const AIEventCreatorScreen: React.FC = () => {
     </View>
   );
 
-
   const renderConfirm = () => {
     const tag = parsedEvent.eventType ?? "other";
     const tagColor = confirmTagColor;
     const tagLabel = getTagLabel(tag);
     const tagImage = getTagImage(tag);
     const title = buildTitle(parsedEvent);
-    const dateText = parsedEvent.day && parsedEvent.month
-      ? `Ngày ${parsedEvent.day} tháng ${parsedEvent.month}` : "—";
+    const dateText =
+      parsedEvent.day && parsedEvent.month
+        ? `Ngày ${parsedEvent.day} tháng ${parsedEvent.month}`
+        : "—";
 
     return (
       <ScrollView
@@ -645,46 +798,96 @@ const AIEventCreatorScreen: React.FC = () => {
           <View style={[styles.cardAccent, { backgroundColor: tagColor }]} />
 
           {/* Card header */}
-          <View style={[styles.cardHeader, { backgroundColor: tagColor + "18" }]}>
-            <View style={[styles.cardIcon, { backgroundColor: tagColor + "22" }]}>
+          <View
+            style={[styles.cardHeader, { backgroundColor: tagColor + "18" }]}
+          >
+            <View
+              style={[styles.cardIcon, { backgroundColor: tagColor + "22" }]}
+            >
               <IconImage source={tagImage} style={{ width: 26, height: 26 }} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{title}</Text>
               <Text style={styles.cardSub}>{tagLabel} · Hàng năm</Text>
             </View>
-            <View style={[styles.badge, { backgroundColor: tagColor + "18", borderColor: tagColor + "33" }]}>
-              <Text style={[styles.badgeTxt, { color: tagColor }]}>{tagLabel}</Text>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: tagColor + "18",
+                  borderColor: tagColor + "33",
+                },
+              ]}
+            >
+              <Text style={[styles.badgeTxt, { color: tagColor }]}>
+                {tagLabel}
+              </Text>
             </View>
           </View>
 
           <View>
-            <View style={[styles.cardRow, (!parsedEvent.day || !parsedEvent.month) && { borderBottomWidth: 0 }]}>
-              <Ionicons name="calendar-outline" size={18} color={tagColor} style={styles.cardRowIcon} />
+            <View
+              style={[
+                styles.cardRow,
+                (!parsedEvent.day || !parsedEvent.month) && {
+                  borderBottomWidth: 0,
+                },
+              ]}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={18}
+                color={tagColor}
+                style={styles.cardRowIcon}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardRowTxt}>{dateText}</Text>
-                <Text style={styles.cardRowSub}>{parsedEvent.isLunar ? "Âm lịch" : "Dương lịch"}</Text>
+                <Text style={styles.cardRowSub}>
+                  {parsedEvent.isLunar ? "Âm lịch" : "Dương lịch"}
+                </Text>
               </View>
               {parsedEvent.isLunar && (
-                <View style={[styles.badge, { backgroundColor: tagColor + "18", borderColor: tagColor + "33" }]}>
+                <View
+                  style={[
+                    styles.badge,
+                    {
+                      backgroundColor: tagColor + "18",
+                      borderColor: tagColor + "33",
+                    },
+                  ]}
+                >
                   <Text style={[styles.badgeTxt, { color: tagColor }]}>Âm</Text>
                 </View>
               )}
             </View>
 
             <View style={styles.cardRow}>
-              <Ionicons name="notifications-outline" size={18} color={colors.textSecondary} style={styles.cardRowIcon} />
+              <Ionicons
+                name="notifications-outline"
+                size={18}
+                color={colors.textSecondary}
+                style={styles.cardRowIcon}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardRowTxt}>Nhắc nhở</Text>
-                <Text style={styles.cardRowSub}>Trước 7 ngày, 1 ngày, hôm đó</Text>
+                <Text style={styles.cardRowSub}>
+                  Trước 7 ngày, 1 ngày, hôm đó
+                </Text>
               </View>
             </View>
 
             {!!parsedEvent.year && (
               <View style={[styles.cardRow, { borderBottomWidth: 0 }]}>
-                <Ionicons name="book-outline" size={18} color={colors.textSecondary} style={styles.cardRowIcon} />
+                <Ionicons
+                  name="book-outline"
+                  size={18}
+                  color={colors.textSecondary}
+                  style={styles.cardRowIcon}
+                />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardRowTxt}>Sinh năm {parsedEvent.year}</Text>
+                  <Text style={styles.cardRowTxt}>
+                    Sinh năm {parsedEvent.year}
+                  </Text>
                   <Text style={styles.cardRowSub}>Tính tuổi tự động</Text>
                 </View>
               </View>
@@ -725,7 +928,9 @@ const AIEventCreatorScreen: React.FC = () => {
       {isLoadingConnections ? (
         <View style={styles.shareLoading}>
           <ActivityIndicator color={colors.aiPrimary} />
-          <Text style={styles.shareLoadingText}>Đang tải danh sách kết nối...</Text>
+          <Text style={styles.shareLoadingText}>
+            Đang tải danh sách kết nối...
+          </Text>
         </View>
       ) : connections.length === 0 ? (
         <View style={styles.shareEmpty}>
@@ -747,7 +952,10 @@ const AIEventCreatorScreen: React.FC = () => {
                 key={connection.id}
                 style={[
                   styles.shareCard,
-                  isSelected && [styles.shareCardSelected, { borderColor: confirmTagColor }],
+                  isSelected && [
+                    styles.shareCardSelected,
+                    { borderColor: confirmTagColor },
+                  ],
                   !canReceive && styles.shareCardDisabled,
                 ]}
                 onPress={() => {
@@ -761,26 +969,44 @@ const AIEventCreatorScreen: React.FC = () => {
                 }}
                 activeOpacity={canReceive ? 0.7 : 1}
               >
-                <View style={[styles.shareAvatar, { backgroundColor: avatarColor }]}>
+                <View
+                  style={[styles.shareAvatar, { backgroundColor: avatarColor }]}
+                >
                   <Text style={styles.shareAvatarTxt}>
-                    {(partner.displayName || partner.email || "?")[0].toUpperCase()}
+                    {(partner.displayName ||
+                      partner.email ||
+                      "?")[0].toUpperCase()}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.shareConnName, !canReceive && { color: colors.textLight }]}>
+                  <Text
+                    style={[
+                      styles.shareConnName,
+                      !canReceive && { color: colors.textLight },
+                    ]}
+                  >
                     {partner.displayName || "Người dùng"}
                   </Text>
-                  <Text style={styles.shareConnEmail} numberOfLines={1}>{partner.email}</Text>
+                  <Text style={styles.shareConnEmail} numberOfLines={1}>
+                    {partner.email}
+                  </Text>
                   {!canReceive && (
                     <Text style={styles.shareConnFull}>Hết lượt nhận</Text>
                   )}
                 </View>
                 {canReceive && (
-                  <View style={[
-                    styles.shareCheck,
-                    isSelected && { backgroundColor: confirmTagColor, borderColor: confirmTagColor },
-                  ]}>
-                    {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  <View
+                    style={[
+                      styles.shareCheck,
+                      isSelected && {
+                        backgroundColor: confirmTagColor,
+                        borderColor: confirmTagColor,
+                      },
+                    ]}
+                  >
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    )}
                   </View>
                 )}
               </TouchableOpacity>
@@ -799,15 +1025,21 @@ const AIEventCreatorScreen: React.FC = () => {
     const tagLabel = getTagLabel(tag);
     const tagImage = getTagImage(tag);
     const title = buildTitle(parsedEvent);
-    const dateText = parsedEvent.day && parsedEvent.month
-      ? `ngày ${parsedEvent.day} tháng ${parsedEvent.month}` : "";
+    const dateText =
+      parsedEvent.day && parsedEvent.month
+        ? `ngày ${parsedEvent.day} tháng ${parsedEvent.month}`
+        : "";
     const calendarType = parsedEvent.isLunar ? "âm lịch" : "dương lịch";
 
     return (
       <View style={styles.successWrap}>
         {/* Check circle */}
-        <View style={[styles.successCircle, { backgroundColor: tagColor + "18" }]}>
-          <View style={[styles.successCircleInner, { backgroundColor: tagColor }]}>
+        <View
+          style={[styles.successCircle, { backgroundColor: tagColor + "18" }]}
+        >
+          <View
+            style={[styles.successCircleInner, { backgroundColor: tagColor }]}
+          >
             <Ionicons name="checkmark" size={32} color="#fff" />
           </View>
         </View>
@@ -817,13 +1049,22 @@ const AIEventCreatorScreen: React.FC = () => {
         {/* Event summary card */}
         <View style={styles.successCard}>
           <View style={[styles.cardAccent, { backgroundColor: tagColor }]} />
-          <View style={[styles.successCardHeader, { backgroundColor: tagColor + "18" }]}>
-            <View style={[styles.cardIcon, { backgroundColor: tagColor + "22" }]}>
+          <View
+            style={[
+              styles.successCardHeader,
+              { backgroundColor: tagColor + "18" },
+            ]}
+          >
+            <View
+              style={[styles.cardIcon, { backgroundColor: tagColor + "22" }]}
+            >
               <IconImage source={tagImage} style={{ width: 26, height: 26 }} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{title}</Text>
-              <Text style={styles.cardSub}>{tagLabel} · {dateText} · {calendarType}</Text>
+              <Text style={styles.cardSub}>
+                {tagLabel} · {dateText} · {calendarType}
+              </Text>
             </View>
           </View>
 
@@ -840,7 +1081,9 @@ const AIEventCreatorScreen: React.FC = () => {
                 Tôi sẽ báo bạn trước{" "}
                 <Text style={{ fontFamily: "Manrope_700Bold" }}>7 ngày</Text>,{" "}
                 <Text style={{ fontFamily: "Manrope_700Bold" }}>1 ngày</Text> và{" "}
-                <Text style={{ fontFamily: "Manrope_700Bold" }}>ngay hôm đó</Text>{" "}
+                <Text style={{ fontFamily: "Manrope_700Bold" }}>
+                  ngay hôm đó
+                </Text>{" "}
                 để bạn kịp chuẩn bị nhé!
               </Text>
             </View>
@@ -855,7 +1098,12 @@ const AIEventCreatorScreen: React.FC = () => {
           <Text style={styles.saveBtnTxt}>Xong</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => { setParsedEvent(EMPTY_PARSED); setScreenState("IDLE"); }}>
+        <TouchableOpacity
+          onPress={() => {
+            setParsedEvent(EMPTY_PARSED);
+            setScreenState("IDLE");
+          }}
+        >
           <Text style={styles.retryBtnTxt}>Thêm sự kiện khác</Text>
         </TouchableOpacity>
       </View>
@@ -879,37 +1127,45 @@ const AIEventCreatorScreen: React.FC = () => {
             <Ionicons name="close" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {screenState === "CONFIRM" ? "Xác nhận sự kiện"
-              : screenState === "SHARE" ? "Chia sẻ sự kiện"
-              : screenState === "ASKING" ? "Thêm sự kiện"
+            {screenState === "CONFIRM"
+              ? "Xác nhận sự kiện"
+              : screenState === "SHARE"
+              ? "Chia sẻ sự kiện"
+              : screenState === "ASKING"
+              ? "Thêm sự kiện"
               : "Thêm nhanh"}
           </Text>
           <View style={{ width: 36 }} />
         </View>
       )}
 
-      {screenState === "ASKING"
-        ? renderAsking()
-        : (
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-          >
-            {(screenState === "IDLE" || screenState === "RECORDING") && renderIdle()}
-            {screenState === "PROCESSING" && renderProcessing()}
-            {screenState === "CONFIRM" && renderConfirm()}
-            {screenState === "SHARE" && renderShare()}
-            {screenState === "SUCCESS" && renderSuccess()}
-          </KeyboardAvoidingView>
-        )
-      }
+      {screenState === "ASKING" ? (
+        renderAsking()
+      ) : (
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          {(screenState === "IDLE" || screenState === "RECORDING") &&
+            renderIdle()}
+          {screenState === "PROCESSING" && renderProcessing()}
+          {screenState === "CONFIRM" && renderConfirm()}
+          {screenState === "SHARE" && renderShare()}
+          {screenState === "SUCCESS" && renderSuccess()}
+        </KeyboardAvoidingView>
+      )}
 
       {/* Recording overlay — always dark */}
       {screenState === "RECORDING" && renderRecordingOverlay()}
 
       {/* Save / Retry (CONFIRM only) */}
       {screenState === "CONFIRM" && (
-        <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View
+          style={[
+            styles.actions,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
           <TouchableOpacity
             style={[styles.saveBtnWrap, isSaving && styles.saveBtnDisabled]}
             onPress={handleSave}
@@ -918,12 +1174,15 @@ const AIEventCreatorScreen: React.FC = () => {
           >
             <LinearGradient
               colors={[confirmTagColor, confirmTagColor + "CC"]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={styles.saveBtnGrad}
             >
-              {isSaving
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.saveBtnTxt}>Lưu sự kiện</Text>}
+              {isSaving ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.saveBtnTxt}>Lưu sự kiện</Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity style={styles.retryBtn} onPress={handleReset}>
@@ -934,7 +1193,12 @@ const AIEventCreatorScreen: React.FC = () => {
 
       {/* Share footer */}
       {screenState === "SHARE" && (
-        <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View
+          style={[
+            styles.actions,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+          ]}
+        >
           {/* Sync timeout warning */}
           {!isSyncingForShare && !createdEvent?.serverId && (
             <Text style={styles.shareSyncWarn}>
@@ -953,18 +1217,33 @@ const AIEventCreatorScreen: React.FC = () => {
                 style={[
                   styles.shareSendBtn,
                   { backgroundColor: confirmTagColor },
-                  (selectedConnIds.size === 0 || isSharing || isSyncingForShare || !createdEvent?.serverId) && styles.shareSendBtnDisabled,
+                  (selectedConnIds.size === 0 ||
+                    isSharing ||
+                    isSyncingForShare ||
+                    !createdEvent?.serverId) &&
+                    styles.shareSendBtnDisabled,
                 ]}
                 onPress={handleShare}
-                disabled={selectedConnIds.size === 0 || isSharing || isSyncingForShare || !createdEvent?.serverId}
+                disabled={
+                  selectedConnIds.size === 0 ||
+                  isSharing ||
+                  isSyncingForShare ||
+                  !createdEvent?.serverId
+                }
               >
-                {isSharing
-                  ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={styles.shareSendTxt}>
-                      {isSyncingForShare
-                        ? "Đang đồng bộ..."
-                        : `Chia sẻ${selectedConnIds.size > 0 ? ` (${selectedConnIds.size})` : ""}`}
-                    </Text>}
+                {isSharing ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.shareSendTxt}>
+                    {isSyncingForShare
+                      ? "Đang đồng bộ..."
+                      : `Chia sẻ${
+                          selectedConnIds.size > 0
+                            ? ` (${selectedConnIds.size})`
+                            : ""
+                        }`}
+                  </Text>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -994,7 +1273,8 @@ const useStyles = makeStyles((colors) => ({
     borderBottomColor: colors.border,
   },
   headerClose: {
-    width: 36, height: 36,
+    width: 36,
+    height: 36,
     borderRadius: 18,
     backgroundColor: colors.borderLight,
     alignItems: "center",
@@ -1034,7 +1314,8 @@ const useStyles = makeStyles((colors) => ({
     // borderColor set inline so we can use colors.aiPrimary
   },
   heroIcon: {
-    width: 72, height: 72,
+    width: 72,
+    height: 72,
     borderRadius: 36,
     alignItems: "center",
     justifyContent: "center",
@@ -1083,7 +1364,8 @@ const useStyles = makeStyles((colors) => ({
     padding: 0,
   },
   micBtn: {
-    width: 38, height: 38,
+    width: 38,
+    height: 38,
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
@@ -1226,7 +1508,8 @@ const useStyles = makeStyles((colors) => ({
     marginBottom: 40,
   },
   recDot: {
-    width: 9, height: 9,
+    width: 9,
+    height: 9,
     borderRadius: 5,
     backgroundColor: "#EF4444",
   },
@@ -1238,14 +1521,16 @@ const useStyles = makeStyles((colors) => ({
   },
   ring: {
     position: "absolute",
-    width: 110, height: 110,
+    width: 110,
+    height: 110,
     borderRadius: 55,
     borderWidth: 1.5,
     borderColor: "rgba(124,58,237,0.5)",
   },
   recMicWrap: { zIndex: 2 },
   recMic: {
-    width: 80, height: 80,
+    width: 80,
+    height: 80,
     borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
@@ -1263,7 +1548,8 @@ const useStyles = makeStyles((colors) => ({
     marginTop: 36,
   },
   waveBar: {
-    width: 5, height: 36,
+    width: 5,
+    height: 36,
     borderRadius: 3,
     backgroundColor: "#7C3AED",
   },
@@ -1298,7 +1584,8 @@ const useStyles = makeStyles((colors) => ({
   msgRowAI: { justifyContent: "flex-start" },
   msgRowUser: { flexDirection: "row-reverse" },
   aiAvatar: {
-    width: 28, height: 28,
+    width: 28,
+    height: 28,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
@@ -1347,7 +1634,8 @@ const useStyles = makeStyles((colors) => ({
     borderBottomLeftRadius: 4,
   },
   dot: {
-    width: 6, height: 6,
+    width: 6,
+    height: 6,
     borderRadius: 3,
     backgroundColor: colors.textLight,
   },
@@ -1373,7 +1661,8 @@ const useStyles = makeStyles((colors) => ({
     color: colors.textPrimary,
   },
   replyMic: {
-    width: 34, height: 34,
+    width: 34,
+    height: 34,
     borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
@@ -1431,7 +1720,8 @@ const useStyles = makeStyles((colors) => ({
     borderBottomColor: colors.borderLight,
   },
   cardIcon: {
-    width: 44, height: 44,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",

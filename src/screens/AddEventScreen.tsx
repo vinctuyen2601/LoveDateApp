@@ -62,6 +62,7 @@ const AddEventScreen: React.FC = () => {
   const eventId = route.params?.eventId;
   const isEditMode = !!eventId;
   const existingEvent = isEditMode ? getEventById(eventId) : undefined;
+  const prefill: Partial<EventFormData> | undefined = route.params?.prefill;
 
   const now = new Date();
   // Create default date at 12:00 to avoid timezone issues
@@ -97,6 +98,13 @@ const AddEventScreen: React.FC = () => {
     new Set()
   );
   const [isSharing, setIsSharing] = useState(false);
+
+  // Pre-fill form from AI parser result (coming from AIEventCreatorScreen)
+  useEffect(() => {
+    if (!isEditMode && prefill) {
+      setFormData((prev) => ({ ...prev, ...prefill }));
+    }
+  }, []);
 
   // Load existing event data when in Edit mode
   useEffect(() => {

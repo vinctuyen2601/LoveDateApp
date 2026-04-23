@@ -122,12 +122,12 @@ const ConnectionsScreen: React.FC = () => {
       setRequests(reqs);
       setLimits(lims);
     } catch (e: any) {
-      if (!silent) showError('Không thể tải danh sách kết nối');
+      if (!silent && connections.length > 0) showError('Không thể tải danh sách kết nối');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [isAnonymous]);
+  }, [isAnonymous, connections.length]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
