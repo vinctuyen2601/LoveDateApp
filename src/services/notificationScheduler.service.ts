@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Event, getTagIcon } from "../types";
+import { Event } from "../types";
 import { lunarService } from "./lunar.service";
 import { SPECIAL_DATES, resolveSpecialDateForYear } from "../constants/specialDates";
 
@@ -166,11 +166,6 @@ function getOccurrencesInWindow(
   return results;
 }
 
-function getIcon(tags: string[]): string {
-  const primaryTag = tags[0];
-  if (primaryTag) return getTagIcon(primaryTag);
-  return "calendar-outline";
-}
 
 function getChannelId(daysBefore: number): string {
   if (daysBefore === 0) return "urgent";
@@ -281,7 +276,7 @@ function collectUserNotifications(
           date: notifDate,
           source: "user",
           content: {
-            title: `${getIcon(event.tags)} Nhắc nhở`,
+            title: `Nhắc nhở`,
             body: buildUserEventBody(event.title, daysBefore),
             data: { eventId: event.id, eventTitle: event.title, daysBefore },
             sound: "default",
@@ -321,7 +316,7 @@ export async function scheduleUpcomingNotifications(
   windowEnd.setDate(windowEnd.getDate() + SCHEDULING_WINDOW_DAYS);
 
   // Hủy tất cả notifications hiện có (native only)
-  if (Platform.OS === 'web') return;
+  if (Platform.OS === 'web') return { scheduled: 0, systemScheduled: 0, windowDays: SCHEDULING_WINDOW_DAYS };
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   // Collect tất cả notifications trong window

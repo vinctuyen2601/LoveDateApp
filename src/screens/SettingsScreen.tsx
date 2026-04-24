@@ -89,6 +89,7 @@ const SettingsScreen: React.FC = () => {
     user,
     isAnonymous,
     isEmailVerified,
+    isLoading: isAuthLoading,
     linkedProviders,
     logout,
     deleteAccount,
@@ -294,7 +295,7 @@ const SettingsScreen: React.FC = () => {
       contentContainerStyle={[styles.content, { paddingTop: insets.top }]}
     >
       {/* Profile Section — only for registered users */}
-      {!isAnonymous && (
+      {!isAuthLoading && !isAnonymous && (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Tài khoản</Text>
 
@@ -397,7 +398,7 @@ const SettingsScreen: React.FC = () => {
       )}
 
       {/* Link Account Section */}
-      {isAnonymous && (
+      {!isAuthLoading && isAnonymous && (
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.authCard}
@@ -597,22 +598,23 @@ const SettingsScreen: React.FC = () => {
         />
       </View>
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color={colors.error} />
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
+      {/* Logout & Delete Account — only for registered users */}
+      {!isAuthLoading && !isAnonymous && (
+        <>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color={colors.error} />
+            <Text style={styles.logoutText}>Đăng xuất</Text>
+          </TouchableOpacity>
 
-      {/* Delete Account / Reset Data */}
-      <TouchableOpacity
-        style={[styles.deleteButton, { marginHorizontal: 16, marginTop: 12 }]}
-        onPress={handleDeleteAccount}
-      >
-        <Ionicons name="trash-outline" size={20} color={colors.error} />
-        <Text style={styles.deleteText}>
-          {isAnonymous ? "Xóa toàn bộ dữ liệu" : "Xóa tài khoản"}
-        </Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.deleteButton, { marginHorizontal: 16, marginTop: 12 }]}
+            onPress={handleDeleteAccount}
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
+            <Text style={styles.deleteText}>Xóa tài khoản</Text>
+          </TouchableOpacity>
+        </>
+      )}
 
       {/* Logout Confirm Dialog */}
       <ConfirmDialog
