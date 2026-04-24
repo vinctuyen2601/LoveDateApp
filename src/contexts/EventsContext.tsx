@@ -10,7 +10,7 @@ import * as ChecklistService from '../services/checklist.service';
 import * as StreakService from '../services/streak.service';
 import { useAchievement } from './AchievementContext';
 import { syncService } from '../services/sync.service';
-import { authService } from '../services/auth.service';
+import { useAuth } from './AuthContext';
 
 const EventsContext = createContext<EventsContextValue | undefined>(undefined);
 
@@ -20,6 +20,7 @@ interface EventsProviderProps {
 
 export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const db = useSQLiteContext();
+  const { isAnonymous } = useAuth();
   const { showAchievements } = useAchievement();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,9 +125,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
       await refreshAndReschedule();
 
-      authService.isAnonymous().then(isAnon => {
-        if (!isAnon) syncService.sync().catch(err => console.warn('Event add sync failed:', err));
-      });
+      if (!isAnonymous) syncService.sync().catch(err => console.warn('Event add sync failed:', err));
 
       return savedEvent;
     } catch (err: any) {
@@ -160,9 +159,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
 
       await refreshAndReschedule();
 
-      authService.isAnonymous().then(isAnon => {
-        if (!isAnon) syncService.sync().catch(err => console.warn('Event update sync failed:', err));
-      });
+      if (!isAnonymous) syncService.sync().catch(err => console.warn('Event update sync failed:', err));
 
       return updatedEvent;
     } catch (err: any) {
@@ -239,9 +236,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         }
       }
 
-      authService.isAnonymous().then(isAnon => {
-        if (!isAnon) syncService.sync().catch(err => console.warn('Toggle notification sync failed:', err));
-      });
+      if (!isAnonymous) syncService.sync().catch(err => console.warn('Toggle notification sync failed:', err));
     } catch (err: any) {
       console.error('Failed to toggle notification:', err);
       setError(err.message || 'Failed to toggle notification');
@@ -264,9 +259,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       }
       const updated = await DB.updateEvent(db, eventId, { notes, needsSync: true, version: Date.now() });
       await refreshAndReschedule();
-      authService.isAnonymous().then(isAnon => {
-        if (!isAnon) syncService.sync().catch(err => console.warn('Note sync failed:', err));
-      });
+      if (!isAnonymous) syncService.sync().catch(err => console.warn('Note sync failed:', err));
       return updated;
     } catch (err: any) {
       console.error('Failed to upsert event note:', err);
