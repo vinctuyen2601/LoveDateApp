@@ -52,10 +52,11 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
   }),
 
   rose: buildTheme({
-    primary: "#F43F5E", // rose-500
-    primaryLight: "#FB7185", // rose-400
-    secondary: "#FB923C", // orange-400
-    gradientStart: "#F43F5E",
+    primary: "#fc809f",
+    primaryLight: "#fda3b7",
+    primaryDark: "#e5607f",
+    secondary: "#FB923C",
+    gradientStart: "#fc809f",
     gradientEnd: "#FB923C",
   }),
 
@@ -80,7 +81,7 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
 
 export const THEME_LIST: ThemeInfo[] = [
   { name: "light", label: "Cam", preview: THEMES.light.primary },
-  { name: "rose", label: "Đỏ", preview: THEMES.rose.primary },
+  { name: "rose", label: "Hồng", preview: THEMES.rose.primary },
   // { name: 'ocean',  label: 'Đại dương',  preview: THEMES.ocean.primary },
   { name: "forest", label: "Xanh", preview: THEMES.forest.primary },
   { name: "dark", label: "Xanh Đêm", preview: "#1E293B" },
