@@ -90,7 +90,6 @@ const SettingsScreen: React.FC = () => {
     isAnonymous,
     isEmailVerified,
     isLoading: isAuthLoading,
-    linkedProviders,
     logout,
     deleteAccount,
     updateProfile,
@@ -283,10 +282,6 @@ const SettingsScreen: React.FC = () => {
     } finally {
       setIsLinking(false);
     }
-  };
-
-  const isLinked = (provider: string) => {
-    return linkedProviders?.includes(provider) || false;
   };
 
   return (

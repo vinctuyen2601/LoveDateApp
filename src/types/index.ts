@@ -471,35 +471,15 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isAnonymous: boolean;
   isEmailVerified: boolean;
-  linkedProviders: string[];
-  resendVerificationEmail: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    displayName: string
-  ) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshToken: () => Promise<void>;
-  // 🆕 Linking methods
-  linkWithEmailPassword: (
-    email: string,
-    password: string,
-    displayName: string
-  ) => Promise<void>;
-  linkWithGoogle: () => Promise<void>;
-  linkWithFacebook: () => Promise<void>;
-  linkWithPhoneNumber: (
-    phoneNumber: string
-  ) => Promise<{ verificationId: string }>;
-  completeLinkWithPhone: (
-    verificationId: string,
-    code: string
-  ) => Promise<void>;
+  linkWithEmailPassword: (email: string, password: string, displayName: string) => Promise<void>;
   updateProfile: (displayName: string) => Promise<void>;
   refreshUser: () => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
 }
 
 export interface EventsContextValue {
