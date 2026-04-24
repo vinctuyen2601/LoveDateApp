@@ -14,6 +14,7 @@ class ApiService {
   private authToken: string | null = null;
   private onAccountDeactivatedCallback: (() => void) | null = null;
   private onUnauthorizedCallback: (() => void) | null = null;
+  private isHandlingUnauthorized = false;
 
   setOnAccountDeactivated(callback: () => void): void {
     this.onAccountDeactivatedCallback = callback;
@@ -92,7 +93,10 @@ class ApiService {
 
             case 401:
               this.authToken = null;
-              this.onUnauthorizedCallback?.();
+              if (!this.isHandlingUnauthorized) {
+                this.isHandlingUnauthorized = true;
+                this.onUnauthorizedCallback?.();
+              }
               break;
 
             case 403:
@@ -157,6 +161,9 @@ class ApiService {
    */
   setAuthToken(token: string | null): void {
     this.authToken = token;
+    if (token) {
+      this.isHandlingUnauthorized = false;
+    }
   }
 
   /**
