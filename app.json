@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lovedate.mobile",
       "icon": "./assets/icon.png",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification", "fetch", "processing"],
@@ -25,7 +25,7 @@
       }
     },
     "android": {
-      "versionCode": 15,
+      "versionCode": 16,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF8E8E"
