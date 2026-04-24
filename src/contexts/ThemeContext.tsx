@@ -55,9 +55,9 @@ export const THEMES: Record<ThemeName, ColorScheme> = {
     primary: "#fc809f",
     primaryLight: "#fda3b7",
     primaryDark: "#e5607f",
-    secondary: "#FB923C",
+    secondary: "#ff97d2",
     gradientStart: "#fc809f",
-    gradientEnd: "#FB923C",
+    gradientEnd: "#ff97d2",
   }),
 
   ocean: buildTheme({
