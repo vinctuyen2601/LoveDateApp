@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
-import { v4 as uuidv4 } from 'uuid';
 import { STORAGE_KEYS } from '../constants/config';
+
+function generateId(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 import { User, AuthTokens, AuthError } from '../types';
 import { apiService } from './api.service';
 import { notificationService } from './notification.service';
@@ -13,13 +19,13 @@ class AuthService {
   private async getOrCreateDeviceSessionKey(): Promise<string> {
     const stored = await AsyncStorage.getItem(STORAGE_KEYS.DEVICE_SESSION_KEY);
     if (stored) return stored;
-    const key = uuidv4();
+    const key = generateId();
     await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_SESSION_KEY, key);
     return key;
   }
 
   private async resetDeviceSessionKey(): Promise<void> {
-    await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_SESSION_KEY, uuidv4());
+    await AsyncStorage.setItem(STORAGE_KEYS.DEVICE_SESSION_KEY, generateId());
   }
 
   // ─── Session persistence ─────────────────────────────────────────────────────
