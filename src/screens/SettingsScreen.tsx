@@ -335,14 +335,7 @@ const SettingsScreen: React.FC = () => {
             <Text style={styles.userName}>
               {user?.displayName || "Người dùng"}
             </Text>
-            {isAnonymous ? (
-              <View style={styles.anonymousBadge}>
-                <Ionicons name="eye-off" size={12} color={colors.warning} />
-                <Text style={styles.anonymousText}>Tài khoản ẩn danh</Text>
-              </View>
-            ) : (
-              <Text style={styles.userEmail}>{user?.email}</Text>
-            )}
+            <Text style={styles.userEmail}>{user?.email}</Text>
             {user?.createdAt ? (
               <Text style={styles.memberSince}>
                 Thành viên từ {formatMemberSince(user.createdAt)}
@@ -356,24 +349,8 @@ const SettingsScreen: React.FC = () => {
           />
         </TouchableOpacity>
 
-        {/* Anonymous Warning */}
-        {isAnonymous && (
-          <View style={styles.warningCard}>
-            <Ionicons name="warning" size={24} color={colors.warning} />
-            <View style={styles.warningContent}>
-              <Text style={styles.warningTitle}>
-                Liên kết tài khoản để backup!
-              </Text>
-              <Text style={styles.warningText}>
-                Dữ liệu của bạn chỉ lưu trên thiết bị này. Hãy liên kết với
-                email để không mất dữ liệu khi đổi máy.
-              </Text>
-            </View>
-          </View>
-        )}
-
         {/* Email Verification Banner */}
-        {!isAnonymous && !isEmailVerified && (
+        {!isEmailVerified && (
           <View style={styles.verifyCard}>
             <Ionicons name="mail-unread" size={24} color={colors.primary} />
             <View style={styles.verifyContent}>

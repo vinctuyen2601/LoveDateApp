@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Update linked providers when user changes
     if (user) {
+      setIsAnonymous(user.isAnonymous ?? false);
       const loadProviders = async () => {
         try {
           const providers = await authService.getLinkedProviders();
@@ -60,14 +61,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       };
       loadProviders();
-      checkIfAnonymous();
     }
   }, [user]);
-
-  const checkIfAnonymous = async () => {
-    const anon = await authService.isAnonymous();
-    setIsAnonymous(anon);
-  };
 
   const autoLogin = async () => {
     try {
@@ -79,16 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setTokens(session.tokens);
         setIsAuthenticated(true);
         setIsEmailVerified(session.user.emailVerified || false);
-
-        // Check if anonymous
-        const anon = await authService.isAnonymous();
-        setIsAnonymous(anon);
+        setIsAnonymous(session.user.isAnonymous ?? false);
 
         // Đăng ký push token cho tất cả user (kể cả anonymous)
         registerPushToken().catch(err => console.warn('Push token registration failed:', err));
 
         // Chỉ sync events cho tài khoản thật
-        if (!anon) {
+        if (!session.user.isAnonymous) {
           syncService.sync().catch(err => console.warn('Startup sync failed:', err));
         }
       }
@@ -184,9 +176,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       navigate('Main', { screen: 'Home' });
 
-      // Create anonymous session in background — triggers isAnonymous false→true
-      // which EventsContext detects to clear local user data
-      autoLogin().catch(err => console.error('Anonymous session creation failed:', err));
+      // Await autoLogin so isLoading stays true until isAnonymous is correctly set,
+      // preventing a flash of the profile section in SettingsScreen.
+      await autoLogin();
     } catch (error) {
       console.error('Logout failed:', error);
       throw error;
