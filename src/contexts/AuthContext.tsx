@@ -45,6 +45,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         [{ text: 'Đã hiểu', style: 'default' }],
       );
     });
+
+    // Xử lý khi token hết hạn hoặc không hợp lệ (401)
+    apiService.setOnUnauthorized(() => {
+      logout();
+    });
   }, []);
 
   useEffect(() => {

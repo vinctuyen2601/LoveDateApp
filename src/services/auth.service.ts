@@ -53,6 +53,7 @@ class AuthService {
         );
 
         const { access_token, user } = response;
+        user.isAnonymous = true; // đảm bảo field luôn có dù BE không trả về
 
         // Save tokens
         const tokens: AuthTokens = {
@@ -133,6 +134,7 @@ class AuthService {
       );
 
       const { access_token, user } = response;
+      user.isAnonymous = false;
 
       // Save tokens
       const tokens: AuthTokens = {
@@ -273,6 +275,7 @@ class AuthService {
       );
 
       const { access_token, user } = response;
+      user.isAnonymous = false;
 
       // Save tokens
       const tokens: AuthTokens = {
@@ -326,6 +329,7 @@ class AuthService {
       );
 
       const { access_token, user } = response;
+      user.isAnonymous = false;
 
       // Save tokens
       const tokens: AuthTokens = {

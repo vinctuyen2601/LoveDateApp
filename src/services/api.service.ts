@@ -13,9 +13,14 @@ class ApiService {
   private client: AxiosInstance;
   private authToken: string | null = null;
   private onAccountDeactivatedCallback: (() => void) | null = null;
+  private onUnauthorizedCallback: (() => void) | null = null;
 
   setOnAccountDeactivated(callback: () => void): void {
     this.onAccountDeactivatedCallback = callback;
+  }
+
+  setOnUnauthorized(callback: () => void): void {
+    this.onUnauthorizedCallback = callback;
   }
 
   constructor() {
@@ -86,10 +91,8 @@ class ApiService {
               break;
 
             case 401:
-              // Unauthorized - token expired or invalid
-              console.log('Unauthorized - triggering re-authentication');
-              // Emit event for AuthContext to handle logout
-              // You can use EventEmitter or other mechanism here
+              this.authToken = null;
+              this.onUnauthorizedCallback?.();
               break;
 
             case 403:
